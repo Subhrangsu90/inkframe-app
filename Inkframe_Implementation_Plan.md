@@ -188,30 +188,34 @@ Implement the 21-color swatch palette (`Screenshot4.png`) and the dual-tab image
 
 ---
 
-## Phase 5: Enhanced Code Block NodeView
+## Phase 5: Enhanced Code Block NodeView (Status: ✅ Complete)
 
 ### Objective
 Upgrade code blocks into an IDE-like component with dynamic line numbers, syntax language selector, and quick copy actions (`Screenshot6.png`).
 
 ### Scope of Work
-1. **Schema Specs (`core/schema.ts`)**:
-   - `code_block`: Add `language` and `wrap` attributes (default: `language: 'typescript'`, `wrap: false`).
-2. **Code Block NodeView (`node-views/code-block.node-view.ts`)**:
+1. **Schema Specs (`core/schema.ts`)**: [x]
+   - `code_block`: Added `language` and `wrap` attributes (default: `language: 'typescript'`, `wrap: false`).
+2. **Code Block NodeView (`node-views/code-block.node-view.ts`)**: [x]
    - Host element: `<div class="ink-code-block-wrapper">`.
-   - **Line numbers gutter**: Left sidebar counting lines based on `\n` characters in content.
-   - **Floating control bar**:
-     - **Language selector (`Select language ∨`)**: Dropdown supporting:
-       `TypeScript`, `JavaScript`, `HTML`, `CSS`, `JSON`, `Python`, `SQL`, `Bash`, `Go`, `Rust`, `Java`.
+   - **Line numbers gutter**: Left sidebar counting lines dynamically based on line breaks.
+   - **Floating control bar (`Screenshot6.png`)**:
+     - **Language selector (`Select language ∨`)**: Popover menu supporting 15 languages (`TypeScript`, `JavaScript`, `HTML`, `CSS`, `JSON`, `Python`, `SQL`, `Bash`, `Go`, `Rust`, `Java`, `C++`, `C#`, `Markdown`, `Plain Text`).
      - **Word wrap toggle (`⇄`)**: Toggles CSS `white-space: pre` vs `pre-wrap`.
-     - **Copy button**: Copies code content to clipboard and displays transient "Copied!" feedback.
-     - **Delete button**: Removes code block.
-3. **Editor Service Integration**:
+     - **Copy button (`⧉`)**: Copies code content to clipboard with transient `✓` feedback.
+     - **Delete button (`✕`)**: Removes code block via ProseMirror transaction.
+3. **Editor Service Integration**: [x]
    - `setCodeBlockLanguage(pos: number, lang: string)`.
    - `toggleCodeBlockWrap(pos: number)`.
+4. **Markdown & IO Support (`io/markdown.ts`, `io/html.ts`, `core/input-rules.ts`)**: [x]
+   - Markdown serializer outputs ````<language>\n<code>\n````.
+   - Markdown parser imports language fences into `code_block` node attributes.
+   - Input rule ````<lang> ` creates code block with specified language.
 
 ### Deliverables & Acceptance Criteria
-- Line numbers update in real-time as lines are added or removed.
-- Language attribute persists in JSON envelope and Markdown code fence (e.g. ````typescript ... ````).
+- [x] Line numbers update in real-time as lines are added or removed.
+- [x] Language attribute persists in JSON envelope and Markdown code fence (e.g. ````typescript ... ````).
+- [x] Unit test coverage in `core.spec.ts` for code block attributes, HTML, and Markdown round-tripping.
 
 ---
 
@@ -294,7 +298,7 @@ Ensure 100% test pass rate, no memory leaks in NodeViews, and compliance with pe
 | **Phase 2** | Task List Node & Interactive Checkbox | Phase 1 | Complete (100%) |
 | **Phase 3** | Modular Toolbar Redesign (`T`, `B ∨`, `:= ∨`) | Phase 1 & 2 | Complete (100%) |
 | **Phase 4** | Color Palette Popover & Dual-Tab Image Dialog | Phase 1 & 3 | Complete (100%) |
-| **Phase 5** | Enhanced Code Block NodeView | Phase 1 | Pending (Next) |
-| **Phase 6** | Interactive Table NodeView & Floating Toolbar | Phase 3 | In Progress (~15%) |
+| **Phase 5** | Enhanced Code Block NodeView | Phase 1 | Complete (100%) |
+| **Phase 6** | Interactive Table NodeView & Floating Toolbar | Phase 3 | In Progress (~15%, Next) |
 | **Phase 7** | User Mentions (@) & Dictation (🎤) | Phase 1 | Pending |
-| **Phase 8** | Test Coverage & Production Verification | Phases 1–7 | In Progress (~40%) |
+| **Phase 8** | Test Coverage & Production Verification | Phases 1–7 | In Progress (~50%) |

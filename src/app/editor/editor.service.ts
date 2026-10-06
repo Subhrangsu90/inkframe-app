@@ -40,6 +40,7 @@ import { SLASH_ITEMS, SlashItem } from './slash-menu/slash-items';
 import { CalloutNodeView } from './node-views/callout.node-view';
 import { ImageNodeView } from './node-views/image.node-view';
 import { TaskItemNodeView } from './node-views/task-item.node-view';
+import { CodeBlockNodeView } from './node-views/code-block.node-view';
 import { imageStorage } from './core/image-storage';
 
 export interface BlockInfo {
@@ -153,6 +154,8 @@ export class EditorService implements EditorHooks {
           ),
         task_item: (node, view, getPos) =>
           new TaskItemNodeView(node, view, getPos),
+        code_block: (node, view, getPos) =>
+          new CodeBlockNodeView(node, view, getPos),
       },
       handlePaste: (view, event) => {
         const files = event.clipboardData?.files;
@@ -459,6 +462,38 @@ export class EditorService implements EditorHooks {
   }
   codeBlock() {
     this.run(setBlockType(schema.nodes['code_block']));
+  }
+
+  setCodeBlockLanguage(pos: number, lang: string): void {
+    this.run((state, dispatch) => {
+      const node = state.doc.nodeAt(pos);
+      if (node && node.type.name === 'code_block') {
+        dispatch?.(
+          state.tr.setNodeMarkup(pos, undefined, {
+            ...node.attrs,
+            language: lang,
+          }),
+        );
+        return true;
+      }
+      return false;
+    });
+  }
+
+  toggleCodeBlockWrap(pos: number): void {
+    this.run((state, dispatch) => {
+      const node = state.doc.nodeAt(pos);
+      if (node && node.type.name === 'code_block') {
+        dispatch?.(
+          state.tr.setNodeMarkup(pos, undefined, {
+            ...node.attrs,
+            wrap: !node.attrs['wrap'],
+          }),
+        );
+        return true;
+      }
+      return false;
+    });
   }
   insertCallout(kind: CalloutKind = 'info') {
     this.run(wrapIn(schema.nodes['callout'], { type: kind }));

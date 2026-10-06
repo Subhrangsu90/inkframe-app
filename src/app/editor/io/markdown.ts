@@ -60,6 +60,13 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
     table_header(state, node) {
       state.renderContent(node);
     },
+    code_block(state, node) {
+      state.write('```' + (node.attrs['language'] || '') + '\n');
+      state.text(node.textContent, false);
+      state.ensureNewLine();
+      state.write('```');
+      state.closeBlock(node);
+    },
   },
   {
     ...defaultMarkdownSerializer.marks,
@@ -169,6 +176,18 @@ export const inkMarkdownParser = new MarkdownParser(
       block: 'task_item',
       getAttrs: (tok: any) => ({
         checked: tok.attrGet('checked') === 'true',
+      }),
+    },
+    fence: {
+      block: 'code_block',
+      getAttrs: (tok: any) => ({
+        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
+      }),
+    },
+    code_block: {
+      block: 'code_block',
+      getAttrs: (tok: any) => ({
+        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
       }),
     },
   },

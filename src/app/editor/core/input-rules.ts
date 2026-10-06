@@ -65,7 +65,9 @@ export const buildInputRules = () => {
       ),
       taskItemRule(),
       wrappingInputRule(/^\s*>\s$/, blockquote),
-      textblockTypeInputRule(/^`{3}$/, code_block),
+      textblockTypeInputRule(/^`{3}([a-z0-9_-]+)?\s$/, code_block, (m) => ({
+        language: m[1]?.toLowerCase() || 'typescript',
+      })),
       markRule(/\*\*([^*]+)\*\*$/, strong),
       markRule(/(?:^|\s)_([^_\s][^_]*)_$/, em),
       markRule(/~~([^~]+)~~$/, strikethrough),

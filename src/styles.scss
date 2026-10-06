@@ -1176,4 +1176,265 @@ mat-divider.mat-divider {
   }
 }
 
+/* ── Enhanced Code Block (Matches Screenshot6.png) ── */
+.ink-code-block-wrapper {
+  position: relative;
+  margin: 1.25rem 0;
+  background: #1c1d22;
+  border: 1px solid #30323a;
+  border-radius: 10px;
+  overflow: visible;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+
+  &:hover,
+  &.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .ink-code-body {
+    display: flex;
+    align-items: stretch;
+    min-height: 48px;
+    overflow: hidden;
+    border-radius: 9px;
+  }
+
+  .ink-code-gutter {
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    padding: 14px 10px 14px 14px;
+    min-width: 38px;
+    text-align: right;
+    background: #151619;
+    border-right: 1px solid #282a32;
+    border-top-left-radius: 9px;
+    border-bottom-left-radius: 9px;
+
+    .ink-code-line-number {
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #555b6a;
+      font-family: inherit;
+    }
+  }
+
+  .ink-code-pre {
+    flex: 1;
+    margin: 0;
+    padding: 14px 18px 36px;
+    background: transparent;
+    overflow-x: auto;
+    line-height: 1.65;
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    tab-size: 2;
+    font-family: inherit;
+
+    .ink-code-content {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      padding: 0 !important;
+      color: inherit;
+      font-family: inherit;
+      white-space: inherit;
+      word-break: inherit;
+    }
+
+    /* Prism Syntax Highlighting (One Dark) */
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: #6a737d;
+      font-style: italic;
+    }
+
+    .token.punctuation {
+      color: #abb2bf;
+    }
+
+    .token.property,
+    .token.tag,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: #e06c75;
+    }
+
+    .token.boolean,
+    .token.number {
+      color: #d19a66;
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: #98c379;
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url {
+      color: #56b6c2;
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: #c678dd;
+      font-weight: 500;
+    }
+
+    .token.function,
+    .token.class-name {
+      color: #61afef;
+    }
+
+    .token.regex,
+    .token.important,
+    .token.variable {
+      color: #e5c07b;
+    }
+  }
+
+  /* Floating Control Bar (Screenshot6.png) */
+  .ink-code-toolbar {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #23252b;
+    border: 1px solid #383a44;
+    border-radius: 8px;
+    padding: 3px 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    z-index: 25;
+    user-select: none;
+
+    .ink-code-lang-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: #e2e8f0;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s ease;
+
+      .ink-lang-text {
+        white-space: nowrap;
+      }
+
+      .ink-lang-caret {
+        font-size: 10px;
+        color: #94a3b8;
+        line-height: 1;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #60a5fa;
+        color: #60a5fa;
+
+        .ink-lang-caret {
+          color: #60a5fa;
+        }
+      }
+    }
+
+    .ink-code-tool-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      border-radius: 5px;
+      color: #94a3b8;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.12s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
+      }
+
+      &.active {
+        background: #172c47;
+        color: #60a5fa;
+      }
+
+      &.copied {
+        color: #4ade80 !important;
+        background: rgba(74, 222, 128, 0.12);
+      }
+
+      &.delete-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+      }
+    }
+
+    /* Language Dropdown Menu */
+    .ink-code-lang-menu {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      width: 160px;
+      max-height: 240px;
+      overflow-y: auto;
+      background: #212226;
+      border: 1px solid #383a42;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+      padding: 4px;
+      z-index: 60;
+
+      .ink-code-lang-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        border-radius: 5px;
+        color: #cbd5e1;
+        font-size: 0.82rem;
+        font-weight: 500;
+        padding: 6px 10px;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        font-family: inherit;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+        }
+
+        &.selected {
+          background: #172c47;
+          color: #60a5fa;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+
 

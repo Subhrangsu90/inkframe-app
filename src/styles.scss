@@ -264,49 +264,203 @@ body {
   position: relative;
   display: inline-block;
   max-width: 100%;
-  margin: 1rem 0;
+  margin: 1.25rem 0;
+  vertical-align: middle;
+  transition: width 0.08s ease;
 
-  .ink-image {
-    display: block;
+  &.is-resizing {
+    user-select: none;
+    cursor: ew-resize;
+
+    .ink-image-wrapper {
+      outline: 2px dashed #60a5fa !important;
+    }
+  }
+
+  .ink-image-wrapper {
+    position: relative;
+    display: inline-block;
     max-width: 100%;
-    height: auto;
+    width: 100%;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: visible;
+
+    .ink-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      cursor: zoom-in;
+      transition: filter 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+      }
+    }
+
+    /* Floating action toolbar (Presets, Preview, Delete) */
+    .ink-image-toolbar {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(24, 26, 32, 0.88);
+      backdrop-filter: blur(8px);
+      padding: 3px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 10;
+      pointer-events: none;
+
+      .ink-image-tool-btn {
+        background: transparent;
+        border: none;
+        color: #e2e8f0;
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        line-height: 1.3;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.14);
+          color: #ffffff;
+        }
+
+        &.preview-btn {
+          color: #93c5fd;
+          font-weight: 600;
+
+          &:hover {
+            background: #1e3a5f;
+            color: #bfdbfe;
+          }
+        }
+
+        &.preset-btn {
+          font-family: monospace;
+          font-size: 0.74rem;
+        }
+
+        &.delete-btn {
+          color: #f87171;
+          font-size: 0.85rem;
+          padding: 2px 6px;
+
+          &:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+          }
+        }
+      }
+    }
+
+    /* Size badge during resize */
+    .ink-image-size-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.82);
+      color: #60a5fa;
+      font-size: 0.78rem;
+      font-family: monospace;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      pointer-events: none;
+      z-index: 15;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Resize Handles */
+    .ink-image-resize-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #3b82f6;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+      z-index: 12;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.12s ease;
+
+      &:hover {
+        transform: scale(1.3);
+        background: #60a5fa;
+      }
+
+      &.handle-se {
+        bottom: -5px;
+        right: -5px;
+        cursor: nwse-resize;
+      }
+
+      &.handle-e {
+        top: 50%;
+        right: -5px;
+        transform: translateY(-50%);
+        cursor: ew-resize;
+
+        &:hover {
+          transform: translateY(-50%) scale(1.3);
+        }
+      }
+
+      &.handle-sw {
+        bottom: -5px;
+        left: -5px;
+        cursor: nesw-resize;
+      }
+
+      &.handle-w {
+        top: 50%;
+        left: -5px;
+        transform: translateY(-50%);
+        cursor: ew-resize;
+
+        &:hover {
+          transform: translateY(-50%) scale(1.3);
+        }
+      }
+    }
+  }
+
+  /* Show controls on hover or selected */
+  &:hover,
+  &.selected {
+    .ink-image-wrapper {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
+    }
+
+    .ink-image-toolbar {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .ink-image-resize-handle {
+      opacity: 1;
+    }
   }
 
   .ink-image-caption {
     font-size: 0.85rem;
     color: var(--mat-sys-on-surface-variant, #666);
-    margin-top: 4px;
+    margin-top: 6px;
     text-align: center;
-  }
-
-  .ink-image-delete-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.65);
-    color: #fff;
-    border: none;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-
-  &:hover .ink-image-delete-btn,
-  &.selected .ink-image-delete-btn {
-    opacity: 1;
-  }
-
-  &.selected .ink-image {
-    outline: 2px solid var(--mat-sys-primary, #005ac1);
   }
 }
 
@@ -634,6 +788,63 @@ mat-divider.mat-divider {
       }
     }
 
+    .ink-image-preview-box {
+      width: 100%;
+      height: 110px;
+      border: 1px dashed #383a42;
+      border-radius: 6px;
+      background: #18191c;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 6px;
+      user-select: none;
+
+      .ink-preview-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+        display: block;
+      }
+
+      .ink-preview-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: #64748b;
+        font-size: 0.78rem;
+
+        mat-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+          opacity: 0.6;
+        }
+      }
+
+      .ink-preview-error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: #f87171;
+        font-size: 0.78rem;
+
+        mat-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+          opacity: 0.85;
+        }
+      }
+    }
+
     .ink-image-submit-btn {
       width: 100%;
       height: 36px;
@@ -699,6 +910,119 @@ mat-divider.mat-divider {
     &:hover {
       background: rgba(255, 255, 255, 0.12);
       transform: scale(1.18);
+    }
+  }
+}
+
+.ink-link-popover {
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 12px 14px;
+  width: 290px;
+  max-width: 100%;
+  background-color: #212226;
+  border-radius: 10px;
+  user-select: none;
+
+  .ink-link-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #f1f5f9;
+  }
+
+  .ink-link-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .ink-link-url-input {
+    flex: 1;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #383a42;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #18191c;
+    color: #f1f5f9;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: #60a5fa;
+    }
+  }
+
+  .ink-link-open-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #383a42;
+    border-radius: 6px;
+    background: #2b2d33;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.12s ease;
+
+    &:hover {
+      background: #363942;
+      color: #60a5fa;
+      border-color: #60a5fa;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .ink-link-actions {
+    display: flex;
+    gap: 8px;
+
+    .ink-link-submit-btn {
+      flex: 1;
+      height: 34px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      &:not(:disabled):hover {
+        opacity: 0.92;
+      }
+    }
+
+    .ink-link-remove-btn {
+      height: 34px;
+      padding: 0 12px;
+      border: 1px solid #383a42;
+      border-radius: 6px;
+      background: #2b2d33;
+      color: #ef4444;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s ease;
+
+      &:hover {
+        background: #363942;
+      }
     }
   }
 }

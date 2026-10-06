@@ -57,6 +57,12 @@ export interface MountOptions {
 const sameBlock = (a: BlockInfo, b: BlockInfo) =>
   a.type === b.type && a.level === b.level && a.list === b.list;
 
+export interface ImagePreviewData {
+  src: string;
+  alt?: string;
+  title?: string;
+}
+
 @Injectable()
 export class EditorService implements EditorHooks {
   private readonly env = inject(EnvironmentInjector);
@@ -85,6 +91,8 @@ export class EditorService implements EditorHooks {
   readonly canRedo = signal(false);
   readonly isInTable = signal(false);
 
+  readonly imagePreview = signal<ImagePreviewData | null>(null);
+
   readonly floatingMenu = signal<FloatingMenuState | null>(null, {
     equal: (a, b) =>
       a === b ||
@@ -112,6 +120,14 @@ export class EditorService implements EditorHooks {
     );
   });
 
+  openImagePreview(data: ImagePreviewData): void {
+    this.imagePreview.set(data);
+  }
+
+  closeImagePreview(): void {
+    this.imagePreview.set(null);
+  }
+
   // ── Lifecycle ────────────────────────────────────────────────────
   mount(el: HTMLElement, opts: MountOptions = {}): void {
     this.onChange = opts.onChange;
@@ -132,7 +148,9 @@ export class EditorService implements EditorHooks {
         callout: (node, view, getPos) =>
           new CalloutNodeView(node, view, getPos, this.env, this.appRef),
         image: (node, view, getPos) =>
-          new ImageNodeView(node, view, getPos),
+          new ImageNodeView(node, view, getPos, (data) =>
+            this.openImagePreview(data),
+          ),
         task_item: (node, view, getPos) =>
           new TaskItemNodeView(node, view, getPos),
       },
@@ -564,7 +582,20 @@ export class EditorService implements EditorHooks {
   setLink(href: string): boolean {
     const safe = sanitizeHref(href);
     if (!safe) return false;
-    this.run(toggleMark(schema.marks['link'], { href: safe }));
+    const linkMark = schema.marks['link'];
+    this.run((state, dispatch) => {
+      const { from, to, empty } = state.selection;
+      if (empty) {
+        dispatch?.(state.tr.addStoredMark(linkMark.create({ href: safe })));
+      } else {
+        dispatch?.(
+          state.tr
+            .removeMark(from, to, linkMark)
+            .addMark(from, to, linkMark.create({ href: safe })),
+        );
+      }
+      return true;
+    });
     return true;
   }
 

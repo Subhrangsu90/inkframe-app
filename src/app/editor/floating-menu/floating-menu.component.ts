@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditorService } from '../editor.service';
 import { TEXT_COLORS } from '../core/colors';
@@ -11,6 +12,7 @@ import { TEXT_COLORS } from '../core/colors';
   selector: 'ink-floating-menu',
   standalone: true,
   imports: [
+    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
@@ -86,11 +88,13 @@ import { TEXT_COLORS } from '../core/colors';
 
         <!-- Link -->
         <button mat-icon-button
+                #linkTrigger="matMenuTrigger"
                 aria-label="Link"
                 matTooltip="Link (Ctrl+K)"
                 [attr.aria-pressed]="svc.isLink()"
-                [class.active]="svc.isLink()"
-                (click)="promptLink()">
+                [class.active]="linkTrigger.menuOpen || svc.isLink()"
+                [matMenuTriggerFor]="floatingLinkMenu"
+                (menuOpened)="onLinkMenuOpened()">
           <mat-icon>link</mat-icon>
         </button>
 
@@ -106,7 +110,7 @@ import { TEXT_COLORS } from '../core/colors';
       </div>
     }
 
-    <!-- Menu declared outside @if so it is never destroyed while open -->
+    <!-- Color Menu (declared outside @if so it survives focus changes) -->
     <mat-menu #floatingColorMenu="matMenu">
       <div class="ink-color-popover" (click)="$event.stopPropagation()">
         <div class="ink-color-title">Text color</div>
@@ -132,6 +136,46 @@ import { TEXT_COLORS } from '../core/colors';
                 (click)="svc.removeTextColor()">
           Remove color
         </button>
+      </div>
+    </mat-menu>
+
+    <!-- Link Popover Menu -->
+    <mat-menu #floatingLinkMenu="matMenu">
+      <div class="ink-link-popover" (click)="$event.stopPropagation()">
+        <div class="ink-link-title">Link</div>
+        <div class="ink-link-input-wrapper">
+          <input type="url"
+                 class="ink-link-url-input"
+                 [(ngModel)]="linkUrl"
+                 placeholder="Paste link (https://...)"
+                 (keydown.enter)="applyLink()">
+          @if (svc.isLink() && linkUrl) {
+            <a [href]="linkUrl"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="ink-link-open-btn"
+               matTooltip="Open in new tab">
+              <mat-icon>open_in_new</mat-icon>
+            </a>
+          }
+        </div>
+        <div class="ink-link-actions">
+          <button type="button"
+                  class="ink-link-submit-btn"
+                  [disabled]="!linkUrl.trim()"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="applyLink()">
+            {{ svc.isLink() ? 'Update' : 'Apply' }}
+          </button>
+          @if (svc.isLink()) {
+            <button type="button"
+                    class="ink-link-remove-btn"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="removeLink()">
+              Unlink
+            </button>
+          }
+        </div>
       </div>
     </mat-menu>
   `,
@@ -174,23 +218,23 @@ import { TEXT_COLORS } from '../core/colors';
 export class FloatingMenuComponent {
   protected readonly svc = inject(EditorService);
   protected readonly textColors = TEXT_COLORS;
+  protected readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
+  protected linkUrl = '';
 
-  protected promptLink(): void {
-    if (typeof window === 'undefined') return;
-    const current = this.svc.getLinkHref();
-    if (this.svc.isLink()) {
-      const url = window.prompt('Edit or remove link URL (clear to remove):', current || '');
-      if (url === null) return;
-      if (!url.trim()) {
-        this.svc.removeLink();
-      } else {
-        this.svc.setLink(url.trim());
-      }
-    } else {
-      const url = window.prompt('Enter link URL (e.g. https://...):');
-      if (url?.trim()) {
-        this.svc.setLink(url.trim());
-      }
+  protected onLinkMenuOpened(): void {
+    this.linkUrl = this.svc.getLinkHref() || '';
+  }
+
+  protected applyLink(): void {
+    if (this.linkUrl.trim()) {
+      this.svc.setLink(this.linkUrl.trim());
+      this.linkTrigger()?.closeMenu();
     }
+  }
+
+  protected removeLink(): void {
+    this.svc.removeLink();
+    this.linkUrl = '';
+    this.linkTrigger()?.closeMenu();
   }
 }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditorService } from '../editor.service';
 import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
@@ -247,7 +247,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
               [matMenuTriggerFor]="imageMenu">
         <mat-icon>image</mat-icon>
       </button>
-      <mat-menu #imageMenu="matMenu">
+      <mat-menu #imageMenu="matMenu" (menuOpened)="onImageMenuOpened()">
         <div class="ink-image-popover" (click)="$event.stopPropagation()">
           <div class="ink-image-tabs">
             <button type="button"
@@ -281,7 +281,30 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
               <input type="url"
                      class="ink-image-url-input"
                      [(ngModel)]="imageUrl"
+                     (ngModelChange)="onImageUrlChange()"
                      placeholder="Paste image URL (https://...)">
+              <div class="ink-image-preview-box">
+                @if (imageUrl.trim()) {
+                  @if (previewError) {
+                    <div class="ink-preview-error">
+                      <mat-icon>broken_image</mat-icon>
+                      <span>Unable to load image</span>
+                    </div>
+                  } @else {
+                    <img [src]="imageUrl.trim()"
+                         alt="Preview"
+                         class="ink-preview-img"
+                         referrerpolicy="no-referrer"
+                         (error)="previewError = true"
+                         (load)="previewError = false">
+                  }
+                } @else {
+                  <div class="ink-preview-placeholder">
+                    <mat-icon>image</mat-icon>
+                    <span>Image preview</span>
+                  </div>
+                }
+              </div>
               <button type="button"
                       class="ink-image-submit-btn"
                       [disabled]="!imageUrl.trim()"
@@ -369,12 +392,50 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       <!-- 9. Link Button (🔗) -->
       <button mat-icon-button
               class="ink-tb-icon-btn"
+              #linkTrigger="matMenuTrigger"
+              [matMenuTriggerFor]="linkMenu"
+              (menuOpened)="onLinkMenuOpened()"
               aria-label="Link"
               matTooltip="Link (Ctrl+K)"
-              [class.active]="svc.isLink()"
-              (click)="promptLink()">
+              [class.active]="linkTrigger.menuOpen || svc.isLink()">
         <mat-icon>link</mat-icon>
       </button>
+      <mat-menu #linkMenu="matMenu">
+        <div class="ink-link-popover" (click)="$event.stopPropagation()">
+          <div class="ink-link-title">Link</div>
+          <div class="ink-link-input-wrapper">
+            <input type="url"
+                   class="ink-link-url-input"
+                   [(ngModel)]="linkUrl"
+                   placeholder="Paste link (https://...)"
+                   (keydown.enter)="applyLink(linkTrigger)">
+            @if (svc.isLink() && linkUrl) {
+              <a [href]="linkUrl"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="ink-link-open-btn"
+                 matTooltip="Open in new tab">
+                <mat-icon>open_in_new</mat-icon>
+              </a>
+            }
+          </div>
+          <div class="ink-link-actions">
+            <button type="button"
+                    class="ink-link-submit-btn"
+                    [disabled]="!linkUrl.trim()"
+                    (click)="applyLink(linkTrigger)">
+              {{ svc.isLink() ? 'Update' : 'Apply' }}
+            </button>
+            @if (svc.isLink()) {
+              <button type="button"
+                      class="ink-link-remove-btn"
+                      (click)="removeLink(linkTrigger)">
+                Unlink
+              </button>
+            }
+          </div>
+        </div>
+      </mat-menu>
 
       <!-- 10. Table Context Tools (When cursor is inside table) -->
       @if (svc.isInTable()) {
@@ -550,6 +611,15 @@ export class ToolbarComponent {
 
   protected imageTab: 'file' | 'link' = 'file';
   protected imageUrl = '';
+  protected previewError = false;
+
+  protected onImageUrlChange(): void {
+    this.previewError = false;
+  }
+
+  protected onImageMenuOpened(): void {
+    this.previewError = false;
+  }
 
   protected currentBlockGlyph(): string {
     const b = this.svc.block();
@@ -572,23 +642,23 @@ export class ToolbarComponent {
     return ':=';
   }
 
-  protected promptLink(): void {
-    if (typeof window === 'undefined') return;
-    const current = this.svc.getLinkHref();
-    if (this.svc.isLink()) {
-      const url = window.prompt('Edit or remove link URL (clear to remove):', current || '');
-      if (url === null) return;
-      if (!url.trim()) {
-        this.svc.removeLink();
-      } else {
-        this.svc.setLink(url.trim());
-      }
-    } else {
-      const url = window.prompt('Enter link URL (e.g. https://...):');
-      if (url?.trim()) {
-        this.svc.setLink(url.trim());
-      }
+  protected linkUrl = '';
+
+  protected onLinkMenuOpened(): void {
+    this.linkUrl = this.svc.getLinkHref() || '';
+  }
+
+  protected applyLink(trigger: MatMenuTrigger): void {
+    if (this.linkUrl.trim()) {
+      this.svc.setLink(this.linkUrl.trim());
+      trigger.closeMenu();
     }
+  }
+
+  protected removeLink(trigger: MatMenuTrigger): void {
+    this.svc.removeLink();
+    this.linkUrl = '';
+    trigger.closeMenu();
   }
 
   protected onFileSelected(event: Event): void {
@@ -604,6 +674,7 @@ export class ToolbarComponent {
     if (this.imageUrl.trim()) {
       this.svc.insertImage(this.imageUrl.trim());
       this.imageUrl = '';
+      this.previewError = false;
     }
   }
 

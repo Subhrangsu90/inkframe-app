@@ -18,11 +18,17 @@ import { docToMarkdown, markdownToDoc } from './io/markdown';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 import { FloatingMenuComponent } from './floating-menu/floating-menu.component';
 import { SlashMenuComponent } from './slash-menu/slash-menu.component';
+import { ImageLightboxComponent } from './image-lightbox/image-lightbox.component';
 
 @Component({
   selector: 'ink-editor',
   standalone: true,
-  imports: [ToolbarComponent, FloatingMenuComponent, SlashMenuComponent],
+  imports: [
+    ToolbarComponent,
+    FloatingMenuComponent,
+    SlashMenuComponent,
+    ImageLightboxComponent,
+  ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -31,6 +37,14 @@ import { SlashMenuComponent } from './slash-menu/slash-menu.component';
       <div #host class="ink-host"></div>
       <ink-floating-menu />
       <ink-slash-menu />
+      @if (svc.imagePreview(); as preview) {
+        <ink-image-lightbox
+          [src]="preview.src"
+          [alt]="preview.alt"
+          [title]="preview.title"
+          (closed)="svc.closeImagePreview()"
+        />
+      }
     </div>
   `,
   styles: `
@@ -51,7 +65,7 @@ import { SlashMenuComponent } from './slash-menu/slash-menu.component';
   `,
 })
 export class EditorComponent {
-  private readonly svc = inject(EditorService);
+  protected readonly svc = inject(EditorService);
   private readonly zone = inject(NgZone);
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private timer?: ReturnType<typeof setTimeout>;

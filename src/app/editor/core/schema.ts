@@ -181,7 +181,45 @@ const task_item: NodeSpec = {
   ],
 };
 
+const image: NodeSpec = {
+  inline: true,
+  attrs: {
+    src: {},
+    alt: { default: null },
+    title: { default: null },
+    width: { default: null },
+  },
+  group: 'inline',
+  draggable: true,
+  parseDOM: [
+    {
+      tag: 'img[src]',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement;
+        return {
+          src: el.getAttribute('src'),
+          title: el.getAttribute('title'),
+          alt: el.getAttribute('alt'),
+          width: el.getAttribute('width') || el.style.width || null,
+        };
+      },
+    },
+  ],
+  toDOM: (node) => [
+    'img',
+    {
+      src: node.attrs['src'],
+      alt: node.attrs['alt'],
+      title: node.attrs['title'],
+      ...(node.attrs['width']
+        ? { width: node.attrs['width'], style: `width: ${node.attrs['width']}` }
+        : {}),
+    },
+  ],
+};
+
 const baseNodesWithTasks = base.spec.nodes
+  .update('image', image)
   .addToEnd('task_list', task_list)
   .addToEnd('task_item', task_item);
 

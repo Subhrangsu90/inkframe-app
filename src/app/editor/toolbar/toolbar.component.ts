@@ -261,6 +261,12 @@ import { CalloutKind } from '../core/schema';
           <span class="menu-item-text">Numbered list</span>
           <span class="menu-shortcut">Ctrl+Shift+7</span>
         </button>
+        <button mat-menu-item
+                (click)="svc.toggleTaskList()">
+          <mat-icon>check_box</mat-icon>
+          <span class="menu-item-text">Task list</span>
+          <span class="menu-shortcut">Ctrl+Shift+6</span>
+        </button>
       </mat-menu>
 
       <mat-divider vertical />

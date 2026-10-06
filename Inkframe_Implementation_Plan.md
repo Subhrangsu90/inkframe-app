@@ -79,34 +79,36 @@ Expand the ProseMirror schema with advanced text formatting marks and implement 
 
 ---
 
-## Phase 2: Task / Todo List Node & Interactive NodeView
+## Phase 2: Task / Todo List Node & Interactive NodeView (Status: ✅ Complete)
 
 ### Objective
 Implement interactive checklist items that users can check/uncheck in both edit mode and read-only mode without full page re-renders.
 
 ### Scope of Work
-1. **Schema Specs (`core/schema.ts`)**:
-   - `task_list`: block container, content: `task_item+`, toDOM: `['ul', { class: 'ink-task-list' }, 0]`.
-   - `task_item`: content: `paragraph block*`, attrs: `{ checked: { default: false } }`, defining: true.
-2. **Task Item NodeView (`node-views/task-item.node-view.ts`)**:
+1. **Schema Specs (`core/schema.ts`)**: [x]
+   - `task_list`: block container, content: `task_item+`, toDOM: `['ul', { class: 'ink-task-list', 'data-type': 'task_list' }, 0]`. Registered with precedence before `bullet_list` in schema to ensure correct DOM parsing.
+   - `task_item`: content: `paragraph block*`, attrs: `{ checked: { default: false } }`, defining: true. Supports `.ink-task-item`, `[data-type="task_item"]`, `.task-list-item`, and `<input type="checkbox">` detection in `getAttrs`.
+2. **Task Item NodeView (`node-views/task-item.node-view.ts`)**: [x]
    - Custom NodeView rendering an `<input type="checkbox">` and `<div class="ink-task-content">`.
    - Click listener on checkbox dispatches a transaction toggling `node.attrs.checked`.
    - `stopEvent()` captures checkbox click events so ProseMirror selection is not disrupted.
    - Checkbox is functional in both `editable = true` and `editable = false` modes.
-3. **Input Rules & Shortcuts**:
-   - Typing `[ ] ` or `[x] ` at the beginning of a line converts block to a `task_list`.
+3. **Input Rules & Shortcuts (`core/input-rules.ts`, `core/plugins.ts`)**: [x]
+   - Typing `[ ] ` or `[x] ` at the beginning of a line wraps the block in `task_list` and `task_item` using `findWrapping` without schema textblock errors.
    - `Ctrl+Shift+6` shortcut toggles task list.
-   - Enter creates a new unchecked task item; empty Enter lifts out of the task list.
-4. **Styling (`styles.scss`)**:
+   - Enter creates a new unchecked task item (`splitListItem(task_item, { checked: false })`); empty Enter lifts out of the task list (`liftListItem(task_item)`).
+4. **Styling (`styles.scss`)**: [x]
    - Custom styled checkboxes matching Material M3 accent.
-   - `.ink-task-item.checked` applies dimming or strike-through to the label text.
-5. **IO Support**:
+   - `.ink-task-item.checked` applies line-through and dimming to the label text.
+5. **IO Support (`io/markdown.ts`, `io/html.ts`)**: [x]
    - Markdown export renders `- [ ] ` or `- [x] `.
-   - Markdown import parses `- [ ] ` and `- [x] ` into `task_item` nodes.
+   - Markdown import parses `- [ ] ` and `- [x] ` into `task_item` and `task_list` nodes via custom `markdown-it` core token rule.
+   - HTML DOMSerializer handles round-trip parsing of task lists and items with checked states.
 
 ### Deliverables & Acceptance Criteria
-- Toggling checkboxes updates document state and triggers debounced `changed` output.
-- Markdown and HTML round-trips correctly preserve checked/unchecked states.
+- [x] Toggling checkboxes updates document state and triggers debounced `changed` output.
+- [x] Markdown and HTML round-trips correctly preserve checked/unchecked states.
+- [x] 100% test coverage in `core.spec.ts` for task list input rules, shortcuts, NodeView, and IO round-trips.
 
 ---
 
@@ -288,9 +290,9 @@ Ensure 100% test pass rate, no memory leaks in NodeViews, and compliance with pe
 
 | Phase | Title | Dependencies | Estimated Complexity |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | Core Typography Marks & Shortcuts | None (Schema extension) | Low |
-| **Phase 2** | Task List Node & Interactive Checkbox | Phase 1 | Medium |
-| **Phase 3** | Modular Toolbar Redesign (`T`, `B ∨`, `:= ∨`) | Phase 1 & 2 | Medium |
+| **Phase 1** | Core Typography Marks & Shortcuts | None (Schema extension) | Complete (100%) |
+| **Phase 2** | Task List Node & Interactive Checkbox | Phase 1 | Complete (100%) |
+| **Phase 3** | Modular Toolbar Redesign (`T`, `B ∨`, `:= ∨`) | Phase 1 & 2 | Complete (100%) |
 | **Phase 4** | Color Palette Popover & Dual-Tab Image Dialog | Phase 1 & 3 | Medium |
 | **Phase 5** | Enhanced Code Block NodeView | Phase 1 | Medium |
 | **Phase 6** | Interactive Table NodeView & Floating Toolbar | Phase 3 | High |

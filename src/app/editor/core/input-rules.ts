@@ -5,6 +5,7 @@ import {
   textblockTypeInputRule,
 } from 'prosemirror-inputrules';
 import { MarkType } from 'prosemirror-model';
+import { findWrapping } from 'prosemirror-transform';
 import { schema } from './schema';
 
 /** Wraps text matched by group 1 in a mark: **bold**, _italic_, `code`. */
@@ -18,6 +19,31 @@ function markRule(re: RegExp, type: MarkType): InputRule {
       .insertText(inner, from)
       .addMark(from, from + inner.length, type.create())
       .removeStoredMark(type); // do not keep typing in the mark
+  });
+}
+
+export function taskItemRule(): InputRule {
+  return new InputRule(/^\s*\[([ xX]?)\]\s$/, (state, match, start, end) => {
+    const isChecked = match[1].toLowerCase() === 'x';
+    const { task_list, task_item } = schema.nodes;
+    const tr = state.tr.delete(start, end);
+    const $pos = tr.doc.resolve(tr.mapping.map(start));
+    const range = $pos.blockRange();
+    if (!range) return null;
+
+    if ($pos.depth > 1 && $pos.node($pos.depth - 1).type === task_item) {
+      const itemPos = $pos.before($pos.depth - 1);
+      return tr.setNodeAttribute(itemPos, 'checked', isChecked);
+    }
+
+    const wrapping = findWrapping(range, task_list);
+    if (!wrapping) return null;
+
+    const wrappers = wrapping.map((w) =>
+      w.type === task_item ? { type: w.type, attrs: { checked: isChecked } } : w,
+    );
+
+    return tr.wrap(range, wrappers);
   });
 }
 
@@ -37,6 +63,7 @@ export const buildInputRules = () => {
         (m) => ({ order: +m[1] }),
         (m, node) => node.childCount + node.attrs['order'] === +m[1],
       ),
+      taskItemRule(),
       wrappingInputRule(/^\s*>\s$/, blockquote),
       textblockTypeInputRule(/^`{3}$/, code_block),
       markRule(/\*\*([^*]+)\*\*$/, strong),

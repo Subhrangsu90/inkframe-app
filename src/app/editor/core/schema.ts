@@ -115,7 +115,77 @@ const code: MarkSpec = {
   excludes: '_',
 };
 
-const nodes = addListNodes(base.spec.nodes, 'paragraph block*', 'block')
+const task_list: NodeSpec = {
+  group: 'block',
+  content: 'task_item+',
+  parseDOM: [
+    { tag: 'ul.ink-task-list' },
+    { tag: 'ul[data-type="task_list"]' },
+    { tag: 'ul.contains-task-list' },
+  ],
+  toDOM: () => ['ul', { class: 'ink-task-list', 'data-type': 'task_list' }, 0],
+};
+
+const task_item: NodeSpec = {
+  content: 'paragraph block*',
+  attrs: {
+    checked: { default: false },
+  },
+  defining: true,
+  parseDOM: [
+    {
+      tag: 'li.ink-task-item',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement;
+        const checkbox = el.querySelector('input[type="checkbox"]');
+        const checked =
+          el.getAttribute('data-checked') === 'true' ||
+          el.classList.contains('checked') ||
+          (checkbox ? (checkbox as HTMLInputElement).checked : false);
+        return { checked };
+      },
+    },
+    {
+      tag: 'li[data-type="task_item"]',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement;
+        const checkbox = el.querySelector('input[type="checkbox"]');
+        const checked =
+          el.getAttribute('data-checked') === 'true' ||
+          el.classList.contains('checked') ||
+          (checkbox ? (checkbox as HTMLInputElement).checked : false);
+        return { checked };
+      },
+    },
+    {
+      tag: 'li.task-list-item',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement;
+        const checkbox = el.querySelector('input[type="checkbox"]');
+        const checked =
+          el.getAttribute('data-checked') === 'true' ||
+          el.classList.contains('checked') ||
+          (checkbox ? (checkbox as HTMLInputElement).checked : false);
+        return { checked };
+      },
+    },
+  ],
+  toDOM: (node) => [
+    'li',
+    {
+      class: `ink-task-item${node.attrs['checked'] ? ' checked' : ''}`,
+      'data-type': 'task_item',
+      'data-checked': String(node.attrs['checked']),
+    },
+    0,
+  ],
+};
+
+const baseNodesWithTasks = base.spec.nodes
+  .addToEnd('task_list', task_list)
+  .addToEnd('task_item', task_item);
+
+const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
   .append(
     tableNodes({
       tableGroup: 'block',

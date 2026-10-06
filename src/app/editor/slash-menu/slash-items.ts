@@ -16,6 +16,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   { id: 'h3',  label: 'Heading 3',     hint: 'Small heading',    icon: 'format_h3',          keywords: ['h3'],                run: (s) => s.heading(3) },
   { id: 'ul',  label: 'Bullet list',   hint: 'Unordered list',   icon: 'format_list_bulleted', keywords: ['ul', 'bullets'],    run: (s) => s.toggleList('bullet_list') },
   { id: 'ol',  label: 'Numbered list', hint: 'Ordered list',     icon: 'format_list_numbered', keywords: ['ol', 'numbers'],    run: (s) => s.toggleList('ordered_list') },
+  { id: 'todo', label: 'Task list',    hint: 'Checklist with checkboxes', icon: 'check_box', keywords: ['todo', 'task', 'checklist', 'check'], run: (s) => s.toggleTaskList() },
   { id: 'q',   label: 'Quote',         hint: 'Blockquote',       icon: 'format_quote',       keywords: ['blockquote'],        run: (s) => s.blockquote() },
   { id: 'cb',  label: 'Code block',    hint: 'Monospace block',  icon: 'code',               keywords: ['code', 'pre'],       run: (s) => s.codeBlock() },
   { id: 'cl',  label: 'Callout',       hint: 'Highlighted note', icon: 'info',               keywords: ['note', 'info'],      run: (s) => s.insertCallout('info') },

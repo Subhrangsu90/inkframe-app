@@ -20,7 +20,7 @@ import {
 
 import { CalloutKind, schema } from './core/schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './core/migrations';
-import { buildPlugins, clearFormattingCommand } from './core/plugins';
+import { buildPlugins, clearFormattingCommand, toggleListCommand } from './core/plugins';
 import {
   EditorHooks,
   FloatingMenuState,
@@ -39,12 +39,13 @@ import {
 import { SLASH_ITEMS, SlashItem } from './slash-menu/slash-items';
 import { CalloutNodeView } from './node-views/callout.node-view';
 import { ImageNodeView } from './node-views/image.node-view';
+import { TaskItemNodeView } from './node-views/task-item.node-view';
 import { imageStorage } from './core/image-storage';
 
 export interface BlockInfo {
   type: string; // 'paragraph' | 'heading' | 'code_block' | ...
   level: number | null; // heading level
-  list: 'bullet_list' | 'ordered_list' | null; // innermost enclosing list
+  list: 'bullet_list' | 'ordered_list' | 'task_list' | null; // innermost enclosing list
 }
 
 export interface MountOptions {
@@ -132,6 +133,8 @@ export class EditorService implements EditorHooks {
           new CalloutNodeView(node, view, getPos, this.env, this.appRef),
         image: (node, view, getPos) =>
           new ImageNodeView(node, view, getPos),
+        task_item: (node, view, getPos) =>
+          new TaskItemNodeView(node, view, getPos),
       },
       handlePaste: (view, event) => {
         const files = event.clipboardData?.files;
@@ -243,8 +246,8 @@ export class EditorService implements EditorHooks {
     let list: BlockInfo['list'] = null;
     for (let d = $from.depth; d > 0; d--) {
       const name = $from.node(d).type.name;
-      if (name === 'bullet_list' || name === 'ordered_list') {
-        list = name;
+      if (name === 'bullet_list' || name === 'ordered_list' || name === 'task_list') {
+        list = name as any;
         break;
       }
     }
@@ -425,12 +428,12 @@ export class EditorService implements EditorHooks {
     );
   }
 
-  toggleList(kind: 'bullet_list' | 'ordered_list') {
-    this.run(
-      this.block().list === kind
-        ? liftListItem(schema.nodes['list_item'])
-        : wrapInList(schema.nodes[kind]),
-    );
+  toggleList(kind: 'bullet_list' | 'ordered_list' | 'task_list') {
+    this.run(toggleListCommand(kind));
+  }
+
+  toggleTaskList() {
+    this.toggleList('task_list');
   }
 
   blockquote() {

@@ -71,6 +71,56 @@ body {
 
     li {
       margin: 0.25rem 0;
+
+      ul.ink-task-list {
+        padding-left: 0.75rem;
+        margin: 0.35rem 0;
+      }
+    }
+  }
+
+  ul.ink-task-list {
+    list-style: none;
+    padding-left: 0.25rem;
+    margin: 0.75rem 0;
+
+    li.ink-task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin: 0.35rem 0;
+      line-height: 1.6;
+
+      .ink-task-checkbox {
+        margin-top: 0.32rem;
+        width: 17px;
+        height: 17px;
+        accent-color: var(--mat-sys-primary, #005ac1);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .ink-task-content {
+        flex: 1;
+        min-width: 0;
+
+        > p {
+          margin: 0;
+        }
+
+        ul, ol, ul.ink-task-list {
+          margin: 0.35rem 0;
+          padding-left: 1.25rem;
+        }
+      }
+
+      &.checked {
+        .ink-task-content {
+          text-decoration: line-through;
+          color: var(--mat-sys-outline, #888);
+          opacity: 0.8;
+        }
+      }
     }
   }
 

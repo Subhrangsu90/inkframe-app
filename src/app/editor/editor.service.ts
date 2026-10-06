@@ -20,7 +20,7 @@ import {
 
 import { CalloutKind, schema } from './core/schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './core/migrations';
-import { buildPlugins } from './core/plugins';
+import { buildPlugins, clearFormattingCommand } from './core/plugins';
 import {
   EditorHooks,
   FloatingMenuState,
@@ -70,6 +70,12 @@ export class EditorService implements EditorHooks {
   readonly isItalic = signal(false);
   readonly isCode = signal(false);
   readonly isLink = signal(false);
+  readonly isUnderline = signal(false);
+  readonly isStrike = signal(false);
+  readonly isSubscript = signal(false);
+  readonly isSuperscript = signal(false);
+  readonly isSmall = signal(false);
+  readonly currentColor = signal<string | null>(null);
   readonly block = signal<BlockInfo>(
     { type: 'paragraph', level: null, list: null },
     { equal: sameBlock },
@@ -215,6 +221,24 @@ export class EditorService implements EditorHooks {
     this.isItalic.set(active(schema.marks['em']));
     this.isCode.set(active(schema.marks['code']));
     this.isLink.set(active(schema.marks['link']));
+    this.isUnderline.set(active(schema.marks['underline']));
+    this.isStrike.set(active(schema.marks['strikethrough']));
+    this.isSubscript.set(active(schema.marks['subscript']));
+    this.isSuperscript.set(active(schema.marks['superscript']));
+    this.isSmall.set(active(schema.marks['small']));
+
+    const textColorMark = schema.marks['textColor'];
+    let color: string | null = null;
+    if (empty) {
+      const mark = textColorMark.isInSet(state.storedMarks ?? $from.marks());
+      if (mark) color = (mark.attrs['color'] as string) ?? null;
+    } else {
+      state.doc.nodesBetween(from, to, (node) => {
+        const mark = node.marks.find((m) => m.type === textColorMark);
+        if (mark) color = (mark.attrs['color'] as string) ?? null;
+      });
+    }
+    this.currentColor.set(color);
 
     let list: BlockInfo['list'] = null;
     for (let d = $from.depth; d > 0; d--) {
@@ -290,13 +314,95 @@ export class EditorService implements EditorHooks {
 
   // ── Commands (called by toolbar and menus) ───────────────────────
   toggleBold() {
+    if (this.isCode()) return;
     this.run(toggleMark(schema.marks['strong']));
   }
   toggleItalic() {
+    if (this.isCode()) return;
     this.run(toggleMark(schema.marks['em']));
   }
   toggleCode() {
-    this.run(toggleMark(schema.marks['code']));
+    const codeType = schema.marks['code'];
+    this.run((state, dispatch) => {
+      const { from, to, empty, $from } = state.selection;
+      const hasCode = empty
+        ? !!codeType.isInSet(state.storedMarks ?? $from.marks())
+        : state.doc.rangeHasMark(from, to, codeType);
+
+      let tr = state.tr;
+      if (hasCode) {
+        if (empty) {
+          tr = tr.removeStoredMark(codeType);
+        } else {
+          tr = tr.removeMark(from, to, codeType);
+        }
+      } else {
+        if (empty) {
+          tr = tr.setStoredMarks([codeType.create()]);
+        } else {
+          Object.values(state.schema.marks).forEach((m) => {
+            if (m !== codeType) {
+              tr = tr.removeMark(from, to, m);
+            }
+          });
+          tr = tr.addMark(from, to, codeType.create());
+        }
+      }
+      dispatch?.(tr);
+      return true;
+    });
+  }
+  toggleUnderline() {
+    if (this.isCode()) return;
+    this.run(toggleMark(schema.marks['underline']));
+  }
+  toggleStrike() {
+    if (this.isCode()) return;
+    this.run(toggleMark(schema.marks['strikethrough']));
+  }
+  toggleSubscript() {
+    if (this.isCode()) return;
+    this.run(toggleMark(schema.marks['subscript']));
+  }
+  toggleSuperscript() {
+    if (this.isCode()) return;
+    this.run(toggleMark(schema.marks['superscript']));
+  }
+  toggleSmall() {
+    if (this.isCode()) return;
+    this.run(toggleMark(schema.marks['small']));
+  }
+  setTextColor(color: string) {
+    if (this.isCode()) return;
+    const markType = schema.marks['textColor'];
+    this.run((state, dispatch) => {
+      const { from, to, empty } = state.selection;
+      if (empty) {
+        dispatch?.(state.tr.addStoredMark(markType.create({ color })));
+      } else {
+        dispatch?.(
+          state.tr
+            .removeMark(from, to, markType)
+            .addMark(from, to, markType.create({ color })),
+        );
+      }
+      return true;
+    });
+  }
+  removeTextColor() {
+    const markType = schema.marks['textColor'];
+    this.run((state, dispatch) => {
+      const { from, to, empty } = state.selection;
+      if (empty) {
+        dispatch?.(state.tr.removeStoredMark(markType));
+      } else {
+        dispatch?.(state.tr.removeMark(from, to, markType));
+      }
+      return true;
+    });
+  }
+  clearFormatting() {
+    this.run(clearFormattingCommand);
   }
   undo() {
     this.run(undo);

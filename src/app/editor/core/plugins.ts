@@ -25,8 +25,30 @@ const hardBreak: Command = (state, dispatch) => {
   return true;
 };
 
+export const clearFormattingCommand: Command = (state, dispatch) => {
+  const { from, to, empty } = state.selection;
+  let tr = state.tr;
+  if (empty) {
+    dispatch?.(tr.setStoredMarks([]));
+    return true;
+  }
+  Object.values(state.schema.marks).forEach((mark) => {
+    tr = tr.removeMark(from, to, mark);
+  });
+  dispatch?.(tr.setStoredMarks([]));
+  return true;
+};
+
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
-  const { strong, em, code } = schema.marks;
+  const {
+    strong,
+    em,
+    code,
+    underline,
+    strikethrough,
+    subscript,
+    superscript,
+  } = schema.marks;
   const { list_item } = schema.nodes;
 
   return [
@@ -45,7 +67,12 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
       'Shift-Mod-z': redo,
       'Mod-b': toggleMark(strong),
       'Mod-i': toggleMark(em),
+      'Mod-u': toggleMark(underline),
+      'Shift-Mod-s': toggleMark(strikethrough),
+      'Shift-Mod-,': toggleMark(subscript),
+      'Shift-Mod-.': toggleMark(superscript),
       'Mod-e': toggleMark(code),
+      'Mod-\\': clearFormattingCommand,
       'Shift-Enter': hardBreak,
       Enter: splitListItem(list_item), // new bullet; empty item exits the list
       Tab: sinkListItem(list_item),

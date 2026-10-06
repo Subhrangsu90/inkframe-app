@@ -61,6 +61,60 @@ const link: MarkSpec = {
   ],
 };
 
+const underline: MarkSpec = {
+  parseDOM: [
+    { tag: 'u' },
+    { style: 'text-decoration=underline' },
+    { style: 'text-decoration-line=underline' },
+  ],
+  toDOM: () => ['u', 0],
+};
+
+const strikethrough: MarkSpec = {
+  parseDOM: [
+    { tag: 's' },
+    { tag: 'del' },
+    { tag: 'strike' },
+    { style: 'text-decoration=line-through' },
+    { style: 'text-decoration-line=line-through' },
+  ],
+  toDOM: () => ['s', 0],
+};
+
+const subscript: MarkSpec = {
+  excludes: 'superscript',
+  parseDOM: [{ tag: 'sub' }],
+  toDOM: () => ['sub', 0],
+};
+
+const superscript: MarkSpec = {
+  excludes: 'subscript',
+  parseDOM: [{ tag: 'sup' }],
+  toDOM: () => ['sup', 0],
+};
+
+const textColor: MarkSpec = {
+  attrs: { color: { default: '#000000' } },
+  parseDOM: [
+    {
+      style: 'color',
+      getAttrs: (value) => (typeof value === 'string' ? { color: value } : false),
+    },
+  ],
+  toDOM: (mark) => ['span', { style: `color: ${mark.attrs['color']}` }, 0],
+};
+
+const small: MarkSpec = {
+  parseDOM: [{ tag: 'small' }],
+  toDOM: () => ['small', 0],
+};
+
+const code: MarkSpec = {
+  parseDOM: [{ tag: 'code' }],
+  toDOM: () => ['code', 0],
+  excludes: '_',
+};
+
 const nodes = addListNodes(base.spec.nodes, 'paragraph block*', 'block')
   .append(
     tableNodes({
@@ -73,5 +127,13 @@ const nodes = addListNodes(base.spec.nodes, 'paragraph block*', 'block')
 
 export const schema = new Schema({
   nodes,
-  marks: base.spec.marks.update('link', link),
+  marks: base.spec.marks
+    .update('code', code)
+    .update('link', link)
+    .addToEnd('underline', underline)
+    .addToEnd('strikethrough', strikethrough)
+    .addToEnd('subscript', subscript)
+    .addToEnd('superscript', superscript)
+    .addToEnd('textColor', textColor)
+    .addToEnd('small', small),
 });

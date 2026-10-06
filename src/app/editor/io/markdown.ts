@@ -55,6 +55,44 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
   },
   {
     ...defaultMarkdownSerializer.marks,
+    strikethrough: {
+      open: '~~',
+      close: '~~',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    underline: {
+      open: '<u>',
+      close: '</u>',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    subscript: {
+      open: '~',
+      close: '~',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    superscript: {
+      open: '^',
+      close: '^',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    small: {
+      open: '<small>',
+      close: '</small>',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    textColor: {
+      open(_state, mark) {
+        return `<span style="color: ${mark.attrs['color']}">`;
+      },
+      close: '</span>',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
   },
 );
 
@@ -63,6 +101,7 @@ export const inkMarkdownParser = new MarkdownParser(
   defaultMarkdownParser.tokenizer,
   {
     ...defaultMarkdownParser.tokens,
+    s: { mark: 'strikethrough' },
   },
 );
 

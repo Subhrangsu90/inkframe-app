@@ -23,7 +23,7 @@ function markRule(re: RegExp, type: MarkType): InputRule {
 
 export const buildInputRules = () => {
   const { heading, bullet_list, ordered_list, blockquote, code_block } = schema.nodes;
-  const { strong, em, code } = schema.marks;
+  const { strong, em, code, strikethrough, superscript, subscript } = schema.marks;
 
   return inputRules({
     rules: [
@@ -41,6 +41,9 @@ export const buildInputRules = () => {
       textblockTypeInputRule(/^`{3}$/, code_block),
       markRule(/\*\*([^*]+)\*\*$/, strong),
       markRule(/(?:^|\s)_([^_\s][^_]*)_$/, em),
+      markRule(/~~([^~]+)~~$/, strikethrough),
+      markRule(/\^([^^]+)\^$/, superscript),
+      markRule(/~([^~]+)~$/, subscript),
       markRule(/`([^`]+)`$/, code),
     ],
   });

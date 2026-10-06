@@ -23,7 +23,7 @@ body {
   // Default the application to a light color theme. This can be changed to
   // `dark` to enable the dark color theme, or to `light dark` to defer to the
   // user's system settings.
-  color-scheme: light;
+  color-scheme: dark;
 
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
@@ -300,6 +300,46 @@ body {
         color: var(--mat-sys-on-secondary-container, #041e49);
       }
     }
+  }
+}
+
+/* ── Menu Option Select Active / Selected State ── */
+.mat-mdc-menu-item {
+  display: flex !important;
+  align-items: center !important;
+
+  .menu-item-text {
+    flex: 1;
+    margin-right: 16px;
+  }
+
+  .menu-shortcut {
+    font-size: 11px;
+    color: var(--mat-sys-outline, #64748b);
+    letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+}
+
+.mat-mdc-menu-item.selected,
+button.mat-mdc-menu-item.selected {
+  background-color: var(--mat-sys-secondary-container, #d3e3fd) !important;
+  color: var(--mat-sys-on-secondary-container, #041e49) !important;
+  font-weight: 600 !important;
+  border-left: 3px solid var(--mat-sys-primary, #005ac1);
+
+  mat-icon {
+    color: var(--mat-sys-primary, #005ac1) !important;
+  }
+
+  .menu-item-text {
+    color: var(--mat-sys-on-secondary-container, #041e49) !important;
+    font-weight: 600 !important;
+  }
+
+  .menu-shortcut {
+    color: var(--mat-sys-on-secondary-container, #041e49) !important;
+    opacity: 0.8;
   }
 }
 

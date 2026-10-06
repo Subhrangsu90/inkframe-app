@@ -25,16 +25,21 @@ import {
   EditorHooks,
   FloatingMenuState,
   SlashMenuState,
+  TableMenuState,
 } from './core/editor-hooks';
 import { slashKey } from './core/menus.plugin';
 import { sanitizeHref } from './core/link-utils';
 import {
   addColumnAfter,
+  addColumnBefore,
   addRowAfter,
+  addRowBefore,
   deleteColumn,
   deleteRow,
   deleteTable,
   isInTable,
+  setCellAttr,
+  toggleHeaderRow,
 } from 'prosemirror-tables';
 import { SLASH_ITEMS, SlashItem } from './slash-menu/slash-items';
 import { CalloutNodeView } from './node-views/callout.node-view';
@@ -93,6 +98,12 @@ export class EditorService implements EditorHooks {
   readonly isInTable = signal(false);
 
   readonly imagePreview = signal<ImagePreviewData | null>(null);
+
+  readonly tableMenu = signal<TableMenuState | null>(null, {
+    equal: (a, b) =>
+      a === b ||
+      (!!a && !!b && a.left === b.left && a.top === b.top),
+  });
 
   readonly floatingMenu = signal<FloatingMenuState | null>(null, {
     equal: (a, b) =>
@@ -188,9 +199,15 @@ export class EditorService implements EditorHooks {
       },
     });
     this.syncSignals(this.view.state);
+    if (typeof window !== 'undefined') {
+      (window as any).__ink_active_view__ = this.view;
+    }
   }
 
   destroy(): void {
+    if (typeof window !== 'undefined' && (window as any).__ink_active_view__ === this.view) {
+      (window as any).__ink_active_view__ = undefined;
+    }
     this.view?.destroy();
     this.view = undefined;
   }
@@ -295,6 +312,10 @@ export class EditorService implements EditorHooks {
   onSlashMenu(state: SlashMenuState | null): void {
     if (state?.query !== this.slashMenu()?.query) this.slashActive.set(0);
     this.slashMenu.set(state);
+  }
+
+  onTableMenu(state: TableMenuState | null): void {
+    this.tableMenu.set(state);
   }
 
   onSlashKeyDown(e: KeyboardEvent): boolean {
@@ -573,17 +594,38 @@ export class EditorService implements EditorHooks {
   addRow() {
     this.run(addRowAfter);
   }
+  addRowAfter() {
+    this.run(addRowAfter);
+  }
+  addRowBefore() {
+    this.run(addRowBefore);
+  }
   deleteRow() {
     this.run(deleteRow);
   }
   addColumn() {
     this.run(addColumnAfter);
   }
+  addColumnAfter() {
+    this.run(addColumnAfter);
+  }
+  addColumnBefore() {
+    this.run(addColumnBefore);
+  }
   deleteColumn() {
     this.run(deleteColumn);
   }
   deleteTable() {
     this.run(deleteTable);
+  }
+  setCellAlignment(alignment: 'left' | 'center' | 'right') {
+    this.run(setCellAttr('alignment', alignment));
+  }
+  setCellBackground(color: string | null) {
+    this.run(setCellAttr('background', color));
+  }
+  toggleHeaderRow() {
+    this.run(toggleHeaderRow);
   }
 
   /** Returns current link href if the selection has a link mark. */

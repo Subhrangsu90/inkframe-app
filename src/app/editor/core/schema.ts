@@ -268,7 +268,30 @@ const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
     tableNodes({
       tableGroup: 'block',
       cellContent: 'block+',
-      cellAttributes: {},
+      cellAttributes: {
+        alignment: {
+          default: null,
+          getFromDOM(dom) {
+            return (dom as HTMLElement).style.textAlign || null;
+          },
+          setDOMAttr(value, attrs) {
+            if (value) {
+              attrs['style'] = (attrs['style'] || '') + `text-align: ${value};`;
+            }
+          },
+        },
+        background: {
+          default: null,
+          getFromDOM(dom) {
+            return (dom as HTMLElement).style.backgroundColor || null;
+          },
+          setDOMAttr(value, attrs) {
+            if (value) {
+              attrs['style'] = (attrs['style'] || '') + `background-color: ${value};`;
+            }
+          },
+        },
+      },
     }),
   )
   .addToEnd('callout', callout);

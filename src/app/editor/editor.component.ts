@@ -19,6 +19,7 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 import { FloatingMenuComponent } from './floating-menu/floating-menu.component';
 import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 import { ImageLightboxComponent } from './image-lightbox/image-lightbox.component';
+import { TableToolbarComponent } from './table-toolbar/table-toolbar.component';
 
 @Component({
   selector: 'ink-editor',
@@ -28,6 +29,7 @@ import { ImageLightboxComponent } from './image-lightbox/image-lightbox.componen
     FloatingMenuComponent,
     SlashMenuComponent,
     ImageLightboxComponent,
+    TableToolbarComponent,
   ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +38,7 @@ import { ImageLightboxComponent } from './image-lightbox/image-lightbox.componen
       <ink-toolbar />
       <div #host class="ink-host"></div>
       <ink-floating-menu />
+      <ink-table-toolbar />
       <ink-slash-menu />
       @if (svc.imagePreview(); as preview) {
         <ink-image-lightbox

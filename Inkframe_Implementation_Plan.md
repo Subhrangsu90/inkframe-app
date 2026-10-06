@@ -219,21 +219,21 @@ Upgrade code blocks into an IDE-like component with dynamic line numbers, syntax
 
 ---
 
-## Phase 6: Interactive Table NodeView & Floating Table Controls
+## Phase 6: Interactive Table NodeView & Floating Table Controls (Status: ✅ Complete)
 
 ### Objective
 Provide visual table editing tools matching `Screenshot7.png`: column adder handles, header menus, cell placeholders, and floating alignment toolbars.
 
 ### Scope of Work
-1. **Interactive Column Handles**:
+1. **Interactive Column Handles**: [x]
    - Top `+` button rendered above table columns to add a new column at that index with one click.
    - Header dropdown trigger (`∨`) for column operations:
      - Insert left / right
      - Delete column
      - Column text alignment
-2. **Cell Placeholder (`Screenshot7.png`)**:
+2. **Cell Placeholder (`Screenshot7.png`)**: [x]
    - When a table cell is empty, display a subtle CSS placeholder: `"/ to insert"`.
-3. **Floating Table Toolbar (`Screenshot7.png`)**:
+3. **Floating Table Toolbar (`Screenshot7.png`)**: [x]
    - Appears whenever cursor/selection is inside a table (`svc.isInTable() = true`).
    - Controls:
      - `Table options ∨`: Add row above/below, add column, delete row/column, delete table.
@@ -242,8 +242,10 @@ Provide visual table editing tools matching `Screenshot7.png`: column adder hand
      - Column border / grid toggle.
 
 ### Deliverables & Acceptance Criteria
-- Table resizing, cell navigation via Tab/Shift-Tab, and column insertion operate without breaking table structure.
-- Placeholder displays only when cell is empty and focused/hovered.
+- [x] Table resizing, cell navigation via Tab/Shift-Tab, and column insertion operate without breaking table structure.
+- [x] Placeholder displays only when cell is empty and focused/hovered.
+- [x] Floating table toolbar dynamically positions at active table boundary with table options, alignment, grid toggle, and background color picker.
+- [x] Unit test coverage in `core.spec.ts` for cell attributes and table UI decoration generation.
 
 ---
 

@@ -12,6 +12,7 @@ import { TaskItemNodeView } from '../node-views/task-item.node-view';
 import { EditorView } from 'prosemirror-view';
 import { imageStorage } from './image-storage';
 import { highlightPlugin, highlightKey } from './highlight.plugin';
+import { tableUIPlugin, tableUIKey } from './table-ui.plugin';
 
 describe('Inkframe Core', () => {
   describe('Link Sanitization (Security)', () => {
@@ -683,6 +684,84 @@ describe('Inkframe Core', () => {
       const classes = found.map((d: any) => d.type.attrs.class);
       expect(classes.some((c: string) => c.includes('keyword'))).toBe(true);
       expect(classes.some((c: string) => c.includes('string'))).toBe(true);
+    });
+  });
+
+  describe('Phase 6: Interactive Table NodeView & Table UI', () => {
+    it('supports cell alignment and background attributes in schema', () => {
+      const cell = schema.nodes['table_cell'].create(
+        { alignment: 'center', background: '#1e3a5f' },
+        [schema.nodes['paragraph'].create(null, [schema.text('Centered Cell')])]
+      );
+
+      expect(cell.attrs['alignment']).toBe('center');
+      expect(cell.attrs['background']).toBe('#1e3a5f');
+
+      const row = schema.nodes['table_row'].create(null, [cell]);
+      const table = schema.nodes['table'].create(null, [row]);
+      const doc = schema.node('doc', null, [table]);
+
+      const html = docToHtml(doc);
+      expect(html).toContain('text-align: center');
+      expect(html).toContain('background-color: rgb(30, 58, 95)');
+
+      const parsed = htmlToDoc(html);
+      let foundCell = false;
+      parsed.descendants((node) => {
+        if (node.type.name === 'table_cell') {
+          foundCell = true;
+          expect(node.attrs['alignment']).toBe('center');
+          expect(node.attrs['background']).toMatch(/#1e3a5f|rgb\(30, 58, 95\)/i);
+        }
+      });
+      expect(foundCell).toBe(true);
+    });
+
+    it('tableUIPlugin generates column handles, row handles, and empty cell placeholders', () => {
+      const emptyCell = schema.nodes['table_cell'].create(null, [
+        schema.nodes['paragraph'].create(),
+      ]);
+      const filledCell = schema.nodes['table_cell'].create(null, [
+        schema.nodes['paragraph'].create(null, [schema.text('Data')]),
+      ]);
+
+      const row1 = schema.nodes['table_row'].create(null, [emptyCell, filledCell]);
+      const row2 = schema.nodes['table_row'].create(null, [filledCell, emptyCell]);
+      const table = schema.nodes['table'].create(null, [row1, row2]);
+      const doc = schema.node('doc', null, [table]);
+
+      const state = EditorState.create({
+        doc,
+        schema,
+        plugins: [tableUIPlugin()],
+      });
+
+      const decos = tableUIKey.getState(state);
+      expect(decos).toBeDefined();
+
+      const allDecos = decos.find(0, doc.nodeSize);
+      expect(allDecos.length).toBeGreaterThan(0);
+
+      // Check for row handles (first cell of row1 and row2)
+      const hasRowHandle = allDecos.some((d: any) => {
+        const el = d.type?.toDOM || d.type?.widget;
+        return ((el && el.className) || '').includes('ink-table-row-handle');
+      });
+      expect(hasRowHandle).toBe(true);
+
+      // Check for column header handles (in first row)
+      const hasColHandle = allDecos.some((d: any) => {
+        const el = d.type?.toDOM || d.type?.widget;
+        return ((el && el.className) || '').includes('ink-table-col-header-handle');
+      });
+      expect(hasColHandle).toBe(true);
+
+      // Check for empty cell placeholder in emptyCell
+      const hasPlaceholder = allDecos.some((d: any) => {
+        const el = d.type?.toDOM || d.type?.widget;
+        return ((el && el.className) || '').includes('ink-table-cell-placeholder');
+      });
+      expect(hasPlaceholder).toBe(true);
     });
   });
 });

@@ -1,5 +1,6 @@
 // core/menus.plugin.ts
 import { EditorState, Plugin, PluginKey, TextSelection } from 'prosemirror-state';
+import { isInTable } from 'prosemirror-tables';
 import { EditorHooks } from './editor-hooks';
 
 interface SlashPluginState {
@@ -60,6 +61,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
     view(view) {
       let raf = 0;
       let lastFloatingCoords: { left: number; top: number } | null = null;
+      let lastTableCoords: { left: number; top: number } | null = null;
 
       const render = () => {
         raf = 0;
@@ -114,6 +116,41 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         } else {
           lastFloatingCoords = null;
           hooks.onFloatingMenu(null);
+        }
+
+        // ── Floating Table Toolbar ────────────────────────────────────
+        const inTable = isInTable(state);
+        const isInteractingWithTable =
+          Boolean(activeEl && activeEl.closest('.ink-table-toolbar')) ||
+          isInteractingWithMenu;
+
+        if (inTable && (view.hasFocus() || isInteractingWithTable)) {
+          const { $from } = selection;
+          let tableEl: HTMLElement | null = null;
+          try {
+            const domAt = view.domAtPos($from.pos);
+            const domNode = domAt.node as HTMLElement;
+            tableEl = (domNode.nodeType === 1 ? domNode : domNode.parentElement)?.closest('table') as HTMLElement | null;
+          } catch {
+            tableEl = null;
+          }
+
+          if (tableEl) {
+            const rect = tableEl.getBoundingClientRect();
+            lastTableCoords = {
+              left: rect.left + rect.width / 2,
+              top: rect.bottom + 8,
+            };
+            hooks.onTableMenu?.(lastTableCoords);
+          } else if (lastTableCoords && isInteractingWithTable) {
+            hooks.onTableMenu?.(lastTableCoords);
+          } else {
+            lastTableCoords = null;
+            hooks.onTableMenu?.(null);
+          }
+        } else {
+          lastTableCoords = null;
+          hooks.onTableMenu?.(null);
         }
       };
 

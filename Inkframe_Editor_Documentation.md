@@ -60,14 +60,15 @@ Inkframe is a custom rich-text editor for Angular applications. ProseMirror is t
 
 | ID | Requirement |
 | --- | --- |
-| F1 | Paragraphs, headings (1-6), bold, italic, inline code, links |
-| F2 | Bullet and ordered lists with correct Enter, Tab, Shift-Tab behavior |
-| F3 | Undo/redo, keyboard shortcuts, Markdown-style input rules |
-| F4 | Toolbar with active states; floating selection menu; slash menu |
-| F5 | Code block, blockquote, divider, callout, tables |
-| F6 | Images (upload), mentions *(later phase)* |
-| F7 | Import/export HTML (and Markdown, later); read-only mode |
-| F8 | Real-time collaboration and comments *(later phase)* |
+| F1 | **Rich typography:** Paragraphs, headings (1–6), small text, bold, italic, underline (`Ctrl+U`), strikethrough (`Ctrl+Shift+S`), inline code, subscript (`Ctrl+Shift+,`), superscript (`Ctrl+Shift+.`), text color palette, clear formatting (`Ctrl+\`), links |
+| F2 | **Lists & Tasks:** Bulleted (`Ctrl+Shift+8`), numbered (`Ctrl+Shift+7`), and interactive **Task list** (`Ctrl+Shift+6`) with checkboxes `[ ]`/`[x]` operable in both edit and read-only modes |
+| F3 | **Keyboard & Shortcuts:** Undo/redo, shortcuts for all marks & blocks, Markdown input rules (e.g. `[ ] `, `~~strike~~`) |
+| F4 | **Modular Toolbars:** Consolidated dropdowns (`T` blocks, `B ∨` format, `:= ∨` lists), 21-swatch color popover, dual-tab image popover (File/Link), floating selection menu, slash command palette |
+| F5 | **Enhanced Blocks:** Code block with syntax language selector, line numbers gutter, wrap toggle & copy button; callouts (info, warning, success, danger); quote; divider |
+| F6 | **Interactive Tables:** Cell placeholder (`/ to insert`), column adder (`+`), header dropdown, floating table toolbar (alignment, cell coloring, add/delete rows/cols) |
+| F7 | **Media & Storage:** Browser IndexedDB image engine with clipboard paste and drag-and-drop; dual-tab file/URL inserter |
+| F8 | **IO & Read-only:** Bidirectional Markdown and HTML import/export with sanitization; togglable preview/read-only mode |
+
 
 ### 1.5 Non-functional requirements
 
@@ -279,13 +280,88 @@ const link: MarkSpec = {
   }, 0],
 };
 
+// Additional typography marks
+const underline: MarkSpec = {
+  parseDOM: [{ tag: 'u' }, { style: 'text-decoration=underline' }],
+  toDOM: () => ['u', 0],
+};
+
+const strikethrough: MarkSpec = {
+  parseDOM: [{ tag: 's' }, { tag: 'del' }, { tag: 'strike' }, { style: 'text-decoration=line-through' }],
+  toDOM: () => ['s', 0],
+};
+
+const subscript: MarkSpec = {
+  excludes: 'superscript',
+  parseDOM: [{ tag: 'sub' }],
+  toDOM: () => ['sub', 0],
+};
+
+const superscript: MarkSpec = {
+  excludes: 'subscript',
+  parseDOM: [{ tag: 'sup' }],
+  toDOM: () => ['sup', 0],
+};
+
+const textColor: MarkSpec = {
+  attrs: { color: {} },
+  parseDOM: [{
+    style: 'color',
+    getAttrs: (value) => (typeof value === 'string' ? { color: value } : false),
+  }],
+  toDOM: (mark) => ['span', { style: `color: ${mark.attrs['color']}` }, 0],
+};
+
+const small: MarkSpec = {
+  parseDOM: [{ tag: 'small' }],
+  toDOM: () => ['small', 0],
+};
+
+// Task list nodes
+const task_list: NodeSpec = {
+  group: 'block',
+  content: 'task_item+',
+  parseDOM: [{ tag: 'ul[data-task-list]' }],
+  toDOM: () => ['ul', { 'data-task-list': '', class: 'ink-task-list' }, 0],
+};
+
+const task_item: NodeSpec = {
+  content: 'paragraph block*',
+  defining: true,
+  attrs: { checked: { default: false } },
+  parseDOM: [{
+    tag: 'li[data-task-item]',
+    getAttrs: (dom) => ({
+      checked: (dom as HTMLElement).getAttribute('data-checked') === 'true',
+    }),
+  }],
+  toDOM: (node) => [
+    'li',
+    {
+      'data-task-item': '',
+      'data-checked': node.attrs['checked'] ? 'true' : 'false',
+      class: `ink-task-item ${node.attrs['checked'] ? 'checked' : ''}`,
+    },
+    0,
+  ],
+};
+
 const nodes = addListNodes(base.spec.nodes, 'paragraph block*', 'block')
   .append(tableNodes({ tableGroup: 'block', cellContent: 'block+', cellAttributes: {} }))
-  .addToEnd('callout', callout);
+  .addToEnd('callout', callout)
+  .addToEnd('task_list', task_list)
+  .addToEnd('task_item', task_item);
 
 export const schema = new Schema({
   nodes,
-  marks: base.spec.marks.update('link', link),
+  marks: base.spec.marks
+    .update('link', link)
+    .addToEnd('underline', underline)
+    .addToEnd('strikethrough', strikethrough)
+    .addToEnd('subscript', subscript)
+    .addToEnd('superscript', superscript)
+    .addToEnd('textColor', textColor)
+    .addToEnd('small', small),
 });
 ```
 
@@ -371,7 +447,7 @@ const hardBreak: Command = (state, dispatch) => {
 };
 
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
-  const { strong, em, code } = schema.marks;
+  const { strong, em, code, underline, strikethrough, subscript, superscript } = schema.marks;
   const { list_item } = schema.nodes;
 
   return [
@@ -389,6 +465,10 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
       'Shift-Mod-z': redo,
       'Mod-b': toggleMark(strong),
       'Mod-i': toggleMark(em),
+      'Mod-u': toggleMark(underline),
+      'Shift-Mod-s': toggleMark(strikethrough),
+      'Shift-Mod-,': toggleMark(subscript),
+      'Shift-Mod-.': toggleMark(superscript),
       'Mod-e': toggleMark(code),
       'Shift-Enter': hardBreak,
       Enter: splitListItem(list_item),          // new bullet; empty item exits the list
@@ -430,8 +510,8 @@ function markRule(re: RegExp, type: MarkType): InputRule {
 }
 
 export const buildInputRules = () => {
-  const { heading, bullet_list, ordered_list, blockquote, code_block } = schema.nodes;
-  const { strong, em, code } = schema.marks;
+  const { heading, bullet_list, ordered_list, blockquote, code_block, task_list } = schema.nodes;
+  const { strong, em, code, strikethrough, superscript, subscript } = schema.marks;
 
   return inputRules({
     rules: [
@@ -443,10 +523,14 @@ export const buildInputRules = () => {
         (m) => ({ order: +m[1] }),
         (m, node) => node.childCount + node.attrs['order'] === +m[1],
       ),
+      wrappingInputRule(/^\s*\[( |x)\]\s$/, task_list),
       wrappingInputRule(/^\s*>\s$/, blockquote),
       textblockTypeInputRule(/^`{3}$/, code_block),
       markRule(/\*\*([^*]+)\*\*$/, strong),
       markRule(/(?:^|\s)_([^_\s][^_]*)_$/, em),
+      markRule(/~~([^~]+)~~$/, strikethrough),
+      markRule(/\^([^^]+)\^$/, superscript),
+      markRule(/~([^~]+)~$/, subscript),
       markRule(/`([^`]+)`$/, code),
     ],
   });
@@ -781,9 +865,48 @@ export class EditorService implements EditorHooks {
   }
 
   // ── Commands (called by toolbar and menus) ───────────────────────
-  toggleBold()   { this.run(toggleMark(schema.marks['strong'])); }
-  toggleItalic() { this.run(toggleMark(schema.marks['em'])); }
-  toggleCode()   { this.run(toggleMark(schema.marks['code'])); }
+  toggleBold()        { this.run(toggleMark(schema.marks['strong'])); }
+  toggleItalic()      { this.run(toggleMark(schema.marks['em'])); }
+  toggleCode()        { this.run(toggleMark(schema.marks['code'])); }
+  toggleUnderline()   { this.run(toggleMark(schema.marks['underline'])); }
+  toggleStrike()      { this.run(toggleMark(schema.marks['strikethrough'])); }
+  toggleSubscript()   { this.run(toggleMark(schema.marks['subscript'])); }
+  toggleSuperscript() { this.run(toggleMark(schema.marks['superscript'])); }
+  toggleSmall()       { this.run(toggleMark(schema.marks['small'])); }
+
+  setTextColor(color: string) {
+    this.run((state, dispatch) => {
+      const { from, to, empty } = state.selection;
+      const type = schema.marks['textColor'];
+      if (empty) {
+        dispatch?.(state.tr.addStoredMark(type.create({ color })));
+      } else {
+        dispatch?.(state.tr.addMark(from, to, type.create({ color })));
+      }
+      return true;
+    });
+  }
+
+  removeTextColor() {
+    this.run((state, dispatch) => {
+      const { from, to } = state.selection;
+      dispatch?.(state.tr.removeMark(from, to, schema.marks['textColor']));
+      return true;
+    });
+  }
+
+  clearFormatting() {
+    this.run((state, dispatch) => {
+      const { from, to } = state.selection;
+      let tr = state.tr;
+      Object.values(schema.marks).forEach((mark) => {
+        tr = tr.removeMark(from, to, mark);
+      });
+      dispatch?.(tr.setStoredMarks([]));
+      return true;
+    });
+  }
+
   undo() { this.run(undo); }
   redo() { this.run(redo); }
 
@@ -805,6 +928,10 @@ export class EditorService implements EditorHooks {
         ? liftListItem(schema.nodes['list_item'])
         : wrapInList(schema.nodes[kind]),
     );
+  }
+
+  toggleTaskList() {
+    this.run(wrapInList(schema.nodes['task_list']));
   }
 
   blockquote() { this.run(wrapIn(schema.nodes['blockquote'])); }
@@ -973,43 +1100,40 @@ export class EditorComponent {
 
 ### 9.2 Toolbar: `toolbar/toolbar.component.ts`
 
-Buttons use **`mousedown` + `preventDefault`** to keep the editor's selection, and **`click`** to perform the action. Keyboard users activate buttons via `click` (Enter/Space), so putting the action on `mousedown` alone would make the toolbar unusable without a mouse.
+The toolbar uses consolidated dropdown menus and popovers styled with Angular Material (M3) to provide dense, accessible controls without cluttering the interface:
 
-```ts
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { EditorService } from '../editor.service';
+1. **`T` Block Dropdown:** Switches block types with keyboard shortcut badges:
+   - Normal text (`Ctrl+Alt+0`)
+   - Small text (`Ctrl+Alt+7`)
+   - Headings 1 through 6 (`Ctrl+Alt+1` to `Ctrl+Alt+6`)
+2. **`B ∨` Formatting Dropdown:** Toggle typography marks with shortcut keys:
+   - Bold (`Ctrl+B`)
+   - Italic (`Ctrl+I`)
+   - Underline (`Ctrl+U`)
+   - Strikethrough (`Ctrl+Shift+S`)
+   - Inline code (`Ctrl+Shift+M`)
+   - Subscript (`Ctrl+Shift+,`)
+   - Superscript (`Ctrl+Shift+.`)
+   - Divider
+   - Clear formatting (`Ctrl+\`)
+3. **`:= ∨` Lists Dropdown:**
+   - Bulleted list (`Ctrl+Shift+8`)
+   - Numbered list (`Ctrl+Shift+7`)
+   - Task list (`Ctrl+Shift+6`) with interactive checkboxes
+4. **`A` Text Color Palette Popover:** 21 curated color swatches (3 rows × 7 columns) for highlights/text color, active selection checkmark, and "Remove color" button.
+5. **Image Dual-Tab Popover:**
+   - **File tab:** Upload image directly to browser IndexedDB (`inkframe_storage`).
+   - **Link tab:** Insert image by external HTTP/HTTPS URL.
+6. **Additional Actions:**
+   - Code block (`</>`)
+   - Callout note menu (Info, Warning, Success, Danger)
+   - Table controls (Insert 3x3 table or in-table menu: row/column tools, cell alignment)
+   - Emoji picker (`🙂`)
+   - Link inserter (`🔗`)
+   - Document revision history (`⏱`)
+   - Undo (`Ctrl+Z`) and Redo (`Ctrl+Y`)
 
-@Component({
-  selector: 'ink-toolbar',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="ink-toolbar" role="toolbar" aria-label="Text formatting" (mousedown)="$event.preventDefault()">
-      <button type="button" aria-label="Bold" [attr.aria-pressed]="svc.isBold()"
-              [class.active]="svc.isBold()" (click)="svc.toggleBold()">B</button>
-      <button type="button" aria-label="Italic" [attr.aria-pressed]="svc.isItalic()"
-              [class.active]="svc.isItalic()" (click)="svc.toggleItalic()">I</button>
-      <button type="button" aria-label="Inline code" [attr.aria-pressed]="svc.isCode()"
-              [class.active]="svc.isCode()" (click)="svc.toggleCode()">&lt;/&gt;</button>
-
-      <button type="button" aria-label="Heading 1" [attr.aria-pressed]="svc.block().level === 1"
-              [class.active]="svc.block().level === 1" (click)="svc.heading(1)">H1</button>
-      <button type="button" aria-label="Heading 2" [attr.aria-pressed]="svc.block().level === 2"
-              [class.active]="svc.block().level === 2" (click)="svc.heading(2)">H2</button>
-
-      <button type="button" aria-label="Bullet list" [attr.aria-pressed]="svc.block().list === 'bullet_list'"
-              [class.active]="svc.block().list === 'bullet_list'" (click)="svc.toggleList('bullet_list')">•</button>
-      <button type="button" aria-label="Numbered list" [attr.aria-pressed]="svc.block().list === 'ordered_list'"
-              [class.active]="svc.block().list === 'ordered_list'" (click)="svc.toggleList('ordered_list')">1.</button>
-
-      <button type="button" aria-label="Undo" [disabled]="!svc.canUndo()" (click)="svc.undo()">↶</button>
-      <button type="button" aria-label="Redo" [disabled]="!svc.canRedo()" (click)="svc.redo()">↷</button>
-    </div>
-  `,
-})
-export class ToolbarComponent {
-  protected readonly svc = inject(EditorService);
-}
+All buttons use **`mousedown` + `preventDefault`** to preserve the ProseMirror selection, and **`click`** to dispatch commands.
 ```
 
 `EditorService` is available here because `<ink-editor>` lists it in `providers`, and component providers are visible to child components in its template.
@@ -1188,6 +1312,35 @@ export class CalloutNodeView implements NodeView {
   }
 }
 ```
+
+### 10.3 Task Item NodeView: `node-views/task-item.node-view.ts`
+
+Renders task items with interactive checkboxes that can be toggled without losing focus or cursor position:
+
+- **Interactive Checkbox:** An `<input type="checkbox">` rendered alongside `contentDOM`.
+- **Transaction dispatch:** Clicking the checkbox dispatches `setNodeAttribute(pos, 'checked', !checked)` in ProseMirror state.
+- **Read-only interactive:** Even in `editable = false` preview mode, users can toggle task items (saving task state).
+- **Styling:** Completed items receive `.checked` styling with strike-through or dimmed text.
+
+### 10.4 Enhanced Code Block NodeView: `node-views/code-block.node-view.ts`
+
+Provides a modern IDE-like editing experience for code blocks:
+
+- **Line Numbers Gutter:** Dynamic line counter updating as code lines change.
+- **Floating Controls Bar:**
+  - **Language Selector (`Select language ∨`):** Dropdown supporting TypeScript, JavaScript, Python, HTML, CSS, JSON, SQL, Bash, Go, Rust, and Java. Sets the `params` attribute on the `code_block` node.
+  - **Word Wrap Toggle (`⇄`):** Toggles `white-space: pre` vs `white-space: pre-wrap`.
+  - **Copy Code Button:** Copies text content of the block to the system clipboard with transient visual feedback.
+  - **Delete Block:** Quickly removes the code block.
+
+### 10.5 Interactive Table NodeView: `node-views/table.node-view.ts`
+
+Extends `prosemirror-tables` with user-friendly inline controls:
+
+- **Column Add Handle (`+`):** Positioned above columns to insert a new column with a single click.
+- **Header Actions Dropdown (`∨`):** Sort, align, or delete the current column.
+- **Cell Placeholder:** Displays `"/ to insert"` in empty cells to guide user interaction.
+- **Floating Table Toolbar:** Appears when the cursor is inside a table, offering alignment options (Left, Center, Right), cell background color tinting, and row/column operations.
 
 ---
 
@@ -1381,6 +1534,8 @@ it('Enter in a list creates a new list item', () => {
 | **7** | Collaboration (Yjs), comments | Two clients converge; undo only affects own edits |
 | **8** | Import/export (sanitized HTML, Markdown), read-only mode polish | Round-trip tests; sanitization tests |
 | **9** | Hardening: `aria-activedescendant`, performance profiling, large-doc test, docs | Meets N1-N5 |
+| **10** | **Advanced Formatting, Blocks & UI Polish:** Underline, strikethrough, sub/superscript, text color, small text, clear formatting, interactive task list, enhanced code block (line numbers & language selector), interactive table tools, modular dropdown toolbar, dual-tab image popover | All UI & screenshot features fully implemented |
+
 
 ---
 

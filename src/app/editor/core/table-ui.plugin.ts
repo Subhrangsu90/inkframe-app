@@ -53,6 +53,18 @@ function buildTableDecorations(doc: PMNode): DecorationSet {
 
           // Column Header Controls: Top separator dot, [+] adder, and [∨] column options
           if (isFirstRow) {
+            if (cellOffset === 0) {
+              const leftDot = document.createElement('div');
+              leftDot.className = 'ink-table-col-corner-dot';
+              leftDot.innerHTML = '•';
+              decorations.push(
+                Decoration.widget(cellPos + 1, leftDot, {
+                  side: -1,
+                  ignoreSelection: true,
+                }),
+              );
+            }
+
             const colHandle = document.createElement('div');
             colHandle.className = 'ink-table-col-header-handle';
 

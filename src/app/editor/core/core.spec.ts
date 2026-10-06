@@ -13,6 +13,7 @@ import { EditorView } from 'prosemirror-view';
 import { imageStorage } from './image-storage';
 import { highlightPlugin, highlightKey } from './highlight.plugin';
 import { tableUIPlugin, tableUIKey } from './table-ui.plugin';
+import { tableResizingPlugin, tableResizingKey } from './table-resizing.plugin';
 
 describe('Inkframe Core', () => {
   describe('Link Sanitization (Security)', () => {
@@ -688,14 +689,15 @@ describe('Inkframe Core', () => {
   });
 
   describe('Phase 6: Interactive Table NodeView & Table UI', () => {
-    it('supports cell alignment and background attributes in schema', () => {
+    it('supports cell alignment, background, and height attributes in schema', () => {
       const cell = schema.nodes['table_cell'].create(
-        { alignment: 'center', background: '#1e3a5f' },
+        { alignment: 'center', background: '#1e3a5f', height: '48px' },
         [schema.nodes['paragraph'].create(null, [schema.text('Centered Cell')])]
       );
 
       expect(cell.attrs['alignment']).toBe('center');
       expect(cell.attrs['background']).toBe('#1e3a5f');
+      expect(cell.attrs['height']).toBe('48px');
 
       const row = schema.nodes['table_row'].create(null, [cell]);
       const table = schema.nodes['table'].create(null, [row]);
@@ -704,6 +706,7 @@ describe('Inkframe Core', () => {
       const html = docToHtml(doc);
       expect(html).toContain('text-align: center');
       expect(html).toContain('background-color: rgb(30, 58, 95)');
+      expect(html).toContain('height: 48px');
 
       const parsed = htmlToDoc(html);
       let foundCell = false;
@@ -712,9 +715,15 @@ describe('Inkframe Core', () => {
           foundCell = true;
           expect(node.attrs['alignment']).toBe('center');
           expect(node.attrs['background']).toMatch(/#1e3a5f|rgb\(30, 58, 95\)/i);
+          expect(node.attrs['height']).toBe('48px');
         }
       });
       expect(foundCell).toBe(true);
+    });
+
+    it('tableResizingPlugin initializes with proper plugin key', () => {
+      const plugin = tableResizingPlugin();
+      expect(plugin.spec.key).toBe(tableResizingKey);
     });
 
     it('tableUIPlugin generates column handles, row handles, and empty cell placeholders', () => {

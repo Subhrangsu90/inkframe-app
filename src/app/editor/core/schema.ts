@@ -291,6 +291,18 @@ const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
             }
           },
         },
+        height: {
+          default: null,
+          getFromDOM(dom) {
+            return (dom as HTMLElement).style.height || (dom as HTMLElement).getAttribute('data-height') || null;
+          },
+          setDOMAttr(value, attrs) {
+            if (value) {
+              attrs['style'] = (attrs['style'] || '') + `height: ${value};`;
+              attrs['data-height'] = String(value);
+            }
+          },
+        },
       },
     }),
   )

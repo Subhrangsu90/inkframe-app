@@ -1510,32 +1510,40 @@ tr:hover .ink-table-row-handle {
   transform: translateY(-50%) scale(1.2);
 }
 
-/* Column Header Handle (Top dot, [+] adder, and [▾] options) */
+/* Column Top-Left Corner Dot */
+.ink-table-col-corner-dot {
+  position: absolute;
+  top: -16px;
+  left: -4px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Column Header Handle (Top dot, [+] adder, and [▾] options on column divider) */
 .ink-table-col-header-handle {
   position: absolute;
-  top: -22px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: -16px;
+  right: -9px;
+  width: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  z-index: 10;
+  z-index: 20;
   user-select: none;
 }
 
 .ink-table-col-dot {
-  color: #94a3b8;
+  color: #64748b;
   font-size: 14px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  pointer-events: none;
   transition: all 0.15s ease;
-}
-
-th:hover .ink-table-col-dot,
-td:hover .ink-table-col-dot {
-  color: #60a5fa;
 }
 
 .ink-table-add-col-btn {
@@ -1544,15 +1552,15 @@ td:hover .ink-table-col-dot {
   border-radius: 50%;
   background: #23252a;
   border: 1px solid #3c4043;
-  color: #94a3b8;
+  color: #cbd5e1;
   font-size: 12px;
   line-height: 1;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  opacity: 0.65;
+  opacity: 0;
   transition: all 0.15s ease;
 
   &:hover {
@@ -1560,25 +1568,24 @@ td:hover .ink-table-col-dot {
     color: #ffffff;
     border-color: #60a5fa;
     transform: scale(1.15);
-    opacity: 1;
   }
 }
 
 .ink-table-col-opt-btn {
   width: 16px;
-  height: 16px;
+  height: 14px;
   border-radius: 3px;
   background: #23252a;
   border: 1px solid #3c4043;
-  color: #94a3b8;
+  color: #cbd5e1;
   font-size: 10px;
   line-height: 1;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  opacity: 0.65;
+  opacity: 0;
   transition: all 0.15s ease;
 
   &:hover {
@@ -1586,17 +1593,21 @@ td:hover .ink-table-col-dot {
     color: #ffffff;
     border-color: #60a5fa;
     transform: scale(1.15);
-    opacity: 1;
   }
 }
 
-th:hover .ink-table-add-col-btn,
-th:hover .ink-table-col-opt-btn,
-td:hover .ink-table-add-col-btn,
-td:hover .ink-table-col-opt-btn,
-.ink-table-col-header-handle:hover .ink-table-add-col-btn,
-.ink-table-col-header-handle:hover .ink-table-col-opt-btn {
-  opacity: 1;
+/* On hover of column header cell or handle: reveal [+] and [▾], hide dot */
+th:hover .ink-table-col-header-handle,
+td:hover .ink-table-col-header-handle,
+.ink-table-col-header-handle:hover {
+  .ink-table-col-dot {
+    display: none;
+  }
+  .ink-table-add-col-btn,
+  .ink-table-col-opt-btn {
+    display: inline-flex;
+    opacity: 1;
+  }
 }
 
 /* Table Menus (matching Screenshot7.png dark aesthetics) */
@@ -1650,3 +1661,42 @@ td:hover .ink-table-col-opt-btn,
     }
   }
 }
+
+/* ==========================================================================
+   Interactive Table & Row Resizing Handles
+   ========================================================================== */
+
+/* Column Resizing Handle (vertical line between columns) */
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 25;
+  background-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+  pointer-events: none;
+}
+
+.ProseMirror.resize-cursor,
+.resize-cursor {
+  cursor: col-resize !important;
+}
+
+/* Row Resizing Handle (horizontal line between rows) */
+.ink-row-resize-handle {
+  position: fixed;
+  height: 3px;
+  background-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+  z-index: 40;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.ProseMirror.row-resize-cursor,
+.row-resize-cursor {
+  cursor: row-resize !important;
+}
+

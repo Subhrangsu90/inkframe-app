@@ -18,6 +18,7 @@ import { buildInputRules } from './input-rules';
 import { menusPlugin } from './menus.plugin';
 import { highlightPlugin } from './highlight.plugin';
 import { tableUIPlugin } from './table-ui.plugin';
+import { tableResizingPlugin } from './table-resizing.plugin';
 import { EditorHooks } from './editor-hooks';
 
 const hardBreak: Command = (state, dispatch) => {
@@ -180,8 +181,13 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),
-    columnResizing(),
+    columnResizing({
+      handleWidth: 6,
+      cellMinWidth: 45,
+      lastColumnResizable: true,
+    }),
     tableEditing(),
+    tableResizingPlugin(),
     highlightPlugin(),
     tableUIPlugin(),
   ];

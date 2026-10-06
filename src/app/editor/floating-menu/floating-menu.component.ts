@@ -5,6 +5,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditorService } from '../editor.service';
+import { TEXT_COLORS } from '../core/colors';
 
 @Component({
   selector: 'ink-floating-menu',
@@ -74,30 +75,16 @@ import { EditorService } from '../editor.service';
 
         <!-- Text Color -->
         <button mat-icon-button
+                #colorTrigger="matMenuTrigger"
                 aria-label="Text color"
                 matTooltip="Text color"
                 [disabled]="svc.isCode()"
+                [class.active]="colorTrigger.menuOpen || !!svc.currentColor()"
                 [matMenuTriggerFor]="floatingColorMenu">
           <mat-icon [style.color]="svc.isCode() ? 'inherit' : (svc.currentColor() || 'inherit')">format_color_text</mat-icon>
         </button>
-        <mat-menu #floatingColorMenu="matMenu">
-          <div class="ink-color-grid" (click)="$event.stopPropagation()">
-            @for (c of textColors; track c.value) {
-              <button type="button"
-                      class="ink-color-swatch"
-                      [style.background-color]="c.value"
-                      [attr.title]="c.name"
-                      (click)="svc.setTextColor(c.value)">
-              </button>
-            }
-          </div>
-          <mat-divider />
-          <button mat-menu-item (click)="svc.removeTextColor()">
-            <mat-icon>format_clear</mat-icon>
-            <span>Default text color</span>
-          </button>
-        </mat-menu>
 
+        <!-- Link -->
         <button mat-icon-button
                 aria-label="Link"
                 matTooltip="Link (Ctrl+K)"
@@ -109,14 +96,44 @@ import { EditorService } from '../editor.service';
 
         <mat-divider vertical />
 
+        <!-- Clear formatting -->
         <button mat-icon-button
                 aria-label="Clear formatting"
-                matTooltip="Clear formatting (Ctrl+\)"
+                matTooltip="Clear formatting (Ctrl+\\)"
                 (click)="svc.clearFormatting()">
           <mat-icon>format_clear</mat-icon>
         </button>
       </div>
     }
+
+    <!-- Menu declared outside @if so it is never destroyed while open -->
+    <mat-menu #floatingColorMenu="matMenu">
+      <div class="ink-color-popover" (click)="$event.stopPropagation()">
+        <div class="ink-color-title">Text color</div>
+        <div class="ink-color-grid">
+          @for (c of textColors; track c.value) {
+            <button type="button"
+                    class="ink-color-swatch"
+                    [class.light]="c.isLight"
+                    [class.active]="svc.currentColor() === c.value"
+                    [style.background-color]="c.value"
+                    [attr.title]="c.name"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="svc.setTextColor(c.value)">
+              @if (svc.currentColor() === c.value) {
+                <mat-icon class="swatch-check">check</mat-icon>
+              }
+            </button>
+          }
+        </div>
+        <button type="button"
+                class="ink-remove-color-btn"
+                (mousedown)="$event.preventDefault()"
+                (click)="svc.removeTextColor()">
+          Remove color
+        </button>
+      </div>
+    </mat-menu>
   `,
   styles: `
     .ink-floating {
@@ -124,64 +141,39 @@ import { EditorService } from '../editor.service';
       transform: translate(-50%, calc(-100% - 8px));
       z-index: 50;
       display: flex;
+      align-items: center;
       gap: 2px;
-      padding: 4px;
-      background: var(--mat-sys-surface-container-high, #fff);
-      border: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      padding: 4px 6px;
+      background: #212226;
+      border: 1px solid #2e3036;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
     }
-    .ink-floating button.active {
-      background: var(--mat-sys-secondary-container, #d3e3fd);
-      color: var(--mat-sys-on-secondary-container, #041e49);
+    .ink-floating button {
+      color: #94a3b8;
+      border-radius: 6px;
+      transition: all 0.12s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
+      }
+
+      &.active {
+        background: #172c47;
+        color: #60a5fa;
+      }
     }
     .ink-floating mat-divider {
       height: 20px;
-      align-self: center;
+      border-top-color: #2e3036;
       margin: 0 4px;
-    }
-
-    .ink-color-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 28px);
-      gap: 6px;
-      padding: 8px 12px;
-      justify-content: center;
-    }
-    .ink-color-swatch {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 2px solid #ffffff;
-      outline: 1px solid rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      transition: transform 0.15s ease, outline-color 0.15s ease;
-      padding: 0;
-
-      &:hover {
-        transform: scale(1.15);
-        outline-color: var(--mat-sys-primary, #0284c7);
-      }
     }
   `,
 })
 export class FloatingMenuComponent {
   protected readonly svc = inject(EditorService);
-
-  protected readonly textColors = [
-    { name: 'Default Dark', value: '#1e293b' },
-    { name: 'Muted Gray', value: '#64748b' },
-    { name: 'Red', value: '#dc2626' },
-    { name: 'Orange', value: '#ea580c' },
-    { name: 'Amber', value: '#d97706' },
-    { name: 'Emerald Green', value: '#16a34a' },
-    { name: 'Teal', value: '#0d9488' },
-    { name: 'Sky Blue', value: '#0284c7' },
-    { name: 'Indigo', value: '#4f46e5' },
-    { name: 'Purple', value: '#9333ea' },
-    { name: 'Pink', value: '#db2777' },
-    { name: 'Rose', value: '#e11d48' },
-  ];
+  protected readonly textColors = TEXT_COLORS;
 
   protected promptLink(): void {
     if (typeof window === 'undefined') return;

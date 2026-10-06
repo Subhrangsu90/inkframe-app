@@ -446,6 +446,13 @@ export class EditorService implements EditorHooks {
     this.run(wrapIn(schema.nodes['callout'], { type: kind }));
   }
 
+  insertText(text: string): void {
+    this.run((state, dispatch) => {
+      dispatch?.(state.tr.insertText(text).scrollIntoView());
+      return true;
+    });
+  }
+
   insertDivider() {
     this.run((state, dispatch) => {
       dispatch?.(

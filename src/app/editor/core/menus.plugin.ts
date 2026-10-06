@@ -59,6 +59,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
     view(view) {
       let raf = 0;
+      let lastFloatingCoords: { left: number; top: number } | null = null;
 
       const render = () => {
         raf = 0;
@@ -79,25 +80,39 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         }
 
         const { selection } = state;
+        const doc = view.dom.ownerDocument;
+        const activeEl = doc?.activeElement;
+        const hasOverlay = doc
+          ? doc.querySelector('.cdk-overlay-pane, .cdk-overlay-backdrop') !== null
+          : false;
+        const isInteractingWithMenu =
+          Boolean(activeEl && activeEl.closest('.cdk-overlay-container, .ink-floating')) ||
+          hasOverlay;
+
         const showFloating =
           !slash.open &&
           selection instanceof TextSelection &&
           !selection.empty &&
           !selection.$from.parent.type.spec.code &&
-          view.hasFocus();
+          (view.hasFocus() || isInteractingWithMenu);
 
         if (showFloating) {
-          const domSel = view.dom.ownerDocument.getSelection();
+          const domSel = doc?.getSelection();
           const rect =
             domSel && domSel.rangeCount
               ? domSel.getRangeAt(0).getBoundingClientRect()
               : null;
-          hooks.onFloatingMenu(
-            rect && (rect.width || rect.height)
-              ? { left: rect.left + rect.width / 2, top: rect.top }
-              : null,
-          );
+          if (rect && (rect.width || rect.height)) {
+            lastFloatingCoords = { left: rect.left + rect.width / 2, top: rect.top };
+            hooks.onFloatingMenu(lastFloatingCoords);
+          } else if (lastFloatingCoords && isInteractingWithMenu) {
+            hooks.onFloatingMenu(lastFloatingCoords);
+          } else {
+            lastFloatingCoords = null;
+            hooks.onFloatingMenu(null);
+          }
         } else {
+          lastFloatingCoords = null;
           hooks.onFloatingMenu(null);
         }
       };

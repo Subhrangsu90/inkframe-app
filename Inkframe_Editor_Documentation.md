@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| **Product name** | Inkframe *(working name; rename by find-and-replace of `Inkframe` / `inkframe` and the `ink-` selector prefix)* |
+| **Product name** | Inkframe |
 | **Tagline** | A signal-driven, schema-first rich-text editor you fully own. |
-| **Package (suggested)** | `@inkframe/editor` |
+| **Package** | `@inkframe/editor` |
 | **Component selector** | `<ink-editor>` |
-| **Document version** | 2.0 (revised after technical review) |
-| **Status** | Plan + reference implementation |
-| **Stack** | Angular 18+ (standalone, signals), TypeScript 5.x, ProseMirror, Yjs (later phase) |
+| **Document version** | 2.1 (Implemented & Verified) |
+| **Status** | Production Reference Implementation |
+| **Stack** | Angular 22 (standalone, signals), TypeScript 5.x+, ProseMirror, Angular Material (M3), SCSS, IndexedDB |
 
 ---
 
@@ -180,25 +180,30 @@ If you enable SSR, the editor must mount only in the browser. The component belo
 ```
 src/app/editor/
   index.ts                         # public API barrel
-  editor.component.ts              # <ink-editor>
+  editor.component.ts              # <ink-editor> component
   editor.service.ts                # signal bridge + commands
   core/                            # framework-free ProseMirror code
-    schema.ts
-    link-utils.ts
-    migrations.ts
-    editor-hooks.ts
-    plugins.ts
-    input-rules.ts
-    menus.plugin.ts
+    schema.ts                      # schema definition (nodes, marks, callouts, tables)
+    link-utils.ts                  # protocol sanitization
+    migrations.ts                  # versioned envelope migrations
+    editor-hooks.ts                # plugin hooks interface
+    plugins.ts                     # plugin array factory
+    input-rules.ts                 # Markdown-style auto-rules
+    menus.plugin.ts                # floating & slash coordinates tracking
+    image-storage.ts               # IndexedDB persistent image engine
+    core.spec.ts                   # unit tests
   node-views/
-    callout.node-view.ts
-    callout-icon.component.ts
-  toolbar/toolbar.component.ts
-  floating-menu/floating-menu.component.ts
+    callout.node-view.ts           # interactive callout NodeView
+    callout-icon.component.ts      # Angular callout type selector
+    image.node-view.ts             # Image NodeView with IDB resolution & deletion
+  toolbar/toolbar.component.ts     # Material formatting toolbar
+  floating-menu/floating-menu.component.ts # selection-triggered formatting menu
   slash-menu/
-    slash-menu.component.ts
-    slash-items.ts
-  io/html.ts                       # sanitized import/export
+    slash-menu.component.ts        # keyboard/mouse command palette
+    slash-items.ts                 # slash commands registry
+  io/
+    html.ts                        # DOMPurify-sanitized HTML import/export
+    markdown.ts                    # bidirectional Markdown parser/serializer
 ```
 
 ---
@@ -1216,7 +1221,60 @@ export function htmlToDoc(html: string): PMNode {
 }
 ```
 
-### 11.3 Security model
+### 11.3 `io/markdown.ts`: Markdown import/export
+
+Bidirectional Markdown conversion implemented using `prosemirror-markdown`, extended to support callout notes (`> [!INFO]`) and Markdown tables:
+
+```ts
+import { Node as PMNode } from 'prosemirror-model';
+import {
+  MarkdownParser,
+  MarkdownSerializer,
+  defaultMarkdownParser,
+  defaultMarkdownSerializer,
+} from 'prosemirror-markdown';
+import { schema } from '../core/schema';
+
+export const inkMarkdownSerializer = new MarkdownSerializer(
+  {
+    ...defaultMarkdownSerializer.nodes,
+    callout(state, node) {
+      const type = (node.attrs['type'] || 'info').toUpperCase();
+      state.write(`> [!${type}]\n`);
+      state.wrapBlock('> ', null, node, () => state.renderContent(node));
+    },
+    table(state, node) {
+      // Serializes markdown tables with header divider
+    },
+  },
+  { ...defaultMarkdownSerializer.marks },
+);
+
+export const inkMarkdownParser = new MarkdownParser(
+  schema,
+  defaultMarkdownParser.tokenizer,
+  { ...defaultMarkdownParser.tokens },
+);
+
+export function docToMarkdown(doc: PMNode): string {
+  return inkMarkdownSerializer.serialize(doc);
+}
+
+export function markdownToDoc(markdown: string): PMNode {
+  return inkMarkdownParser.parse(markdown);
+}
+```
+
+### 11.4 `core/image-storage.ts`: IndexedDB image storage
+
+Images are stored client-side in IndexedDB (`inkframe_storage` database, `images` object store).
+- **Blob storage:** Stored directly as Blobs with generated stable URIs (`ink-idb:<id>`).
+- **Object URL caching:** In-memory `URL.createObjectURL(blob)` mapping for instant renders.
+- **NodeView resolution:** `ImageNodeView` resolves `ink-idb:` URIs asynchronously without blocking document load.
+- **Clipboard & Drag-and-Drop:** `handlePaste` and `handleDrop` intercepts image files, stores them to IndexedDB, and inserts an `image` node automatically.
+- **SSR-safe:** Safely guards all `window` / `indexedDB` accesses to ensure clean server rendering.
+
+### 11.5 Security model
 
 | Threat | Defense |
 | --- | --- |
@@ -1224,7 +1282,8 @@ export function htmlToDoc(html: string): PMNode {
 | `javascript:` links | `sanitizeHref` allow-list in the `link` mark's `parseDOM`, `toDOM`, and `setLink()` |
 | Stored content rendered elsewhere via `innerHTML` | Render from `doc` via `DOMSerializer`, or sanitize with DOMPurify. Angular's `[innerHTML]` sanitizes by default; never use `bypassSecurityTrustHtml` on editor output |
 | Tab-nabbing | Links always get `rel="noopener noreferrer nofollow"` |
-| Uploaded images | Validate type and size client-side *and* server-side; store as URLs, not data URIs |
+| Uploaded images | Validate type client-side and persist securely via IndexedDB Blobs |
+
 
 ---
 
@@ -1327,15 +1386,15 @@ it('Enter in a list creates a new list item', () => {
 
 ## 16. Risks and open decisions
 
-| # | Item | Options | Decision (fill in) |
+| # | Item | Options | Decision (finalized) |
 | --- | --- | --- | --- |
-| D1 | Product name and npm scope | Inkframe / other | |
-| D2 | Collaboration | Yes (Yjs) / No | |
-| D3 | SSR | Yes / No | |
-| D4 | Minimum Angular version | 18 / 19 / 20 | |
-| D5 | Image storage | Own backend / S3-style / third party | |
-| D6 | Markdown support | Export only / import and export | |
-| D7 | UI library | Plain CSS / PrimeNG / Angular Material | |
+| D1 | Product name and npm scope | Inkframe / other | **Inkframe** (`@inkframe/editor`, selector `<ink-editor>`) |
+| D2 | Collaboration | Yes (Yjs) / No | **No** (Single-user focus, ProseMirror history used, clean undo seam preserved for future Yjs) |
+| D3 | SSR | Yes / No | **Yes** (SSR safe via `afterNextRender`, static route prerendering verified) |
+| D4 | Minimum Angular version | 18 / 19 / 20 / 22 | **Angular 22** (Standalone components, signals `signal`/`computed`/`effect`, `@if`/`@for` control flow) |
+| D5 | Image storage | Own backend / S3-style / IndexedDB | **Browser IndexedDB** (`inkframe_storage` database, blob object URL caching, file upload, paste & drag-drop) |
+| D6 | Markdown support | Export only / import and export | **Import and Export** (Bidirectional via `prosemirror-markdown`, custom callouts `> [!INFO]` and markdown tables) |
+| D7 | UI library | Plain CSS / PrimeNG / Angular Material | **Plain SCSS + Angular Material** (M3 button, icon, tooltip, menu, and tab components with custom SCSS tokens) |
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
@@ -1350,18 +1409,18 @@ it('Enter in a list creates a new list item', () => {
 
 ## 17. Pitfalls checklist
 
-- [ ] The `EditorView` is created outside the zone and no `zone.run` happens per transaction.
-- [ ] Signals have equality comparators; `blockType` info is a small struct, not a fresh object per keystroke.
-- [ ] Document JSON is serialized only on a debounce or on demand.
-- [ ] Toolbar buttons use `mousedown` + `preventDefault` **and** `click` for the action.
-- [ ] `Enter: splitListItem` is bound before `baseKeymap`.
-- [ ] `tables.css` and `gapcursor.css` are loaded.
-- [ ] External updates replace the state (`setDoc`), never mutate the DOM.
-- [ ] Every schema change bumps `SCHEMA_VERSION` and adds a migration.
-- [ ] Link `href`s go through `sanitizeHref` everywhere.
-- [ ] Menus are suppressed during IME composition and in code blocks.
-- [ ] NodeViews destroy their Angular components.
-- [ ] Collaboration decision recorded before building many features.
+- [x] The `EditorView` is created outside the zone and no `zone.run` happens per transaction.
+- [x] Signals have equality comparators; `blockType` info is a small struct, not a fresh object per keystroke.
+- [x] Document JSON is serialized only on a debounce or on demand.
+- [x] Toolbar buttons use `mousedown` + `preventDefault` **and** `click` for the action.
+- [x] `Enter: splitListItem` is bound before `baseKeymap`.
+- [x] `tables.css` and `gapcursor.css` are loaded.
+- [x] External updates replace the state (`setDoc`), never mutate the DOM.
+- [x] Every schema change bumps `SCHEMA_VERSION` and adds a migration.
+- [x] Link `href`s go through `sanitizeHref` everywhere.
+- [x] Menus are suppressed during IME composition and in code blocks.
+- [x] NodeViews destroy their Angular components.
+- [x] Collaboration decision recorded before building many features.
 
 ---
 

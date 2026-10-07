@@ -60,16 +60,26 @@ export const CELL_BG_COLORS: CellBgColor[] = [
         [style.top.px]="m.top"
         (mousedown)="$event.preventDefault()"
       >
-        <!-- Table options ▾ -->
+        <!-- Quick Add Row -->
         <button
           type="button"
           class="ink-tbl-btn"
-          [matMenuTriggerFor]="tableOptionsMenu"
-          matTooltip="Table operations"
+          matTooltip="Insert row below"
+          (click)="svc.addRowAfter()"
         >
-          <mat-icon class="tbl-icon">tune</mat-icon>
-          <span class="tbl-label">Table options</span>
-          <mat-icon class="tbl-caret">arrow_drop_down</mat-icon>
+          <mat-icon class="tbl-icon">add</mat-icon>
+          <span class="tbl-label">Row</span>
+        </button>
+
+        <!-- Quick Add Column -->
+        <button
+          type="button"
+          class="ink-tbl-btn"
+          matTooltip="Insert column right"
+          (click)="svc.addColumnAfter()"
+        >
+          <mat-icon class="tbl-icon">add</mat-icon>
+          <span class="tbl-label">Col</span>
         </button>
 
         <div class="ink-tbl-divider"></div>
@@ -99,14 +109,28 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
         <div class="ink-tbl-divider"></div>
 
-        <!-- More options / Background tint picker -->
+        <!-- Cell Background Color -->
         <button
           type="button"
           class="ink-tbl-icon-btn"
-          matTooltip="Cell color & more options"
+          matTooltip="Cell background color"
           [matMenuTriggerFor]="moreMenu"
         >
-          <mat-icon class="tbl-icon">more_horiz</mat-icon>
+          <mat-icon class="tbl-icon">palette</mat-icon>
+        </button>
+
+        <div class="ink-tbl-divider"></div>
+
+        <!-- Table options ▾ -->
+        <button
+          type="button"
+          class="ink-tbl-btn"
+          [matMenuTriggerFor]="tableOptionsMenu"
+          matTooltip="Table & row/col operations"
+        >
+          <mat-icon class="tbl-icon">tune</mat-icon>
+          <span class="tbl-label">Options</span>
+          <mat-icon class="tbl-caret">arrow_drop_down</mat-icon>
         </button>
       </div>
     }

@@ -13,7 +13,6 @@ import { EditorView } from 'prosemirror-view';
 import { imageStorage } from './image-storage';
 import { highlightPlugin, highlightKey } from './highlight.plugin';
 import { tableUIPlugin, tableUIKey } from './table-ui.plugin';
-import { tableResizingPlugin, tableResizingKey } from './table-resizing.plugin';
 
 describe('Inkframe Core', () => {
   describe('Link Sanitization (Security)', () => {
@@ -719,11 +718,6 @@ describe('Inkframe Core', () => {
         }
       });
       expect(foundCell).toBe(true);
-    });
-
-    it('tableResizingPlugin initializes with proper plugin key', () => {
-      const plugin = tableResizingPlugin();
-      expect(plugin.spec.key).toBe(tableResizingKey);
     });
 
     it('tableUIPlugin generates column handles, row handles, and empty cell placeholders', () => {

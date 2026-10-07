@@ -179,46 +179,89 @@ body {
 
   .tableWrapper {
     overflow: visible !important;
-    padding-top: 36px !important;
+    padding-top: 28px !important;
     padding-left: 24px !important;
     margin: 1.5rem 0 !important;
     position: relative;
   }
 
-  /* Tables */
+  /* Tables (matching clean aesthetics & Image 2 reference) */
   table {
-    border-collapse: separate;
-    border-spacing: 0;
-    border-top: 1px solid var(--ink-border, #383a42);
-    border-left: 1px solid var(--ink-border, #383a42);
-    width: 100%;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    width: 100% !important;
     margin: 0 !important;
-    table-layout: fixed;
-    position: relative;
-    border-radius: 4px;
+    table-layout: fixed !important;
+    position: relative !important;
+    overflow: visible !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--ink-border, #33363f) !important;
+    background: var(--ink-table-bg, #16181d) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 
     td, th {
-      border-right: 1px solid var(--ink-border, #383a42);
-      border-bottom: 1px solid var(--ink-border, #383a42);
-      padding: 10px 14px;
-      min-width: 80px;
-      vertical-align: top;
-      box-sizing: border-box;
-      position: relative;
+      border-right: 1px solid var(--ink-border, #33363f) !important;
+      border-bottom: 1px solid var(--ink-border, #33363f) !important;
+      padding: 10px 14px !important;
+      min-width: 90px !important;
+      vertical-align: top !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+      transition: background-color 0.12s ease;
+
+      &:last-child {
+        border-right: none !important;
+      }
+    }
+
+    tr:last-child td,
+    tr:last-child th {
+      border-bottom: none !important;
+    }
+
+    tr:first-child th:first-child,
+    tr:first-child td:first-child {
+      border-top-left-radius: 7px;
+    }
+
+    tr:first-child th:last-child,
+    tr:first-child td:last-child {
+      border-top-right-radius: 7px;
+    }
+
+    tr:last-child td:first-child {
+      border-bottom-left-radius: 7px;
+    }
+
+    tr:last-child td:last-child {
+      border-bottom-right-radius: 7px;
     }
 
     th {
-      background: rgba(255, 255, 255, 0.03);
-      font-weight: 600;
-      text-align: left;
+      background: var(--ink-th-bg, #1f2228) !important;
+      color: var(--ink-th-color, #f1f5f9) !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+      letter-spacing: -0.01em;
     }
 
-    .selectedCell:after {
-      content: "";
-      position: absolute;
-      left: 0; right: 0; top: 0; bottom: 0;
-      background: rgba(96, 165, 250, 0.2);
-      pointer-events: none;
+    /* Selected Cell / Column State (Purple highlight matching Image 2) */
+    .selectedCell {
+      background-color: rgba(124, 58, 237, 0.12) !important;
+      position: relative !important;
+
+      &:after {
+        content: "" !important;
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        border: 2px solid #7c3aed !important;
+        background: rgba(124, 58, 237, 0.08) !important;
+        pointer-events: none !important;
+        z-index: 5 !important;
+      }
     }
   }
 }
@@ -1486,73 +1529,37 @@ th:focus-within .ink-table-cell-placeholder {
   line-height: 1.3;
 }
 
-/* Left Row Handle (• dot indicator) */
+/* Left Row Handle (• dot indicator & [+] add row button) */
 .ink-table-row-handle {
   position: absolute;
-  left: -18px;
+  left: -22px;
   top: 50%;
   transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
-  font-size: 16px;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-  transition: all 0.15s ease;
-}
-
-tr:hover .ink-table-row-handle {
-  color: #60a5fa;
-  transform: translateY(-50%) scale(1.2);
-}
-
-/* Column Top-Left Corner Dot */
-.ink-table-col-corner-dot {
-  position: absolute;
-  top: -16px;
-  left: -4px;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Column Header Handle (Top dot, [+] adder, and [▾] options on column divider) */
-.ink-table-col-header-handle {
-  position: absolute;
-  top: -16px;
-  right: -9px;
-  width: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
   z-index: 20;
   user-select: none;
 }
 
-.ink-table-col-dot {
-  color: #64748b;
+.ink-table-row-dot {
+  color: #7c3aed;
   font-size: 14px;
   line-height: 1;
-  display: inline-flex;
-  align-items: center;
   pointer-events: none;
+  opacity: 0.65;
   transition: all 0.15s ease;
 }
 
-.ink-table-add-col-btn {
+.ink-table-add-row-btn {
   width: 16px;
   height: 16px;
   border-radius: 50%;
   background: #23252a;
-  border: 1px solid #3c4043;
-  color: #cbd5e1;
+  border: 1px solid #7c3aed;
+  color: #ffffff;
   font-size: 12px;
   line-height: 1;
   display: none;
@@ -1561,12 +1568,87 @@ tr:hover .ink-table-row-handle {
   cursor: pointer;
   padding: 0;
   opacity: 0;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
   transition: all 0.15s ease;
 
   &:hover {
-    background: #32353c;
+    background: #7c3aed;
     color: #ffffff;
-    border-color: #60a5fa;
+    transform: scale(1.15);
+  }
+}
+
+tr:hover .ink-table-row-handle,
+.ink-table-row-handle:hover {
+  .ink-table-row-dot {
+    display: none;
+  }
+  .ink-table-add-row-btn {
+    display: inline-flex;
+    opacity: 1;
+  }
+}
+
+/* Column Top-Left Corner Dot */
+.ink-table-col-corner-dot {
+  position: absolute;
+  top: -18px;
+  left: -4px;
+  color: #7c3aed;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.7;
+}
+
+/* Column Header Handle (Top dot, [+] adder, and [▾] options on column divider) */
+.ink-table-col-header-handle {
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  width: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 25;
+  user-select: none;
+  padding: 2px;
+}
+
+.ink-table-col-dot {
+  color: #7c3aed;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: all 0.15s ease;
+}
+
+.ink-table-add-col-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #23252a;
+  border: 1px solid #7c3aed;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #7c3aed;
+    color: #ffffff;
     transform: scale(1.15);
   }
 }
@@ -1590,13 +1672,13 @@ tr:hover .ink-table-row-handle {
 
   &:hover {
     background: #32353c;
+    border-color: #7c3aed;
     color: #ffffff;
-    border-color: #60a5fa;
-    transform: scale(1.15);
+    transform: scale(1.1);
   }
 }
 
-/* On hover of column header cell or handle: reveal [+] and [▾], hide dot */
+/* Reveal [+] and [▾] on hover of header, cell, or handle */
 th:hover .ink-table-col-header-handle,
 td:hover .ink-table-col-header-handle,
 .ink-table-col-header-handle:hover {
@@ -1610,7 +1692,7 @@ td:hover .ink-table-col-header-handle,
   }
 }
 
-/* Table Menus (matching Screenshot7.png dark aesthetics) */
+/* Table Menus (matching dark aesthetics) */
 .ink-table-mat-menu {
   &.mat-mdc-menu-panel {
     background: #212226 !important;
@@ -1640,7 +1722,7 @@ td:hover .ink-table-col-header-handle,
       color: #ffffff !important;
 
       .mat-icon {
-        color: #60a5fa !important;
+        color: #a78bfa !important;
       }
     }
   }
@@ -1663,40 +1745,36 @@ td:hover .ink-table-col-header-handle,
 }
 
 /* ==========================================================================
-   Interactive Table & Row Resizing Handles
+   Column Resizing Handles (Purple accent with centered circle handle matching Image 2)
    ========================================================================== */
 
-/* Column Resizing Handle (vertical line between columns) */
 .ProseMirror .column-resize-handle {
-  position: absolute;
-  right: -2px;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  z-index: 25;
-  background-color: #60a5fa;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
-  pointer-events: none;
+  position: absolute !important;
+  right: -1px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 2px !important;
+  z-index: 30 !important;
+  background-color: #7c3aed !important;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.6) !important;
+  pointer-events: none !important;
+
+  &::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background-color: #7c3aed !important;
+    box-shadow: 0 0 0 2px #18191d, 0 2px 6px rgba(124, 58, 237, 0.7) !important;
+  }
 }
 
 .ProseMirror.resize-cursor,
 .resize-cursor {
   cursor: col-resize !important;
-}
-
-/* Row Resizing Handle (horizontal line between rows) */
-.ink-row-resize-handle {
-  position: fixed;
-  height: 3px;
-  background-color: #60a5fa;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
-  z-index: 40;
-  pointer-events: none;
-  transition: opacity 0.1s ease;
-}
-
-.ProseMirror.row-resize-cursor,
-.row-resize-cursor {
-  cursor: row-resize !important;
 }
 

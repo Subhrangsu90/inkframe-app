@@ -240,7 +240,7 @@ Provide visual table editing tools matching `Screenshot7.png`: column adder hand
      - Column border / grid toggle.
 
 ### Deliverables & Acceptance Criteria
-- [x] Table resizing, cell navigation via Tab/Shift-Tab, and column insertion operate without breaking table structure.
+- [x] Column resizing, cell navigation via Tab/Shift-Tab, and column insertion operate without breaking table structure.
 - [x] Placeholder displays only when cell is empty and focused/hovered.
 - [x] Floating table toolbar dynamically positions at active table boundary with table options, alignment, grid toggle, and background color picker.
 - [x] Unit test coverage in `core.spec.ts` for cell attributes and table UI decoration generation.

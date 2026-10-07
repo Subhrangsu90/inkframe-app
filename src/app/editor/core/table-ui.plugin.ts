@@ -1,7 +1,7 @@
 import { Plugin, PluginKey, Selection } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import { Node as PMNode } from 'prosemirror-model';
-import { addColumnAfter, addColumnBefore, deleteColumn } from 'prosemirror-tables';
+import { addColumnAfter, addColumnBefore, deleteColumn, addRowAfter } from 'prosemirror-tables';
 
 export const tableUIKey = new PluginKey('table-ui');
 
@@ -38,13 +38,42 @@ function buildTableDecorations(doc: PMNode): DecorationSet {
         row.forEach((cell, cellOffset) => {
           const cellPos = rowPos + 1 + cellOffset;
 
-          // Left dot handle for each row (attached to first cell)
+          // Left interactive handle for each row (attached to first cell)
           if (cellOffset === 0) {
-            const rowDotWidget = document.createElement('div');
-            rowDotWidget.className = 'ink-table-row-handle';
-            rowDotWidget.innerHTML = '•';
+            const rowHandleWidget = document.createElement('div');
+            rowHandleWidget.className = 'ink-table-row-handle';
+
+            const rowDot = document.createElement('span');
+            rowDot.className = 'ink-table-row-dot';
+            rowDot.textContent = '•';
+            rowHandleWidget.appendChild(rowDot);
+
+            const addRowBtn = document.createElement('button');
+            addRowBtn.type = 'button';
+            addRowBtn.className = 'ink-table-add-row-btn';
+            addRowBtn.title = 'Insert row below';
+            addRowBtn.innerHTML = '+';
+            addRowBtn.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            });
+            addRowBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const view = (window as any).__ink_active_view__ as EditorView | undefined;
+              if (view) {
+                view.focus();
+                const tr = view.state.tr.setSelection(
+                  Selection.near(view.state.doc.resolve(cellPos + 1)),
+                );
+                view.dispatch(tr);
+                addRowAfter(view.state, view.dispatch);
+              }
+            });
+            rowHandleWidget.appendChild(addRowBtn);
+
             decorations.push(
-              Decoration.widget(cellPos + 1, rowDotWidget, {
+              Decoration.widget(cellPos + 1, rowHandleWidget, {
                 side: -1,
                 ignoreSelection: true,
               }),

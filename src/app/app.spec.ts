@@ -455,4 +455,42 @@ describe('EditorPageComponent', () => {
     const remaining = (app as any).docList().map((d: any) => d.id);
     expect(remaining).not.toContain(duplicatedId);
   });
+
+  it('should prompt delete warning dialog before deleting from history and cancel or confirm', async () => {
+    const fixture = TestBed.createComponent(EditorPageComponent);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    const fakeEvent = { stopPropagation: () => {}, preventDefault: () => {} } as any;
+
+    // Create a new doc to test deletion dialog
+    await (app as any).createNewDoc();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const createdId = (app as any).activeDocId();
+    const docMeta = (app as any).docList().find((d: any) => d.id === createdId);
+    expect(docMeta).toBeTruthy();
+
+    // Trigger delete prompt
+    (app as any).promptDeleteDoc(docMeta, fakeEvent);
+    fixture.detectChanges();
+    expect((app as any).docToDelete()).toBe(docMeta);
+
+    // Cancel deletion
+    (app as any).cancelDeleteDoc();
+    fixture.detectChanges();
+    expect((app as any).docToDelete()).toBeNull();
+    expect((app as any).docList().some((d: any) => d.id === createdId)).toBe(true);
+
+    // Prompt again and confirm deletion
+    (app as any).promptDeleteDoc(docMeta, fakeEvent);
+    fixture.detectChanges();
+    await (app as any).confirmDeleteDoc();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect((app as any).docToDelete()).toBeNull();
+    expect((app as any).docList().some((d: any) => d.id === createdId)).toBe(false);
+  });
 });

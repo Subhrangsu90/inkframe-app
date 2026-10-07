@@ -264,7 +264,7 @@
                   <button type="button"
                           class="item-action-btn delete-btn"
                           matTooltip="Delete document"
-                          (click)="deleteDoc(item.id, $event)">
+                          (click)="promptDeleteDoc(item, $event)">
                     <mat-icon>delete_outline</mat-icon>
                   </button>
                 </div>
@@ -343,6 +343,44 @@
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Delete Document Confirmation Dialog -->
+    @if (docToDelete(); as targetDoc) {
+      <div class="ink-modal-backdrop ink-confirm-backdrop" (click)="cancelDeleteDoc()">
+        <div class="ink-modal-dialog ink-confirm-dialog"
+             (click)="$event.stopPropagation()"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="confirm-delete-title"
+             aria-describedby="confirm-delete-desc">
+          <div class="ink-confirm-body">
+            <div class="confirm-icon-badge">
+              <mat-icon>warning_amber</mat-icon>
+            </div>
+            <div class="confirm-text-group">
+              <h3 id="confirm-delete-title">Delete Document?</h3>
+              <p id="confirm-delete-desc">
+                Are you sure you want to delete <strong class="confirm-doc-name">“{{ targetDoc.title }}”</strong>?
+                This document will be permanently removed from your browser's history.
+              </p>
+              <div class="confirm-note">
+                <mat-icon>info_outline</mat-icon>
+                <span>This action cannot be undone.</span>
+              </div>
+            </div>
+          </div>
+          <div class="ink-confirm-footer">
+            <button type="button" class="btn-confirm-cancel" (click)="cancelDeleteDoc()">
+              Cancel
+            </button>
+            <button type="button" class="btn-confirm-delete" (click)="confirmDeleteDoc()">
+              <mat-icon>delete</mat-icon>
+              <span>Delete Document</span>
+            </button>
           </div>
         </div>
       </div>

@@ -535,6 +535,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
     .ink-toolbar {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 4px 3px;
       padding: 6px 10px;
       border-bottom: 1px solid var(--ink-border-default, #2e3036);

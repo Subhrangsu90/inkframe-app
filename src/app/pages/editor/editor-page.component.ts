@@ -230,6 +230,7 @@ export class EditorPageComponent implements OnInit {
   protected readonly docList = signal<DocMeta[]>([]);
   protected readonly activeDocId = signal<string>('doc_default');
   protected readonly searchQuery = signal<string>('');
+  protected readonly docToDelete = signal<DocMeta | null>(null);
 
   protected readonly editor = viewChild<EditorComponent>('inkEditor');
 
@@ -400,9 +401,28 @@ export class EditorPageComponent implements OnInit {
     this.showDocDrawer.set(false);
   }
 
-  protected async deleteDoc(id: string, event: MouseEvent): Promise<void> {
+  protected promptDeleteDoc(item: DocMeta, event: MouseEvent): void {
     event.stopPropagation();
     event.preventDefault();
+    this.docToDelete.set(item);
+  }
+
+  protected cancelDeleteDoc(): void {
+    this.docToDelete.set(null);
+  }
+
+  protected async confirmDeleteDoc(): Promise<void> {
+    const target = this.docToDelete();
+    if (!target) return;
+    this.docToDelete.set(null);
+    await this.deleteDoc(target.id);
+  }
+
+  protected async deleteDoc(id: string, event?: MouseEvent): Promise<void> {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     const wasActive = id === this.activeDocId();
     const nextId = await this.docManager.deleteDoc(id);
     const list = await this.docManager.getIndex();
@@ -673,6 +693,14 @@ export class EditorPageComponent implements OnInit {
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault();
       void this.saveDocument();
+    } else if (event.key === 'Escape') {
+      if (this.docToDelete()) {
+        this.cancelDeleteDoc();
+      } else if (this.showDocDrawer()) {
+        this.closeDocDrawer();
+      } else if (this.showShareModal()) {
+        this.closeShareModal();
+      }
     }
   }
 

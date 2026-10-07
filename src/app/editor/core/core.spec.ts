@@ -139,7 +139,7 @@ describe('Inkframe Core', () => {
       expect(html).toContain('<sub>O</sub>');
       expect(html).toContain('<sup>2</sup>');
       expect(html).toContain('<small>Fineprint</small>');
-      expect(html).toContain('color: rgb(225, 29, 72)') || expect(html).toContain('color: #e11d48');
+      expect(html.includes('color: rgb(225, 29, 72)') || html.includes('color: #e11d48')).toBe(true);
 
       // Roundtrip test
       const parsedDoc = htmlToDoc(html);

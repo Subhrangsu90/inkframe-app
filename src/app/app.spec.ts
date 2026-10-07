@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { StoredDoc, imageStorage } from './editor';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -240,5 +241,103 @@ describe('App', () => {
 
     expect((app as any).isGeneratingShareLink()).toBe(false);
     expect((app as any).shareUrl()).toContain('view=preview');
+  });
+
+  it('should successfully share and inline images located inside table cells', async () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    const { uri: imageKey } = await imageStorage.saveImage(
+      new Blob(['fake-table-image-content'], { type: 'image/png' })
+    );
+
+    const docWithTableImage: StoredDoc = {
+      schemaVersion: 1,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'table',
+            content: [
+              {
+                type: 'table_row',
+                content: [
+                  {
+                    type: 'table_cell',
+                    content: [
+                      {
+                        type: 'paragraph',
+                        content: [
+                          {
+                            type: 'image',
+                            attrs: {
+                              src: imageKey,
+                              alt: 'Table Image',
+                              title: null,
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    if ((app as any).editor()) {
+      (app as any).editor().loadDoc(docWithTableImage);
+    } else {
+      (app as any).currentDoc.set(docWithTableImage);
+    }
+
+    await (app as any).shareDocument();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const shareUrl = (app as any).shareUrl();
+    expect(shareUrl).toContain('view=preview');
+    expect(shareUrl).toContain('#share=');
+
+    // Verify the image inside the table cell was properly inlined to a data URL
+    const tableNode = (app as any).currentDoc().doc.content[0];
+    const cellNode = tableNode.content[0].content[0];
+    const paraNode = cellNode.content[0];
+    const imgNode = paraNode.content[0];
+    expect(imgNode.attrs.src).toContain('data:image/png;base64');
+  });
+
+  it('should gracefully fall back to saved document if share URL hash is truncated or malformed', async () => {
+    const savedDoc: StoredDoc = {
+      schemaVersion: 1,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Recovered Document from Storage' }],
+          },
+        ],
+      },
+    };
+
+    await imageStorage.saveDocument('inkframe_saved_doc', savedDoc);
+
+    // Simulate truncated URL hash (like the Chromium 384KB URL truncation)
+    const truncatedHash = '#share=' + encodeURIComponent('eyJzY2hlbWFWZXJzaW9uIjoxLCJkb2MiOnsidHlwZSI6ImRvYyIsImNvbnRlbnQiOlt7');
+    window.location.hash = truncatedHash;
+
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    await (app as any).initClientState();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // Verify it recovered from IndexedDB/localStorage rather than crashing or staying on demo
+    expect((app as any).currentDoc().doc.content[0].content[0].text).toBe('Recovered Document from Storage');
   });
 });

@@ -309,16 +309,43 @@ const DEMO_DOC: StoredDoc = {
   },
 };
 
-function encodeDocToUrl(doc: StoredDoc): string {
+function arrayBufferToBinary(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK_SIZE = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
+  }
+  return binary;
+}
+
+async function encodeDocToUrl(doc: StoredDoc): Promise<string> {
   try {
     const json = JSON.stringify(doc);
-    const bytes = new TextEncoder().encode(json);
-    const CHUNK_SIZE = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
+    let b64 = '';
+
+    const canGzip =
+      typeof CompressionStream !== 'undefined' &&
+      typeof Response !== 'undefined' &&
+      typeof Blob !== 'undefined' &&
+      typeof (Blob.prototype as unknown as { stream?: unknown })?.stream === 'function';
+
+    if (canGzip) {
+      try {
+        const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+        const response = new Response(stream);
+        const compressedBuffer = await response.arrayBuffer();
+        b64 = 'gz.' + btoa(arrayBufferToBinary(compressedBuffer));
+      } catch (gzipErr) {
+        console.warn('Gzip compression failed, falling back to uncompressed URL:', gzipErr);
+        const bytes = new TextEncoder().encode(json);
+        b64 = btoa(arrayBufferToBinary(bytes.buffer));
+      }
+    } else {
+      const bytes = new TextEncoder().encode(json);
+      b64 = btoa(arrayBufferToBinary(bytes.buffer));
     }
-    const b64 = btoa(binary);
+
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
     return `${origin}${pathname}?view=preview#share=${encodeURIComponent(b64)}`;
@@ -328,18 +355,42 @@ function encodeDocToUrl(doc: StoredDoc): string {
   }
 }
 
-function decodeDocFromUrl(hash: string): StoredDoc | null {
+async function decodeDocFromUrl(hash: string): Promise<StoredDoc | null> {
   try {
     const match = hash.match(/share=([^&]+)/);
     if (!match) return null;
-    const b64 = decodeURIComponent(match[1]);
+    let b64 = decodeURIComponent(match[1]);
+    const isGzip = b64.startsWith('gz.');
+    if (isGzip) {
+      b64 = b64.slice(3);
+    }
     const binary = atob(b64);
     const len = binary.length;
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    const json = new TextDecoder().decode(bytes);
+
+    let json = '';
+    const canDecompress =
+      typeof DecompressionStream !== 'undefined' &&
+      typeof Response !== 'undefined' &&
+      typeof Blob !== 'undefined' &&
+      typeof (Blob.prototype as unknown as { stream?: unknown })?.stream === 'function';
+
+    if (isGzip && canDecompress) {
+      try {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        const response = new Response(stream);
+        json = await response.text();
+      } catch (decompErr) {
+        console.warn('Decompression failed, falling back to raw decode:', decompErr);
+        json = new TextDecoder().decode(bytes);
+      }
+    } else {
+      json = new TextDecoder().decode(bytes);
+    }
+
     const doc = JSON.parse(json) as StoredDoc;
     if (doc && doc.doc) return doc;
   } catch (e) {
@@ -412,16 +463,25 @@ export class App {
       }
 
       if (hash && hash.includes('share=')) {
-        const decoded = decodeDocFromUrl(hash);
+        const decoded = await decodeDocFromUrl(hash);
         if (decoded) {
           this.currentDoc.set(decoded);
+          this.editor()?.loadDoc(decoded);
           this.shareUrl.set(window.location.href);
+        } else {
+          // Graceful fallback: If URL hash was truncated or corrupted, recover from IndexedDB
+          const saved = await imageStorage.getDocument<StoredDoc>('inkframe_saved_doc');
+          if (saved && saved.doc) {
+            this.currentDoc.set(saved);
+            this.editor()?.loadDoc(saved);
+          }
         }
       } else {
         // Asynchronously load from IndexedDB with localStorage fallback
         const saved = await imageStorage.getDocument<StoredDoc>('inkframe_saved_doc');
         if (saved && saved.doc) {
           this.currentDoc.set(saved);
+          this.editor()?.loadDoc(saved);
         }
       }
 
@@ -467,16 +527,16 @@ export class App {
     this.isGeneratingShareLink.set(true);
 
     try {
-      // In-line all ink-idb images as Base64 data URLs for portable sharing
-      const shareableDoc = await imageStorage.inlineDocImages(doc);
+      // In-line images as optimized Base64 data URLs for portable sharing
+      const shareableDoc = await imageStorage.inlineDocImages(doc, true);
       this.currentDoc.set(shareableDoc);
 
       // Save asynchronously to IndexedDB (non-blocking!)
       void imageStorage.saveDocument('inkframe_saved_doc', shareableDoc);
       this.isDirty.set(false);
 
-      // Generate content-only share URL with fast chunked encoding
-      const url = encodeDocToUrl(shareableDoc);
+      // Generate content-only share URL with fast chunked encoding and gzip
+      const url = await encodeDocToUrl(shareableDoc);
       this.shareUrl.set(url);
 
       // Copy to clipboard in background

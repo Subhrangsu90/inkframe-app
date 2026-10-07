@@ -131,8 +131,8 @@ export interface ImagePreviewPayload {
     .ink-lightbox-backdrop {
       width: 100%;
       height: 100%;
-      background: rgba(12, 13, 16, 0.9);
-      backdrop-filter: blur(10px);
+      background: var(--ink-lightbox-backdrop, rgba(12, 13, 16, 0.88));
+      backdrop-filter: blur(12px);
       display: flex;
       flex-direction: column;
       position: relative;
@@ -143,16 +143,17 @@ export interface ImagePreviewPayload {
       align-items: center;
       justify-content: space-between;
       padding: 10px 16px;
-      background: rgba(24, 25, 28, 0.7);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--ink-bg-header, var(--ink-bg-card, #18191c));
+      border-bottom: 1px solid var(--ink-border-default, #2e3036);
       z-index: 10;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .ink-lightbox-info {
       display: flex;
       align-items: center;
       gap: 10px;
-      color: #f1f5f9;
+      color: var(--ink-text-primary, #f1f5f9);
       overflow: hidden;
 
       .ink-lightbox-title {
@@ -162,12 +163,14 @@ export interface ImagePreviewPayload {
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 320px;
+        color: var(--ink-text-heading, #ffffff);
       }
 
       .ink-lightbox-dimensions {
         font-size: 0.76rem;
-        color: #94a3b8;
-        background: rgba(255, 255, 255, 0.08);
+        color: var(--ink-badge-text, #94a3b8);
+        background: var(--ink-badge-bg, rgba(255, 255, 255, 0.08));
+        border: 1px solid var(--ink-border-subtle, rgba(255, 255, 255, 0.08));
         padding: 2px 8px;
         border-radius: 4px;
         font-family: monospace;
@@ -180,22 +183,29 @@ export interface ImagePreviewPayload {
       gap: 4px;
 
       .ink-lightbox-btn {
-        color: #cbd5e1;
+        color: var(--ink-text-secondary, #cbd5e1);
         width: 36px;
         height: 36px;
         line-height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: 8px;
+        transition: background-color 0.12s ease, color 0.12s ease;
 
-        &:hover {
-          color: #ffffff;
-          background: rgba(255, 255, 255, 0.1);
+        &:hover:not([disabled]) {
+          color: var(--ink-text-primary, #ffffff);
+          background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.1));
         }
 
-        &.close-btn:hover {
-          background: rgba(239, 68, 68, 0.2);
-          color: #fca5a5;
+        &[disabled] {
+          color: var(--ink-text-muted, #64748b);
+          opacity: 0.4;
+        }
+
+        &.close-btn:hover:not([disabled]) {
+          background: var(--ink-danger-bg, rgba(239, 68, 68, 0.18));
+          color: var(--ink-danger-text, #f87171);
         }
 
         mat-icon {
@@ -206,10 +216,10 @@ export interface ImagePreviewPayload {
       }
 
       .ink-lightbox-zoom-badge {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--ink-badge-bg, rgba(255, 255, 255, 0.08));
+        border: 1px solid var(--ink-border-default, rgba(255, 255, 255, 0.1));
         border-radius: 6px;
-        color: #e2e8f0;
+        color: var(--ink-text-primary, #e2e8f0);
         font-size: 0.78rem;
         font-family: monospace;
         padding: 3px 8px;
@@ -217,8 +227,9 @@ export interface ImagePreviewPayload {
         transition: all 0.12s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.16);
-          color: #60a5fa;
+          background: var(--ink-active-bg, #172c47);
+          color: var(--ink-active-text, #60a5fa);
+          border-color: var(--ink-active-border, #1e3a5f);
         }
       }
     }
@@ -239,7 +250,7 @@ export interface ImagePreviewPayload {
       align-items: center;
       justify-content: center;
       max-width: 92vw;
-      max-height: 84vh;
+      max-height: 80vh;
       cursor: default;
     }
 
@@ -248,7 +259,8 @@ export interface ImagePreviewPayload {
       max-height: 82vh;
       object-fit: contain;
       border-radius: 8px;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65);
+      border: 1px solid var(--ink-border-subtle, rgba(255, 255, 255, 0.1));
+      box-shadow: var(--ink-shadow-popover, 0 16px 48px rgba(0, 0, 0, 0.65));
       cursor: zoom-in;
       animation: inkScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -256,10 +268,11 @@ export interface ImagePreviewPayload {
     .ink-lightbox-footer {
       padding: 10px 16px;
       text-align: center;
-      color: #94a3b8;
+      color: var(--ink-text-secondary, #94a3b8);
       font-size: 0.85rem;
-      background: rgba(24, 25, 28, 0.7);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--ink-bg-header, var(--ink-bg-card, #18191c));
+      border-top: 1px solid var(--ink-border-default, #2e3036);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     @keyframes inkFadeIn {

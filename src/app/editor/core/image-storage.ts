@@ -24,13 +24,14 @@ class ImageStorage {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
   private readonly urlCache = new Map<string, string>();
   private readonly dataUrlCache = new Map<string, string>();
+  private readonly blobCache = new Map<string, Blob>();
 
   private isBrowser(): boolean {
-    return typeof window !== 'undefined' && typeof indexedDB !== 'undefined';
+    return typeof window !== 'undefined';
   }
 
   private getDB(): Promise<IDBDatabase | null> {
-    if (!this.isBrowser()) return Promise.resolve(null);
+    if (!this.isBrowser() || typeof indexedDB === 'undefined') return Promise.resolve(null);
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve) => {
@@ -81,6 +82,8 @@ class ImageStorage {
     const fileName = name || (file instanceof File ? file.name : 'image.png');
     const uri = `ink-idb:${id}`;
 
+    this.blobCache.set(id, file);
+
     if (!this.isBrowser()) {
       return { id, uri, url: '' };
     }
@@ -120,6 +123,9 @@ class ImageStorage {
    * Retrieves image blob from IndexedDB.
    */
   async getImageBlob(id: string): Promise<Blob | null> {
+    const inMemory = this.blobCache.get(id);
+    if (inMemory) return inMemory;
+
     const db = await this.getDB();
     if (!db) return null;
 
@@ -160,19 +166,77 @@ class ImageStorage {
   }
 
   /**
-   * Resolves any src string to a self-contained Base64 Data URL.
+   * Resizes and compresses an image Blob to fit cleanly inside URL share links.
    */
-  async resolveToDataUrl(src: string): Promise<string> {
+  async optimizeImageBlob(blob: Blob, maxWidth = 960, maxHeight = 960, quality = 0.72): Promise<string> {
+    if (
+      typeof document === 'undefined' ||
+      typeof Image === 'undefined' ||
+      (typeof navigator !== 'undefined' && navigator.userAgent?.includes('jsdom'))
+    ) {
+      return this.blobToDataUrl(blob);
+    }
+    return new Promise((resolve) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+
+      timer = setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch {}
+        this.blobToDataUrl(blob).then(resolve);
+      }, 1500);
+
+      img.onload = () => {
+        if (timer) clearTimeout(timer);
+        URL.revokeObjectURL(url);
+        let w = img.naturalWidth || img.width;
+        let h = img.naturalHeight || img.height;
+        if (!w || !h) {
+          this.blobToDataUrl(blob).then(resolve);
+          return;
+        }
+        if (w > maxWidth || h > maxHeight) {
+          const ratio = Math.min(maxWidth / w, maxHeight / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          this.blobToDataUrl(blob).then(resolve);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        if (timer) clearTimeout(timer);
+        URL.revokeObjectURL(url);
+        this.blobToDataUrl(blob).then(resolve);
+      };
+      img.src = url;
+    });
+  }
+
+  /**
+   * Resolves any src string to a self-contained Base64 Data URL.
+   * If optimize is true and the image is large, compresses and resizes it for URLs.
+   */
+  async resolveToDataUrl(src: string, optimize = false): Promise<string> {
     if (!src) return '';
-    if (src.startsWith('data:')) return src;
 
     if (src.startsWith('ink-idb:')) {
       const id = src.slice('ink-idb:'.length);
-      const cached = this.dataUrlCache.get(id);
-      if (cached) return cached;
-
       const blob = await this.getImageBlob(id);
       if (blob) {
+        if (optimize) {
+          return await this.optimizeImageBlob(blob);
+        }
+        const cached = this.dataUrlCache.get(id);
+        if (cached) return cached;
         const dataUrl = await this.blobToDataUrl(blob);
         if (dataUrl) {
           this.dataUrlCache.set(id, dataUrl);
@@ -186,10 +250,27 @@ class ImageStorage {
       try {
         const res = await fetch(src);
         const blob = await res.blob();
+        if (optimize) {
+          return await this.optimizeImageBlob(blob);
+        }
         return await this.blobToDataUrl(blob);
       } catch {
         return src;
       }
+    }
+
+    if (src.startsWith('data:') && optimize && this.isBrowser()) {
+      // If data URL is larger than 100KB, optimize it
+      if (src.length > 100000) {
+        try {
+          const res = await fetch(src);
+          const blob = await res.blob();
+          return await this.optimizeImageBlob(blob);
+        } catch {
+          return src;
+        }
+      }
+      return src;
     }
 
     return src;
@@ -233,7 +314,7 @@ class ImageStorage {
   /**
    * Inlines all ink-idb image nodes in a document as Base64 data URLs for portable sharing and persistence.
    */
-  async inlineDocImages<T = any>(storedDoc: T): Promise<T> {
+  async inlineDocImages<T = any>(storedDoc: T, forShare = false): Promise<T> {
     if (!storedDoc || typeof storedDoc !== 'object') return storedDoc;
     const clone = JSON.parse(JSON.stringify(storedDoc));
 
@@ -241,8 +322,8 @@ class ImageStorage {
       if (!node) return;
       if (node.type === 'image' && node.attrs && typeof node.attrs.src === 'string') {
         const src = node.attrs.src;
-        if (src.startsWith('ink-idb:') || src.startsWith('blob:')) {
-          const dataUrl = await this.resolveToDataUrl(src);
+        if (src.startsWith('ink-idb:') || src.startsWith('blob:') || (forShare && src.startsWith('data:'))) {
+          const dataUrl = await this.resolveToDataUrl(src, forShare);
           if (dataUrl && dataUrl.startsWith('data:')) {
             node.attrs.src = dataUrl;
           }

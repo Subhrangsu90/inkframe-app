@@ -30,6 +30,8 @@ Phase 5: Enhanced Code Block NodeView (Line Numbers, Language Selector, Copy, Wr
 Phase 6: Interactive Table NodeView & Floating Table Controls (+ Column, Alignment, Placeholder)
    ↓
 Phase 7: Test Coverage, Benchmarking & Production Verification
+   ↓
+Phase 8: Cloud Short Link & Cloud Storage Sharing (Short URLs, Full-Res Images, Web Share API)
 ```
 
 ---
@@ -284,4 +286,56 @@ Ensure 100% test pass rate, no memory leaks in NodeViews, and compliance with pe
 | **Phase 5** | Enhanced Code Block NodeView | Phase 1 | Complete (100%) |
 | **Phase 6** | Interactive Table NodeView & Floating Toolbar | Phase 3 | Complete (100%) |
 | **Phase 7** | Test Coverage & Production Verification | Phases 1–6 | Complete (100%) |
+| **Phase 8** | Cloud Short Link & Cloud Storage Sharing | Phase 4 & 7 | Planned |
+
+---
+
+## Phase 8: Cloud Short Link & Cloud Storage Sharing Architecture
+
+### Objective
+Provide clean, ultra-short shareable URLs (e.g. `https://inkframe.app/p/k9Z2wP` or `/?p=k9Z2wP`) by storing document state and full-resolution images in lightweight cloud storage (Supabase / Firebase / Cloudflare Workers KV), completely eliminating browser address bar length constraints (~384KB truncation) and allowing frictionless sharing across apps with strict URL length limits (WhatsApp, Slack, Discord, Twitter).
+
+### Architectural Strategy & Options
+1. **Cloud Backend Provider Options**:
+   - **Option A (Supabase / PostgreSQL + S3 Storage)**: Stores document JSON in a `shared_docs` table and uploaded images in a public S3-compatible storage bucket.
+   - **Option B (Firebase Firestore / Cloud Storage)**: Serverless document store with instant real-time sync, CDN caching, and generous free tier (50K reads/day).
+   - **Option C (Cloudflare Workers KV / Netlify Blobs)**: Edge key-value store returning sub-50ms reads globally with automatic TTL/expiration.
+2. **Hybrid Client Fallback (Zero Downtime Guarantee)**:
+   - When cloud credentials or connectivity are unavailable, the editor automatically falls back to client-side compressed URL sharing (`#share=gz...`) and local IndexedDB, guaranteeing 100% functionality without server lock-in.
+
+### Scope of Work
+1. **Cloud Sharing Service (`src/app/core/cloud-share.service.ts`)**:
+   - `createShortLink(doc: StoredDoc, options?: { expiresInDays?: number }): Promise<{ shortUrl: string; shareId: string }>`:
+     - Generates a compact, URL-safe unique ID (e.g., 6–8 character nanoid `k9Z2wP`).
+     - Extracts image blobs from the document and uploads them to cloud media storage (or stores clean Base64/SVG payloads).
+     - Persists the document payload to cloud storage with creation timestamp and optional expiry.
+     - Returns clean short URL: `https://inkframe.app/p/:id` (or `/?p=:id`).
+   - `fetchSharedDoc(shareId: string): Promise<StoredDoc | null>`:
+     - Fetches and parses document JSON by ID.
+     - Resolves remote media URLs into renderable image elements.
+     - Caches retrieved documents in IndexedDB (`inkframe_shared_cache`) for instant repeat loads and offline access.
+2. **Client State & Router Integration (`src/app/app.ts`)**:
+   - During `initClientState()`:
+     - Detects `?p=:id` or route `/p/:id`.
+     - Displays sleek skeleton loader or spinner while fetching from cloud storage.
+     - Sets `isPublicView = true` and updates preview signals.
+     - If local author opens their own short link, automatically connects back to their local draft in IndexedDB.
+3. **UI & Share Modal Enhancement (`src/app/app.html`, `src/app/app.ts`)**:
+   - **Short URL Display**: Renders clean short link (`inkframe.app/p/x8K2mN`) with quick one-click copy and transient "Copied!" feedback.
+   - **Native Web Share API**: Adds "Share via..." button triggering `navigator.share({ title, url })` for native iOS / Android / macOS share sheets (WhatsApp, Messages, AirDrop, Telegram).
+   - **Sharing Options**:
+     - "Allow duplicate / fork" toggle.
+     - "Public read-only" badge.
+     - Optional link expiration picker (e.g. 7 days, 30 days, Never).
+4. **Security & Limits**:
+   - Enforce document payload size limits (e.g. max 10MB per shared document).
+   - Rate limiting on link generation to prevent spam abuse.
+   - Read-only enforcement for public access tokens.
+
+### Deliverables & Acceptance Criteria
+- [ ] Share modal generates clean short URLs under 35 characters (`https://inkframe.app/p/:id`).
+- [ ] Embedded images of any resolution and size (including inside nested tables) load reliably without browser truncation or syntax errors.
+- [ ] Shared links open directly in content-only preview mode across any device and browser.
+- [ ] Automatic fallback to local Gzip URL sharing (`#share=gz...`) if cloud backend is disabled or offline.
+- [ ] Unit test coverage in `app.spec.ts` for cloud share service, short ID resolution, and offline fallback.
 

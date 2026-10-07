@@ -1,0 +1,293 @@
+<div class="ink-landing-page">
+  <!-- Landing Navigation Bar -->
+  <header class="ink-landing-nav">
+    <div class="ink-landing-nav-container">
+      <div class="ink-nav-brand" routerLink="/">
+        <div class="ink-brand-logo">
+          <mat-icon>edit_note</mat-icon>
+        </div>
+        <span class="ink-title">Inkframe</span>
+        <span class="ink-version-pill">v2.4</span>
+      </div>
+
+      <nav class="ink-landing-nav-links">
+        <a href="#features" class="ink-nav-link">Features</a>
+        <a href="#showcase" class="ink-nav-link">Showcase</a>
+        <a href="#shortcuts" class="ink-nav-link">Shortcuts</a>
+      </nav>
+
+      <div class="ink-landing-nav-actions">
+        <button type="button"
+                class="ink-landing-theme-toggle"
+                [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+                (click)="themeService.toggleTheme()">
+          <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+        <button mat-stroked-button
+                class="ink-landing-btn-demo"
+                (click)="exploreDemo()">
+          <span>Try Demo</span>
+        </button>
+        <button mat-flat-button
+                color="primary"
+                class="ink-landing-btn-editor"
+                (click)="startWriting()">
+          <span>Open Editor</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="ink-landing-hero">
+    <div class="ink-hero-badge">
+      <span class="badge-dot"></span>
+      <span>Modern Block &amp; Markdown Canvas</span>
+    </div>
+
+    <h1 class="ink-hero-headline">
+      Thoughtful Writing,<br />
+      <span class="gradient-text">Flawless Presentation.</span>
+    </h1>
+
+    <p class="ink-hero-subhead">
+      A distraction-free rich-text and markdown editor with instant preview, interactive tables,
+      syntax-highlighted code blocks, offline IndexedDB auto-save, and zero-setup portable link sharing.
+    </p>
+
+    <div class="ink-hero-cta-group">
+      <button mat-flat-button
+              color="primary"
+              class="ink-hero-btn-primary"
+              (click)="startWriting()">
+        <mat-icon>edit</mat-icon>
+        <span>Start Writing</span>
+      </button>
+      <button mat-stroked-button
+              class="ink-hero-btn-secondary"
+              (click)="newDocument()">
+        <mat-icon>add</mat-icon>
+        <span>New Blank Doc</span>
+      </button>
+      <button mat-stroked-button
+              class="ink-hero-btn-tertiary"
+              (click)="exploreDemo()">
+        <mat-icon>play_circle</mat-icon>
+        <span>Explore Demo</span>
+      </button>
+    </div>
+
+    <div class="ink-hero-metrics">
+      <div class="metric-item">
+        <mat-icon>offline_bolt</mat-icon>
+        <span>100% Offline (IndexedDB)</span>
+      </div>
+      <div class="metric-dot">·</div>
+      <div class="metric-item">
+        <mat-icon>lock</mat-icon>
+        <span>Private &amp; Client-Side</span>
+      </div>
+      <div class="metric-dot">·</div>
+      <div class="metric-item">
+        <mat-icon>share</mat-icon>
+        <span>Portable Gzip Sharing</span>
+      </div>
+      <div class="metric-dot">·</div>
+      <div class="metric-item">
+        <mat-icon>download</mat-icon>
+        <span>PDF, Word &amp; Markdown Export</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase / Live Teaser Card -->
+  <section id="showcase" class="ink-landing-showcase">
+    <div class="ink-showcase-window">
+      <div class="ink-window-bar">
+        <div class="window-dots">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="window-title">Inkframe Workspace — Live Document Canvas</div>
+        <div class="window-actions">
+          <button mat-button class="window-action-btn" (click)="startWriting()">
+            <span>Launch Fullscreen</span>
+            <mat-icon>fullscreen</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="ink-showcase-content" (click)="startWriting()" title="Click to open full editor">
+        <div class="ink-mock-editor">
+          <h2>✨ Welcome to Your Next Document</h2>
+          <p>Inkframe unites the speed of pure Markdown with the refined elegance of a desktop publishing tool. Designed for deep focus, structured documentation, and quick publishing.</p>
+          
+          <div class="ink-mock-checklist">
+            <div class="mock-check-item checked">
+              <mat-icon>check_box</mat-icon>
+              <span>Interactive checklist with keyboard toggle</span>
+            </div>
+            <div class="mock-check-item checked">
+              <mat-icon>check_box</mat-icon>
+              <span>Dynamic tables with column insertion and cell alignment</span>
+            </div>
+            <div class="mock-check-item">
+              <mat-icon>check_box_outline_blank</mat-icon>
+              <span>Syntax highlighted code blocks for 15+ languages</span>
+            </div>
+          </div>
+
+          <div class="ink-showcase-overlay">
+            <button mat-flat-button color="primary" class="btn-jump-editor" (click)="startWriting()">
+              <mat-icon>edit_note</mat-icon>
+              <span>Click anywhere to start editing</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="ink-landing-features">
+    <div class="ink-section-header">
+      <span class="section-tag">ENGINEERED FOR EXCELLENCE</span>
+      <h2>Everything you need for serious documentation</h2>
+      <p>Built from the ground up on ProseMirror and Angular Signals with extreme attention to typographic fidelity.</p>
+    </div>
+
+    <div class="ink-features-grid">
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-blue">
+          <mat-icon>format_shapes</mat-icon>
+        </div>
+        <h3>Slash Commands &amp; Block Architecture</h3>
+        <p>Type <code>/</code> to seamlessly summon headings, code blocks, task lists, bulleted items, blockquotes, and tables without reaching for your mouse.</p>
+      </div>
+
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-purple">
+          <mat-icon>table_chart</mat-icon>
+        </div>
+        <h3>Interactive Tables &amp; Rich Cells</h3>
+        <p>Full spreadsheet-grade tables with dynamic column handles, row controls, text alignments, cell backgrounds, and embedded inline images.</p>
+      </div>
+
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-pink">
+          <mat-icon>code</mat-icon>
+        </div>
+        <h3>IDE-Grade Code Blocks</h3>
+        <p>Includes dynamic line numbering gutters, word-wrap toggle, one-click clipboard copy, and syntax highlighting across 15+ programming languages.</p>
+      </div>
+
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-amber">
+          <mat-icon>image</mat-icon>
+        </div>
+        <h3>Dual-Engine Image Support</h3>
+        <p>Paste or upload local photos securely into IndexedDB or embed external image links, equipped with full lightbox zoom, inspection, and download.</p>
+      </div>
+
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-emerald">
+          <mat-icon>share</mat-icon>
+        </div>
+        <h3>Instant Portable Sharing</h3>
+        <p>Generate compact Gzip compressed share URLs or short cloud links. Readers receive a clean, read-only document view with zero interface clutter.</p>
+      </div>
+
+      <div class="ink-feature-card">
+        <div class="card-icon gradient-indigo">
+          <mat-icon>file_download</mat-icon>
+        </div>
+        <h3>Universal Import &amp; Export</h3>
+        <p>Export your documents anytime as PDF (.pdf), Microsoft Word (.doc), Markdown (.md), or raw HTML with complete styling and image retention.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Shortcuts Quick Guide -->
+  <section id="shortcuts" class="ink-landing-shortcuts">
+    <div class="ink-section-header">
+      <span class="section-tag">KEYBOARD-FIRST WORKFLOW</span>
+      <h2>Keep your hands on the keyboard</h2>
+      <p>Speed up your writing with intuitive, standard keyboard shortcuts.</p>
+    </div>
+
+    <div class="ink-shortcuts-grid">
+      <div class="shortcut-pill">
+        <span class="sc-label">Bold</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>B</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Italic</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>I</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Underline</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>U</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Strikethrough</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Save Document</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>S</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Slash Commands</span>
+        <span class="sc-keys"><kbd>/</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Task Checklist</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>6</kbd></span>
+      </div>
+      <div class="shortcut-pill">
+        <span class="sc-label">Clear Formatting</span>
+        <span class="sc-keys"><kbd>Ctrl</kbd> + <kbd>\</kbd></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA Banner -->
+  <section class="ink-landing-bottom-cta">
+    <div class="ink-bottom-cta-card">
+      <h2>Start writing with clarity today</h2>
+      <p>Zero signups, zero tracking, and zero servers required to begin. Your document is stored privately in your browser.</p>
+      <div class="cta-actions">
+        <button mat-flat-button color="primary" class="ink-hero-btn-primary" (click)="startWriting()">
+          <mat-icon>edit_note</mat-icon>
+          <span>Launch Inkframe Editor</span>
+        </button>
+        <button mat-stroked-button class="ink-hero-btn-secondary" (click)="exploreDemo()">
+          <span>Explore Demo</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Landing Footer -->
+  <footer class="ink-landing-footer">
+    <div class="ink-footer-container">
+      <div class="footer-brand" routerLink="/">
+        <mat-icon>edit_note</mat-icon>
+        <span class="ink-title">Inkframe</span>
+      </div>
+      <div class="footer-links">
+        <a routerLink="/editor" class="footer-link">Editor</a>
+        <button mat-button (click)="exploreDemo()">Demo</button>
+        <button mat-button (click)="newDocument()">New Doc</button>
+        <a href="#features" class="footer-link">Features</a>
+        <a href="#shortcuts" class="footer-link">Shortcuts</a>
+      </div>
+      <div class="footer-copy">
+        <span>&copy; Inkframe. Client-side, privacy-first editor.</span>
+      </div>
+    </div>
+  </footer>
+</div>

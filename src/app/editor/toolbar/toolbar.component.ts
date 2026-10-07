@@ -662,10 +662,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
 
       &.ink-tb-theme-toggle {
         mat-icon {
-          transition: transform 0.25s ease, color 0.15s ease;
-        }
-        &:hover mat-icon {
-          transform: rotate(20deg);
+          transition: color 0.15s ease;
         }
       }
 
@@ -792,6 +789,6 @@ export class ToolbarComponent {
   }
 
   protected openHistory(): void {
-    // Snapshot revision history
+    this.svc.requestOpenHistory();
   }
 }

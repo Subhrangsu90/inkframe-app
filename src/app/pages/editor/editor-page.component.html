@@ -1,0 +1,360 @@
+@if (isPublicView()) {
+  <!-- Pure Content-Only Shared View (Only content, no toolbar, no navbar, no buttons) -->
+  <div class="ink-pure-page">
+    <span class="ink-title" style="display:none">{{ title() }}</span>
+    <main class="ink-pure-viewport">
+      <div class="ink-doc-page">
+        <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()" (click)="onPreviewClick($event)"></div>
+      </div>
+    </main>
+  </div>
+} @else {
+  <!-- Main Editor Application with Editor & Preview Tabs -->
+  <div class="ink-app">
+    <!-- Clean Minimalist Navigation Bar -->
+    <header class="ink-navbar">
+      <div class="ink-nav-left">
+        <!-- Back to Landing Page Button -->
+        <a mat-button
+           routerLink="/"
+           class="ink-nav-home-btn"
+           matTooltip="Back to Landing Page">
+          <mat-icon>arrow_back</mat-icon>
+          <span>Home</span>
+        </a>
+
+        <div class="ink-nav-divider"></div>
+
+        <a routerLink="/" class="ink-brand-logo" matTooltip="Inkframe Home">
+          <mat-icon>edit_note</mat-icon>
+        </a>
+        <span class="ink-title">{{ title() }}</span>
+
+        <div class="ink-nav-divider"></div>
+
+        <!-- Document Switcher & History Button -->
+        <button type="button"
+                class="ink-nav-doc-btn"
+                (click)="openDocDrawer()"
+                matTooltip="Documents & History">
+          <mat-icon class="folder-icon">folder_open</mat-icon>
+          <span class="doc-title-text">{{ currentDocTitle() }}</span>
+          <span class="doc-count-badge">{{ docList().length }}</span>
+          <mat-icon class="caret">expand_more</mat-icon>
+        </button>
+      </div>
+
+      <!-- Segmented Tab Controls: Editor vs Preview -->
+      <div class="ink-tab-group" role="tablist" aria-label="Editor view modes">
+        <button type="button"
+                #editTabBtn
+                role="tab"
+                class="ink-tab-btn"
+                [class.active]="activeTab() === 'edit'"
+                [attr.aria-selected]="activeTab() === 'edit'"
+                (click)="setTab('edit'); editTabBtn.blur()"
+                matTooltip="Edit document with toolbar">
+          <mat-icon>edit</mat-icon>
+          <span>Editor</span>
+        </button>
+        <button type="button"
+                #previewTabBtn
+                role="tab"
+                class="ink-tab-btn"
+                [class.active]="activeTab() === 'preview'"
+                [attr.aria-selected]="activeTab() === 'preview'"
+                (click)="setTab('preview'); previewTabBtn.blur()"
+                matTooltip="Preview rendered document (no toolbar)">
+          <mat-icon>visibility</mat-icon>
+          <span>Preview</span>
+        </button>
+      </div>
+
+      <!-- Right Actions: Word Count, New Doc, Save & Share -->
+      <div class="ink-nav-right">
+        <div class="ink-stats-pill" matTooltip="Document word and character counts">
+          <span>{{ wordCount() }} words</span>
+          <span class="stat-sep">·</span>
+          <span>{{ charCount() }} chars</span>
+        </div>
+
+        <!-- New Document Button -->
+        <button type="button"
+                class="ink-btn-new"
+                (click)="createNewDoc()"
+                matTooltip="Create New Document">
+          <mat-icon>add</mat-icon>
+          <span>New</span>
+        </button>
+
+        <!-- Save Button -->
+        <button mat-stroked-button
+                class="ink-btn-save"
+                [class.saved]="justSaved()"
+                (click)="saveDocument()"
+                [matTooltip]="justSaved() ? 'Document saved to IndexedDB!' : 'Save document (Ctrl + S)'">
+          <mat-icon>{{ justSaved() ? 'check' : 'save' }}</mat-icon>
+          <span>{{ justSaved() ? 'Saved' : 'Save' }}</span>
+        </button>
+
+        <!-- Share Button (Generates content-only share link) -->
+        <button mat-flat-button
+                color="primary"
+                class="ink-btn-share"
+                (click)="shareDocument()"
+                matTooltip="Create and copy clean content-only share link">
+          <mat-icon>share</mat-icon>
+          <span>Share</span>
+        </button>
+
+        <!-- More Actions Menu -->
+        <button mat-icon-button
+                class="ink-btn-more"
+                [matMenuTriggerFor]="moreAppMenu"
+                matTooltip="More actions">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #moreAppMenu="matMenu" class="ink-toolbar-mat-menu">
+          <button mat-menu-item (click)="openDocDrawer()">
+            <mat-icon>history</mat-icon>
+            <span>Documents & History</span>
+          </button>
+          <button mat-menu-item (click)="createNewDoc()">
+            <mat-icon>add</mat-icon>
+            <span>New Document</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="exportPdf()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Export as PDF (.pdf)</span>
+          </button>
+          <button mat-menu-item (click)="exportDocs()">
+            <mat-icon>description</mat-icon>
+            <span>Export as Word (.doc)</span>
+          </button>
+          <button mat-menu-item (click)="exportMarkdown()">
+            <mat-icon>code</mat-icon>
+            <span>Export as Markdown (.md)</span>
+          </button>
+          <button mat-menu-item (click)="exportHtml()">
+            <mat-icon>html</mat-icon>
+            <span>Export as HTML (.html)</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="importMarkdown()">
+            <mat-icon>file_upload</mat-icon>
+            <span>Import Markdown / Text</span>
+          </button>
+          <button mat-menu-item (click)="loadDemo()">
+            <mat-icon>auto_stories</mat-icon>
+            <span>Reload Demo Document</span>
+          </button>
+        </mat-menu>
+      </div>
+    </header>
+
+    <!-- Main Workspace (Editor / Preview Tabs) -->
+    <main class="ink-workspace">
+      <!-- 1. Editor Tab View: Interactive rich-text editing engine -->
+      <div class="ink-tab-pane ink-editor-pane" [style.display]="activeTab() === 'edit' ? 'block' : 'none'">
+        <ink-editor
+          #inkEditor
+          [initialDoc]="currentDoc()"
+          (changed)="onChanged($event)"
+          (historyRequested)="openDocDrawer()" />
+      </div>
+
+      <!-- 2. Preview Tab View: Pure rendered document (NO TOOLBAR) -->
+      <div class="ink-tab-pane ink-preview-pane" [style.display]="activeTab() === 'preview' ? 'block' : 'none'">
+        <div class="ink-preview-wrapper">
+          <div class="ink-preview-header">
+            <div class="ink-preview-status">
+              <span class="preview-dot"></span>
+              <span class="preview-label">Document Preview</span>
+              <span class="preview-badge">Read-only</span>
+            </div>
+            <div class="ink-preview-actions">
+              <span class="preview-hint">Rendered view without formatting toolbar</span>
+              <button type="button"
+                      class="ink-preview-theme-btn"
+                      [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                      [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+                      (click)="themeService.toggleTheme()">
+                <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="ink-preview-viewport">
+            <div class="ink-doc-page">
+              <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()" (click)="onPreviewClick($event)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Documents & History Slide-Over Drawer -->
+    @if (showDocDrawer()) {
+      <div class="ink-drawer-backdrop" (click)="closeDocDrawer()">
+        <aside class="ink-drawer" (click)="$event.stopPropagation()">
+          <!-- Drawer Header -->
+          <div class="ink-drawer-header">
+            <div class="drawer-title-group">
+              <div class="drawer-title-row">
+                <mat-icon class="drawer-icon">folder_open</mat-icon>
+                <h2>Documents & History</h2>
+                <span class="drawer-badge">{{ docList().length }}</span>
+              </div>
+              <p class="drawer-sub">Offline IndexedDB storage in your browser</p>
+            </div>
+            <div class="drawer-header-actions">
+              <button type="button" class="btn-create-doc" (click)="createNewDoc()">
+                <mat-icon>add</mat-icon>
+                <span>New</span>
+              </button>
+              <button type="button" class="btn-close-drawer" (click)="closeDocDrawer()" aria-label="Close drawer">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Filter Bar -->
+          <div class="ink-drawer-search">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input type="text"
+                   placeholder="Filter documents..."
+                   [ngModel]="searchQuery()"
+                   (ngModelChange)="searchQuery.set($event)" />
+            @if (searchQuery()) {
+              <button type="button" class="btn-clear-search" (click)="searchQuery.set('')">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+
+          <!-- Documents List -->
+          <div class="ink-drawer-list">
+            @for (item of filteredDocs(); track item.id) {
+              <div class="ink-doc-item"
+                   [class.active]="item.id === activeDocId()"
+                   (click)="switchDoc(item.id)">
+                <div class="doc-item-icon">
+                  <mat-icon>{{ item.id === activeDocId() ? 'edit_note' : 'description' }}</mat-icon>
+                </div>
+                <div class="doc-item-body">
+                  <div class="doc-item-title-row">
+                    <span class="doc-item-title">{{ item.title }}</span>
+                    @if (item.id === activeDocId()) {
+                      <span class="active-pill">Active</span>
+                    }
+                  </div>
+                  <div class="doc-item-meta">
+                    <span>{{ item.wordCount }} words</span>
+                    <span class="meta-dot">·</span>
+                    <span>Edited {{ formatTime(item.updatedAt) }}</span>
+                  </div>
+                </div>
+                <div class="doc-item-actions">
+                  <button type="button"
+                          class="item-action-btn"
+                          matTooltip="Duplicate document"
+                          (click)="duplicateDoc(item.id, $event)">
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                  <button type="button"
+                          class="item-action-btn delete-btn"
+                          matTooltip="Delete document"
+                          (click)="deleteDoc(item.id, $event)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <div class="ink-drawer-empty">
+                <mat-icon>search_off</mat-icon>
+                <p>No documents matching your search</p>
+                <button type="button" class="btn-create-doc-empty" (click)="createNewDoc()">
+                  <mat-icon>add</mat-icon>
+                  <span>Create New Document</span>
+                </button>
+              </div>
+            }
+          </div>
+        </aside>
+      </div>
+    }
+
+    <!-- Share Link Modal -->
+    @if (showShareModal()) {
+      <div class="ink-modal-backdrop" (click)="closeShareModal()">
+        <div class="ink-modal-dialog" (click)="$event.stopPropagation()">
+          <div class="ink-modal-header">
+            <div class="modal-info">
+              <h2>Share Document</h2>
+              <p class="modal-subtitle">Share link with clean content-only view</p>
+            </div>
+            <button mat-icon-button (click)="closeShareModal()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="ink-share-modal-body">
+            <div class="share-info-banner">
+              <mat-icon>visibility</mat-icon>
+              <span>Anyone opening this link will see <strong>only the clean content</strong> — no toolbar, no navigation bar, and no editor interface.</span>
+            </div>
+
+            <div class="share-input-row">
+              <input type="text"
+                     class="share-url-field"
+                     [class.is-loading]="isGeneratingShareLink()"
+                     [value]="isGeneratingShareLink() ? 'Generating portable share link...' : shareUrl()"
+                     readonly
+                     (focus)="$any($event.target).select()" />
+              <button mat-flat-button
+                      color="primary"
+                      class="btn-copy-link"
+                      [disabled]="isGeneratingShareLink() || !shareUrl()"
+                      (click)="copyShareLink()">
+                <mat-icon [class.spin-icon]="isGeneratingShareLink()">
+                  {{ isGeneratingShareLink() ? 'sync' : (copiedShareLink() ? 'check' : 'content_copy') }}
+                </mat-icon>
+                <span>{{ isGeneratingShareLink() ? 'Preparing...' : (copiedShareLink() ? 'Copied' : 'Copy Link') }}</span>
+              </button>
+            </div>
+
+            <div class="share-actions-row">
+              @if (isGeneratingShareLink() || !shareUrl()) {
+                <button mat-stroked-button disabled class="btn-test-preview">
+                  <mat-icon class="spin-icon">sync</mat-icon>
+                  <span>Preparing link...</span>
+                </button>
+              } @else {
+                <a [href]="shareUrl()"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   mat-stroked-button
+                   class="btn-test-preview">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>Open in New Tab</span>
+                </a>
+              }
+              <button mat-button (click)="closeShareModal()">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+@if (previewLightbox(); as lb) {
+  <ink-image-lightbox
+    [src]="lb.src"
+    [alt]="lb.alt || ''"
+    [title]="lb.title || ''"
+    (closed)="closePreviewLightbox()"
+  />
+}

@@ -145,6 +145,7 @@ export class EditorComponent {
   readonly editable = input(true);
   readonly debounceMs = input(300);
   readonly changed = output<StoredDoc>();
+  readonly historyRequested = output<void>();
 
   constructor() {
     // afterNextRender runs only in the browser, so this is SSR-safe.
@@ -160,6 +161,13 @@ export class EditorComponent {
     });
 
     effect(() => this.svc.setEditable(this.editable()));
+
+    effect(() => {
+      const count = this.svc.openHistoryRequested();
+      if (count > 0) {
+        this.zone.run(() => this.historyRequested.emit());
+      }
+    });
 
     inject(DestroyRef).onDestroy(() => {
       clearTimeout(this.timer);

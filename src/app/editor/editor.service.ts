@@ -98,6 +98,12 @@ export class EditorService implements EditorHooks {
   readonly isInTable = signal(false);
 
   readonly imagePreview = signal<ImagePreviewData | null>(null);
+  readonly openHistoryRequested = signal<number>(0);
+  private currentDocSnapshot: StoredDoc | null = null;
+
+  requestOpenHistory(): void {
+    this.openHistoryRequested.update((n) => n + 1);
+  }
 
   readonly tableMenu = signal<TableMenuState | null>(null, {
     equal: (a, b) =>
@@ -142,6 +148,9 @@ export class EditorService implements EditorHooks {
 
   // ── Lifecycle ────────────────────────────────────────────────────
   mount(el: HTMLElement, opts: MountOptions = {}): void {
+    if (opts.doc) {
+      this.currentDocSnapshot = opts.doc;
+    }
     this.onChange = opts.onChange;
     this.editableFlag = opts.editable ?? true;
     const self = this;
@@ -216,16 +225,24 @@ export class EditorService implements EditorHooks {
     this.view?.focus();
   }
 
-  // ── Document IO ──────────────────────────────────────────────────
   getJSON(): StoredDoc {
+    if (!this.view) {
+      return (
+        this.currentDocSnapshot || {
+          schemaVersion: SCHEMA_VERSION,
+          doc: { type: 'doc', content: [] },
+        }
+      );
+    }
     return {
       schemaVersion: SCHEMA_VERSION,
-      doc: this.view!.state.doc.toJSON(),
+      doc: this.view.state.doc.toJSON(),
     };
   }
 
   /** Replace the whole document (loads fresh state, resets undo history). */
   setDoc(stored: StoredDoc): void {
+    this.currentDocSnapshot = stored;
     const v = this.view;
     if (!v) return;
     const state = this.createState(stored, v.state.plugins);

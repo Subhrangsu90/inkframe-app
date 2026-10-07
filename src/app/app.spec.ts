@@ -1,30 +1,87 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { LandingComponent } from './pages/landing/landing.component';
+import { EditorPageComponent } from './pages/editor/editor-page.component';
 import { StoredDoc, imageStorage } from './editor';
 
-describe('App', () => {
+describe('App Root', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-    })
-      .compileComponents();
+      providers: [provideRouter([])],
+    }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('should create the app root shell', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should contain a router outlet', () => {
     const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
+  });
+});
+
+describe('LandingComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LandingComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  it('should create the landing page', () => {
+    const fixture = TestBed.createComponent(LandingComponent);
+    const landing = fixture.componentInstance;
+    expect(landing).toBeTruthy();
+  });
+
+  it('should render brand title and hero headline', async () => {
+    const fixture = TestBed.createComponent(LandingComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.ink-title')?.textContent).toContain('Inkframe');
+    expect(compiled.querySelector('.ink-hero-headline')?.textContent).toContain('Thoughtful Writing');
+  });
+});
+
+describe('EditorPageComponent', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    window.location.hash = '';
+    await TestBed.configureTestingModule({
+      imports: [EditorPageComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    window.location.hash = '';
+  });
+
+  it('should create the editor page', () => {
+    const fixture = TestBed.createComponent(EditorPageComponent);
+    const editorPage = fixture.componentInstance;
+    expect(editorPage).toBeTruthy();
+  });
+
+  it('should render title', async () => {
+    const fixture = TestBed.createComponent(EditorPageComponent);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.ink-title')?.textContent).toContain('Inkframe');
   });
 
   it('should toggle between Editor and Preview tabs', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -50,7 +107,7 @@ describe('App', () => {
   });
 
   it('should generate a share link with view=preview', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -65,7 +122,7 @@ describe('App', () => {
   });
 
   it('should support exportDocs and exportPdf without errors', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -74,8 +131,9 @@ describe('App', () => {
   });
 
   it('should inline image data URLs when sharing a document', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
+    await (app as any).initClientState();
     await fixture.whenStable();
 
     const docWithImage = {
@@ -103,10 +161,9 @@ describe('App', () => {
       },
     };
 
+    (app as any).currentDoc.set(docWithImage);
     if ((app as any).editor()) {
       (app as any).editor().loadDoc(docWithImage);
-    } else {
-      (app as any).currentDoc.set(docWithImage);
     }
     await (app as any).shareDocument();
     fixture.detectChanges();
@@ -120,7 +177,7 @@ describe('App', () => {
   });
 
   it('should resolve preview HTML without broken ink-idb protocols', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -133,7 +190,7 @@ describe('App', () => {
   });
 
   it('should toggle theme between dark and light and synchronize across editor and preview', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -178,7 +235,7 @@ describe('App', () => {
   });
 
   it('should open image lightbox when an image in preview is clicked and close when dismissed', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -223,7 +280,7 @@ describe('App', () => {
   });
 
   it('should persist document to IndexedDB storage and open share modal immediately', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -244,7 +301,7 @@ describe('App', () => {
   });
 
   it('should successfully share and inline images located inside table cells', async () => {
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await fixture.whenStable();
 
@@ -289,10 +346,9 @@ describe('App', () => {
       },
     };
 
-    if ((app as any).editor()) {
+    (app as any).currentDoc.set(docWithTableImage);
+    if ((app as any).editor() && (app as any).editor().svc?.view) {
       (app as any).editor().loadDoc(docWithTableImage);
-    } else {
-      (app as any).currentDoc.set(docWithTableImage);
     }
 
     await (app as any).shareDocument();
@@ -326,12 +382,13 @@ describe('App', () => {
     };
 
     await imageStorage.saveDocument('inkframe_saved_doc', savedDoc);
+    await imageStorage.saveDocument('inkframe_doc_doc_default', savedDoc);
 
     // Simulate truncated URL hash (like the Chromium 384KB URL truncation)
     const truncatedHash = '#share=' + encodeURIComponent('eyJzY2hlbWFWZXJzaW9uIjoxLCJkb2MiOnsidHlwZSI6ImRvYyIsImNvbnRlbnQiOlt7');
     window.location.hash = truncatedHash;
 
-    const fixture = TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(EditorPageComponent);
     const app = fixture.componentInstance;
     await (app as any).initClientState();
     fixture.detectChanges();
@@ -339,5 +396,63 @@ describe('App', () => {
 
     // Verify it recovered from IndexedDB/localStorage rather than crashing or staying on demo
     expect((app as any).currentDoc().doc.content[0].content[0].text).toBe('Recovered Document from Storage');
+  });
+
+  it('should support creating multiple documents, listing history, and switching between them', async () => {
+    const fixture = TestBed.createComponent(EditorPageComponent);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    // Open drawer
+    await (app as any).openDocDrawer();
+    expect((app as any).showDocDrawer()).toBe(true);
+    const initialCount = (app as any).docList().length;
+
+    // Create a new document
+    await (app as any).createNewDoc();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect((app as any).docList().length).toBe(initialCount + 1);
+    expect((app as any).showDocDrawer()).toBe(false);
+
+    const doc2Id = (app as any).activeDocId();
+    expect((app as any).currentDocTitle()).toBe('Untitled Document');
+
+    // Switch back to original doc
+    const firstDocId = (app as any).docList().find((d: any) => d.id !== doc2Id)?.id;
+    if (firstDocId) {
+      await (app as any).switchDoc(firstDocId);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect((app as any).activeDocId()).toBe(firstDocId);
+    }
+  });
+
+  it('should support duplicating and deleting documents from history', async () => {
+    const fixture = TestBed.createComponent(EditorPageComponent);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    const activeId = (app as any).activeDocId();
+    const fakeEvent = { stopPropagation: () => {}, preventDefault: () => {} } as any;
+
+    // Duplicate document
+    await (app as any).duplicateDoc(activeId, fakeEvent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const duplicatedTitle = (app as any).currentDocTitle();
+    expect(duplicatedTitle).toContain('(Copy)');
+    const duplicatedId = (app as any).activeDocId();
+
+    // Delete duplicated document
+    await (app as any).deleteDoc(duplicatedId, fakeEvent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const remaining = (app as any).docList().map((d: any) => d.id);
+    expect(remaining).not.toContain(duplicatedId);
   });
 });

@@ -17,7 +17,8 @@ interface ImageRecord extends StoredImageMetadata {
 
 const DB_NAME = 'inkframe_storage';
 const STORE_NAME = 'images';
-const DB_VERSION = 1;
+const DOC_STORE_NAME = 'documents';
+const DB_VERSION = 2;
 
 class ImageStorage {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
@@ -39,6 +40,9 @@ class ImageStorage {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(DOC_STORE_NAME)) {
+          db.createObjectStore(DOC_STORE_NAME);
         }
       };
 
@@ -325,6 +329,60 @@ class ImageStorage {
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
+  }
+
+  /**
+   * Persists a document to IndexedDB asynchronously without blocking the UI thread.
+   * Includes fallback to localStorage if IndexedDB is inaccessible.
+   */
+  async saveDocument<T = any>(key: string, doc: T): Promise<void> {
+    if (!this.isBrowser()) return;
+    try {
+      const db = await this.getDB();
+      if (!db) throw new Error('IndexedDB unavailable');
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(DOC_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(DOC_STORE_NAME);
+        const req = store.put(doc, key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.warn('Failed to save to IndexedDB, fallback to localStorage:', e);
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(key, JSON.stringify(doc));
+        }
+      } catch {}
+    }
+  }
+
+  /**
+   * Retrieves a persisted document from IndexedDB asynchronously with localStorage fallback.
+   */
+  async getDocument<T = any>(key: string): Promise<T | null> {
+    if (!this.isBrowser()) return null;
+    try {
+      const db = await this.getDB();
+      if (!db) throw new Error('IndexedDB unavailable');
+      const result = await new Promise<T | null>((resolve) => {
+        const tx = db.transaction(DOC_STORE_NAME, 'readonly');
+        const store = tx.objectStore(DOC_STORE_NAME);
+        const req = store.get(key);
+        req.onsuccess = () => resolve((req.result as T) ?? null);
+        req.onerror = () => resolve(null);
+      });
+      if (result) return result;
+    } catch {}
+
+    // Fallback to localStorage (for existing saved docs or fallback)
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const item = localStorage.getItem(key);
+        if (item) return JSON.parse(item) as T;
+      }
+    } catch {}
+    return null;
   }
 }
 

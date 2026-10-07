@@ -175,4 +175,70 @@ describe('App', () => {
 
     expect(themeService.theme()).toBe('dark');
   });
+
+  it('should open image lightbox when an image in preview is clicked and close when dismissed', async () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    expect((app as any).previewLightbox()).toBeNull();
+
+    // Simulate clicking an img element inside preview
+    const fakeImg = document.createElement('img');
+    fakeImg.src = 'https://example.com/test.png';
+    fakeImg.alt = 'Test Image';
+    fakeImg.title = 'Test Title';
+
+    let prevented = false;
+    let stopped = false;
+    const fakeEvent = {
+      target: fakeImg,
+      preventDefault: () => { prevented = true; },
+      stopPropagation: () => { stopped = true; },
+    } as unknown as MouseEvent;
+
+    (app as any).onPreviewClick(fakeEvent);
+    expect(prevented).toBe(true);
+    expect(stopped).toBe(true);
+    expect((app as any).previewLightbox()).toEqual({
+      src: 'https://example.com/test.png',
+      alt: 'Test Image',
+      title: 'Test Title',
+    });
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('ink-image-lightbox')).toBeTruthy();
+
+    // Dismiss lightbox
+    (app as any).closePreviewLightbox();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect((app as any).previewLightbox()).toBeNull();
+    expect(compiled.querySelector('ink-image-lightbox')).toBeNull();
+  });
+
+  it('should persist document to IndexedDB storage and open share modal immediately', async () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    await fixture.whenStable();
+
+    await (app as any).saveDocument();
+    expect((app as any).isDirty()).toBe(false);
+
+    // Trigger share
+    const sharePromise = (app as any).shareDocument();
+    // Modal opens immediately upon calling
+    expect((app as any).showShareModal()).toBe(true);
+
+    await sharePromise;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect((app as any).isGeneratingShareLink()).toBe(false);
+    expect((app as any).shareUrl()).toContain('view=preview');
+  });
 });

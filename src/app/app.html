@@ -4,7 +4,7 @@
     <span class="ink-title" style="display:none">{{ title() }}</span>
     <main class="ink-pure-viewport">
       <div class="ink-doc-page">
-        <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()"></div>
+        <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()" (click)="onPreviewClick($event)"></div>
       </div>
     </main>
   </div>
@@ -54,6 +54,16 @@
           <span>{{ charCount() }} chars</span>
         </div>
 
+        <!-- Save Button (Outside 3-dot menu) -->
+        <button mat-stroked-button
+                class="ink-btn-save"
+                [class.saved]="justSaved()"
+                (click)="saveDocument()"
+                [matTooltip]="justSaved() ? 'Document saved to IndexedDB!' : 'Save document (Ctrl + S)'">
+          <mat-icon>{{ justSaved() ? 'check' : 'save' }}</mat-icon>
+          <span>{{ justSaved() ? 'Saved' : 'Save' }}</span>
+        </button>
+
         <!-- Share Button (Generates content-only share link) -->
         <button mat-flat-button
                 color="primary"
@@ -72,11 +82,6 @@
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #moreAppMenu="matMenu" class="ink-toolbar-mat-menu">
-          <button mat-menu-item (click)="saveDocument()">
-            <mat-icon>save</mat-icon>
-            <span>Save locally</span>
-          </button>
-          <mat-divider />
           <button mat-menu-item (click)="exportPdf()">
             <mat-icon>picture_as_pdf</mat-icon>
             <span>Export as PDF (.pdf)</span>
@@ -136,7 +141,7 @@
           </div>
           <div class="ink-preview-viewport">
             <div class="ink-doc-page">
-              <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()"></div>
+              <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()" (click)="onPreviewClick($event)"></div>
             </div>
           </div>
         </div>
@@ -166,27 +171,38 @@
             <div class="share-input-row">
               <input type="text"
                      class="share-url-field"
-                     [value]="shareUrl()"
+                     [class.is-loading]="isGeneratingShareLink()"
+                     [value]="isGeneratingShareLink() ? 'Generating portable share link...' : shareUrl()"
                      readonly
                      (focus)="$any($event.target).select()" />
               <button mat-flat-button
                       color="primary"
                       class="btn-copy-link"
+                      [disabled]="isGeneratingShareLink() || !shareUrl()"
                       (click)="copyShareLink()">
-                <mat-icon>{{ copiedShareLink() ? 'check' : 'content_copy' }}</mat-icon>
-                <span>{{ copiedShareLink() ? 'Copied' : 'Copy Link' }}</span>
+                <mat-icon [class.spin-icon]="isGeneratingShareLink()">
+                  {{ isGeneratingShareLink() ? 'sync' : (copiedShareLink() ? 'check' : 'content_copy') }}
+                </mat-icon>
+                <span>{{ isGeneratingShareLink() ? 'Preparing...' : (copiedShareLink() ? 'Copied' : 'Copy Link') }}</span>
               </button>
             </div>
 
             <div class="share-actions-row">
-              <a [href]="shareUrl()"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 mat-stroked-button
-                 class="btn-test-preview">
-                <mat-icon>open_in_new</mat-icon>
-                <span>Open in New Tab</span>
-              </a>
+              @if (isGeneratingShareLink() || !shareUrl()) {
+                <button mat-stroked-button disabled class="btn-test-preview">
+                  <mat-icon class="spin-icon">sync</mat-icon>
+                  <span>Preparing link...</span>
+                </button>
+              } @else {
+                <a [href]="shareUrl()"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   mat-stroked-button
+                   class="btn-test-preview">
+                  <mat-icon>open_in_new</mat-icon>
+                  <span>Open in New Tab</span>
+                </a>
+              }
               <button mat-button (click)="closeShareModal()">
                 Close
               </button>
@@ -196,4 +212,13 @@
       </div>
     }
   </div>
+}
+
+@if (previewLightbox(); as lb) {
+  <ink-image-lightbox
+    [src]="lb.src"
+    [alt]="lb.alt || ''"
+    [title]="lb.title || ''"
+    (closed)="closePreviewLightbox()"
+  />
 }

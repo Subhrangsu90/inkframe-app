@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  HostListener,
   inject,
   signal,
   viewChild,
@@ -15,6 +16,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   EditorComponent,
+  ImageLightboxComponent,
+  type ImagePreviewPayload,
   StoredDoc,
   SCHEMA_VERSION,
   schema,
@@ -275,6 +278,33 @@ const DEMO_DOC: StoredDoc = {
           },
         ],
       },
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: 'Image Preview & Lightbox' }],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'Click on the image below in Editor, Preview, or Shared view to open the interactive full-screen lightbox:',
+          },
+        ],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'image',
+            attrs: {
+              src: 'https://plus.unsplash.com/premium_photo-1790376728632-cb5a4b08f437?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+              alt: 'Abstract Art - Inkframe Demonstration',
+              title: 'Abstract Art - Inkframe Demonstration',
+            },
+          },
+        ],
+      },
     ],
   },
 };
@@ -283,9 +313,10 @@ function encodeDocToUrl(doc: StoredDoc): string {
   try {
     const json = JSON.stringify(doc);
     const bytes = new TextEncoder().encode(json);
+    const CHUNK_SIZE = 0x8000;
     let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
     }
     const b64 = btoa(binary);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -303,8 +334,9 @@ function decodeDocFromUrl(hash: string): StoredDoc | null {
     if (!match) return null;
     const b64 = decodeURIComponent(match[1]);
     const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
     const json = new TextDecoder().decode(bytes);
@@ -326,6 +358,7 @@ function decodeDocFromUrl(hash: string): StoredDoc | null {
     MatTooltipModule,
     MatDividerModule,
     EditorComponent,
+    ImageLightboxComponent,
   ],
   selector: 'app-root',
   host: {
@@ -344,9 +377,12 @@ export class App {
   protected readonly isPublicView = signal(false);
   protected readonly isDirty = signal(false);
   protected readonly showShareModal = signal(false);
+  protected readonly isGeneratingShareLink = signal(false);
   protected readonly shareUrl = signal('');
   protected readonly copiedShareLink = signal(false);
+  protected readonly justSaved = signal(false);
   protected readonly sanitizedPreviewHtml = signal<SafeHtml>('');
+  protected readonly previewLightbox = signal<ImagePreviewPayload | null>(null);
 
   protected readonly editor = viewChild<EditorComponent>('inkEditor');
 
@@ -361,11 +397,11 @@ export class App {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.initClientState();
+      void this.initClientState();
     }
   }
 
-  private initClientState(): void {
+  private async initClientState(): Promise<void> {
     try {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
@@ -382,18 +418,14 @@ export class App {
           this.shareUrl.set(window.location.href);
         }
       } else {
-        const local = localStorage.getItem('inkframe_saved_doc');
-        if (local) {
-          try {
-            const parsed = JSON.parse(local) as StoredDoc;
-            if (parsed && parsed.doc) {
-              this.currentDoc.set(parsed);
-            }
-          } catch {}
+        // Asynchronously load from IndexedDB with localStorage fallback
+        const saved = await imageStorage.getDocument<StoredDoc>('inkframe_saved_doc');
+        if (saved && saved.doc) {
+          this.currentDoc.set(saved);
         }
       }
 
-      this.refreshPreviewHtml();
+      await this.refreshPreviewHtml();
     } catch (e) {
       console.error('Error initializing client state:', e);
     }
@@ -410,6 +442,7 @@ export class App {
   protected async onChanged(doc: StoredDoc): Promise<void> {
     this.currentDoc.set(doc);
     this.isDirty.set(true);
+    void imageStorage.saveDocument('inkframe_saved_doc', doc);
     if (this.activeTab() === 'preview') {
       await this.refreshPreviewHtml();
     }
@@ -426,25 +459,31 @@ export class App {
 
   protected async shareDocument(): Promise<void> {
     const ed = this.editor();
+    ed?.flush();
     const doc = ed ? ed.getJSON() : this.currentDoc();
 
-    // In-line all ink-idb images as Base64 data URLs for portable sharing
-    const shareableDoc = await imageStorage.inlineDocImages(doc);
-    this.currentDoc.set(shareableDoc);
-
-    // Save state
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('inkframe_saved_doc', JSON.stringify(shareableDoc));
-    }
-    this.isDirty.set(false);
-
-    // Generate content-only share URL
-    const url = encodeDocToUrl(shareableDoc);
-    this.shareUrl.set(url);
-
-    // Copy to clipboard immediately and open modal
-    this.copyShareLink();
+    // 1. Open the modal INSTANTLY (0ms response to user click!)
     this.showShareModal.set(true);
+    this.isGeneratingShareLink.set(true);
+
+    try {
+      // In-line all ink-idb images as Base64 data URLs for portable sharing
+      const shareableDoc = await imageStorage.inlineDocImages(doc);
+      this.currentDoc.set(shareableDoc);
+
+      // Save asynchronously to IndexedDB (non-blocking!)
+      void imageStorage.saveDocument('inkframe_saved_doc', shareableDoc);
+      this.isDirty.set(false);
+
+      // Generate content-only share URL with fast chunked encoding
+      const url = encodeDocToUrl(shareableDoc);
+      this.shareUrl.set(url);
+
+      // Copy to clipboard in background
+      await this.copyShareLink();
+    } finally {
+      this.isGeneratingShareLink.set(false);
+    }
   }
 
   protected async copyShareLink(): Promise<void> {
@@ -470,26 +509,40 @@ export class App {
     }
   }
 
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      void this.saveDocument();
+    }
+  }
+
+  @HostListener('window:hashchange')
+  onHashChange(): void {
+    void this.initClientState();
+  }
+
   protected closeShareModal(): void {
     this.showShareModal.set(false);
   }
 
-  protected saveDocument(): void {
+  protected async saveDocument(): Promise<void> {
     const ed = this.editor();
     const doc = ed ? ed.getJSON() : this.currentDoc();
     this.currentDoc.set(doc);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('inkframe_saved_doc', JSON.stringify(doc));
-    }
+    await imageStorage.saveDocument('inkframe_saved_doc', doc);
     this.isDirty.set(false);
+    this.justSaved.set(true);
+    setTimeout(() => this.justSaved.set(false), 2000);
   }
 
-  protected loadDemo(): void {
+  protected async loadDemo(): Promise<void> {
     this.editor()?.loadDoc(DEMO_DOC);
     this.currentDoc.set(DEMO_DOC);
     this.isDirty.set(false);
     this.shareUrl.set('');
-    this.refreshPreviewHtml();
+    await imageStorage.saveDocument('inkframe_saved_doc', DEMO_DOC);
+    await this.refreshPreviewHtml();
   }
 
   protected convertDocToHtml(stored: StoredDoc): string {
@@ -500,6 +553,24 @@ export class App {
       console.error('Error converting doc to HTML:', e);
       return '';
     }
+  }
+
+  protected onPreviewClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    const img = target?.closest('img');
+    if (img && img.src) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.previewLightbox.set({
+        src: img.src,
+        alt: img.getAttribute('alt') || '',
+        title: img.getAttribute('title') || '',
+      });
+    }
+  }
+
+  protected closePreviewLightbox(): void {
+    this.previewLightbox.set(null);
   }
 
   // ── Export & Import (PDF, Docs, Markdown, HTML) ───────────────────
@@ -648,7 +719,7 @@ export class App {
       try {
         const node = schema.nodeFromJSON(migrate(this.currentDoc()));
         md = docToMarkdown(node);
-      } catch {}
+      } catch { }
     }
     md = await imageStorage.resolveMarkdownImages(md);
     this.downloadFile(md, 'inkframe-document.md', 'text/markdown');

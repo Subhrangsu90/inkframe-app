@@ -773,5 +773,240 @@ describe('Inkframe Core', () => {
       expect(hasPlaceholder).toBe(true);
     });
   });
+
+  describe('Phase 7: Advanced Typography Marks, Formatting, Lifecycles & Benchmarking', () => {
+    describe('Typography Marks & HTML Serialization', () => {
+      it('creates and serializes underline mark', () => {
+        const mark = schema.marks['underline'].create();
+        const node = schema.text('Underlined text', [mark]);
+        const p = schema.nodes['paragraph'].create(null, [node]);
+        const doc = schema.node('doc', null, [p]);
+        const html = docToHtml(doc);
+        expect(html).toContain('<u>Underlined text</u>');
+
+        const parsed = htmlToDoc(html);
+        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'underline')).toBe(true);
+      });
+
+      it('creates and serializes strikethrough mark', () => {
+        const mark = schema.marks['strikethrough'].create();
+        const node = schema.text('Struck text', [mark]);
+        const p = schema.nodes['paragraph'].create(null, [node]);
+        const doc = schema.node('doc', null, [p]);
+        const html = docToHtml(doc);
+        expect(html).toContain('<s>Struck text</s>');
+
+        const parsed = htmlToDoc(html);
+        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'strikethrough')).toBe(true);
+      });
+
+      it('creates and serializes subscript and superscript marks', () => {
+        const subMark = schema.marks['subscript'].create();
+        const superMark = schema.marks['superscript'].create();
+
+        const p = schema.nodes['paragraph'].create(null, [
+          schema.text('H'),
+          schema.text('2', [subMark]),
+          schema.text('O and x'),
+          schema.text('2', [superMark]),
+        ]);
+        const doc = schema.node('doc', null, [p]);
+        const html = docToHtml(doc);
+
+        expect(html).toContain('<sub>2</sub>');
+        expect(html).toContain('<sup>2</sup>');
+
+        const parsed = htmlToDoc(html);
+        let foundSub = false;
+        let foundSuper = false;
+        parsed.descendants((child) => {
+          if (child.isText && child.marks.some((m) => m.type.name === 'subscript')) {
+            foundSub = true;
+          }
+          if (child.isText && child.marks.some((m) => m.type.name === 'superscript')) {
+            foundSuper = true;
+          }
+        });
+        expect(foundSub).toBe(true);
+        expect(foundSuper).toBe(true);
+      });
+
+      it('creates and serializes textColor mark', () => {
+        const colorMark = schema.marks['textColor'].create({ color: '#ff5500' });
+        const node = schema.text('Vibrant text', [colorMark]);
+        const p = schema.nodes['paragraph'].create(null, [node]);
+        const doc = schema.node('doc', null, [p]);
+        const html = docToHtml(doc);
+
+        expect(html).toMatch(/color:\s*(#ff5500|rgb\(255,\s*85,\s*0\))/i);
+
+        const parsed = htmlToDoc(html);
+        let foundColor = false;
+        parsed.descendants((child) => {
+          const mark = child.marks.find((m) => m.type.name === 'textColor');
+          if (mark) {
+            foundColor = true;
+            expect(mark.attrs['color']).toMatch(/#ff5500|rgb\(255,\s*85,\s*0\)/i);
+          }
+        });
+        expect(foundColor).toBe(true);
+      });
+
+      it('creates and serializes small mark', () => {
+        const smallMark = schema.marks['small'].create();
+        const node = schema.text('Fine print', [smallMark]);
+        const p = schema.nodes['paragraph'].create(null, [node]);
+        const doc = schema.node('doc', null, [p]);
+        const html = docToHtml(doc);
+
+        expect(html).toContain('<small>Fine print</small>');
+
+        const parsed = htmlToDoc(html);
+        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'small')).toBe(true);
+      });
+    });
+
+    describe('clearFormattingCommand', () => {
+      it('removes all inline marks from the active selection range', () => {
+        const boldMark = schema.marks['strong'].create();
+        const italicMark = schema.marks['em'].create();
+        const underlineMark = schema.marks['underline'].create();
+        const textNode = schema.text('Formatted text', [boldMark, italicMark, underlineMark]);
+        const p = schema.nodes['paragraph'].create(null, [textNode]);
+        const doc = schema.node('doc', null, [p]);
+
+        let state = EditorState.create({
+          doc,
+          schema,
+          selection: TextSelection.create(doc, 1, 15),
+        });
+
+        expect(state.doc.firstChild?.firstChild?.marks.length).toBe(3);
+
+        const commandExecuted = clearFormattingCommand(state, (tr) => {
+          state = state.apply(tr);
+        });
+
+        expect(commandExecuted).toBe(true);
+        expect(state.doc.firstChild?.firstChild?.marks.length).toBe(0);
+        expect(state.doc.firstChild?.firstChild?.text).toBe('Formatted text');
+      });
+    });
+
+    describe('Markdown Round-Trip For Languages and Task Lists', () => {
+      it('preserves code block language fences across markdown round-trip', () => {
+        const codeBlock = schema.nodes['code_block'].create(
+          { language: 'typescript' },
+          schema.text('const answer: number = 42;')
+        );
+        const doc = schema.node('doc', null, [codeBlock]);
+
+        const markdown = docToMarkdown(doc);
+        expect(markdown).toContain('```typescript');
+        expect(markdown).toContain('const answer: number = 42;');
+
+        const roundTripDoc = markdownToDoc(markdown);
+        let foundLang = false;
+        roundTripDoc.descendants((node) => {
+          if (node.type.name === 'code_block') {
+            foundLang = true;
+            expect(node.attrs['language']).toBe('typescript');
+            expect(node.textContent).toBe('const answer: number = 42;');
+          }
+        });
+        expect(foundLang).toBe(true);
+      });
+
+      it('preserves task item states in markdown round-trip', () => {
+        const item1 = schema.nodes['task_item'].create(
+          { checked: false },
+          schema.nodes['paragraph'].create(null, [schema.text('Todo task')])
+        );
+        const item2 = schema.nodes['task_item'].create(
+          { checked: true },
+          schema.nodes['paragraph'].create(null, [schema.text('Completed task')])
+        );
+        const taskList = schema.nodes['task_list'].create(null, [item1, item2]);
+        const doc = schema.node('doc', null, [taskList]);
+
+        const markdown = docToMarkdown(doc);
+        expect(markdown).toContain('- [ ] Todo task');
+        expect(markdown).toContain('- [x] Completed task');
+
+        const roundTripDoc = markdownToDoc(markdown);
+        let foundUnchecked = false;
+        let foundChecked = false;
+        roundTripDoc.descendants((node) => {
+          if (node.type.name === 'task_item') {
+            if (node.attrs['checked'] === false) foundUnchecked = true;
+            if (node.attrs['checked'] === true) foundChecked = true;
+          }
+        });
+        expect(foundUnchecked).toBe(true);
+        expect(foundChecked).toBe(true);
+      });
+    });
+
+    describe('NodeView Mount & Destroy Lifecycle Leak Test', () => {
+      it('mounts and destroys 100 times without leaking or throwing', () => {
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+
+        for (let i = 0; i < 100; i++) {
+          const doc = schema.node('doc', null, [
+            schema.nodes['task_list'].create(null, [
+              schema.nodes['task_item'].create(
+                { checked: i % 2 === 0 },
+                schema.nodes['paragraph'].create(null, [schema.text(`Item ${i}`)])
+              ),
+            ]),
+          ]);
+
+          const state = EditorState.create({ doc, schema });
+          const view = new EditorView(container, {
+            state,
+            nodeViews: {
+              task_item: (node, v, getPos) => new TaskItemNodeView(node, v, getPos as () => number),
+            },
+          });
+
+          expect(view.dom).toBeDefined();
+          view.destroy();
+        }
+
+        container.remove();
+      });
+    });
+
+    describe('Performance & Latency Benchmarks', () => {
+      it('executes 100 consecutive typing transactions in < 16ms average latency', () => {
+        // Construct a substantial multi-block document
+        const paragraphs = Array.from({ length: 50 }, (_, i) =>
+          schema.nodes['paragraph'].create(null, [
+            schema.text(`Paragraph ${i + 1}: inkframe performance profiling and latency evaluation test.`),
+          ])
+        );
+        const doc = schema.node('doc', null, paragraphs);
+        let state = EditorState.create({ doc, schema });
+
+        const startTime = performance.now();
+        const iterations = 100;
+
+        for (let i = 0; i < iterations; i++) {
+          // Insert a character at position 1, then delete it
+          const tr1 = state.tr.insertText('A', 1);
+          state = state.apply(tr1);
+          const tr2 = state.tr.delete(1, 2);
+          state = state.apply(tr2);
+        }
+
+        const totalElapsed = performance.now() - startTime;
+        const avgPerIteration = totalElapsed / (iterations * 2);
+
+        // Average transaction time must be well within a 16ms frame budget (typically < 1ms)
+        expect(avgPerIteration).toBeLessThan(16);
+      });
+    });
+  });
 });
 

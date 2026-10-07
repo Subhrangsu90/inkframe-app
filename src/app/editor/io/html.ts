@@ -6,7 +6,16 @@ import {
 } from 'prosemirror-model';
 import { schema } from '../core/schema';
 
+export const DOMPURIFY_CONFIG = {
+  USE_PROFILES: { html: true },
+  ADD_DATA_URI_TAGS: ['img'],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|blob|ink-idb):|data:image\/)/i,
+};
+
 export function docToHtml(doc: PMNode): string {
+  if (typeof document === 'undefined') {
+    return '';
+  }
   const fragment = DOMSerializer.fromSchema(schema).serializeFragment(
     doc.content,
   );
@@ -16,7 +25,10 @@ export function docToHtml(doc: PMNode): string {
 }
 
 export function htmlToDoc(html: string): PMNode {
-  const clean = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  if (typeof document === 'undefined') {
+    return schema.node('doc', null, [schema.node('paragraph')]);
+  }
+  const clean = DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
   const el = document.createElement('div');
   el.innerHTML = clean;
   return PMDOMParser.fromSchema(schema).parse(el);

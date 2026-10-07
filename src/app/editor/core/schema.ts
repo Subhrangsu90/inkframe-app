@@ -211,6 +211,7 @@ const image: NodeSpec = {
       src: node.attrs['src'],
       alt: node.attrs['alt'],
       title: node.attrs['title'],
+      class: 'ink-image',
       ...(node.attrs['width']
         ? { width: node.attrs['width'], style: `width: ${node.attrs['width']}` }
         : {}),

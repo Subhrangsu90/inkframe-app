@@ -1,164 +1,199 @@
-<div class="ink-app-container">
-  <!-- Top Application Bar -->
-  <header class="ink-header">
-    <div class="ink-brand">
-      <div class="ink-logo">
-        <mat-icon>edit_note</mat-icon>
+@if (isPublicView()) {
+  <!-- Pure Content-Only Shared View (Only content, no toolbar, no navbar, no buttons) -->
+  <div class="ink-pure-page">
+    <span class="ink-title" style="display:none">{{ title() }}</span>
+    <main class="ink-pure-viewport">
+      <div class="ink-doc-page">
+        <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()"></div>
       </div>
-      <div class="ink-titles">
+    </main>
+  </div>
+} @else {
+  <!-- Main Editor Application with Editor & Preview Tabs -->
+  <div class="ink-app">
+    <!-- Clean Minimalist Navigation Bar -->
+    <header class="ink-navbar">
+      <div class="ink-nav-left">
+        <div class="ink-brand-logo">
+          <mat-icon>edit_note</mat-icon>
+        </div>
         <span class="ink-title">{{ title() }}</span>
-        <span class="ink-subtitle">Signal-driven, schema-first rich text editor for Angular</span>
-      </div>
-    </div>
-
-    <!-- Actions & Stats -->
-    <div class="ink-header-actions">
-      <div class="ink-stats">
-        <span class="ink-badge" matTooltip="Total words count">{{ wordCount() }} words</span>
-        <span class="ink-badge" matTooltip="Total characters count">{{ charCount() }} chars</span>
-        <span class="ink-badge ink-badge-accent" matTooltip="Current schema version">v1.0 schema</span>
       </div>
 
-      <!-- Mode Toggle -->
-      <button mat-stroked-button
-              (click)="toggleEditable()"
-              [matTooltip]="editable() ? 'Switch to Read-Only Preview' : 'Enable Editing Mode'">
-        <mat-icon>{{ editable() ? 'visibility' : 'edit' }}</mat-icon>
-        {{ editable() ? 'Preview Mode' : 'Edit Mode' }}
-      </button>
+      <!-- Segmented Tab Controls: Editor vs Preview -->
+      <div class="ink-tab-group" role="tablist" aria-label="Editor view modes">
+        <button type="button"
+                #editTabBtn
+                role="tab"
+                class="ink-tab-btn"
+                [class.active]="activeTab() === 'edit'"
+                [attr.aria-selected]="activeTab() === 'edit'"
+                (click)="setTab('edit'); editTabBtn.blur()"
+                matTooltip="Edit document with toolbar">
+          <mat-icon>edit</mat-icon>
+          <span>Editor</span>
+        </button>
+        <button type="button"
+                #previewTabBtn
+                role="tab"
+                class="ink-tab-btn"
+                [class.active]="activeTab() === 'preview'"
+                [attr.aria-selected]="activeTab() === 'preview'"
+                (click)="setTab('preview'); previewTabBtn.blur()"
+                matTooltip="Preview rendered document (no toolbar)">
+          <mat-icon>visibility</mat-icon>
+          <span>Preview</span>
+        </button>
+      </div>
 
-      <!-- Import Menu -->
-      <button mat-flat-button [matMenuTriggerFor]="importMenu">
-        <mat-icon>file_upload</mat-icon>
-        Import
-      </button>
-      <mat-menu #importMenu="matMenu">
-        <button mat-menu-item (click)="importMarkdown()">
-          <mat-icon>description</mat-icon>
-          <span>Import Markdown (.md)</span>
-        </button>
-        <button mat-menu-item (click)="importHtml()">
-          <mat-icon>html</mat-icon>
-          <span>Import HTML (.html)</span>
-        </button>
-        <button mat-menu-item (click)="importJson()">
-          <mat-icon>data_object</mat-icon>
-          <span>Import JSON Envelope</span>
-        </button>
-      </mat-menu>
-
-      <!-- Export Menu -->
-      <button mat-flat-button color="primary" [matMenuTriggerFor]="exportMenu">
-        <mat-icon>file_download</mat-icon>
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportMarkdown()">
-          <mat-icon>description</mat-icon>
-          <span>Export as Markdown</span>
-        </button>
-        <button mat-menu-item (click)="exportHtml()">
-          <mat-icon>html</mat-icon>
-          <span>Export as HTML</span>
-        </button>
-        <button mat-menu-item (click)="exportJson()">
-          <mat-icon>data_object</mat-icon>
-          <span>Export JSON Envelope</span>
-        </button>
-      </mat-menu>
-
-      <button mat-icon-button (click)="loadDemo()" matTooltip="Reset to showcase demo content">
-        <mat-icon>restart_alt</mat-icon>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Work Area -->
-  <main class="ink-main">
-    <mat-tab-group animationDuration="150ms" (selectedIndexChange)="updateOutputs()">
-      <!-- Editor Tab -->
-      <mat-tab label="Editor">
-        <div class="ink-editor-pane">
-          <ink-editor
-            #inkEditor
-            [initialDoc]="currentDoc()"
-            [editable]="editable()"
-            (changed)="onChanged($event)" />
+      <!-- Right Actions: Word Count & Share Button -->
+      <div class="ink-nav-right">
+        <div class="ink-stats-pill" matTooltip="Document word and character counts">
+          <span>{{ wordCount() }} words</span>
+          <span class="stat-sep">·</span>
+          <span>{{ charCount() }} chars</span>
         </div>
-      </mat-tab>
 
-      <!-- Live HTML Preview Tab -->
-      <mat-tab label="HTML Export">
-        <div class="ink-preview-pane">
-          <div class="ink-pane-header">
-            <h3>Sanitized HTML Output</h3>
-            <button mat-stroked-button (click)="exportHtml()">
-              <mat-icon>download</mat-icon> Download HTML
-            </button>
-          </div>
-          <pre class="ink-code-preview"><code>{{ htmlOutput() }}</code></pre>
-        </div>
-      </mat-tab>
+        <!-- Share Button (Generates content-only share link) -->
+        <button mat-flat-button
+                color="primary"
+                class="ink-btn-share"
+                (click)="shareDocument()"
+                matTooltip="Create and copy clean content-only share link">
+          <mat-icon>share</mat-icon>
+          <span>Share</span>
+        </button>
 
-      <!-- Markdown Output Tab -->
-      <mat-tab label="Markdown Export">
-        <div class="ink-preview-pane">
-          <div class="ink-pane-header">
-            <h3>Markdown Output</h3>
-            <button mat-stroked-button (click)="exportMarkdown()">
-              <mat-icon>download</mat-icon> Download Markdown
-            </button>
-          </div>
-          <pre class="ink-code-preview"><code>{{ markdownOutput() }}</code></pre>
-        </div>
-      </mat-tab>
+        <!-- More Actions Menu -->
+        <button mat-icon-button
+                class="ink-btn-more"
+                [matMenuTriggerFor]="moreAppMenu"
+                matTooltip="More actions">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #moreAppMenu="matMenu" class="ink-toolbar-mat-menu">
+          <button mat-menu-item (click)="saveDocument()">
+            <mat-icon>save</mat-icon>
+            <span>Save locally</span>
+          </button>
+          <mat-divider />
+          <button mat-menu-item (click)="exportPdf()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Export as PDF (.pdf)</span>
+          </button>
+          <button mat-menu-item (click)="exportDocs()">
+            <mat-icon>description</mat-icon>
+            <span>Export as Word Document (.doc)</span>
+          </button>
+          <button mat-menu-item (click)="exportMarkdown()">
+            <mat-icon>download</mat-icon>
+            <span>Export as Markdown (.md)</span>
+          </button>
+          <mat-divider />
+          <button mat-menu-item (click)="importMarkdown()">
+            <mat-icon>upload_file</mat-icon>
+            <span>Import document (.md, .html)</span>
+          </button>
+          <mat-divider />
+          <button mat-menu-item (click)="loadDemo()">
+            <mat-icon>restart_alt</mat-icon>
+            <span>Reset Demo Content</span>
+          </button>
+        </mat-menu>
+      </div>
+    </header>
 
-      <!-- JSON Envelope Schema Tab -->
-      <mat-tab label="JSON Storage Schema">
-        <div class="ink-preview-pane">
-          <div class="ink-pane-header">
-            <h3>Versioned Document Envelope (Single Source of Truth)</h3>
-            <button mat-stroked-button (click)="exportJson()">
-              <mat-icon>download</mat-icon> Download JSON
-            </button>
-          </div>
-          <pre class="ink-code-preview"><code>{{ jsonString() }}</code></pre>
-        </div>
-      </mat-tab>
+    <!-- Main Workspace -->
+    <main class="ink-workspace">
+      <!-- 1. Editor Tab View: Contains full toolbar and editor -->
+      <div class="ink-tab-pane" [style.display]="activeTab() === 'edit' ? 'block' : 'none'">
+        <ink-editor
+          #inkEditor
+          [initialDoc]="currentDoc()"
+          [editable]="true"
+          (changed)="onChanged($event)" />
+      </div>
 
-      <!-- IndexedDB Storage Manager Tab -->
-      <mat-tab label="IndexedDB Images">
-        <div class="ink-preview-pane">
-          <div class="ink-pane-header">
-            <h3>IndexedDB Image Store (inkframe_storage)</h3>
-            <button mat-stroked-button (click)="refreshImages()">
-              <mat-icon>refresh</mat-icon> Refresh
-            </button>
-          </div>
-          @if (storedImages().length === 0) {
-            <div class="ink-empty-state">
-              <mat-icon>photo_library</mat-icon>
-              <p>No images stored in IndexedDB yet.</p>
-              <small>Upload an image using the toolbar button or paste/drag an image into the editor.</small>
+      <!-- 2. Preview Tab View: Pure rendered document (NO TOOLBAR) -->
+      <div class="ink-tab-pane ink-preview-pane" [style.display]="activeTab() === 'preview' ? 'block' : 'none'">
+        <div class="ink-preview-wrapper">
+          <div class="ink-preview-header">
+            <div class="ink-preview-status">
+              <span class="preview-dot"></span>
+              <span class="preview-label">Document Preview</span>
+              <span class="preview-badge">Read-only</span>
             </div>
-          } @else {
-            <div class="ink-images-grid">
-              @for (img of storedImages(); track img.id) {
-                <div class="ink-image-card">
-                  <div class="ink-image-card-info">
-                    <strong>{{ img.name }}</strong>
-                    <span>{{ (img.size / 1024).toFixed(1) }} KB · {{ img.type }}</span>
-                    <small>ID: {{ img.id }}</small>
-                  </div>
-                  <button mat-icon-button color="warn" (click)="deleteImage(img.id)" matTooltip="Delete from IndexedDB">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              }
+            <div class="ink-preview-actions">
+              <span class="preview-hint">Rendered view without formatting toolbar</span>
+              <button type="button"
+                      class="ink-preview-theme-btn"
+                      [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                      [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+                      (click)="themeService.toggleTheme()">
+                <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+              </button>
             </div>
-          }
+          </div>
+          <div class="ink-preview-viewport">
+            <div class="ink-doc-page">
+              <div class="ProseMirror ProseMirror-preview" [innerHTML]="sanitizedPreviewHtml()"></div>
+            </div>
+          </div>
         </div>
-      </mat-tab>
-    </mat-tab-group>
-  </main>
-</div>
+      </div>
+    </main>
+
+    <!-- Share Link Modal -->
+    @if (showShareModal()) {
+      <div class="ink-modal-backdrop" (click)="closeShareModal()">
+        <div class="ink-modal-dialog" (click)="$event.stopPropagation()">
+          <div class="ink-modal-header">
+            <div class="modal-info">
+              <h2>Share Document</h2>
+              <p class="modal-subtitle">Share link with clean content-only view</p>
+            </div>
+            <button mat-icon-button (click)="closeShareModal()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="ink-share-modal-body">
+            <div class="share-info-banner">
+              <mat-icon>visibility</mat-icon>
+              <span>Anyone opening this link will see <strong>only the clean content</strong> — no toolbar, no navigation bar, and no editor interface.</span>
+            </div>
+
+            <div class="share-input-row">
+              <input type="text"
+                     class="share-url-field"
+                     [value]="shareUrl()"
+                     readonly
+                     (focus)="$any($event.target).select()" />
+              <button mat-flat-button
+                      color="primary"
+                      class="btn-copy-link"
+                      (click)="copyShareLink()">
+                <mat-icon>{{ copiedShareLink() ? 'check' : 'content_copy' }}</mat-icon>
+                <span>{{ copiedShareLink() ? 'Copied' : 'Copy Link' }}</span>
+              </button>
+            </div>
+
+            <div class="share-actions-row">
+              <a [href]="shareUrl()"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 mat-stroked-button
+                 class="btn-test-preview">
+                <mat-icon>open_in_new</mat-icon>
+                <span>Open in New Tab</span>
+              </a>
+              <button mat-button (click)="closeShareModal()">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

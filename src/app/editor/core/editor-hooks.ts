@@ -1,6 +1,7 @@
 export interface FloatingMenuState {
   left: number;
   top: number;
+  placement?: 'top' | 'bottom';
 }
 
 export interface SlashMenuState {

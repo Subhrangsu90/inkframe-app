@@ -1,7 +1,7 @@
 // core/menus.plugin.ts
 import { EditorState, Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { isInTable } from 'prosemirror-tables';
-import { EditorHooks } from './editor-hooks';
+import { EditorHooks, FloatingMenuState, TableMenuState } from './editor-hooks';
 
 interface SlashPluginState {
   open: boolean;
@@ -60,23 +60,30 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
     view(view) {
       let raf = 0;
-      let lastFloatingCoords: { left: number; top: number } | null = null;
-      let lastTableCoords: { left: number; top: number } | null = null;
+      let lastFloatingCoords: FloatingMenuState | null = null;
+      let lastTableCoords: TableMenuState | null = null;
 
       const render = () => {
         raf = 0;
         const { state } = view;
         const slash = slashKey.getState(state)!;
+        const vp = view.dom.closest('.ink-editor-viewport') as HTMLElement | null;
+        const vpRect = vp?.getBoundingClientRect();
 
         if (slash.open && !view.composing) {
           const c = view.coordsAtPos(slash.to);
-          hooks.onSlashMenu({
-            query: slash.query,
-            from: slash.from,
-            to: slash.to,
-            left: c.left,
-            top: c.bottom,
-          });
+          const isVisible = !vpRect || (c.bottom >= vpRect.top && c.top <= vpRect.bottom);
+          if (isVisible) {
+            hooks.onSlashMenu({
+              query: slash.query,
+              from: slash.from,
+              to: slash.to,
+              left: c.left,
+              top: c.bottom,
+            });
+          } else {
+            hooks.onSlashMenu(null);
+          }
         } else {
           hooks.onSlashMenu(null);
         }
@@ -105,10 +112,36 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
               ? domSel.getRangeAt(0).getBoundingClientRect()
               : null;
           if (rect && (rect.width || rect.height)) {
-            lastFloatingCoords = { left: rect.left + rect.width / 2, top: rect.top };
-            hooks.onFloatingMenu(lastFloatingCoords);
+            // Check if selection is within the visible viewport bounds
+            const isOutOfView = vpRect && (rect.bottom < vpRect.top + 10 || rect.top > vpRect.bottom - 10);
+            if (isOutOfView) {
+              lastFloatingCoords = null;
+              hooks.onFloatingMenu(null);
+            } else {
+              // Decide whether to place above or below selection
+              // Floating menu is ~38px tall; need ~48px clearance above selection
+              const placeBelow = vpRect ? (rect.top - 48 < vpRect.top) : false;
+              const top = placeBelow ? rect.bottom + 8 : rect.top - 8;
+              const placement = placeBelow ? 'bottom' : 'top';
+
+              // Clamp left so it doesn't overflow horizontally off viewport
+              const rawLeft = rect.left + rect.width / 2;
+              let left = rawLeft;
+              if (vpRect) {
+                left = Math.max(vpRect.left + 150, Math.min(rawLeft, vpRect.right - 150));
+              }
+
+              lastFloatingCoords = { left, top, placement };
+              hooks.onFloatingMenu(lastFloatingCoords);
+            }
           } else if (lastFloatingCoords && isInteractingWithMenu) {
-            hooks.onFloatingMenu(lastFloatingCoords);
+            // Keep existing menu if interacting with overlay, but hide if viewport scrolled away
+            if (vpRect && (lastFloatingCoords.top < vpRect.top || lastFloatingCoords.top > vpRect.bottom)) {
+              lastFloatingCoords = null;
+              hooks.onFloatingMenu(null);
+            } else {
+              hooks.onFloatingMenu(lastFloatingCoords);
+            }
           } else {
             lastFloatingCoords = null;
             hooks.onFloatingMenu(null);
@@ -137,11 +170,17 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
           if (tableEl) {
             const rect = tableEl.getBoundingClientRect();
-            lastTableCoords = {
-              left: rect.left + rect.width / 2,
-              top: rect.bottom + 8,
-            };
-            hooks.onTableMenu?.(lastTableCoords);
+            const isVisible = !vpRect || (rect.bottom >= vpRect.top && rect.top <= vpRect.bottom);
+            if (isVisible) {
+              lastTableCoords = {
+                left: rect.left + rect.width / 2,
+                top: rect.bottom + 8,
+              };
+              hooks.onTableMenu?.(lastTableCoords);
+            } else {
+              lastTableCoords = null;
+              hooks.onTableMenu?.(null);
+            }
           } else if (lastTableCoords && isInteractingWithTable) {
             hooks.onTableMenu?.(lastTableCoords);
           } else {

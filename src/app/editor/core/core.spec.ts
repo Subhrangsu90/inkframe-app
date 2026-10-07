@@ -111,6 +111,38 @@ describe('Inkframe Core', () => {
       const resolved = await imageStorage.resolveUrl(extUrl);
       expect(resolved).toBe(extUrl);
     });
+
+    it('returns original data URLs directly', async () => {
+      const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ';
+      const resolved = await imageStorage.resolveToDataUrl(dataUrl);
+      expect(resolved).toBe(dataUrl);
+    });
+
+    it('resolves image URLs in HTML strings', async () => {
+      const html = '<p>Photo</p><img src="https://example.com/photo.jpg" alt="test">';
+      const resolved = await imageStorage.resolveHtmlImages(html);
+      expect(resolved).toBe(html);
+    });
+
+    it('inlines document image nodes with data URLs', async () => {
+      const testDoc = {
+        schemaVersion: 1,
+        doc: {
+          type: 'doc',
+          content: [
+            {
+              type: 'image',
+              attrs: {
+                src: 'data:image/png;base64,ABC',
+                alt: 'Pic',
+              },
+            },
+          ],
+        },
+      };
+      const result = await imageStorage.inlineDocImages(testDoc);
+      expect(result.doc.content[0].attrs.src).toBe('data:image/png;base64,ABC');
+    });
   });
 
   describe('Phase 1: Typography Marks & Commands', () => {

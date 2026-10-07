@@ -7,6 +7,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditorService } from '../editor.service';
+import { ThemeService } from '../../core/theme.service';
 import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
 
 @Component({
@@ -177,8 +178,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
                 matTooltip="Text color"
                 [disabled]="svc.isCode()"
                 [matMenuTriggerFor]="colorMenu">
-          <mat-icon>format_color_text</mat-icon>
-          <span class="color-indicator-bar" [style.background-color]="svc.currentColor() || '#60a5fa'"></span>
+          <mat-icon [style.color]="svc.currentColor() ">format_color_text</mat-icon>
         </button>
         <mat-menu #colorMenu="matMenu">
           <div class="ink-color-popover" (click)="$event.stopPropagation()">
@@ -501,72 +501,11 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
         </mat-menu>
       </div>
 
-      <!-- 7. Contextual Table Tools (Shown dynamically when cursor is inside table) -->
-      @if (svc.isInTable()) {
-        <div class="tb-divider"></div>
-        <div class="tb-group tb-group-context" role="group" aria-label="Table tools">
-          <div class="tb-context-pill" matTooltip="Cursor is inside a table">
-            <mat-icon class="context-icon">table_rows</mat-icon>
-            <span class="context-label">Table</span>
-          </div>
-          <button type="button"
-                  class="ink-tb-icon-btn"
-                  matTooltip="Insert row below"
-                  (click)="svc.addRowAfter()">
-            <mat-icon>keyboard_arrow_down</mat-icon>
-          </button>
-          <button type="button"
-                  class="ink-tb-icon-btn"
-                  matTooltip="Insert column right"
-                  (click)="svc.addColumnAfter()">
-            <mat-icon>keyboard_arrow_right</mat-icon>
-          </button>
-          <button type="button"
-                  class="ink-tb-icon-btn active"
-                  aria-label="Table options"
-                  matTooltip="Table operations"
-                  [matMenuTriggerFor]="tableMenu">
-            <mat-icon>tune</mat-icon>
-          </button>
-          <mat-menu #tableMenu="matMenu" class="ink-toolbar-mat-menu">
-            <button mat-menu-item (click)="svc.addRowBefore()">
-              <mat-icon>keyboard_arrow_up</mat-icon>
-              <span class="menu-item-text">Insert row above</span>
-            </button>
-            <button mat-menu-item (click)="svc.addRowAfter()">
-              <mat-icon>keyboard_arrow_down</mat-icon>
-              <span class="menu-item-text">Insert row below</span>
-            </button>
-            <button mat-menu-item (click)="svc.addColumnBefore()">
-              <mat-icon>keyboard_arrow_left</mat-icon>
-              <span class="menu-item-text">Insert column left</span>
-            </button>
-            <button mat-menu-item (click)="svc.addColumnAfter()">
-              <mat-icon>keyboard_arrow_right</mat-icon>
-              <span class="menu-item-text">Insert column right</span>
-            </button>
-            <mat-divider />
-            <button mat-menu-item (click)="svc.deleteRow()">
-              <mat-icon>remove_circle_outline</mat-icon>
-              <span class="menu-item-text">Delete row</span>
-            </button>
-            <button mat-menu-item (click)="svc.deleteColumn()">
-              <mat-icon>remove_circle_outline</mat-icon>
-              <span class="menu-item-text">Delete column</span>
-            </button>
-            <mat-divider />
-            <button mat-menu-item class="ink-menu-danger" (click)="svc.deleteTable()">
-              <mat-icon color="warn">delete_forever</mat-icon>
-              <span class="menu-item-text text-danger">Delete table</span>
-            </button>
-          </mat-menu>
-        </div>
-      }
 
       <span class="toolbar-spacer"></span>
 
-      <!-- 8. Document History -->
-      <div class="tb-group" role="group" aria-label="Document history">
+      <!-- 8. Document History & Theme Toggle -->
+      <div class="tb-group" role="group" aria-label="Editor settings">
         <button type="button"
                 class="ink-tb-icon-btn"
                 aria-label="Revision history"
@@ -574,19 +513,42 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
                 (click)="openHistory()">
           <mat-icon>history</mat-icon>
         </button>
+        <button type="button"
+                class="ink-tb-icon-btn ink-tb-theme-toggle"
+                [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+                (click)="themeService.toggleTheme()">
+          <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
       </div>
     </div>
   `,
   styles: `
+    :host {
+      display: block;
+      width: 100%;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 20;
+    }
+
     .ink-toolbar {
       display: flex;
       align-items: center;
-      gap: 3px;
-      padding: 5px 8px;
-      border-bottom: 1px solid #2e3036;
-      background: #18191c;
-      flex-wrap: wrap;
+      gap: 4px 3px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--ink-border-default, #2e3036);
+      background: var(--ink-bg-toolbar, #18191c);
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
       user-select: none;
+      box-sizing: border-box;
+      min-height: 44px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .tb-group {
@@ -599,9 +561,10 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
     .tb-divider {
       width: 1px;
       height: 20px;
-      background: #2e3036;
+      background: var(--ink-border-default, #2e3036);
       margin: 0 4px;
       flex-shrink: 0;
+      transition: background-color 0.15s ease;
     }
 
     .toolbar-spacer {
@@ -617,24 +580,24 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       height: 32px;
       padding: 0 6px 0 8px;
       border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(255, 255, 255, 0.04);
-      color: #cbd5e1;
+      border: 1px solid var(--ink-border-default, rgba(255, 255, 255, 0.06));
+      background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.04));
+      color: var(--ink-text-secondary, #cbd5e1);
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.14s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.12);
-        color: #f8fafc;
+        background: var(--ink-btn-hover-bg);
+        border-color: var(--ink-border-focus);
+        color: var(--ink-text-primary, #f8fafc);
       }
 
       &.active {
-        background: #172c47;
-        color: #60a5fa;
-        border-color: #1e3a5f;
+        background: var(--ink-btn-active-bg, #172c47);
+        color: var(--ink-btn-active-text, #60a5fa);
+        border-color: var(--ink-btn-active-border, #1e3a5f);
       }
 
       .block-glyph {
@@ -643,8 +606,8 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
         line-height: 1;
         padding: 2px 4px;
         border-radius: 3px;
-        background: rgba(255, 255, 255, 0.08);
-        color: #94a3b8;
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-secondary, #94a3b8);
       }
 
       .block-label {
@@ -677,24 +640,33 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       border-radius: 6px;
       border: 1px solid transparent;
       background: transparent;
-      color: #94a3b8;
+      color: var(--ink-text-secondary, #94a3b8);
       cursor: pointer;
       transition: all 0.12s ease;
 
       &:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f8fafc;
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-primary, #f8fafc);
       }
 
       &.active {
-        background: #172c47;
-        color: #60a5fa;
-        border-color: #1e3a5f;
+        background: var(--ink-btn-active-bg, #172c47);
+        color: var(--ink-btn-active-text, #60a5fa);
+        border-color: var(--ink-btn-active-border, #1e3a5f);
       }
 
       &:disabled {
         opacity: 0.35;
         cursor: not-allowed;
+      }
+
+      &.ink-tb-theme-toggle {
+        mat-icon {
+          transition: transform 0.25s ease, color 0.15s ease;
+        }
+        &:hover mat-icon {
+          transform: rotate(20deg);
+        }
       }
 
       mat-icon {
@@ -727,34 +699,6 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       }
     }
 
-    /* Contextual Table tools indicator pill */
-    .tb-group-context {
-      background: rgba(59, 130, 246, 0.08);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 6px;
-      padding: 1px 3px;
-    }
-
-    .tb-context-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 0 6px;
-      height: 24px;
-      color: #60a5fa;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-      user-select: none;
-
-      .context-icon {
-        font-size: 14px;
-        width: 14px;
-        height: 14px;
-        line-height: 14px;
-      }
-    }
 
     /* Typography helper classes for menu items */
     .heading-h1 { font-size: 15px; font-weight: 700; }
@@ -768,6 +712,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
 })
 export class ToolbarComponent {
   protected readonly svc = inject(EditorService);
+  protected readonly themeService = inject(ThemeService);
   protected readonly textColors: ColorSwatch[] = TEXT_COLORS;
   protected readonly emojis: string[] = COMMON_EMOJIS;
 

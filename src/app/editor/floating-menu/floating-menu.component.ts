@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,6 +23,7 @@ import { TEXT_COLORS } from '../core/colors';
   template: `
     @if (svc.floatingMenu(); as m) {
       <div class="ink-floating" role="toolbar" aria-label="Selection formatting"
+           [class.placement-bottom]="m.placement === 'bottom'"
            [style.left.px]="m.left" [style.top.px]="m.top"
            (mousedown)="$event.preventDefault()">
         <!-- Typography marks (disabled if code is active) -->
@@ -182,44 +183,73 @@ import { TEXT_COLORS } from '../core/colors';
   styles: `
     .ink-floating {
       position: fixed;
-      transform: translate(-50%, calc(-100% - 8px));
+      transform: translate(-50%, -100%);
       z-index: 50;
       display: flex;
       align-items: center;
       gap: 2px;
-      padding: 4px 6px;
-      background: #212226;
-      border: 1px solid #2e3036;
-      border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+      padding: 3px 5px;
+      background: var(--ink-bg-popover, #212226);
+      border: 1px solid var(--ink-border-default, #2e3036);
+      border-radius: 8px;
+      box-shadow: var(--ink-shadow-popover, 0 4px 20px rgba(0, 0, 0, 0.45));
+      user-select: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .ink-floating.placement-bottom {
+      transform: translate(-50%, 0);
     }
     .ink-floating button {
-      color: #94a3b8;
-      border-radius: 6px;
+      width: 30px !important;
+      height: 30px !important;
+      min-width: 30px !important;
+      padding: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-text-secondary, #94a3b8);
+      border-radius: 5px;
       transition: all 0.12s ease;
 
-      &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f1f5f9;
+      mat-icon {
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+        line-height: 18px !important;
+      }
+
+      &:hover:not([disabled]) {
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-primary, #f1f5f9);
       }
 
       &.active {
-        background: #172c47;
-        color: #60a5fa;
+        background: var(--ink-btn-active-bg, #172c47);
+        color: var(--ink-btn-active-text, #60a5fa);
       }
     }
     .ink-floating mat-divider {
-      height: 20px;
-      border-top-color: #2e3036;
-      margin: 0 4px;
+      height: 18px;
+      border-top-color: var(--ink-border-default, #2e3036);
+      margin: 0 3px;
     }
   `,
 })
 export class FloatingMenuComponent {
   protected readonly svc = inject(EditorService);
   protected readonly textColors = TEXT_COLORS;
+  protected readonly colorTrigger = viewChild<MatMenuTrigger>('colorTrigger');
   protected readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
   protected linkUrl = '';
+
+  constructor() {
+    effect(() => {
+      if (!this.svc.floatingMenu()) {
+        this.colorTrigger()?.closeMenu();
+        this.linkTrigger()?.closeMenu();
+      }
+    });
+  }
 
   protected onLinkMenuOpened(): void {
     this.linkUrl = this.svc.getLinkHref() || '';

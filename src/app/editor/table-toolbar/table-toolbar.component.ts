@@ -271,12 +271,13 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       align-items: center;
       gap: 2px;
       padding: 3px 6px;
-      background: #212226;
-      border: 1px solid #383a42;
+      background: var(--ink-bg-popover, #212226);
+      border: 1px solid var(--ink-border-default, #2e3036);
       border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-      color: #c4c7c5;
+      box-shadow: var(--ink-shadow-popover, 0 4px 16px rgba(0, 0, 0, 0.4));
+      color: var(--ink-text-secondary, #94a3b8);
       user-select: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .ink-tbl-btn {
@@ -287,15 +288,15 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       border: none;
       border-radius: 6px;
       padding: 4px 8px;
-      color: #c4c7c5;
+      color: var(--ink-text-secondary, #94a3b8);
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.12s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f1f5f9;
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-primary, #f1f5f9);
       }
     }
 
@@ -308,14 +309,14 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       background: transparent;
       border: none;
       border-radius: 6px;
-      color: #c4c7c5;
+      color: var(--ink-text-secondary, #94a3b8);
       cursor: pointer;
       padding: 0;
       transition: all 0.12s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.08);
-        color: #f1f5f9;
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-primary, #f1f5f9);
       }
     }
 
@@ -331,13 +332,13 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       width: 16px;
       height: 16px;
       margin-left: -2px;
-      color: #94a3b8;
+      color: var(--ink-text-secondary, #94a3b8);
     }
 
     .ink-tbl-divider {
       width: 1px;
       height: 16px;
-      background: #383a42;
+      background: var(--ink-border-default, #2e3036);
       margin: 0 2px;
     }
 
@@ -355,13 +356,14 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
     .ink-table-color-section {
       padding: 8px 12px;
+      background: var(--ink-bg-popover, #212226);
     }
 
     .ink-table-color-title {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #94a3b8;
+      color: var(--ink-text-secondary, #94a3b8);
       font-weight: 600;
       margin-bottom: 8px;
     }
@@ -377,7 +379,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       width: 24px;
       height: 24px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--ink-border-default, rgba(255, 255, 255, 0.12));
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -387,35 +389,35 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
       &:hover {
         transform: scale(1.15);
-        border-color: #60a5fa;
+        border-color: var(--ink-border-focus, #60a5fa);
       }
 
       .swatch-none {
         font-size: 10px;
-        color: #94a3b8;
+        color: var(--ink-text-secondary, #94a3b8);
       }
     }
 
     .ink-tbl-remove-bg-btn {
       width: 100%;
-      background: transparent;
-      border: 1px dashed #3c4043;
+      background: var(--ink-bg-subtle, transparent);
+      border: 1px dashed var(--ink-border-default, #3c4043);
       border-radius: 4px;
       padding: 4px;
-      color: #94a3b8;
+      color: var(--ink-text-secondary, #94a3b8);
       font-size: 11px;
       cursor: pointer;
       transition: all 0.12s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #f1f5f9;
-        border-color: #60a5fa;
+        background: var(--ink-bg-hover, rgba(255, 255, 255, 0.08));
+        color: var(--ink-text-primary, #f1f5f9);
+        border-color: var(--ink-border-focus, #60a5fa);
       }
     }
 
     .text-danger {
-      color: #f87171 !important;
+      color: var(--ink-danger-text, #f87171) !important;
     }
   `,
 })

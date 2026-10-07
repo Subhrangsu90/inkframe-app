@@ -34,15 +34,16 @@ import { EditorService } from '../editor.service';
       position: fixed;
       z-index: 50;
       margin: 4px 0 0;
-      padding: 4px;
+      padding: 6px;
       list-style: none;
-      background: var(--mat-sys-surface-container-high, #fff);
-      border: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+      background: var(--ink-bg-popover, #212226);
+      border: 1px solid var(--ink-border-default, #2e3036);
       border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      box-shadow: var(--ink-shadow-popover, 0 4px 16px rgba(0, 0, 0, 0.25));
       max-height: 20rem;
       overflow: auto;
-      min-width: 220px;
+      min-width: 230px;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     li {
       display: flex;
@@ -51,17 +52,31 @@ import { EditorService } from '../editor.service';
       padding: 8px 12px;
       cursor: pointer;
       border-radius: 8px;
-      transition: background 0.1s;
+      color: var(--ink-text-primary, #f1f5f9);
+      transition: background-color 0.12s ease, color 0.12s ease;
     }
     li:hover,
     li.active {
-      background: var(--mat-sys-secondary-container, #d3e3fd);
+      background: var(--ink-active-bg, #172c47);
+      color: var(--ink-active-text, #60a5fa);
+
+      .slash-icon {
+        color: var(--ink-active-text, #60a5fa);
+      }
+      .slash-text strong {
+        color: var(--ink-active-text, #60a5fa);
+      }
+      .slash-text small {
+        color: var(--ink-active-text, #60a5fa);
+        opacity: 0.9;
+      }
     }
     .slash-icon {
-      color: var(--mat-sys-on-surface-variant, #444);
+      color: var(--ink-text-secondary, #94a3b8);
       font-size: 20px;
       width: 20px;
       height: 20px;
+      transition: color 0.12s ease;
     }
     .slash-text {
       display: flex;
@@ -70,13 +85,14 @@ import { EditorService } from '../editor.service';
     }
     .slash-text strong {
       font-size: 14px;
+      color: var(--ink-text-primary, #f1f5f9);
     }
     .slash-text small {
       font-size: 12px;
-      color: var(--mat-sys-on-surface-variant, #666);
+      color: var(--ink-text-secondary, #94a3b8);
     }
     .slash-empty {
-      color: var(--mat-sys-on-surface-variant, #888);
+      color: var(--ink-text-muted, #64748b);
       padding: 8px 12px;
       font-style: italic;
     }

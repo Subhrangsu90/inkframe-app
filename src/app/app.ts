@@ -1,6 +1,7 @@
 import {
   Component,
   computed,
+  inject,
   signal,
   viewChild,
 } from '@angular/core';
@@ -10,16 +11,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   EditorComponent,
   StoredDoc,
   SCHEMA_VERSION,
+  schema,
+  docToHtml,
+  docToMarkdown,
   imageStorage,
-  type StoredImageMetadata,
+  migrate,
 } from './editor';
+import { ThemeService } from './core/theme.service';
 
 const DEMO_DOC: StoredDoc = {
   schemaVersion: SCHEMA_VERSION,
@@ -240,38 +244,6 @@ const DEMO_DOC: StoredDoc = {
               },
             ],
           },
-          {
-            type: 'table_row',
-            content: [
-              {
-                type: 'table_cell',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'code' }], text: 'Tab / Shift+Tab' }],
-                  },
-                ],
-              },
-              {
-                type: 'table_cell',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: 'Navigate table cells / indent lists' }],
-                  },
-                ],
-              },
-              {
-                type: 'table_cell',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: 'Tables / Lists' }],
-                  },
-                ],
-              },
-            ],
-          },
         ],
       },
       {
@@ -284,7 +256,7 @@ const DEMO_DOC: StoredDoc = {
         content: [
           {
             type: 'text',
-            text: "// Angular 18+ Signal Integration\nconst isBold = signal(false);\nconst title = computed(() => `Status: ${isBold() ? 'Active' : 'Idle'}`);",
+            text: "// Angular Signal Integration\nconst isBold = signal(false);\nconst title = computed(() => `Status: ${isBold() ? 'Active' : 'Idle'}`);",
           },
         ],
       },
@@ -307,6 +279,43 @@ const DEMO_DOC: StoredDoc = {
   },
 };
 
+function encodeDocToUrl(doc: StoredDoc): string {
+  try {
+    const json = JSON.stringify(doc);
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const b64 = btoa(binary);
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+    return `${origin}${pathname}?view=preview#share=${encodeURIComponent(b64)}`;
+  } catch (e) {
+    console.error('Error generating share URL:', e);
+    return typeof window !== 'undefined' ? window.location.href : '';
+  }
+}
+
+function decodeDocFromUrl(hash: string): StoredDoc | null {
+  try {
+    const match = hash.match(/share=([^&]+)/);
+    if (!match) return null;
+    const b64 = decodeURIComponent(match[1]);
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const json = new TextDecoder().decode(bytes);
+    const doc = JSON.parse(json) as StoredDoc;
+    if (doc && doc.doc) return doc;
+  } catch (e) {
+    console.error('Failed to parse document from URL hash:', e);
+  }
+  return null;
+}
+
 @Component({
   imports: [
     CommonModule,
@@ -315,23 +324,29 @@ const DEMO_DOC: StoredDoc = {
     MatIconModule,
     MatMenuModule,
     MatTooltipModule,
-    MatTabsModule,
-    MatChipsModule,
-    MatCardModule,
+    MatDividerModule,
     EditorComponent,
   ],
   selector: 'app-root',
+  host: {
+    ngSkipHydration: 'true',
+  },
   styleUrl: './app.scss',
   templateUrl: './app.html',
 })
 export class App {
+  private readonly sanitizer = inject(DomSanitizer);
+  protected readonly themeService = inject(ThemeService);
+
   protected readonly title = signal('Inkframe');
-  protected readonly editable = signal(true);
   protected readonly currentDoc = signal<StoredDoc>(DEMO_DOC);
-  protected readonly htmlOutput = signal('');
-  protected readonly markdownOutput = signal('');
-  protected readonly storedImages = signal<StoredImageMetadata[]>([]);
-  protected readonly activeTab = signal(0);
+  protected readonly activeTab = signal<'edit' | 'preview'>('edit');
+  protected readonly isPublicView = signal(false);
+  protected readonly isDirty = signal(false);
+  protected readonly showShareModal = signal(false);
+  protected readonly shareUrl = signal('');
+  protected readonly copiedShareLink = signal(false);
+  protected readonly sanitizedPreviewHtml = signal<SafeHtml>('');
 
   protected readonly editor = viewChild<EditorComponent>('inkEditor');
 
@@ -344,90 +359,315 @@ export class App {
     return this.extractText(this.currentDoc().doc).length;
   });
 
-  protected readonly jsonString = computed(() => {
-    return JSON.stringify(this.currentDoc(), null, 2);
-  });
-
   constructor() {
-    this.refreshImages();
-  }
-
-  protected onChanged(doc: StoredDoc): void {
-    this.currentDoc.set(doc);
-    this.updateOutputs();
-  }
-
-  protected updateOutputs(): void {
-    const ed = this.editor();
-    if (ed) {
-      this.htmlOutput.set(ed.getHtml());
-      this.markdownOutput.set(ed.getMarkdown());
+    if (typeof window !== 'undefined') {
+      this.initClientState();
     }
   }
 
-  protected toggleEditable(): void {
-    this.editable.update((v) => !v);
+  private initClientState(): void {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+
+      // Check if URL has ?view=preview (content-only public view)
+      if (params.get('view') === 'preview') {
+        this.isPublicView.set(true);
+      }
+
+      if (hash && hash.includes('share=')) {
+        const decoded = decodeDocFromUrl(hash);
+        if (decoded) {
+          this.currentDoc.set(decoded);
+          this.shareUrl.set(window.location.href);
+        }
+      } else {
+        const local = localStorage.getItem('inkframe_saved_doc');
+        if (local) {
+          try {
+            const parsed = JSON.parse(local) as StoredDoc;
+            if (parsed && parsed.doc) {
+              this.currentDoc.set(parsed);
+            }
+          } catch {}
+        }
+      }
+
+      this.refreshPreviewHtml();
+    } catch (e) {
+      console.error('Error initializing client state:', e);
+    }
+  }
+
+  protected async setTab(tab: 'edit' | 'preview'): Promise<void> {
+    this.activeTab.set(tab);
+    if (tab === 'preview') {
+      this.editor()?.blur();
+      await this.refreshPreviewHtml();
+    }
+  }
+
+  protected async onChanged(doc: StoredDoc): Promise<void> {
+    this.currentDoc.set(doc);
+    this.isDirty.set(true);
+    if (this.activeTab() === 'preview') {
+      await this.refreshPreviewHtml();
+    }
+  }
+
+  private async refreshPreviewHtml(): Promise<void> {
+    const ed = this.editor();
+    let html = ed ? ed.getHtml() : this.convertDocToHtml(this.currentDoc());
+    if (html) {
+      html = await imageStorage.resolveHtmlImages(html);
+    }
+    this.sanitizedPreviewHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
+  }
+
+  protected async shareDocument(): Promise<void> {
+    const ed = this.editor();
+    const doc = ed ? ed.getJSON() : this.currentDoc();
+
+    // In-line all ink-idb images as Base64 data URLs for portable sharing
+    const shareableDoc = await imageStorage.inlineDocImages(doc);
+    this.currentDoc.set(shareableDoc);
+
+    // Save state
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('inkframe_saved_doc', JSON.stringify(shareableDoc));
+    }
+    this.isDirty.set(false);
+
+    // Generate content-only share URL
+    const url = encodeDocToUrl(shareableDoc);
+    this.shareUrl.set(url);
+
+    // Copy to clipboard immediately and open modal
+    this.copyShareLink();
+    this.showShareModal.set(true);
+  }
+
+  protected async copyShareLink(): Promise<void> {
+    const url = this.shareUrl();
+    if (!url) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else if (typeof document !== 'undefined' && typeof document.execCommand === 'function') {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      this.copiedShareLink.set(true);
+      setTimeout(() => this.copiedShareLink.set(false), 2500);
+    } catch (e) {
+      console.error('Failed to copy share link:', e);
+    }
+  }
+
+  protected closeShareModal(): void {
+    this.showShareModal.set(false);
+  }
+
+  protected saveDocument(): void {
+    const ed = this.editor();
+    const doc = ed ? ed.getJSON() : this.currentDoc();
+    this.currentDoc.set(doc);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('inkframe_saved_doc', JSON.stringify(doc));
+    }
+    this.isDirty.set(false);
   }
 
   protected loadDemo(): void {
     this.editor()?.loadDoc(DEMO_DOC);
     this.currentDoc.set(DEMO_DOC);
-    this.updateOutputs();
+    this.isDirty.set(false);
+    this.shareUrl.set('');
+    this.refreshPreviewHtml();
   }
 
-  protected async refreshImages(): Promise<void> {
-    const list = await imageStorage.listImages();
-    this.storedImages.set(list);
+  protected convertDocToHtml(stored: StoredDoc): string {
+    try {
+      const node = schema.nodeFromJSON(migrate(stored));
+      return docToHtml(node);
+    } catch (e) {
+      console.error('Error converting doc to HTML:', e);
+      return '';
+    }
   }
 
-  protected async deleteImage(id: string): Promise<void> {
-    await imageStorage.deleteImage(id);
-    await this.refreshImages();
+  // ── Export & Import (PDF, Docs, Markdown, HTML) ───────────────────
+  protected async exportPdf(): Promise<void> {
+    if (typeof document === 'undefined') return;
+    const rawHtml = this.editor()?.getHtml() || this.convertDocToHtml(this.currentDoc());
+    // Resolve all images to data URLs for printing iframe
+    const html = await imageStorage.resolveHtmlImages(rawHtml, true);
+    const title = this.title() || 'Inkframe Document';
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${title}</title>
+          <style>
+            @page { margin: 20mm 15mm; size: auto; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #111; padding: 10px; }
+            h1 { font-size: 26px; font-weight: 700; margin-bottom: 12px; }
+            h2 { font-size: 20px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+            h3 { font-size: 16px; font-weight: 600; margin-top: 16px; margin-bottom: 6px; }
+            p { margin: 8px 0; }
+            ul, ol { padding-left: 24px; margin: 8px 0; }
+            li { margin: 4px 0; }
+            table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+            th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+            th { background-color: #f5f5f5; font-weight: 600; }
+            blockquote { border-left: 3px solid #2563eb; padding-left: 12px; margin: 12px 0; color: #555; font-style: italic; }
+            code { font-family: monospace; font-size: 13px; background: #f0f0f0; padding: 2px 4px; border-radius: 3px; }
+            pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; border: 1px solid #e0e0e0; }
+            .callout { border-left: 4px solid #2563eb; padding: 10px 14px; margin: 12px 0; background: #f0f7ff; border-radius: 4px; }
+            .callout-warning { border-left-color: #d97706; background: #fffbeb; }
+            .callout-success { border-left-color: #16a34a; background: #f0fdf4; }
+            .callout-danger { border-left-color: #dc2626; background: #fef2f2; }
+            img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+        </html>
+      `);
+      doc.close();
+
+      const printIframe = () => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+        }, 1500);
+      };
+
+      const imgs = iframe.contentDocument?.images;
+      if (imgs && imgs.length > 0) {
+        let loaded = 0;
+        const total = imgs.length;
+        const onDone = () => {
+          loaded++;
+          if (loaded >= total) {
+            setTimeout(printIframe, 150);
+          }
+        };
+        for (let i = 0; i < total; i++) {
+          if (imgs[i].complete) {
+            loaded++;
+          } else {
+            imgs[i].onload = onDone;
+            imgs[i].onerror = onDone;
+          }
+        }
+        if (loaded >= total) {
+          setTimeout(printIframe, 200);
+        }
+      } else {
+        setTimeout(printIframe, 200);
+      }
+    }
   }
 
-  // ── Import / Export ─────────────────────────────────────────────
-  protected exportMarkdown(): void {
-    const md = this.editor()?.getMarkdown() || '';
+  protected async exportDocs(): Promise<void> {
+    const rawHtml = this.editor()?.getHtml() || this.convertDocToHtml(this.currentDoc());
+    // Resolve all images to Base64 data URLs for Microsoft Word
+    const html = await imageStorage.resolveHtmlImages(rawHtml, true);
+    const title = this.title() || 'Inkframe Document';
+    const docContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${title}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; color: #111827; }
+          h1 { font-size: 22pt; font-weight: bold; color: #111827; margin: 18pt 0 6pt; }
+          h2 { font-size: 16pt; font-weight: bold; color: #1f2937; margin: 14pt 0 4pt; }
+          h3 { font-size: 13pt; font-weight: bold; color: #374151; margin: 10pt 0 3pt; }
+          p { margin: 6pt 0; }
+          table { border-collapse: collapse; width: 100%; margin: 12pt 0; }
+          th, td { border: 1px solid #d1d5db; padding: 6pt 8pt; text-align: left; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          blockquote { border-left: 3pt solid #2563eb; padding-left: 10pt; color: #4b5563; font-style: italic; margin: 8pt 0; }
+          code { font-family: 'Consolas', monospace; font-size: 10pt; background-color: #f3f4f6; padding: 2pt 4pt; }
+          pre { font-family: 'Consolas', monospace; font-size: 10pt; background-color: #f3f4f6; padding: 8pt; border: 1px solid #e5e7eb; }
+          .callout { border-left: 4pt solid #2563eb; padding: 8pt 12pt; margin: 8pt 0; background-color: #eff6ff; }
+          .callout-warning { border-left-color: #d97706; background-color: #fffbeb; }
+          .callout-success { border-left-color: #16a34a; background-color: #f0fdf4; }
+          .callout-danger { border-left-color: #dc2626; background-color: #fef2f2; }
+          img { max-width: 100%; height: auto; margin: 6pt 0; }
+        </style>
+      </head>
+      <body>
+        ${html}
+      </body>
+      </html>
+    `;
+    this.downloadFile(docContent, 'inkframe-document.doc', 'application/msword');
+  }
+
+  protected async exportMarkdown(): Promise<void> {
+    let md = this.editor()?.getMarkdown() || '';
+    if (!md) {
+      try {
+        const node = schema.nodeFromJSON(migrate(this.currentDoc()));
+        md = docToMarkdown(node);
+      } catch {}
+    }
+    md = await imageStorage.resolveMarkdownImages(md);
     this.downloadFile(md, 'inkframe-document.md', 'text/markdown');
   }
 
-  protected exportHtml(): void {
-    const html = this.editor()?.getHtml() || '';
-    this.downloadFile(html, 'inkframe-document.html', 'text/html');
-  }
-
-  protected exportJson(): void {
-    const json = JSON.stringify(this.currentDoc(), null, 2);
-    this.downloadFile(json, 'inkframe-document.json', 'application/json');
-  }
-
   protected importMarkdown(): void {
-    this.pickFile('.md,text/markdown', (content) => {
-      this.editor()?.loadMarkdown(content);
-      this.updateOutputs();
-    });
-  }
-
-  protected importHtml(): void {
-    this.pickFile('.html,text/html', (content) => {
-      this.editor()?.loadHtml(content);
-      this.updateOutputs();
-    });
-  }
-
-  protected importJson(): void {
-    this.pickFile('.json,application/json', (content) => {
-      try {
-        const parsed = JSON.parse(content) as StoredDoc;
-        this.editor()?.loadDoc(parsed);
-        this.updateOutputs();
-      } catch (e) {
-        alert('Invalid JSON file format.');
+    this.pickFile('.md,text/markdown,.html,text/html,.txt,text/plain', async (content, filename) => {
+      const isHtml = filename.endsWith('.html') || filename.endsWith('.htm') || content.trim().startsWith('<');
+      if (isHtml) {
+        this.editor()?.loadHtml(content);
+      } else {
+        this.editor()?.loadMarkdown(content);
       }
+      this.isDirty.set(true);
+      await this.refreshPreviewHtml();
     });
   }
 
-  private pickFile(accept: string, onLoad: (content: string) => void): void {
+  private pickFile(accept: string, onLoad: (content: string, filename: string) => void): void {
     if (typeof document === 'undefined') return;
     const input = document.createElement('input');
     input.type = 'file';
@@ -436,7 +676,7 @@ export class App {
       const file = input.files?.[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = () => onLoad(reader.result as string);
+        reader.onload = () => onLoad((reader.result as string) || '', file.name);
         reader.readAsText(file);
       }
     };

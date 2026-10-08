@@ -1,9 +1,9 @@
-/* ── Inkframe Centralized Theming System (Dark & Light Variables) ── */
+/* ── Inkframe Centralized Theming System (Dark & Light) ── */
 :root {
   --ink-theme: dark;
   color-scheme: dark;
 
-  /* Surfaces & Backgrounds */
+  /* Surfaces & Backgrounds - Clean, Professional Obsidian Base (Tiptap-inspired) */
   --ink-bg-app: #0d0d0d;
   --ink-bg-card: #151516;
   --ink-bg-wrapper: #0d0d0d;
@@ -20,7 +20,7 @@
   --ink-bg-code: #0a0a0b;
   --ink-bg-code-gutter: #080809;
 
-  /* Borders & Dividers */
+  /* Borders & Dividers - Hairline Precision (1px subtle) */
   --ink-border-default: rgba(255, 255, 255, 0.08);
   --ink-border-subtle: rgba(255, 255, 255, 0.05);
   --ink-border-focus: rgba(139, 92, 246, 0.45);
@@ -32,45 +32,136 @@
   --ink-text-heading: #ffffff;
   --ink-text-inverse: #0d0d0d;
 
-  /* Shadows */
+  /* Shadows - Minimal & Flat Micro-Elevation Only */
   --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
   --ink-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
   --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.2);
   --ink-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --ink-shadow-menu: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+  /* Buttons & Interactive States */
+  --ink-btn-hover-bg: rgba(255, 255, 255, 0.06);
+  --ink-btn-active-bg: rgba(139, 92, 246, 0.16);
+  --ink-btn-active-text: #c4b5fd;
+  --ink-btn-active-border: rgba(139, 92, 246, 0.32);
+
+  /* Active / Selected Item States */
+  --ink-active-bg: rgba(139, 92, 246, 0.16);
+  --ink-active-text: #c4b5fd;
+  --ink-active-border: rgba(139, 92, 246, 0.32);
+
+  /* Badges, Glyphs & Shortcuts */
+  --ink-badge-bg: rgba(255, 255, 255, 0.08);
+  --ink-badge-text: rgba(255, 255, 255, 0.7);
+  --ink-badge-active-bg: rgba(139, 92, 246, 0.2);
+  --ink-badge-active-text: #ddd6fe;
+  --ink-glyph-bg: rgba(255, 255, 255, 0.08);
+  --ink-glyph-text: rgba(255, 255, 255, 0.8);
+
+  /* Accents - Refined Violet / Indigo Accent */
+  --ink-accent-primary: #8b5cf6;
+  --ink-accent-hover: #7c3aed;
+  --ink-accent-light: #a78bfa;
+  --ink-danger: #ef4444;
+  --ink-danger-bg: rgba(239, 68, 68, 0.12);
+  --ink-danger-hover-bg: rgba(239, 68, 68, 0.2);
+  --ink-danger-text: #f87171;
+
+  /* Tables */
+  --ink-border: rgba(255, 255, 255, 0.08);
+  --ink-table-bg: #151516;
+  --ink-th-bg: #1a1a1d;
+  --ink-th-color: #f9fafb;
+
+  /* Scrollbars */
+  --ink-scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --ink-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+
+  /* Lightbox */
+  --ink-lightbox-backdrop: rgba(10, 10, 11, 0.92);
 }
 
-[data-theme='light'], .theme-light {
+:root[data-theme="light"],
+body[data-theme="light"],
+body.theme-light,
+.theme-light {
   --ink-theme: light;
   color-scheme: light;
 
-  --ink-bg-app: #f4f5f7;
+  /* Surfaces & Backgrounds - Warm, Modern Flat Light (Tiptap-inspired) */
+  --ink-bg-app: #f5f5f4;
   --ink-bg-card: #ffffff;
-  --ink-bg-wrapper: #ffffff;
+  --ink-bg-wrapper: #f5f5f4;
   --ink-bg-header: #ffffff;
-  --ink-bg-toolbar: #fafafa;
+  --ink-bg-toolbar: #ffffff;
   --ink-bg-page: #ffffff;
   --ink-bg-menu: #ffffff;
   --ink-bg-popover: #ffffff;
   --ink-bg-input: #ffffff;
-  --ink-bg-hover: rgba(0, 0, 0, 0.05);
-  --ink-bg-subtle: #f0f1f3;
+  --ink-bg-hover: rgba(0, 0, 0, 0.04);
+  --ink-bg-subtle: #f0f0ee;
   --ink-bg-table: #ffffff;
-  --ink-bg-th: #f3f4f6;
-  --ink-bg-code: #f3f4f6;
-  --ink-bg-code-gutter: #e5e7eb;
+  --ink-bg-th: #f9fafb;
+  --ink-bg-code: #f6f6f7;
+  --ink-bg-code-gutter: #ececeb;
 
-  --ink-border-default: rgba(0, 0, 0, 0.1);
-  --ink-border-subtle: rgba(0, 0, 0, 0.06);
-  --ink-border-focus: rgba(99, 102, 241, 0.5);
+  /* Borders & Dividers - Hairline Precision */
+  --ink-border-default: rgba(0, 0, 0, 0.08);
+  --ink-border-subtle: rgba(0, 0, 0, 0.05);
+  --ink-border-focus: rgba(124, 58, 237, 0.35);
 
-  --ink-text-primary: #111827;
-  --ink-text-secondary: #4b5563;
-  --ink-text-muted: #9ca3af;
-  --ink-text-heading: #111827;
+  /* Typography */
+  --ink-text-primary: #0d0d0d;
+  --ink-text-secondary: rgba(13, 13, 13, 0.65);
+  --ink-text-muted: rgba(13, 13, 13, 0.4);
+  --ink-text-heading: #0d0d0d;
   --ink-text-inverse: #ffffff;
 
-  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --ink-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --ink-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  /* Shadows - Minimal & Flat Micro-Elevation Only */
+  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --ink-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --ink-shadow-page: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --ink-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --ink-shadow-menu: 0 6px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Buttons & Interactive States */
+  --ink-btn-hover-bg: rgba(0, 0, 0, 0.04);
+  --ink-btn-active-bg: rgba(124, 58, 237, 0.08);
+  --ink-btn-active-text: #6d28d9;
+  --ink-btn-active-border: rgba(124, 58, 237, 0.25);
+
+  /* Active / Selected Item States */
+  --ink-active-bg: rgba(124, 58, 237, 0.08);
+  --ink-active-text: #6d28d9;
+  --ink-active-border: rgba(124, 58, 237, 0.25);
+
+  /* Badges, Glyphs & Shortcuts */
+  --ink-badge-bg: rgba(0, 0, 0, 0.05);
+  --ink-badge-text: rgba(13, 13, 13, 0.7);
+  --ink-badge-active-bg: rgba(124, 58, 237, 0.1);
+  --ink-badge-active-text: #6d28d9;
+  --ink-glyph-bg: rgba(0, 0, 0, 0.05);
+  --ink-glyph-text: #374151;
+
+  /* Accents */
+  --ink-accent-primary: #7c3aed;
+  --ink-accent-hover: #6d28d9;
+  --ink-accent-light: #7c3aed;
+  --ink-danger: #dc2626;
+  --ink-danger-bg: #fef2f2;
+  --ink-danger-hover-bg: #fee2e2;
+  --ink-danger-text: #dc2626;
+
+  /* Tables */
+  --ink-border: rgba(0, 0, 0, 0.08);
+  --ink-table-bg: #ffffff;
+  --ink-th-bg: #f9fafb;
+  --ink-th-color: #0d0d0d;
+
+  /* Scrollbars */
+  --ink-scrollbar-thumb: rgba(0, 0, 0, 0.14);
+  --ink-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+
+  /* Lightbox */
+  --ink-lightbox-backdrop: rgba(13, 13, 13, 0.85);
 }

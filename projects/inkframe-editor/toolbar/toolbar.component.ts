@@ -458,24 +458,54 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
         <!-- Table Insert Dropdown -->
         <button type="button"
                 class="ink-tb-icon-btn"
+                #tableTrigger="matMenuTrigger"
                 aria-label="Insert table"
                 matTooltip="Insert table"
-                [matMenuTriggerFor]="insertTableMenu">
-          <mat-icon>table_chart</mat-icon>
+                [matMenuTriggerFor]="insertTableMenu"
+                (menuOpened)="onTableMenuOpened()">
+          <mat-icon>grid_on</mat-icon>
         </button>
-        <mat-menu #insertTableMenu="matMenu" class="ink-toolbar-mat-menu">
-          <button mat-menu-item (click)="svc.insertTable(3, 3)">
-            <mat-icon>table_chart</mat-icon>
-            <span class="menu-item-text">Standard table (3×3)</span>
-          </button>
-          <button mat-menu-item (click)="svc.insertTable(2, 2)">
-            <mat-icon>grid_view</mat-icon>
-            <span class="menu-item-text">Compact table (2×2)</span>
-          </button>
-          <button mat-menu-item (click)="svc.insertTable(4, 4)">
-            <mat-icon>grid_on</mat-icon>
-            <span class="menu-item-text">Large table (4×4)</span>
-          </button>
+        <mat-menu #insertTableMenu="matMenu">
+          <div class="ink-table-grid-popover" (click)="$event.stopPropagation()">
+            <div class="ink-table-grid" role="grid" aria-label="Table dimension selector">
+              @for (r of gridRows; track r) {
+                <div class="ink-table-grid-row" role="row">
+                  @for (c of gridCols; track c) {
+                    <button type="button"
+                            role="gridcell"
+                            class="ink-table-grid-cell"
+                            [class.active]="r <= tableHoverRows() && c <= tableHoverCols()"
+                            (mouseenter)="onCellHover(r, c)"
+                            (click)="insertTableGrid(r, c, tableTrigger)"
+                            [attr.aria-label]="c + ' columns by ' + r + ' rows'">
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="ink-table-pills"
+                 (click)="insertTableGrid(tableHoverRows(), tableHoverCols(), tableTrigger)"
+                 title="Click to insert table">
+              <div class="ink-table-pill">
+                <svg class="pill-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="12" height="12" rx="2.5" />
+                  <line x1="6" y1="2" x2="6" y2="14" />
+                  <line x1="10" y1="2" x2="10" y2="14" />
+                </svg>
+                <span class="pill-val">{{ tableHoverCols() }}</span>
+              </div>
+              <span class="ink-table-times">×</span>
+              <div class="ink-table-pill">
+                <svg class="pill-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="12" height="12" rx="2.5" />
+                  <line x1="2" y1="6" x2="14" y2="6" />
+                  <line x1="2" y1="10" x2="14" y2="10" />
+                </svg>
+                <span class="pill-val">{{ tableHoverRows() }}</span>
+              </div>
+            </div>
+          </div>
         </mat-menu>
 
         <!-- Callout Dropdown -->
@@ -969,6 +999,26 @@ export class ToolbarComponent implements OnDestroy {
   protected imageUrl = '';
   protected previewError = false;
   protected linkUrl = '';
+
+  protected readonly gridRows = [1, 2, 3, 4, 5, 6, 7, 8];
+  protected readonly gridCols = [1, 2, 3, 4, 5, 6, 7, 8];
+  protected readonly tableHoverRows = signal(1);
+  protected readonly tableHoverCols = signal(1);
+
+  protected onTableMenuOpened(): void {
+    this.tableHoverRows.set(1);
+    this.tableHoverCols.set(1);
+  }
+
+  protected onCellHover(r: number, c: number): void {
+    this.tableHoverRows.set(r);
+    this.tableHoverCols.set(c);
+  }
+
+  protected insertTableGrid(rows: number, cols: number, trigger: MatMenuTrigger): void {
+    this.svc.insertTable(rows, cols);
+    trigger.closeMenu();
+  }
 
   protected currentBlockLabel(): string {
     const b = this.svc.block();

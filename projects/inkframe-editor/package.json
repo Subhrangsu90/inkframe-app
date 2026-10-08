@@ -28,5 +28,18 @@
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
+  "style": "styles/index.scss",
+  "exports": {
+    "./styles": {
+      "sass": "./styles/index.scss",
+      "style": "./styles/index.scss",
+      "default": "./styles/index.scss"
+    },
+    "./styles/*": {
+      "sass": "./styles/*",
+      "style": "./styles/*",
+      "default": "./styles/*"
+    }
+  },
   "sideEffects": false
 }

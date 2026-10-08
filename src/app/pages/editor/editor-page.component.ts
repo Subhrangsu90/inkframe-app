@@ -35,81 +35,9 @@ import {
   formatRelativeTime,
   extractDocTitle,
 } from '../../core/document-manager.service';
+import { WELCOME_DOC } from '../../core/welcome-doc';
 
-const DEMO_DOC: StoredDoc = {
-  schemaVersion: 1,
-  doc: {
-    type: 'doc',
-    content: [
-      {
-        type: 'heading',
-        attrs: { level: 1 },
-        content: [{ type: 'text', text: 'Welcome to Inkframe' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'A clean, modern document editor built with Angular and ProseMirror. Try editing this text, creating lists, or inserting images.',
-          },
-        ],
-      },
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Features' }],
-      },
-      {
-        type: 'bullet_list',
-        content: [
-          {
-            type: 'list_item',
-            content: [
-              {
-                type: 'paragraph',
-                content: [
-                  { type: 'text', marks: [{ type: 'strong' }], text: 'Rich typography' },
-                  { type: 'text', text: ' with headings, lists, blockquotes, and code blocks' },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'list_item',
-            content: [
-              {
-                type: 'paragraph',
-                content: [
-                  { type: 'text', marks: [{ type: 'strong' }], text: 'Image attachments' },
-                  { type: 'text', text: ' with full-res inspection and zoom controls' },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'list_item',
-            content: [
-              {
-                type: 'paragraph',
-                content: [
-                  { type: 'text', marks: [{ type: 'strong' }], text: 'Markdown & HTML' },
-                  { type: 'text', text: ' seamless import and export' },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          { type: 'text', marks: [{ type: 'em' }], text: 'Start typing below to see changes in the preview tab in real-time...' },
-        ],
-      },
-    ],
-  },
-};
+const DEMO_DOC: StoredDoc = WELCOME_DOC;
 
 function arrayBufferToBinary(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);

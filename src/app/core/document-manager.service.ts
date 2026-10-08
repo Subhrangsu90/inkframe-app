@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { StoredDoc } from '../editor';
 import { imageStorage } from '../editor/core/image-storage';
+import { WELCOME_DOC } from './welcome-doc';
 
 export interface DocMeta {
   id: string;
@@ -219,7 +220,7 @@ export class DocumentManagerService {
     } catch {}
 
     if (index.length === 0) {
-      const created = await this.createDoc('Welcome to Inkframe');
+      const created = await this.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
       return created.meta.id;
     }
 

@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,8 +33,29 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ink-toolbar" role="toolbar" aria-label="Editor toolbar">
-      <!-- 1. History Group (Undo / Redo) -->
+    <div class="ink-toolbar-wrapper"
+         [class.can-scroll-left]="canScrollLeft()"
+         [class.can-scroll-right]="canScrollRight()">
+      @if (canScrollLeft()) {
+        <button type="button"
+                class="ink-tb-scroll-btn ink-tb-scroll-left"
+                (click)="scrollByOffset(-180)"
+                aria-label="Scroll toolbar left"
+                tabindex="-1">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+      }
+
+      <div #toolbarEl
+           class="ink-toolbar"
+           role="toolbar"
+           aria-label="Editor toolbar"
+           (scroll)="onToolbarScroll()"
+           (pointerdown)="onPointerDown($event)"
+           (pointermove)="onPointerMove($event)"
+           (pointerup)="onPointerUp($event)"
+           (pointercancel)="onPointerCancel()">
+        <!-- 1. History Group (Undo / Redo) -->
       <div class="tb-group" role="group" aria-label="History">
         <button type="button"
                 class="ink-tb-icon-btn"
@@ -521,6 +551,17 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
           <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
         </button>
       </div>
+      </div>
+
+      @if (canScrollRight()) {
+        <button type="button"
+                class="ink-tb-scroll-btn ink-tb-scroll-right"
+                (click)="scrollByOffset(180)"
+                aria-label="Scroll toolbar right"
+                tabindex="-1">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      }
     </div>
   `,
   styles: `
@@ -533,24 +574,113 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       z-index: 20;
     }
 
+    .ink-toolbar-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+
+      /* Visual gradient fade hints when overflowed */
+      &.can-scroll-left::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 28px;
+        background: linear-gradient(to right, var(--ink-bg-toolbar, #18191c), transparent);
+        pointer-events: none;
+        z-index: 12;
+      }
+
+      &.can-scroll-right::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 28px;
+        background: linear-gradient(to left, var(--ink-bg-toolbar, #18191c), transparent);
+        pointer-events: none;
+        z-index: 12;
+      }
+    }
+
+    /* Scroll nudge buttons for touch / mobile screens */
+    .ink-tb-scroll-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 15;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid var(--ink-border-default, rgba(255, 255, 255, 0.12));
+      border-radius: 6px;
+      background: var(--ink-bg-toolbar, #18191c);
+      color: var(--ink-text-primary, #f8fafc);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      opacity: 0.95;
+      transition: all 0.15s ease;
+
+      &:hover {
+        opacity: 1;
+        background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.1));
+        color: var(--ink-accent-light, #60a5fa);
+      }
+
+      &:active {
+        transform: translateY(-50%) scale(0.92);
+      }
+
+      &.ink-tb-scroll-left {
+        left: 3px;
+      }
+
+      &.ink-tb-scroll-right {
+        right: 3px;
+      }
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
     .ink-toolbar {
       display: flex;
       align-items: center;
       gap: 4px 3px;
-      padding: 6px 8px;
+      padding: 6px 10px;
       border-bottom: 1px solid var(--ink-border-default, #2e3036);
       background: var(--ink-bg-toolbar, #18191c);
       flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      overscroll-behavior-x: contain;
+      scroll-behavior: smooth;
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+      min-height: 44px;
+      width: 100%;
+      cursor: grab;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+
+      &:active {
+        cursor: grabbing;
+      }
+
       &::-webkit-scrollbar {
         display: none;
       }
-      user-select: none;
-      box-sizing: border-box;
-      min-height: 44px;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .tb-group {
@@ -558,6 +688,7 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       align-items: center;
       gap: 2px;
       flex-shrink: 0;
+      touch-action: pan-x;
     }
 
     .tb-divider {
@@ -588,6 +719,8 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
+      touch-action: pan-x;
+      -webkit-tap-highlight-color: transparent;
       transition: all 0.14s ease;
 
       &:hover {
@@ -644,6 +777,8 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       background: transparent;
       color: var(--ink-text-secondary, #94a3b8);
       cursor: pointer;
+      touch-action: pan-x;
+      -webkit-tap-highlight-color: transparent;
       transition: all 0.12s ease;
 
       &:hover:not(:disabled) {
@@ -709,11 +844,128 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
     .small-text { font-size: 12px; }
   `,
 })
-export class ToolbarComponent {
+export class ToolbarComponent implements OnDestroy {
   protected readonly svc = inject(EditorService);
   protected readonly themeService = inject(ThemeService);
   protected readonly textColors: ColorSwatch[] = TEXT_COLORS;
   protected readonly emojis: string[] = COMMON_EMOJIS;
+
+  protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');
+  protected readonly canScrollLeft = signal(false);
+  protected readonly canScrollRight = signal(false);
+
+  // Pointer drag-to-scroll state
+  private isPointerDown = false;
+  private startX = 0;
+  private startScrollLeft = 0;
+  private hasDragged = false;
+  private lastDragTimestamp = 0;
+  private resizeObserver: ResizeObserver | null = null;
+
+  constructor() {
+    afterNextRender(() => {
+      this.initToolbarScroll();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
+
+  private initToolbarScroll(): void {
+    const el = this.toolbarRef()?.nativeElement;
+    if (!el) return;
+
+    // Suppress accidental button click triggers when swiping
+    el.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        if (this.hasDragged || Date.now() - this.lastDragTimestamp < 200) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+      },
+      true // capture phase
+    );
+
+    this.checkScrollState();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.checkScrollState();
+      });
+      this.resizeObserver.observe(el);
+    }
+  }
+
+  protected onToolbarScroll(): void {
+    this.checkScrollState();
+  }
+
+  protected checkScrollState(): void {
+    const el = this.toolbarRef()?.nativeElement;
+    if (!el) return;
+
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const current = el.scrollLeft;
+    this.canScrollLeft.set(current > 4);
+    this.canScrollRight.set(current < maxScroll - 4);
+  }
+
+  protected scrollByOffset(offset: number): void {
+    const el = this.toolbarRef()?.nativeElement;
+    if (!el) return;
+    el.scrollBy({ left: offset, behavior: 'smooth' });
+    setTimeout(() => this.checkScrollState(), 250);
+  }
+
+  protected onPointerDown(event: PointerEvent): void {
+    if (event.button !== 0 && event.pointerType === 'mouse') return;
+
+    const el = this.toolbarRef()?.nativeElement;
+    if (!el) return;
+
+    this.isPointerDown = true;
+    this.hasDragged = false;
+    this.startX = event.clientX;
+    this.startScrollLeft = el.scrollLeft;
+  }
+
+  protected onPointerMove(event: PointerEvent): void {
+    if (!this.isPointerDown) return;
+
+    const el = this.toolbarRef()?.nativeElement;
+    if (!el) return;
+
+    const deltaX = event.clientX - this.startX;
+
+    if (!this.hasDragged && Math.abs(deltaX) > 6) {
+      this.hasDragged = true;
+    }
+
+    if (this.hasDragged) {
+      el.scrollLeft = this.startScrollLeft - deltaX;
+      this.checkScrollState();
+    }
+  }
+
+  protected onPointerUp(event: PointerEvent): void {
+    if (this.isPointerDown) {
+      if (this.hasDragged) {
+        this.lastDragTimestamp = Date.now();
+      }
+      this.isPointerDown = false;
+      setTimeout(() => {
+        this.hasDragged = false;
+      }, 80);
+    }
+  }
+
+  protected onPointerCancel(): void {
+    this.isPointerDown = false;
+    this.hasDragged = false;
+  }
 
   protected imageTab: 'file' | 'link' = 'file';
   protected imageUrl = '';

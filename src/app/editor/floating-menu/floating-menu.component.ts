@@ -194,6 +194,13 @@ import { TEXT_COLORS } from '../core/colors';
       border-radius: 8px;
       box-shadow: var(--ink-shadow-popover, 0 4px 20px rgba(0, 0, 0, 0.45));
       user-select: none;
+      max-width: calc(100vw - 16px);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      &::-webkit-scrollbar {
+        display: none;
+      }
       transition: background-color 0.15s ease, border-color 0.15s ease;
     }
     .ink-floating.placement-bottom {

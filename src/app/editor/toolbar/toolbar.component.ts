@@ -528,21 +528,22 @@ import { TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '../core/colors';
       display: block;
       width: 100%;
       flex-shrink: 0;
-      position: relative;
+      position: sticky;
+      top: 0;
       z-index: 20;
     }
 
     .ink-toolbar {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
       gap: 4px 3px;
-      padding: 6px 10px;
+      padding: 6px 8px;
       border-bottom: 1px solid var(--ink-border-default, #2e3036);
       background: var(--ink-bg-toolbar, #18191c);
       flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
       &::-webkit-scrollbar {
         display: none;
       }

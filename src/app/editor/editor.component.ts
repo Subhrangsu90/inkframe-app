@@ -57,25 +57,40 @@ import { TableToolbarComponent } from './table-toolbar/table-toolbar.component';
   styles: `
     .ink-editor-wrapper {
       border: 1px solid var(--ink-border-default, #2e3036);
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
       background: var(--ink-bg-wrapper, #141518);
-      height: clamp(560px, 76vh, 880px);
+      height: calc(100dvh - 128px);
+      min-height: 460px;
       display: flex;
       flex-direction: column;
       position: relative;
       transition: background-color 0.15s ease, border-color 0.15s ease;
+
+      @media (min-width: 768px) {
+        border-radius: 12px;
+        height: clamp(580px, 76vh, 900px);
+      }
     }
     .ink-editor-viewport {
       flex: 1 1 0;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
       background: var(--ink-bg-app, #121316);
-      padding: 28px 20px 60px;
+      padding: 8px 4px 32px;
       cursor: text;
       box-sizing: border-box;
       transition: background-color 0.15s ease;
+
+      @media (min-width: 640px) {
+        padding: 18px 14px 44px;
+      }
+
+      @media (min-width: 900px) {
+        padding: 28px 20px 60px;
+      }
 
       scrollbar-width: thin;
       scrollbar-color: var(--ink-scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
@@ -101,35 +116,49 @@ import { TableToolbarComponent } from './table-toolbar/table-toolbar.component';
       margin: 0 auto;
       background: var(--ink-bg-page, #18191c);
       border: 1px solid var(--ink-border-subtle, #282a30);
-      border-radius: 8px;
-      box-shadow: var(--ink-shadow-page, 0 4px 24px -2px rgba(0, 0, 0, 0.45));
-      min-height: 880px;
+      border-radius: 6px;
+      box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
+      min-height: calc(100dvh - 180px);
       height: auto;
       overflow: hidden;
       box-sizing: border-box;
       transition: box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+
+      @media (min-width: 768px) {
+        border-radius: 8px;
+        min-height: 880px;
+      }
 
       &:focus-within {
         box-shadow: 0 6px 30px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
       }
     }
     .ink-host {
-      padding: 3rem 3.5rem 4rem;
+      padding: 1.25rem 0.85rem 2.5rem;
       outline: none;
-      min-height: 880px;
+      min-height: calc(100dvh - 200px);
       box-sizing: border-box;
       cursor: text;
 
-      @media (max-width: 768px) {
-        padding: 1.5rem 1.25rem 2rem;
+      @media (min-width: 640px) {
+        padding: 2rem 1.75rem 3rem;
+      }
+
+      @media (min-width: 900px) {
+        padding: 3rem 3.5rem 4rem;
+        min-height: 880px;
       }
     }
     .ink-host :first-child {
       margin-top: 0;
     }
     .ink-host .ProseMirror {
-      min-height: 760px;
+      min-height: calc(100dvh - 220px);
       outline: none;
+
+      @media (min-width: 768px) {
+        min-height: 760px;
+      }
     }
   `,
 })

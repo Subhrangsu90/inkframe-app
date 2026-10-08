@@ -69,16 +69,20 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         const slash = slashKey.getState(state)!;
         const vp = view.dom.closest('.ink-editor-viewport') as HTMLElement | null;
         const vpRect = vp?.getBoundingClientRect();
+        const screenW = typeof window !== 'undefined' ? window.innerWidth : 800;
 
         if (slash.open && !view.composing) {
           const c = view.coordsAtPos(slash.to);
           const isVisible = !vpRect || (c.bottom >= vpRect.top && c.top <= vpRect.bottom);
           if (isVisible) {
+            // Keep slash menu clamped on small mobile screens
+            const slashWidth = Math.min(300, screenW - 24);
+            const clampedLeft = Math.max(12, Math.min(c.left, screenW - slashWidth - 12));
             hooks.onSlashMenu({
               query: slash.query,
               from: slash.from,
               to: slash.to,
-              left: c.left,
+              left: clampedLeft,
               top: c.bottom,
             });
           } else {
@@ -128,7 +132,10 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
               const rawLeft = rect.left + rect.width / 2;
               let left = rawLeft;
               if (vpRect) {
-                left = Math.max(vpRect.left + 150, Math.min(rawLeft, vpRect.right - 150));
+                const margin = Math.min(140, Math.max(60, (vpRect.width - 24) / 2));
+                left = Math.max(vpRect.left + margin, Math.min(rawLeft, vpRect.right - margin));
+              } else {
+                left = Math.max(70, Math.min(rawLeft, screenW - 70));
               }
 
               lastFloatingCoords = { left, top, placement };
@@ -172,8 +179,10 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
             const rect = tableEl.getBoundingClientRect();
             const isVisible = !vpRect || (rect.bottom >= vpRect.top && rect.top <= vpRect.bottom);
             if (isVisible) {
+              const rawLeft = rect.left + rect.width / 2;
+              const left = Math.max(120, Math.min(rawLeft, screenW - 120));
               lastTableCoords = {
-                left: rect.left + rect.width / 2,
+                left,
                 top: rect.bottom + 8,
               };
               hooks.onTableMenu?.(lastTableCoords);

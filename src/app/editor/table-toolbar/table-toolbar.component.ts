@@ -277,6 +277,13 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       box-shadow: var(--ink-shadow-popover, 0 4px 16px rgba(0, 0, 0, 0.4));
       color: var(--ink-text-secondary, #94a3b8);
       user-select: none;
+      max-width: calc(100vw - 16px);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      &::-webkit-scrollbar {
+        display: none;
+      }
       transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 

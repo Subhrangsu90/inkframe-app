@@ -142,11 +142,16 @@ export interface ImagePreviewPayload {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       padding: 10px 16px;
       background: var(--ink-bg-header, var(--ink-bg-card, #18191c));
       border-bottom: 1px solid var(--ink-border-default, #2e3036);
       z-index: 10;
       transition: background-color 0.15s ease, border-color 0.15s ease;
+
+      @media (max-width: 640px) {
+        padding: 8px 10px;
+      }
     }
 
     .ink-lightbox-info {
@@ -155,6 +160,8 @@ export interface ImagePreviewPayload {
       gap: 10px;
       color: var(--ink-text-primary, #f1f5f9);
       overflow: hidden;
+      min-width: 0;
+      flex: 1;
 
       .ink-lightbox-title {
         font-size: 0.92rem;
@@ -164,6 +171,11 @@ export interface ImagePreviewPayload {
         text-overflow: ellipsis;
         max-width: 320px;
         color: var(--ink-text-heading, #ffffff);
+
+        @media (max-width: 640px) {
+          max-width: 140px;
+          font-size: 0.84rem;
+        }
       }
 
       .ink-lightbox-dimensions {
@@ -174,6 +186,10 @@ export interface ImagePreviewPayload {
         padding: 2px 8px;
         border-radius: 4px;
         font-family: monospace;
+
+        @media (max-width: 520px) {
+          display: none;
+        }
       }
     }
 
@@ -181,6 +197,7 @@ export interface ImagePreviewPayload {
       display: flex;
       align-items: center;
       gap: 4px;
+      flex-shrink: 0;
 
       .ink-lightbox-btn {
         color: var(--ink-text-secondary, #cbd5e1);

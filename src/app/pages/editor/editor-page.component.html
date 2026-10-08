@@ -20,17 +20,17 @@
            class="ink-nav-home-btn"
            matTooltip="Back to Landing Page">
           <mat-icon>arrow_back</mat-icon>
-          <span>Home</span>
+          <span class="btn-text">Home</span>
         </a>
 
-        <div class="ink-nav-divider"></div>
+        <div class="ink-nav-divider hide-mobile"></div>
 
-        <a routerLink="/" class="ink-brand-logo" matTooltip="Inkframe Home">
+        <a routerLink="/" class="ink-brand-logo hide-mobile" matTooltip="Inkframe Home">
           <mat-icon>edit_note</mat-icon>
         </a>
-        <span class="ink-title">{{ title() }}</span>
+        <span class="ink-title hide-mobile">{{ title() }}</span>
 
-        <div class="ink-nav-divider"></div>
+        <div class="ink-nav-divider hide-mobile"></div>
 
         <!-- Document Switcher & History Button -->
         <button type="button"
@@ -73,18 +73,18 @@
       <!-- Right Actions: Word Count, New Doc, Save & Share -->
       <div class="ink-nav-right">
         <div class="ink-stats-pill" matTooltip="Document word and character counts">
-          <span>{{ wordCount() }} words</span>
-          <span class="stat-sep">·</span>
-          <span>{{ charCount() }} chars</span>
+          <span class="stat-count">{{ wordCount() }}w</span>
+          <span class="stat-sep stat-detail">·</span>
+          <span class="stat-count stat-detail">{{ charCount() }}c</span>
         </div>
 
-        <!-- New Document Button -->
+        <!-- New Document Button (desktop only, accessible via menu on mobile) -->
         <button type="button"
-                class="ink-btn-new"
+                class="ink-btn-new hide-mobile"
                 (click)="createNewDoc()"
                 matTooltip="Create New Document">
           <mat-icon>add</mat-icon>
-          <span>New</span>
+          <span class="btn-text">New</span>
         </button>
 
         <!-- Save Button -->
@@ -94,7 +94,7 @@
                 (click)="saveDocument()"
                 [matTooltip]="justSaved() ? 'Document saved to IndexedDB!' : 'Save document (Ctrl + S)'">
           <mat-icon>{{ justSaved() ? 'check' : 'save' }}</mat-icon>
-          <span>{{ justSaved() ? 'Saved' : 'Save' }}</span>
+          <span class="btn-text">{{ justSaved() ? 'Saved' : 'Save' }}</span>
         </button>
 
         <!-- Share Button (Generates content-only share link) -->
@@ -104,7 +104,7 @@
                 (click)="shareDocument()"
                 matTooltip="Create and copy clean content-only share link">
           <mat-icon>share</mat-icon>
-          <span>Share</span>
+          <span class="btn-text">Share</span>
         </button>
 
         <!-- More Actions Menu -->

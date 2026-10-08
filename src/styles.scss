@@ -201,14 +201,29 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus while maintaining desktop sizing */
+input,
+textarea,
+select {
+  font-size: 16px;
+
+  @media (min-width: 640px) {
+    font-size: inherit;
+  }
+}
+
 /* ── ProseMirror & Inkframe Global Styles ── */
 .ProseMirror {
   outline: none;
-  min-height: 800px;
+  min-height: calc(100dvh - 220px);
   box-sizing: border-box;
   font-size: 1rem;
   line-height: 1.65;
   color: var(--ink-text-primary);
+
+  @media (min-width: 768px) {
+    min-height: 800px;
+  }
 
   > *:first-child {
     margin-top: 0;
@@ -226,9 +241,18 @@ body {
     margin-bottom: 0.5rem;
   }
 
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.5rem; }
-  h3 { font-size: 1.25rem; }
+  h1 {
+    font-size: 1.65rem;
+    @media (min-width: 768px) { font-size: 2rem; }
+  }
+  h2 {
+    font-size: 1.35rem;
+    @media (min-width: 768px) { font-size: 1.5rem; }
+  }
+  h3 {
+    font-size: 1.15rem;
+    @media (min-width: 768px) { font-size: 1.25rem; }
+  }
 
   ul, ol {
     padding-left: 1.5rem;
@@ -346,11 +370,19 @@ body {
   }
 
   .tableWrapper {
-    overflow: visible !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
     padding-top: 28px !important;
-    padding-left: 24px !important;
-    margin: 1.5rem 0 !important;
+    padding-left: 10px !important;
+    margin: 1.25rem 0 !important;
     position: relative;
+
+    @media (min-width: 768px) {
+      overflow-x: visible !important;
+      padding-left: 24px !important;
+      margin: 1.5rem 0 !important;
+    }
   }
 
   /* Tables (matching clean aesthetics) */
@@ -358,8 +390,9 @@ body {
     border-collapse: separate !important;
     border-spacing: 0 !important;
     width: 100% !important;
+    min-width: 100% !important;
     margin: 0 !important;
-    table-layout: fixed !important;
+    table-layout: auto !important;
     position: relative !important;
     overflow: visible !important;
     border-radius: 6px !important;
@@ -367,15 +400,24 @@ body {
     background: var(--ink-table-bg, #151516) !important;
     box-shadow: none !important;
 
+    @media (min-width: 768px) {
+      table-layout: fixed !important;
+    }
+
     td, th {
       border-right: 1px solid var(--ink-border, rgba(255, 255, 255, 0.08)) !important;
       border-bottom: 1px solid var(--ink-border, rgba(255, 255, 255, 0.08)) !important;
-      padding: 8px 12px !important;
-      min-width: 90px !important;
+      padding: 6px 8px !important;
+      min-width: 64px !important;
       vertical-align: top !important;
       box-sizing: border-box !important;
       position: relative !important;
       transition: background-color 0.12s ease;
+
+      @media (min-width: 768px) {
+        padding: 8px 12px !important;
+        min-width: 90px !important;
+      }
 
       &:last-child {
         border-right: none !important;
@@ -438,14 +480,20 @@ body {
 .callout {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.85rem 1.15rem;
-  margin: 1.25rem 0;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  margin: 1rem 0;
   border-left: 3px solid var(--ink-accent-primary, #8b5cf6);
   border-radius: 6px;
   background: rgba(139, 92, 246, 0.06);
   color: var(--ink-text-primary);
   box-shadow: none;
+
+  @media (min-width: 640px) {
+    gap: 0.75rem;
+    padding: 0.85rem 1.15rem;
+    margin: 1.25rem 0;
+  }
 
   p {
     margin: 0;
@@ -635,6 +683,15 @@ img.ink-image {
       z-index: 10;
       pointer-events: none;
 
+      @media (max-width: 600px) {
+        top: 6px;
+        right: 6px;
+        padding: 2px 4px;
+        gap: 2px;
+        max-width: calc(100% - 12px);
+        overflow-x: auto;
+      }
+
       .ink-image-tool-btn {
         background: transparent;
         border: none;
@@ -752,9 +809,10 @@ img.ink-image {
     }
   }
 
-  /* Show controls on hover or selected */
+  /* Show controls on hover, selected, or focus */
   &:hover,
-  &.selected {
+  &.selected,
+  &:focus-within {
     .ink-image-wrapper {
       outline: 2px solid #3b82f6;
       outline-offset: 2px;
@@ -1488,11 +1546,20 @@ mat-divider.mat-divider,
     border-top-left-radius: 9px;
     border-bottom-left-radius: 9px;
 
+    @media (max-width: 600px) {
+      padding: 10px 6px;
+      min-width: 26px;
+    }
+
     .ink-code-line-number {
       font-size: 0.82rem;
       line-height: 1.65;
       color: var(--ink-text-muted);
       font-family: inherit;
+
+      @media (max-width: 600px) {
+        font-size: 0.74rem;
+      }
     }
   }
 
@@ -1502,11 +1569,17 @@ mat-divider.mat-divider,
     padding: 14px 18px 36px;
     background: transparent;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     line-height: 1.65;
     font-size: 0.88rem;
     color: var(--ink-text-primary);
     tab-size: 2;
     font-family: inherit;
+
+    @media (max-width: 600px) {
+      padding: 10px 10px 40px;
+      font-size: 0.8rem;
+    }
 
     .ink-code-content {
       background: transparent !important;
@@ -1594,6 +1667,14 @@ mat-divider.mat-divider,
     box-shadow: var(--ink-shadow-popover);
     z-index: 25;
     user-select: none;
+
+    @media (max-width: 600px) {
+      bottom: 4px;
+      right: 4px;
+      padding: 2px 4px;
+      gap: 2px;
+      border-radius: 6px;
+    }
 
     .ink-code-lang-btn {
       display: flex;

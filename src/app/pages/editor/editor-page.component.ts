@@ -17,17 +17,21 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { EditorComponent } from '@inkframe-ui/editor';
 import {
-  EditorComponent,
-  ImageLightboxComponent,
-  type ImagePreviewPayload,
   StoredDoc,
   schema,
   docToHtml,
   docToMarkdown,
   imageStorage,
   migrate,
-} from '../../editor';
+  highlightCodeInHtml,
+  highlightPreviewElement,
+} from '@inkframe-ui/editor/core';
+import {
+  ImageLightboxComponent,
+  type ImagePreviewPayload,
+} from '@inkframe-ui/editor/extensions';
 import { ThemeService } from '../../core/theme.service';
 import {
   DocumentManagerService,
@@ -278,13 +282,35 @@ export class EditorPageComponent implements OnInit {
     }
   }
 
-  private refreshPreviewHtml(): void {
+  private async refreshPreviewHtml(): Promise<void> {
     const ed = this.editor();
     const docToRender = ed ? ed.getJSON() : this.currentDoc();
-    const rawHtml = this.convertDocToHtml(docToRender);
+    let rawHtml = this.convertDocToHtml(docToRender);
+    rawHtml = highlightCodeInHtml(rawHtml);
+    rawHtml = await imageStorage.resolveHtmlImages(rawHtml);
     this.sanitizedPreviewHtml.set(
       this.sanitizer.bypassSecurityTrustHtml(rawHtml),
     );
+
+    // Double-check all images and code in preview DOM containers
+    if (typeof document !== 'undefined') {
+      setTimeout(async () => {
+        const previewEls = document.querySelectorAll<HTMLElement>('.ProseMirror-preview');
+        for (const previewEl of Array.from(previewEls)) {
+          highlightPreviewElement(previewEl);
+          const unresolvedImgs = previewEl.querySelectorAll<HTMLImageElement>('img[src^="ink-idb:"]');
+          for (const img of Array.from(unresolvedImgs)) {
+            const rawSrc = img.getAttribute('src');
+            if (rawSrc) {
+              const resolved = await imageStorage.resolveUrl(rawSrc);
+              if (resolved && resolved !== rawSrc) {
+                img.src = resolved;
+              }
+            }
+          }
+        }
+      }, 0);
+    }
   }
 
   /* ── Document Management & History Operations ── */
@@ -398,13 +424,14 @@ export class EditorPageComponent implements OnInit {
       let latestDoc = ed ? ed.getJSON() : this.currentDoc();
       this.currentDoc.set(latestDoc);
 
-      const inlinedDoc = await imageStorage.inlineDocImages(latestDoc);
+      const inlinedDoc = await imageStorage.inlineDocImages(latestDoc, true);
       this.currentDoc.set(inlinedDoc);
 
       await this.docManager.saveDoc(this.activeDocId(), inlinedDoc);
 
       const url = await encodeDocToUrl(inlinedDoc);
       this.shareUrl.set(url);
+      await this.refreshPreviewHtml();
     } catch (e) {
       console.error('Failed to share document:', e);
       this.shareUrl.set(window.location.href);
@@ -494,7 +521,9 @@ export class EditorPageComponent implements OnInit {
   protected async exportDocs(): Promise<void> {
     const ed = this.editor();
     const doc = ed ? ed.getJSON() : this.currentDoc();
-    const rawHtml = this.convertDocToHtml(doc);
+    let rawHtml = this.convertDocToHtml(doc);
+    rawHtml = highlightCodeInHtml(rawHtml);
+    rawHtml = await imageStorage.resolveHtmlImages(rawHtml, true);
 
     const docContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office'
@@ -536,7 +565,9 @@ export class EditorPageComponent implements OnInit {
   protected async exportPdf(): Promise<void> {
     const ed = this.editor();
     const doc = ed ? ed.getJSON() : this.currentDoc();
-    const rawHtml = this.convertDocToHtml(doc);
+    let rawHtml = this.convertDocToHtml(doc);
+    rawHtml = highlightCodeInHtml(rawHtml);
+    rawHtml = await imageStorage.resolveHtmlImages(rawHtml);
 
     const printWin = window.open('', '_blank');
     if (!printWin) {
@@ -588,10 +619,13 @@ export class EditorPageComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  protected exportHtml(): void {
+  protected async exportHtml(): Promise<void> {
     const ed = this.editor();
-    const html = ed ? ed.getHtml() : '';
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const doc = ed ? ed.getJSON() : this.currentDoc();
+    let rawHtml = this.convertDocToHtml(doc);
+    rawHtml = highlightCodeInHtml(rawHtml);
+    rawHtml = await imageStorage.resolveHtmlImages(rawHtml, true);
+    const blob = new Blob([rawHtml], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

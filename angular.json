@@ -32,8 +32,8 @@
             ],
             "styles": [
               "node_modules/prosemirror-view/style/prosemirror.css",
-  "node_modules/prosemirror-gapcursor/style/gapcursor.css",
-  "node_modules/prosemirror-tables/style/tables.css",
+              "node_modules/prosemirror-gapcursor/style/gapcursor.css",
+              "node_modules/prosemirror-tables/style/tables.css",
               "src/styles.scss"
             ],
             "server": "src/main.server.ts",
@@ -44,9 +44,7 @@
             "ssr": {
               "entry": "src/server.ts"
             },
-            "allowedCommonJsDependencies": [
-              "prismjs"
-            ]
+            "allowedCommonJsDependencies": ["prismjs"]
           },
           "configurations": {
             "production": {
@@ -94,6 +92,32 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        }
+      }
+    },
+    "inkframe-editor": {
+      "projectType": "library",
+      "root": "projects/inkframe-editor",
+      "sourceRoot": "projects/inkframe-editor/src",
+      "prefix": "ink",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/inkframe-editor/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/inkframe-editor/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/inkframe-editor/tsconfig.spec.json"
+          }
         }
       }
     }

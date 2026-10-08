@@ -1,0 +1,12 @@
+@forward './variables';
+
+/* ProseMirror Base Container Styling */
+.ink-editor-viewport {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.ink-host {
+  position: relative;
+  outline: none;
+}

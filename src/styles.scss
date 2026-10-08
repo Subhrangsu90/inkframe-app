@@ -1791,6 +1791,138 @@ mat-divider.mat-divider,
   }
 }
 
+/* Global Prism Syntax Highlighting (Applies to Preview, Read-only Share, and Editor) */
+.ProseMirror-preview,
+.ink-code-block,
+pre.ink-code-block,
+pre[class*="language-"] {
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: #6a737d;
+    font-style: italic;
+  }
+
+  .token.punctuation {
+    color: #abb2bf;
+  }
+
+  .token.property,
+  .token.tag,
+  .token.constant,
+  .token.symbol,
+  .token.deleted {
+    color: #e06c75;
+  }
+
+  .token.boolean,
+  .token.number {
+    color: #d19a66;
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: #98c379;
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url {
+    color: #56b6c2;
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.keyword {
+    color: #c678dd;
+    font-weight: 500;
+  }
+
+  .token.function,
+  .token.class-name {
+    color: #61afef;
+  }
+
+  .token.regex,
+  .token.important,
+  .token.variable {
+    color: #e5c07b;
+  }
+}
+
+/* Light Theme Prism Syntax Highlighting Overrides */
+[data-theme="light"],
+.theme-light {
+  .ink-code-block-wrapper,
+  .ProseMirror-preview,
+  .ink-code-block,
+  pre.ink-code-block,
+  pre[class*="language-"] {
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: #6e7781;
+      font-style: italic;
+    }
+
+    .token.punctuation {
+      color: #24292f;
+    }
+
+    .token.property,
+    .token.tag,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: #cf222e;
+    }
+
+    .token.boolean,
+    .token.number {
+      color: #953800;
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: #0a3069;
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url {
+      color: #0550ae;
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: #8250df;
+      font-weight: 500;
+    }
+
+    .token.function,
+    .token.class-name {
+      color: #8250df;
+    }
+
+    .token.regex,
+    .token.important,
+    .token.variable {
+      color: #953800;
+    }
+  }
+}
+
 /* ==========================================================================
    Phase 6: Interactive Table NodeView & Floating Table Controls
    ========================================================================== */

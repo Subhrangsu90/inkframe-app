@@ -6,6 +6,6 @@ export default defineConfig({
     environment: 'jsdom',
     isolate: false,
     testTimeout: 10000,
-    include: ['src/app/editor/**/*.spec.ts'],
+    include: ['projects/inkframe-editor/**/*.spec.ts', 'src/**/*.spec.ts'],
   },
 });

@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../dist/inkframe-editor",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "allowedNonPeerDependencies": [
+    "dompurify",
+    "prismjs",
+    "prosemirror-.*",
+    "rxjs",
+    "tslib"
+  ]
+}

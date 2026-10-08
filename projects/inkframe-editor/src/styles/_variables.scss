@@ -1,0 +1,76 @@
+/* ── Inkframe Centralized Theming System (Dark & Light Variables) ── */
+:root {
+  --ink-theme: dark;
+  color-scheme: dark;
+
+  /* Surfaces & Backgrounds */
+  --ink-bg-app: #0d0d0d;
+  --ink-bg-card: #151516;
+  --ink-bg-wrapper: #0d0d0d;
+  --ink-bg-header: #131315;
+  --ink-bg-toolbar: #131315;
+  --ink-bg-page: #151516;
+  --ink-bg-menu: #18181b;
+  --ink-bg-popover: #18181b;
+  --ink-bg-input: #151516;
+  --ink-bg-hover: rgba(255, 255, 255, 0.06);
+  --ink-bg-subtle: #1c1c1f;
+  --ink-bg-table: #151516;
+  --ink-bg-th: #1a1a1d;
+  --ink-bg-code: #0a0a0b;
+  --ink-bg-code-gutter: #080809;
+
+  /* Borders & Dividers */
+  --ink-border-default: rgba(255, 255, 255, 0.08);
+  --ink-border-subtle: rgba(255, 255, 255, 0.05);
+  --ink-border-focus: rgba(139, 92, 246, 0.45);
+
+  /* Typography */
+  --ink-text-primary: #f9fafb;
+  --ink-text-secondary: rgba(255, 255, 255, 0.65);
+  --ink-text-muted: rgba(255, 255, 255, 0.4);
+  --ink-text-heading: #ffffff;
+  --ink-text-inverse: #0d0d0d;
+
+  /* Shadows */
+  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --ink-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.2);
+  --ink-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'], .theme-light {
+  --ink-theme: light;
+  color-scheme: light;
+
+  --ink-bg-app: #f4f5f7;
+  --ink-bg-card: #ffffff;
+  --ink-bg-wrapper: #ffffff;
+  --ink-bg-header: #ffffff;
+  --ink-bg-toolbar: #fafafa;
+  --ink-bg-page: #ffffff;
+  --ink-bg-menu: #ffffff;
+  --ink-bg-popover: #ffffff;
+  --ink-bg-input: #ffffff;
+  --ink-bg-hover: rgba(0, 0, 0, 0.05);
+  --ink-bg-subtle: #f0f1f3;
+  --ink-bg-table: #ffffff;
+  --ink-bg-th: #f3f4f6;
+  --ink-bg-code: #f3f4f6;
+  --ink-bg-code-gutter: #e5e7eb;
+
+  --ink-border-default: rgba(0, 0, 0, 0.1);
+  --ink-border-subtle: rgba(0, 0, 0, 0.06);
+  --ink-border-focus: rgba(99, 102, 241, 0.5);
+
+  --ink-text-primary: #111827;
+  --ink-text-secondary: #4b5563;
+  --ink-text-muted: #9ca3af;
+  --ink-text-heading: #111827;
+  --ink-text-inverse: #ffffff;
+
+  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ink-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --ink-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}

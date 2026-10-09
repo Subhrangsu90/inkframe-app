@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { LandingComponent } from './pages/landing/landing.component';
-import { EditorPageComponent } from './pages/editor/editor-page.component';
+import { EditorPageComponent } from './pages/editor/editor.component';
 import { StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
 
 describe('App Root', () => {

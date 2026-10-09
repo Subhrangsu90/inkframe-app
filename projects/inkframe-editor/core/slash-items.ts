@@ -1,4 +1,4 @@
-import type { EditorService } from './editor.service';
+import type { EditorService } from './editor-service';
 
 export interface SlashItem {
   id: string;

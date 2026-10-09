@@ -48,7 +48,7 @@ const ICONS: Record<CalloutKind, string> = {
     }
   `,
 })
-export class CalloutIconComponent {
+export class CalloutIcon {
   readonly kind = input<CalloutKind>('info');
   readonly kindChange = output<CalloutKind>();
   protected readonly icon = computed(() => ICONS[this.kind()]);
@@ -58,3 +58,7 @@ export class CalloutIconComponent {
     this.kindChange.emit(CALLOUT_KINDS[(i + 1) % CALLOUT_KINDS.length]);
   }
 }
+
+// Backward compatibility alias
+export { CalloutIcon as CalloutIconComponent };
+

@@ -303,7 +303,7 @@ export interface ImagePreviewPayload {
     }
   `,
 })
-export class ImageLightboxComponent {
+export class ImageLightbox {
   readonly src = input.required<string>();
   readonly alt = input<string | undefined>();
   readonly title = input<string | undefined>();
@@ -362,3 +362,7 @@ export class ImageLightboxComponent {
     document.body.removeChild(a);
   }
 }
+
+// Backward compatibility alias
+export { ImageLightbox as ImageLightboxComponent };
+

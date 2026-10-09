@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ThemeService } from '@inkframe-ui/editor/core';
+import { Theme } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-landing',
@@ -22,10 +22,10 @@ import { ThemeService } from '@inkframe-ui/editor/core';
           <button
             type="button"
             class="ink-icon-btn"
-            [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
-            (click)="themeService.toggleTheme()"
+            [matTooltip]="theme.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+            (click)="theme.toggleTheme()"
           >
-            <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
           <a mat-flat-button color="primary" routerLink="/docs" class="ink-btn-launch">
             <span>Open Documents</span>
@@ -167,6 +167,9 @@ import { ThemeService } from '@inkframe-ui/editor/core';
     }
   `,
 })
-export class LandingComponent {
-  protected readonly themeService = inject(ThemeService);
+export class Landing {
+  protected readonly theme = inject(Theme);
 }
+
+// Backward compatibility alias for existing tests
+export { Landing as LandingComponent };

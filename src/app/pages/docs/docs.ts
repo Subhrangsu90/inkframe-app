@@ -3,8 +3,8 @@ import { RouterLink, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ThemeService } from '@inkframe-ui/editor/core';
-import { DocumentManagerService, DocMeta, formatRelativeTime } from '../../core/document-manager.service';
+import { Theme } from '@inkframe-ui/editor/core';
+import { DocumentManager, DocMeta, formatRelativeTime } from '../../core/document-manager';
 
 @Component({
   selector: 'ink-docs',
@@ -25,10 +25,10 @@ import { DocumentManagerService, DocMeta, formatRelativeTime } from '../../core/
           <button
             type="button"
             class="ink-icon-btn"
-            [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
-            (click)="themeService.toggleTheme()"
+            [matTooltip]="theme.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
+            (click)="theme.toggleTheme()"
           >
-            <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
           <a routerLink="/settings" class="ink-icon-btn" matTooltip="Settings">
             <mat-icon>settings</mat-icon>
@@ -253,9 +253,9 @@ import { DocumentManagerService, DocMeta, formatRelativeTime } from '../../core/
     }
   `,
 })
-export class DocsComponent implements OnInit {
-  protected readonly themeService = inject(ThemeService);
-  private readonly docService = inject(DocumentManagerService);
+export class Docs implements OnInit {
+  protected readonly theme = inject(Theme);
+  private readonly docService = inject(DocumentManager);
   private readonly router = inject(Router);
 
   protected readonly docs = signal<DocMeta[]>([]);
@@ -290,3 +290,6 @@ export class DocsComponent implements OnInit {
     this.router.navigate(['/doc', res.meta.id]);
   }
 }
+
+// Backward compatibility alias
+export { Docs as DocsComponent };

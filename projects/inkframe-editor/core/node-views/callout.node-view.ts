@@ -6,13 +6,13 @@ import {
 } from '@angular/core';
 import { Node as PMNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
-import { CalloutIconComponent } from './callout-icon.component';
+import { CalloutIcon } from './callout-icon';
 
 export class CalloutNodeView implements NodeView {
   readonly dom: HTMLElement;
   readonly contentDOM: HTMLElement;
   private readonly iconHost: HTMLElement;
-  private readonly ref: ComponentRef<CalloutIconComponent>;
+  private readonly ref: ComponentRef<CalloutIcon>;
 
   constructor(
     private node: PMNode,
@@ -33,7 +33,7 @@ export class CalloutNodeView implements NodeView {
 
     this.dom.append(this.iconHost, this.contentDOM);
 
-    this.ref = createComponent(CalloutIconComponent, {
+    this.ref = createComponent(CalloutIcon, {
       environmentInjector: env,
       hostElement: this.iconHost,
     });

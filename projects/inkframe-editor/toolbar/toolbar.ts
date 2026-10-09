@@ -872,7 +872,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
     .small-text { font-size: 12px; }
   `,
 })
-export class ToolbarComponent implements OnDestroy {
+export class Toolbar implements OnDestroy {
   protected readonly svc = inject(EditorService);
   protected readonly themeService = inject(ThemeService);
   protected readonly textColors: ColorSwatch[] = TEXT_COLORS;
@@ -1094,3 +1094,7 @@ export class ToolbarComponent implements OnDestroy {
     this.svc.requestOpenHistory();
   }
 }
+
+// Backward compatibility alias
+export { Toolbar as ToolbarComponent };
+

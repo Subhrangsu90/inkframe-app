@@ -10,3 +10,7 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.scss',
 })
 export class App {}
+
+// Backward compatibility alias
+export { App as AppComponent };
+

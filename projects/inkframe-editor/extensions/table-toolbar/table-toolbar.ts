@@ -427,7 +427,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
     }
   `,
 })
-export class TableToolbarComponent {
+export class TableToolbar {
   protected readonly svc = inject(EditorService);
   protected readonly bgColors = CELL_BG_COLORS;
   protected readonly alignIcon = signal<'format_align_left' | 'format_align_center' | 'format_align_right'>('format_align_left');
@@ -467,3 +467,7 @@ export class TableToolbarComponent {
     this.svc.setCellBackground(color);
   }
 }
+
+// Backward compatibility alias
+export { TableToolbar as TableToolbarComponent };
+

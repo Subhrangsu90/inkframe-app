@@ -6,7 +6,7 @@ export type AppTheme = 'dark' | 'light';
 @Injectable({
   providedIn: 'root',
 })
-export class ThemeService {
+export class Theme {
   private readonly document = inject(DOCUMENT);
   readonly theme = signal<AppTheme>('dark');
 
@@ -71,5 +71,8 @@ export class ThemeService {
         body.classList.remove('theme-light');
       }
     }
-  }
 }
+}
+
+// Backward compatibility alias
+export { Theme as ThemeService };

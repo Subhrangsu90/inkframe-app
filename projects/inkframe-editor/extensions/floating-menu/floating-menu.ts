@@ -241,7 +241,7 @@ import { EditorService, TEXT_COLORS } from '@inkframe-ui/editor/core';
     }
   `,
 })
-export class FloatingMenuComponent {
+export class FloatingMenu {
   protected readonly svc = inject(EditorService);
   protected readonly textColors = TEXT_COLORS;
   protected readonly colorTrigger = viewChild<MatMenuTrigger>('colorTrigger');
@@ -274,3 +274,7 @@ export class FloatingMenuComponent {
     this.linkTrigger()?.closeMenu();
   }
 }
+
+// Backward compatibility alias
+export { FloatingMenu as FloatingMenuComponent };
+

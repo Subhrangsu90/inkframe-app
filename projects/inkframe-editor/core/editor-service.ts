@@ -700,3 +700,7 @@ export class EditorService implements EditorHooks {
     v.focus();
   }
 }
+
+// Modern intent-based alias
+export { EditorService as EditorStore };
+

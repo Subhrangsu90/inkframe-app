@@ -130,15 +130,15 @@ body[data-theme="dark"],
 
 ### Route Breakdown
 
-| Route | Component | Purpose | Guards / Behaviors |
+| Route | Component / Identifier | Purpose | Guards / Behaviors |
 | :--- | :--- | :--- | :--- |
-| `/` | `LandingComponent` | Marketing, product explanation, feature showcase, interactive demo. | Redirects to `/doc/:id` on "Open Editor". |
-| `/docs` | `DocsComponent` | Full document manager: Grid/List view, search, sorting, tag filters, templates, batch deletion. | Direct access to all local IndexedDB documents. |
-| `/doc/:id` | `EditorPageComponent` | Primary distraction-free writing environment. | If `:id` is not found, loads or creates new doc. Auto-syncs document title with route. |
+| `/` | `Landing` (`landing.ts`) | Marketing, product explanation, feature showcase, interactive demo. | Redirects to `/doc/:id` on "Open Editor". |
+| `/docs` | `Docs` (`docs.ts`) | Full document manager: Grid/List view, search, sorting, tag filters, templates, batch deletion. | Direct access to all local IndexedDB documents. |
+| `/doc/:id` | `EditorView` (`editor.ts`) | Primary distraction-free writing environment. | If `:id` is not found, loads or creates new doc. Auto-syncs document title with route. |
 | `/editor` | *Redirector* | Legacy fallback. | Redirects to `/doc/:lastActiveId` or creates new doc. |
-| `/s/:hash` | `ReaderComponent` | Pure read-only presentation view. | Decompresses payload, renders sanitized DOM with syntax highlighting, allows "Copy to Editor". |
-| `/settings` | `SettingsComponent` | System preferences. | Appearance (Dark/Light/System), default canvas width, font selection, full backup download/import. |
-| `**` | `NotFoundComponent` | Friendly 404 page. | Includes quick links to Home or Documents Library. |
+| `/s/:hash` | `Reader` (`reader.ts`) | Pure read-only presentation view. | Decompresses payload, renders sanitized DOM with syntax highlighting, allows "Copy to Editor". |
+| `/settings` | `Settings` (`settings.ts`) | System preferences. | Appearance (Dark/Light/System), default canvas width, font selection, full backup download/import. |
+| `**` | `NotFound` (`not-found.ts`) | Friendly 404 page. | Includes quick links to Home or Documents Library. |
 
 ---
 
@@ -156,13 +156,13 @@ inkframe-app/
 │       │   │   └── markdown.ts              (Markdown serializer & parser)
 │       │   ├── node-views/                  <-- Custom ProseMirror Interactive Blocks
 │       │   │   ├── callout.node-view.ts     (Alert boxes with icon switcher)
-│       │   │   ├── callout-icon.component.ts
+│       │   │   ├── callout-icon.ts          (Icon picker component)
 │       │   │   ├── code-block.node-view.ts  (Syntax highlighting, line numbers, copy)
 │       │   │   ├── image.node-view.ts       (Resizable image with lightbox trigger)
 │       │   │   └── task-item.node-view.ts   (Checklist with clickable checkboxes)
 │       │   ├── colors.ts                    (21-swatch text/background color palettes)
 │       │   ├── editor-hooks.ts              (Decoupled bridge between ProseMirror & UI)
-│       │   ├── editor.service.ts            (Reactive ProseMirror state & signal sync)
+│       │   ├── editor-service.ts            (Reactive ProseMirror state & signal sync)
 │       │   ├── highlight.plugin.ts          (Prism.js syntax highlighter)
 │       │   ├── image-storage.ts             (IndexedDB local binary storage engine)
 │       │   ├── input-rules.ts               (Markdown inline typing rules: [ ], #, ~~)
@@ -173,29 +173,29 @@ inkframe-app/
 │       │   ├── schema.ts                    (ProseMirror nodes, marks & attributes)
 │       │   ├── slash-items.ts               (Slash command action registry)
 │       │   ├── table-ui.plugin.ts           (Interactive table column/row handlers)
-│       │   ├── theme.service.ts             (Reactive dark/light signal & DOM toggle)
+│       │   ├── theme.ts                     (Reactive dark/light signal & DOM toggle)
 │       │   ├── index.ts                     (Core public exports)
 │       │   └── ng-package.json
 │       ├── toolbar/                         <-- Entry Point: @inkframe-ui/editor/toolbar
-│       │   ├── toolbar.component.ts         (Grouped formatting bar & dialog triggers)
-│       │   ├── toolbar.component.scss
+│       │   ├── toolbar.ts                   (Grouped formatting bar & dialog triggers)
+│       │   ├── toolbar.scss
 │       │   ├── index.ts
 │       │   └── ng-package.json
 │       ├── extensions/                      <-- Entry Point: @inkframe-ui/editor/extensions
 │       │   ├── floating-menu/
-│       │   │   └── floating-menu.component.ts (Selection bubble menu)
+│       │   │   └── floating-menu.ts         (Selection bubble menu)
 │       │   ├── slash-menu/
-│       │   │   ├── slash-menu.component.ts  (Notion-style / command palette)
+│       │   │   ├── slash-menu.ts            (Notion-style / command palette)
 │       │   │   └── slash-items.ts
 │       │   ├── table-toolbar/
-│       │   │   └── table-toolbar.component.ts (Floating table mutation controls)
+│       │   │   └── table-toolbar.ts         (Floating table mutation controls)
 │       │   ├── image-lightbox/
-│       │   │   └── image-lightbox.component.ts(Full-res image modal preview)
+│       │   │   └── image-lightbox.ts        (Full-res image modal preview)
 │       │   ├── index.ts
 │       │   └── ng-package.json
 │       ├── src/                             <-- Main Package Entry: @inkframe-ui/editor
-│       │   ├── editor.component.ts          (Turnkey <ink-editor> component)
-│       │   ├── editor.service.ts            (Re-exported service & type definitions)
+│       │   ├── editor.ts                    (Turnkey <ink-editor> component)
+│       │   ├── editor-service.ts            (Re-exported service & type definitions)
 │       │   ├── public-api.ts                (Main package index)
 │       │   └── styles/                      <-- SCSS Theme System
 │       │       ├── _variables.scss          (Dark & light CSS custom properties)
@@ -208,56 +208,53 @@ inkframe-app/
 │
 ├── src/                                     <-- Consumer Web Application (inkframe-app)
 │   ├── app/
-│   │   ├── core/                            <-- Application Singletons & State Management
-│   │   │   ├── services/
-│   │   │   │   ├── document-manager.service.ts (IndexedDB index, document CRUD, active doc)
-│   │   │   │   ├── export.service.ts        (File downloads: Markdown, HTML, JSON, print)
-│   │   │   │   ├── share.service.ts         (URL compression, base64 hash & clipboard)
-│   │   │   │   └── shortcuts.service.ts     (Global keyboard shortcut manager)
-│   │   │   ├── models/
-│   │   │   │   ├── document.model.ts        (DocMeta, DocumentArchive, SharePayload)
-│   │   │   │   └── settings.model.ts        (UserSettings, ThemeMode, EditorWidth)
-│   │   │   └── constants/
-│   │   │       ├── welcome-doc.ts           (Starter onboarding document)
-│   │   │       └── templates.ts             (Meeting notes, Spec, Checklist presets)
+│   │   ├── core/                            <-- Application Foundation & State Management
+│   │   │   ├── document-manager.ts          (IndexedDB index, document CRUD, active doc)
+│   │   │   ├── welcome-doc.ts               (Starter onboarding document)
+│   │   │   ├── export.ts                    (File downloads: Markdown, HTML, JSON, print)
+│   │   │   ├── share.ts                     (URL compression, base64 hash & clipboard)
+│   │   │   ├── document.model.ts            (DocMeta, DocumentArchive, SharePayload)
+│   │   │   ├── settings.model.ts            (UserSettings, ThemeMode, EditorWidth)
+│   │   │   └── templates.ts                 (Meeting notes, Spec, Checklist presets)
 │   │   │
-│   │   ├── shared/                          <-- Reusable UI Primitives (Standalone Components)
+│   │   ├── shared/                          <-- Reusable UI Toolkit (Standalone Components)
 │   │   │   ├── ui/
 │   │   │   │   ├── toast/
-│   │   │   │   │   ├── toast.service.ts     (Imperative notification dispatch)
-│   │   │   │   │   └── toast-container.component.ts
+│   │   │   │   │   ├── toast.ts             (Imperative notification dispatch)
+│   │   │   │   │   └── toast-container.ts
 │   │   │   │   ├── skeleton/
-│   │   │   │   │   └── skeleton.component.ts (Shimmering card & text line loaders)
+│   │   │   │   │   └── skeleton.ts          (Shimmering card & text line loaders)
 │   │   │   │   ├── empty-state/
-│   │   │   │   │   └── empty-state.component.ts (Graphic, title, message & action CTA)
+│   │   │   │   │   └── empty-state.ts       (Graphic, title, message & action CTA)
 │   │   │   │   ├── segmented-control/
-│   │   │   │   │   └── segmented-control.component.ts (Pill tab switcher)
+│   │   │   │   │   └── segmented-control.ts (Pill tab switcher)
 │   │   │   │   ├── confirm-dialog/
-│   │   │   │   │   └── confirm-dialog.component.ts (Accessible modal dialog)
+│   │   │   │   │   └── confirm-dialog.ts    (Accessible modal dialog)
 │   │   │   │   └── status-bar/
-│   │   │   │       └── status-bar.component.ts (Words, chars, reading time, zoom)
+│   │   │   │       └── status-bar.ts        (Words, chars, reading time, zoom)
 │   │   │   └── pipes/
-│   │   │       ├── relative-time.pipe.ts    ("Just now", "2h ago", "Yesterday")
+│   │   │       ├── relative-time.ts         ("Just now", "2h ago", "Yesterday")
+│   │   │       └── reading-time.ts          (Calculates "~2 min read")
 │   │   │       └── reading-time.pipe.ts     (Calculates "~2 min read")
 │   │   │
-│   │   ├── pages/                           <-- Lazy-Loaded Feature Routes
+│   │   ├── pages/                           <-- Lazy-Loaded Feature Routes (Intent over Role)
 │   │   │   ├── landing/                     <-- Route: /
 │   │   │   │   ├── components/              (Hero, FeatureGrid, FaqAccordion, DemoCard)
-│   │   │   │   └── landing.component.ts
+│   │   │   │   └── landing.ts               (Class: Landing)
 │   │   │   ├── docs/                        <-- Route: /docs
 │   │   │   │   ├── components/              (DocCard, TemplateCarousel, FilterBar)
-│   │   │   │   └── docs.component.ts
+│   │   │   │   └── docs.ts                  (Class: Docs)
 │   │   │   ├── editor/                      <-- Route: /doc/:id
 │   │   │   │   ├── components/              (EditorTopBar, DocHistoryDrawer)
-│   │   │   │   └── editor.component.ts
+│   │   │   │   └── editor.ts                (Class: EditorView)
 │   │   │   ├── reader/                      <-- Route: /s/:hash
 │   │   │   │   ├── components/              (ReaderTopBar, ForkActionBanner)
-│   │   │   │   └── reader.component.ts
+│   │   │   │   └── reader.ts                (Class: Reader)
 │   │   │   ├── settings/                    <-- Route: /settings
 │   │   │   │   ├── components/              (AppearanceSection, BackupSection)
-│   │   │   │   └── settings.component.ts
+│   │   │   │   └── settings.ts              (Class: Settings)
 │   │   │   └── not-found/                   <-- Route: **
-│   │   │       └── not-found.component.ts
+│   │   │       └── not-found.ts             (Class: NotFound)
 │   │   │
 │   │   ├── app.config.ts                    (Application providers, router, animations)
 │   │   ├── app.config.server.ts             (SSR server configuration)

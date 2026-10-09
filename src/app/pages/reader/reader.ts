@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ThemeService } from '@inkframe-ui/editor/core';
+import { Theme } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-reader',
@@ -24,10 +24,10 @@ import { ThemeService } from '@inkframe-ui/editor/core';
           <button
             type="button"
             class="ink-icon-btn"
-            [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark'"
-            (click)="themeService.toggleTheme()"
+            [matTooltip]="theme.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark'"
+            (click)="theme.toggleTheme()"
           >
-            <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
           <a mat-flat-button color="primary" routerLink="/docs">
             <mat-icon>edit</mat-icon>
@@ -121,8 +121,8 @@ import { ThemeService } from '@inkframe-ui/editor/core';
     }
   `,
 })
-export class ReaderComponent implements OnInit {
-  protected readonly themeService = inject(ThemeService);
+export class Reader implements OnInit {
+  protected readonly theme = inject(Theme);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly contentHtml = signal<string>('');
@@ -131,3 +131,6 @@ export class ReaderComponent implements OnInit {
     this.contentHtml.set('<h2>Shared Document</h2><p>This is a shared read-only view of the document.</p>');
   }
 }
+
+// Backward compatibility alias
+export { Reader as ReaderComponent };

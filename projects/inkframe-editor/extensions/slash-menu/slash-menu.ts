@@ -152,6 +152,10 @@ import { EditorService } from '@inkframe-ui/editor/core';
     }
   `,
 })
-export class SlashMenuComponent {
+export class SlashMenu {
   protected readonly svc = inject(EditorService);
 }
+
+// Backward compatibility alias
+export { SlashMenu as SlashMenuComponent };
+

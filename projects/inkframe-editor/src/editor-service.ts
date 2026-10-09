@@ -1,6 +1,7 @@
 // Re-export EditorService from core entry point
 export {
   EditorService,
+  EditorStore,
   type BlockInfo,
   type MountOptions,
   type ImagePreviewData,

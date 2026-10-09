@@ -12,18 +12,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
-import { EditorComponent as InkEditorCoreComponent } from '@inkframe-ui/editor';
+import { Editor as InkEditor } from '@inkframe-ui/editor';
 import {
   StoredDoc,
-  ThemeService,
+  Theme,
   docToHtml,
   docToMarkdown,
 } from '@inkframe-ui/editor/core';
 import {
-  DocumentManagerService,
+  DocumentManager,
   extractDocTitle,
   extractDocWordCount,
-} from '../../core/document-manager.service';
+} from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
 
 @Component({
@@ -35,7 +35,7 @@ import { WELCOME_DOC } from '../../core/welcome-doc';
     MatIconModule,
     MatTooltipModule,
     MatMenuModule,
-    InkEditorCoreComponent,
+    InkEditor,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -94,10 +94,10 @@ import { WELCOME_DOC } from '../../core/welcome-doc';
           <button
             type="button"
             class="ink-icon-btn"
-            [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark'"
-            (click)="themeService.toggleTheme()"
+            [matTooltip]="theme.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark'"
+            (click)="theme.toggleTheme()"
           >
-            <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
 
           <!-- Share button -->
@@ -313,13 +313,13 @@ import { WELCOME_DOC } from '../../core/welcome-doc';
     }
   `,
 })
-export class EditorPageComponent implements OnInit {
-  protected readonly themeService = inject(ThemeService);
-  private readonly docService = inject(DocumentManagerService);
+export class EditorView implements OnInit {
+  protected readonly theme = inject(Theme);
+  private readonly docService = inject(DocumentManager);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  protected readonly editorRef = viewChild<InkEditorCoreComponent>('editor');
+  protected readonly editorRef = viewChild<InkEditor>('editor');
 
   protected readonly currentDocId = signal<string>('welcome');
   protected readonly docTitle = signal<string>('Welcome to Inkframe');
@@ -401,3 +401,6 @@ export class EditorPageComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 }
+
+// Backward compatibility aliases
+export { EditorView as EditorPageComponent };

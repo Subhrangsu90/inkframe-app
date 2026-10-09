@@ -59,4 +59,7 @@ import { MatIconModule } from '@angular/material/icon';
     }
   `,
 })
-export class NotFoundComponent {}
+export class NotFound {}
+
+// Backward compatibility alias
+export { NotFound as NotFoundComponent };

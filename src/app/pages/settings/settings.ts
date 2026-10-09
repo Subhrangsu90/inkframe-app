@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ThemeService } from '@inkframe-ui/editor/core';
+import { Theme } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-settings',
@@ -30,9 +30,9 @@ import { ThemeService } from '@inkframe-ui/editor/core';
               <strong>Current Theme</strong>
               <div class="sub-text">Switch between Dark and Light mode.</div>
             </div>
-            <button mat-stroked-button (click)="themeService.toggleTheme()">
-              <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-              <span>{{ themeService.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark' }}</span>
+            <button mat-stroked-button (click)="theme.toggleTheme()">
+              <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+              <span>{{ theme.theme() === 'dark' ? 'Switch to Light' : 'Switch to Dark' }}</span>
             </button>
           </div>
         </div>
@@ -120,6 +120,9 @@ import { ThemeService } from '@inkframe-ui/editor/core';
     }
   `,
 })
-export class SettingsComponent {
-  protected readonly themeService = inject(ThemeService);
+export class Settings {
+  protected readonly theme = inject(Theme);
 }
+
+// Backward compatibility alias
+export { Settings as SettingsComponent };

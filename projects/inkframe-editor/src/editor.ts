@@ -20,23 +20,23 @@ import {
   docToMarkdown,
   markdownToDoc,
 } from '@inkframe-ui/editor/core';
-import { ToolbarComponent } from '@inkframe-ui/editor/toolbar';
+import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
-  FloatingMenuComponent,
-  SlashMenuComponent,
-  ImageLightboxComponent,
-  TableToolbarComponent,
+  FloatingMenu,
+  SlashMenu,
+  ImageLightbox,
+  TableToolbar,
 } from '@inkframe-ui/editor/extensions';
 
 @Component({
   selector: 'ink-editor',
   standalone: true,
   imports: [
-    ToolbarComponent,
-    FloatingMenuComponent,
-    SlashMenuComponent,
-    ImageLightboxComponent,
-    TableToolbarComponent,
+    Toolbar,
+    FloatingMenu,
+    SlashMenu,
+    ImageLightbox,
+    TableToolbar,
   ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -169,7 +169,7 @@ import {
     }
   `,
 })
-export class EditorComponent {
+export class Editor {
   protected readonly svc = inject(EditorService);
   private readonly zone = inject(NgZone);
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
@@ -267,3 +267,7 @@ export class EditorComponent {
     );
   }
 }
+
+// Backward compatibility alias
+export { Editor as EditorComponent };
+

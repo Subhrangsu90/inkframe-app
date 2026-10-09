@@ -68,7 +68,7 @@ export function formatRelativeTime(timestamp: number): string {
 @Injectable({
   providedIn: 'root',
 })
-export class DocumentManagerService {
+export class DocumentManager {
   async getIndex(): Promise<DocMeta[]> {
     if (typeof window === 'undefined') return [];
     try {
@@ -253,3 +253,6 @@ export class DocumentManagerService {
     return this.createDoc(newTitle, cloned);
   }
 }
+
+// Backward compatibility alias
+export { DocumentManager as DocumentManagerService };

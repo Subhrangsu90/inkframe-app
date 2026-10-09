@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Theme } from '@inkframe-ui/editor/core';
 
 @Component({
@@ -124,11 +125,16 @@ import { Theme } from '@inkframe-ui/editor/core';
 export class Reader implements OnInit {
   protected readonly theme = inject(Theme);
   private readonly route = inject(ActivatedRoute);
+  private readonly sanitizer = inject(DomSanitizer);
 
-  protected readonly contentHtml = signal<string>('');
+  protected readonly contentHtml = signal<SafeHtml>('');
 
   ngOnInit(): void {
-    this.contentHtml.set('<h2>Shared Document</h2><p>This is a shared read-only view of the document.</p>');
+    this.contentHtml.set(
+      this.sanitizer.bypassSecurityTrustHtml(
+        '<h2>Shared Document</h2><p>This is a shared read-only view of the document.</p>',
+      ),
+    );
   }
 }
 

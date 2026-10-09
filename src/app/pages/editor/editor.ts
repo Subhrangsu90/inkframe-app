@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { Editor as InkEditor } from '@inkframe-ui/editor';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   StoredDoc,
   Theme,
@@ -318,6 +319,7 @@ export class EditorView implements OnInit {
   private readonly docService = inject(DocumentManager);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly editorRef = viewChild<InkEditor>('editor');
 
@@ -336,9 +338,9 @@ export class EditorView implements OnInit {
     return Math.max(1, Math.ceil(words / 200));
   });
 
-  protected readonly renderedHtml = computed(() => {
+  protected readonly renderedHtml = computed<SafeHtml>(() => {
     const ed = this.editorRef();
-    if (ed) return ed.getHtml();
+    if (ed) return this.sanitizer.bypassSecurityTrustHtml(ed.getHtml());
     return '';
   });
 

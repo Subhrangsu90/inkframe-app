@@ -3,8 +3,9 @@
 // components according to the Material 3 design spec.
 @use '@angular/material' as mat;
 
-/* ── Centralized Inkframe Editor Library Styles ── */
+/* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
 @use '@inkframe-ui/editor/styles';
+@use './tokens.scss';
 
 html {
   height: 100%;

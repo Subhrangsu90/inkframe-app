@@ -1,174 +1,177 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Theme } from '@inkframe-ui/editor/core';
+import { Editor as InkEditor } from '@inkframe-ui/editor';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { StoredDoc, Theme } from '@inkframe-ui/editor/core';
+import { ToastService } from '../../shared/ui';
+import { extractDocWordCount } from '../../core/document-manager';
+import { WELCOME_DOC } from '../../core/welcome-doc';
+
+interface FaqItem {
+  category: 'storage' | 'sync' | 'pwa';
+  categoryLabel: string;
+  question: string;
+  answerHtml: SafeHtml;
+}
 
 @Component({
   selector: 'ink-landing',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    InkEditor,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <div class="ink-landing-layout">
-      <!-- Top Navigation -->
-      <header class="ink-landing-header">
-        <div class="ink-nav-brand">
-          <mat-icon class="brand-icon">edit_note</mat-icon>
-          <span class="brand-name">Inkframe</span>
-        </div>
-        <div class="ink-nav-actions">
-          <button
-            type="button"
-            class="ink-icon-btn"
-            [matTooltip]="theme.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
-            (click)="theme.toggleTheme()"
-          >
-            <mat-icon>{{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-          </button>
-          <a mat-flat-button color="primary" routerLink="/docs" class="ink-btn-launch">
-            <span>Open Documents</span>
-            <mat-icon>arrow_forward</mat-icon>
-          </a>
-        </div>
-      </header>
-
-      <!-- Hero Section -->
-      <main class="ink-landing-hero">
-        <div class="ink-hero-chip">
-          <span class="chip-dot"></span>
-          <span>Offline-first · Zero backend · Pure ownership</span>
-        </div>
-        <h1 class="ink-hero-title">
-          Write beautifully.<br />
-          <span class="gradient-text">Stay distraction-free.</span>
-        </h1>
-        <p class="ink-hero-subtitle">
-          A signal-driven rich-text canvas powered by ProseMirror with instant preview,
-          offline IndexedDB storage, and portable link sharing.
-        </p>
-        <div class="ink-hero-actions">
-          <a mat-flat-button color="primary" routerLink="/docs" class="ink-cta-btn">
-            <span>Start Writing</span>
-            <mat-icon>edit</mat-icon>
-          </a>
-          <a mat-stroked-button routerLink="/doc/welcome" class="ink-cta-secondary">
-            <span>Try Interactive Demo</span>
-          </a>
-        </div>
-      </main>
-    </div>
-  `,
-  styles: `
-    .ink-landing-layout {
-      min-height: 100dvh;
-      background: var(--ink-bg, #f7f6f3);
-      color: var(--ink-text, #1b1b1f);
-      display: flex;
-      flex-direction: column;
-      box-sizing: border-box;
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .ink-landing-header {
-      height: 64px;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--ink-border, #e8e6e1);
-      background: var(--ink-surface, #ffffff);
-    }
-    .ink-nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      font-size: 1.15rem;
-      letter-spacing: -0.01em;
-      .brand-icon {
-        color: var(--ink-accent, #7c3aed);
-      }
-    }
-    .ink-nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .ink-icon-btn {
-      width: 36px;
-      height: 36px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: 1px solid var(--ink-border, #e8e6e1);
-      border-radius: 8px;
-      cursor: pointer;
-      color: inherit;
-      transition: all 0.15s ease;
-      &:hover {
-        background: var(--ink-surface-2, #f1f0ec);
-      }
-    }
-    .ink-landing-hero {
-      flex: 1;
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .ink-hero-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 500;
-      background: var(--ink-surface, #ffffff);
-      border: 1px solid var(--ink-border, #e8e6e1);
-      color: var(--ink-text-muted, #6b6b73);
-      margin-bottom: 28px;
-      .chip-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--ink-accent, #7c3aed);
-      }
-    }
-    .ink-hero-title {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
-      line-height: 1.15;
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      margin: 0 0 20px;
-      .gradient-text {
-        background: linear-gradient(135deg, var(--ink-accent, #7c3aed) 0%, #3b82f6 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-    }
-    .ink-hero-subtitle {
-      font-size: 1.15rem;
-      line-height: 1.6;
-      max-width: 620px;
-      color: var(--ink-text-muted, #6b6b73);
-      margin: 0 0 36px;
-    }
-    .ink-hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-  `,
+  templateUrl: './landing.html',
+  styleUrl: './landing.scss',
 })
 export class Landing {
   protected readonly theme = inject(Theme);
+  protected readonly toastService = inject(ToastService);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  public readonly editorRef = viewChild<InkEditor>('editor');
+
+  // Starter document inside MacBook frame
+  public readonly previewDoc: StoredDoc = WELCOME_DOC;
+
+  public readonly wordCount = signal<number>(extractDocWordCount(WELCOME_DOC));
+  public readonly readingTime = computed(() =>
+    Math.max(1, Math.ceil(this.wordCount() / 200)),
+  );
+  public readonly autosaveStatus = signal<'Saved locally ✓' | 'Saving to WASM...'>('Saved locally ✓');
+
+  // Feature cards interactive state
+  public readonly activeSlash = signal<'table' | 'checklist' | 'callout' | 'code'>('table');
+  public readonly sampleTask1 = signal(true);
+  public readonly sampleTask2 = signal(false);
+  public readonly activeRevision = signal('Checkpoint 14:02');
+  public readonly isCardDark = signal(true);
+
+  // FAQ state
+  public readonly activeFaqCategory = signal<'all' | 'storage' | 'sync' | 'pwa'>('all');
+  public readonly openFaqIndex = signal<number | null>(0);
+
+  public readonly faqs: FaqItem[] = [
+    {
+      category: 'storage',
+      categoryLabel: 'Storage',
+      question: 'Where is my document data stored?',
+      answerHtml: this.sanitizer.bypassSecurityTrustHtml(
+        '<p>Entirely within your browser\'s dedicated local storage runtime using <code>WASM SQLite</code> and <code>IndexedDB.wal</code>.</p><p>Keystrokes, drafts, and preferences never touch external servers or cloud queues unless you explicitly generate an end-to-end encrypted peer share link.</p>',
+      ),
+    },
+    {
+      category: 'storage',
+      categoryLabel: 'Data Safety',
+      question: 'What happens if I clear my browser cache or data?',
+      answerHtml: this.sanitizer.bypassSecurityTrustHtml(
+        '<p>Full browser storage purges or incognito session closures clear volatile local storage. Inkframe makes safety painless by allowing instantaneous exports to standard <code>Markdown (.md)</code>, clean HTML, or structured JSON workspace backups.</p><p>You also maintain complete local revision checkpoint rewinds within any active document.</p>',
+      ),
+    },
+    {
+      category: 'sync',
+      categoryLabel: 'Limits',
+      question: 'Are there limits on shared links or document count?',
+      answerHtml: this.sanitizer.bypassSecurityTrustHtml(
+        '<p>No arbitrary limits. Because parsing and indexing operate entirely client-side on your processor, you are bounded solely by your machine\'s physical disk space.</p><p>Shared snapshots are serialized into URL hash fragments with <code>AES-GCM</code> encryption, requiring zero central database allocation.</p>',
+      ),
+    },
+    {
+      category: 'pwa',
+      categoryLabel: 'Offline PWA',
+      question: 'Can I use Inkframe completely disconnected from Wi-Fi?',
+      answerHtml: this.sanitizer.bypassSecurityTrustHtml(
+        '<p>Absolutely. Inkframe functions as an installable <code>Progressive Web App (PWA)</code>. Once cached, all compiled WebAssembly and asset bundles execute with zero network requests.</p><p>Enable Airplane Mode, restart your computer, or write at 35,000 feet — your canvas is unaffected.</p>',
+      ),
+    },
+  ];
+
+  public readonly filteredFaqs = computed(() => {
+    const cat = this.activeFaqCategory();
+    if (cat === 'all') {
+      return this.faqs;
+    }
+    return this.faqs.filter((f) => f.category === cat);
+  });
+
+  // Editor Event Handlers
+  protected onDocChanged(doc: StoredDoc): void {
+    const count = extractDocWordCount(doc);
+    this.wordCount.set(count);
+    this.pulseSave();
+  }
+
+  protected pulseSave(): void {
+    this.autosaveStatus.set('Saving to WASM...');
+    setTimeout(() => {
+      this.autosaveStatus.set('Saved locally ✓');
+    }, 350);
+  }
+
+  protected focusEditor(): void {
+    this.scrollToPreview();
+    setTimeout(() => {
+      this.editorRef()?.focus();
+      this.toastService.info('Editor canvas focused. Start typing or type / for commands.');
+    }, 300);
+  }
+
+  protected copyHeroShareLink(): void {
+    this.toastService.success(
+      'Document share link copied: inkframe.app/doc/architecture-notes',
+    );
+  }
+
+  protected copySnapshotLink(): void {
+    this.toastService.success('Snapshot share URL copied to clipboard');
+  }
+
+  protected copyEncryptedLink(): void {
+    this.toastService.success('Private link copied to clipboard');
+  }
+
+  protected fakeExport(format: string): void {
+    this.toastService.success(`Prepared local export: Document.${format.toLowerCase()}`);
+  }
+
+  protected selectRevision(rev: string): void {
+    this.activeRevision.set(rev);
+    this.toastService.info(`Restored checkpoint from ${rev}`);
+  }
+
+  protected setSlashPreview(type: 'table' | 'checklist' | 'callout' | 'code'): void {
+    this.activeSlash.set(type);
+    this.toastService.info(`Previewing /${type} block schema`);
+  }
+
+  protected toggleFaq(index: number): void {
+    if (this.openFaqIndex() === index) {
+      this.openFaqIndex.set(null);
+    } else {
+      this.openFaqIndex.set(index);
+    }
+  }
+
+  protected scrollToPreview(): void {
+    const el = document.getElementById('editor-preview-card');
+    el?.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 // Backward compatibility alias for existing tests

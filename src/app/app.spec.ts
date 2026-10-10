@@ -88,7 +88,7 @@ describe('Welcome Document Seed', () => {
   it('matches valid editor schema version', () => {
     expect(WELCOME_DOC.schemaVersion).toBe(SCHEMA_VERSION);
     expect(WELCOME_DOC.doc).toBeDefined();
-    expect(WELCOME_DOC.doc.type).toBe('doc');
+    expect((WELCOME_DOC.doc as any).type).toBe('doc');
     expect(Array.isArray((WELCOME_DOC.doc as any).content)).toBe(true);
   });
 

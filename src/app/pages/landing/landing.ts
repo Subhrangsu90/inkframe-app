@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   signal,
   viewChild,
+  afterNextRender,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -44,8 +46,13 @@ export class Landing {
   protected readonly theme = inject(Theme);
   protected readonly toastService = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly editorRef = viewChild<InkEditor>('editor');
+
+  // Sticky header scroll & intersection states
+  public readonly isScrolled = signal<boolean>(false);
+  public readonly activeSection = signal<string>('features');
 
   // Starter document inside MacBook frame
   public readonly previewDoc: StoredDoc = WELCOME_DOC;
@@ -165,6 +172,54 @@ export class Landing {
       this.openFaqIndex.set(null);
     } else {
       this.openFaqIndex.set(index);
+    }
+  }
+
+  constructor() {
+    afterNextRender(() => {
+      if (typeof window === 'undefined') return;
+
+      const onScroll = () => {
+        this.isScrolled.set(window.scrollY > 20);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      const sectionIds = ['features', 'interactive-playground', 'shortcuts', 'faq'];
+      const sectionElements = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null);
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              this.activeSection.set(entry.target.id);
+            }
+          }
+        },
+        {
+          rootMargin: '-80px 0px -40% 0px',
+          threshold: 0.15,
+        },
+      );
+
+      sectionElements.forEach((el) => observer.observe(el));
+
+      this.destroyRef.onDestroy(() => {
+        window.removeEventListener('scroll', onScroll);
+        observer.disconnect();
+      });
+    });
+  }
+
+  protected scrollToSection(event: Event, sectionId: string): void {
+    event.preventDefault();
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      this.activeSection.set(sectionId);
+      history.replaceState(null, '', `#${sectionId}`);
     }
   }
 

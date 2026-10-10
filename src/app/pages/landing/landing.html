@@ -5,10 +5,11 @@
     <div class="ambient-orb ambient-orb-1"></div>
     <div class="ambient-orb ambient-orb-2"></div>
     <div class="ambient-orb ambient-orb-3"></div>
+    <div class="ambient-orb ambient-orb-4"></div>
   </div>
 
   <!-- Main Header -->
-  <header class="ink-header-sticky">
+  <header class="ink-header-sticky" [class.is-scrolled]="isScrolled()">
     <div class="ink-header-capsule">
       <a class="ink-brand-link" routerLink="/">
         <span class="ink-brand-logo-badge">I</span>
@@ -16,10 +17,30 @@
       </a>
 
       <nav class="ink-header-nav">
-        <a href="#features" class="ink-nav-item">Features</a>
-        <a href="#interactive-playground" class="ink-nav-item">Playground</a>
-        <a href="#shortcuts" class="ink-nav-item">Shortcuts</a>
-        <a href="#faq" class="ink-nav-item">FAQ</a>
+        <a
+          href="#features"
+          class="ink-nav-item"
+          [class.active]="activeSection() === 'features'"
+          (click)="scrollToSection($event, 'features')"
+        >Features</a>
+        <a
+          href="#interactive-playground"
+          class="ink-nav-item"
+          [class.active]="activeSection() === 'interactive-playground'"
+          (click)="scrollToSection($event, 'interactive-playground')"
+        >Playground</a>
+        <a
+          href="#shortcuts"
+          class="ink-nav-item"
+          [class.active]="activeSection() === 'shortcuts'"
+          (click)="scrollToSection($event, 'shortcuts')"
+        >Shortcuts</a>
+        <a
+          href="#faq"
+          class="ink-nav-item"
+          [class.active]="activeSection() === 'faq'"
+          (click)="scrollToSection($event, 'faq')"
+        >FAQ</a>
         <a
           href="https://github.com"
           target="_blank"

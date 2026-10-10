@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inkframe — Write beautifully. Stay offline.</title>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            canvas: '#F7F6F3',
+            surface: '#FFFFFF',
+            'surface-2': '#F2F1ED',
+            border: '#E8E6E1',
+            'border-strong': '#D4D1C9',
+            ink: '#141416',
+            'ink-muted': '#62626D',
+            accent: {
+              DEFAULT: '#7C3AED',
+              hover: '#6D28D9',
+              soft: '#F3EEFF',
+              glow: 'rgba(124, 58, 237, 0.22)'
+            }
+          },
+          boxShadow: {
+            'subtle-sm': '0 1px 2px rgba(0, 0, 0, 0.03)',
+            'subtle-md': '0 4px 18px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)',
+            'subtle-lg': '0 14px 44px -8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03)',
+            'glass': '0 8px 32px 0 rgba(124, 58, 237, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)',
+            'macbook': '0 30px 80px -15px rgba(20, 20, 24, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.07), 0 10px 30px -4px rgba(124, 58, 237, 0.08)',
+            'glow-accent': '0 0 24px -2px rgba(124, 58, 237, 0.38)',
+          },
+          letterSpacing: {
+            tightest: '-0.035em',
+            tighter: '-0.025em',
+          }
+        }
+      }
+    }
+  </script>
+<!-- Design Token Styles & Custom Tweaks -->
+<style data-purpose="custom-tokens">
+    :root {
+      --bg: #F7F6F3;
+      --surface: #FFFFFF;
+      --surface-2: #F2F1ED;
+      --border: #E8E6E1;
+      --text: #141416;
+      --text-muted: #62626D;
+      --accent: #7C3AED;
+    }
+
+    html, body {
+      background-color: #F7F6F3;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ambient slow drifting orbs */
+    @keyframes orb-float-1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, 35px) scale(1.06); }
+    }
+    @keyframes orb-float-2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-30px, -20px) scale(1.08); }
+    }
+
+    .ambient-orb-1 {
+      animation: orb-float-1 20s ease-in-out infinite;
+    }
+    .ambient-orb-2 {
+      animation: orb-float-2 24s ease-in-out infinite;
+    }
+
+    /* Custom smooth scrollbar for preview */
+    .mac-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .mac-scroll::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    .mac-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.14);
+      border-radius: 9999px;
+    }
+    .mac-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(124, 58, 237, 0.35);
+    }
+
+    /* Specular glass reflection helper */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(232, 230, 225, 0.88);
+    }
+    .glass-card:hover {
+      border-color: rgba(124, 58, 237, 0.32);
+    }
+
+    .dark-card-preview {
+      transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#F7F6F3] text-ink antialiased selection:bg-purple-100 selection:text-accent font-sans relative overflow-x-hidden">
+<!-- Continuous Warm Radial Glow & Ambient Lighting -->
+<div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden -z-10">
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-100/40 via-transparent to-transparent"></div>
+<div class="ambient-orb-1 absolute -top-36 left-1/4 w-[680px] h-[680px] rounded-full bg-gradient-to-tr from-violet-200/25 via-purple-100/20 to-indigo-50/20 blur-3xl opacity-75"></div>
+<div class="ambient-orb-2 absolute top-[620px] -right-28 w-[640px] h-[640px] rounded-full bg-gradient-to-bl from-rose-100/20 via-amber-50/20 to-violet-100/20 blur-3xl opacity-60"></div>
+<div class="ambient-orb-1 absolute top-[1650px] -left-20 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-indigo-100/20 via-violet-100/25 to-pink-50/20 blur-3xl opacity-65"></div>
+<div class="ambient-orb-2 absolute bottom-24 right-1/4 w-[640px] h-[640px] rounded-full bg-gradient-to-r from-purple-100/20 via-violet-200/20 to-indigo-50/15 blur-3xl opacity-60"></div>
+</div>
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 pt-3 sm:pt-4 px-4 sm:px-6 transition-all duration-200">
+<div class="max-w-5xl mx-auto px-5 py-2.5 rounded-full backdrop-blur-md bg-white/75 border border-black/[0.06] shadow-glass flex items-center justify-between transition-all duration-200 hover:shadow-subtle-lg hover:border-violet-200/80">
+<a class="flex items-center space-x-2.5 group" data-purpose="brand-logo" href="#">
+<span class="w-6 h-6 rounded-lg bg-gradient-to-br from-accent to-purple-800 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-purple-500/25 group-hover:scale-105 transition-transform">
+        I
+      </span>
+<span class="font-bold text-[17px] tracking-tight hover:opacity-90 transition-opacity text-ink">Inkframe</span>
+</a>
+<nav class="hidden md:flex items-center space-x-7 text-[13.5px] text-ink-muted font-medium">
+<a class="hover:text-ink hover:underline underline-offset-8 decoration-accent/40 transition-colors" href="#features">Features</a>
+<a class="hover:text-ink hover:underline underline-offset-8 decoration-accent/40 transition-colors" href="#interactive-playground">Playground</a>
+<a class="hover:text-ink hover:underline underline-offset-8 decoration-accent/40 transition-colors" href="#shortcuts">Shortcuts</a>
+<a class="hover:text-ink hover:underline underline-offset-8 decoration-accent/40 transition-colors" href="#faq">FAQ</a>
+<a class="hover:text-ink transition-colors flex items-center space-x-1" href="https://github.com" rel="noopener noreferrer" target="_blank">
+<span>GitHub</span>
+<span class="text-[10px] text-accent font-mono px-1 rounded bg-accent-soft border border-accent/20">v1.4</span>
+</a>
+</nav>
+<div class="flex items-center space-x-2.5">
+<div class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 text-xs font-mono font-medium text-emerald-800 bg-emerald-50/80 border border-emerald-200/60 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>⚡ 100% Offline</span>
+</div>
+<a class="inline-flex items-center justify-center px-4 py-1.5 text-[13px] font-medium tracking-tight text-white bg-gradient-to-r from-accent to-purple-700 hover:from-purple-600 hover:to-accent rounded-full shadow-subtle-sm hover:shadow-glow-accent transition-all duration-200 active:scale-[0.97] hover:-translate-y-0.5" href="#interactive-playground">
+        Open editor
+      </a>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="relative">
+<!-- BEGIN: HeroSection -->
+<section class="pt-14 pb-16 md:pt-20 md:pb-24 px-6 relative">
+<div class="max-w-[1140px] mx-auto text-center flex flex-col items-center relative">
+<!-- Top Badge: Real zero-backend guarantee -->
+<div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white/80 border border-violet-200/70 shadow-subtle-sm text-[12px] font-medium text-ink mb-6 backdrop-blur-md hover:border-accent/40 transition-colors">
+<span class="flex h-2 w-2 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+</span>
+<span class="text-ink-muted">Private, local-first markdown app</span>
+<span class="text-border-strong font-mono">/</span>
+<span class="text-accent font-semibold tracking-tight">Zero tracking</span>
+</div>
+<!-- Floating Badges: Left Side (Desktop) -->
+<div class="hidden lg:block absolute left-2 xl:left-4 top-8 pointer-events-none select-none z-10 space-y-4 text-left">
+<!-- Badge 1: Floating Format Tooltip -->
+<div class="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/90 shadow-glass -rotate-3 hover:rotate-0 transition-transform duration-300 pointer-events-auto cursor-default">
+<div class="flex items-center space-x-1 border-r border-border pr-2">
+<span class="w-5 h-5 rounded flex items-center justify-center font-bold text-xs bg-surface-2 text-ink shadow-inner">B</span>
+<span class="w-5 h-5 rounded flex items-center justify-center italic text-xs text-ink-muted hover:text-ink">I</span>
+<span class="w-5 h-5 rounded flex items-center justify-center text-[10px] text-accent bg-purple-100 font-mono">H1</span>
+</div>
+<div class="flex items-center space-x-1.5 text-[11px] font-mono text-ink-muted">
+<span class="px-1.5 py-0.5 rounded bg-surface-2 text-ink font-semibold border border-border">⌘B</span>
+<span class="text-[11px] font-sans font-medium text-ink">Bold selection</span>
+</div>
+</div>
+<!-- Badge 2: Slash Command -->
+<div class="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/90 shadow-glass rotate-2 hover:rotate-0 transition-transform duration-300 pointer-events-auto ml-5 cursor-default">
+<div class="w-5 h-5 rounded-md bg-accent-soft text-accent flex items-center justify-center text-xs font-mono font-bold shadow-sm">/</div>
+<div class="text-[11px] font-mono text-ink">
+<span class="text-accent font-semibold">/callout</span>
+<span class="text-ink-muted font-sans ml-1">· Reactive tips</span>
+</div>
+</div>
+</div>
+<!-- Floating Badges: Right Side (Desktop) -->
+<div class="hidden lg:block absolute right-2 xl:right-4 top-8 pointer-events-none select-none z-10 space-y-4 text-left">
+<!-- Badge 3: 0ms Latency / Local-first -->
+<div class="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/90 shadow-glass rotate-3 hover:rotate-0 transition-transform duration-300 pointer-events-auto cursor-default">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+<div class="text-[11px] font-mono text-ink">
+<span class="font-bold text-emerald-600">⚡ &lt; 0.4ms</span>
+<span class="text-ink-muted font-sans ml-1">· SQLite WASM</span>
+</div>
+</div>
+<!-- Badge 4: Quick Command & Live AST -->
+<div class="flex items-center space-x-2.5 px-3.5 py-2 rounded-xl bg-white/85 backdrop-blur-xl border border-white/90 shadow-glass -rotate-2 hover:rotate-0 transition-transform duration-300 pointer-events-auto mr-5 cursor-default">
+<span class="px-1.5 py-0.5 rounded bg-accent-soft text-accent text-[10px] font-mono font-semibold border border-accent/25">36k</span>
+<div class="text-[11px] font-sans text-ink">
+<span class="font-medium">Markdown AST</span>
+<span class="text-[10px] text-accent font-mono ml-1 font-semibold px-1 rounded bg-purple-100/70">Live</span>
+</div>
+</div>
+</div>
+<!-- Main Hero Heading -->
+<h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tightest text-ink leading-[1.08] max-w-3xl">
+  Write beautifully.<br/><span class="bg-gradient-to-r from-ink via-purple-900 to-accent bg-clip-text text-transparent">Stay offline.</span>
+</h1>
+<!-- Subtext -->
+<p class="mt-6 text-[16px] sm:text-[18px] text-ink-muted leading-relaxed max-w-2xl font-normal">
+  Private, fast, zero-backend writing canvas — your words remain strictly on your physical machine. Never in third-party clouds.
+</p>
+<!-- CTA Buttons -->
+<div class="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+<a class="px-6 py-3 rounded-xl bg-accent text-white text-[14.5px] font-medium hover:bg-accent-hover shadow-subtle-md hover:shadow-glow-accent transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] flex items-center space-x-2" href="#interactive-playground">
+<span>Start writing</span>
+<span class="opacity-80">→</span>
+</a>
+<button class="px-5 py-3 rounded-xl bg-white/90 border border-border text-ink text-[14.5px] font-medium hover:bg-surface-2/80 hover:border-border-strong transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] backdrop-blur-md shadow-subtle-sm flex items-center space-x-2" onclick="demoTypingEffect()">
+<svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+<span>Try live typing</span>
+</button>
+</div>
+<!-- Editor Canvas Frame Preview: Realistic MacBook Safari Browser Chrome -->
+<div class="mt-12 w-full max-w-4xl relative group" data-purpose="editor-preview-card" id="editor-preview-card">
+<!-- Interactive Floating Hint Pill -->
+<div class="absolute -top-4 right-6 z-20 flex items-center space-x-2 px-3 py-1 rounded-full bg-ink/90 text-white backdrop-blur-md text-[11px] font-medium shadow-glass border border-white/20 tracking-tight transition-opacity select-none">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+<span class="font-mono text-[10px] text-purple-200">Interactive playground: Type or format below</span>
+</div>
+<!-- MacBook Safari Outer Chassis -->
+<div class="relative bg-white/95 backdrop-blur-2xl border border-neutral-300/80 rounded-2xl sm:rounded-[22px] shadow-macbook text-left transition-all overflow-hidden ring-1 ring-black/[0.05]" id="mock-browser-frame">
+<!-- Safari Title Bar & Navigation Chrome -->
+<div class="bg-[#ECECEF]/95 border-b border-[#DEDEDE] px-4 py-2.5 flex items-center justify-between gap-3 select-none transition-colors" id="safari-chrome-bar">
+<!-- Left: macOS Traffic Lights & Nav Buttons -->
+<div class="flex items-center space-x-3.5 flex-shrink-0">
+<!-- Traffic Light Buttons -->
+<div class="flex items-center space-x-2">
+<span class="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] cursor-pointer hover:brightness-90 transition-all"></span>
+<span class="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] cursor-pointer hover:brightness-90 transition-all"></span>
+<span class="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] cursor-pointer hover:brightness-90 transition-all"></span>
+</div>
+<!-- Safari Back / Forward -->
+<div class="hidden sm:flex items-center space-x-1 pl-1 text-[#6D6D72]">
+<button aria-label="Back" class="p-1 rounded hover:bg-neutral-200/80 transition-colors text-xs text-neutral-400" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<button aria-label="Forward" class="p-1 rounded hover:bg-neutral-200/80 transition-colors text-xs text-neutral-400" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<button aria-label="Reload" class="p-1 rounded hover:bg-neutral-200/80 transition-colors text-xs text-neutral-500 ml-0.5" onclick="triggerSavePulse()" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</div>
+<!-- Center: Safari URL Pill / Address Bar -->
+<div class="flex-1 max-w-xl mx-auto">
+<div class="bg-white/95 border border-[#D5D5DA] hover:border-accent/40 rounded-lg px-3 py-1 flex items-center justify-between text-xs shadow-inner shadow-black/[0.02] transition-colors">
+<div class="flex items-center space-x-2 truncate">
+<svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M10 2a4 4 0 00-4 4v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zm2 6V6a2 2 0 10-4 0v2h4z" fill-rule="evenodd"></path>
+</svg>
+<span class="font-mono text-[11px] text-ink truncate select-all">
+<span class="text-ink-muted">https://</span>inkframe.app<span class="text-ink-muted">/doc/architecture-notes</span>
+</span>
+</div>
+<div class="flex items-center space-x-2 pl-2 flex-shrink-0">
+<span class="hidden md:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+              ● 100% Offline
+            </span>
+<button aria-label="Bookmark" class="text-neutral-400 hover:text-ink transition-colors" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<!-- Right: Safari Theme Switcher & Share Actions -->
+<div class="flex items-center space-x-2 flex-shrink-0">
+<!-- Interactive Theme Switch for the Preview -->
+<button class="px-2 py-1 rounded-md text-[11px] font-mono text-ink-muted hover:text-ink hover:bg-neutral-200/70 border border-transparent hover:border-border transition-colors flex items-center space-x-1" onclick="toggleHeroEditorTheme()" title="Toggle Dark / Light canvas" type="button">
+<span id="theme-btn-icon">🌙</span>
+<span class="hidden sm:inline" id="theme-btn-text">Dark view</span>
+</button>
+<button aria-label="Share" class="p-1 rounded text-neutral-500 hover:text-ink hover:bg-neutral-200/70 transition-colors" onclick="copyHeroLink()" title="Share link" type="button">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</div>
+</div>
+<!-- Safari Secondary Document Bar / Active Tab Bar -->
+<div class="bg-[#F6F6F8] border-b border-border/80 px-4 py-1.5 flex items-center justify-between text-xs select-none transition-colors" id="safari-tab-bar">
+<div class="flex items-center space-x-2">
+<div class="inline-flex items-center space-x-1.5 px-3 py-1 bg-white border border-border/80 rounded-md shadow-subtle-sm font-mono text-[11px] font-medium text-ink transition-colors" id="safari-active-tab">
+<span class="text-accent font-bold">#</span>
+<span>Architecture Notes.md</span>
+<span class="text-neutral-400 hover:text-ink cursor-pointer ml-1 leading-none">×</span>
+</div>
+</div>
+<div class="flex items-center space-x-3 text-[11px]">
+<span class="inline-flex items-center space-x-1 text-emerald-600 font-medium font-mono" id="autosave-indicator">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span id="autosave-text">Saved locally ✓</span>
+</span>
+<span class="text-border-strong hidden sm:inline">|</span>
+<span class="text-ink-muted hidden sm:inline font-mono">SQLite-WASM Active</span>
+</div>
+</div>
+<!-- Sticky Editor Formatting Toolbar with Real Interactive Buttons -->
+<div class="sticky top-0 z-10 px-4 py-2 border-b border-border/80 bg-white/95 backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto text-[13px] text-ink-muted transition-colors" id="editor-toolbar-bar">
+<div class="flex items-center space-x-1 flex-shrink-0" id="editor-toolbar">
+<button class="px-2 py-1 rounded hover:bg-surface-2 active:scale-95 font-bold text-ink transition-all" onclick="applyFormatStyle('bold', this)" title="Bold (⌘B)" type="button">B</button>
+<button class="px-2 py-1 rounded hover:bg-surface-2 active:scale-95 italic text-ink transition-all" onclick="applyFormatStyle('italic', this)" title="Italic (⌘I)" type="button">I</button>
+<button class="px-2 py-1 rounded hover:bg-surface-2 active:scale-95 line-through text-ink transition-all" onclick="applyFormatStyle('strike', this)" title="Strikethrough" type="button">S</button>
+<span class="h-4 w-px bg-border mx-1"></span>
+<button class="px-2 py-0.5 rounded bg-accent-soft text-accent font-semibold text-xs border border-accent/25 active:scale-95" onclick="applyHeadingStyle('h1', this)" title="Heading 1" type="button">H1</button>
+<button class="px-2 py-0.5 rounded hover:bg-surface-2 text-xs font-semibold text-ink active:scale-95 transition-all" onclick="applyHeadingStyle('h2', this)" title="Heading 2" type="button">H2</button>
+<button class="px-2 py-0.5 rounded hover:bg-surface-2 text-xs font-semibold text-ink active:scale-95 transition-all" onclick="applyHeadingStyle('h3', this)" title="Heading 3" type="button">H3</button>
+<span class="h-4 w-px bg-border mx-1"></span>
+<button class="px-2 py-1 rounded hover:bg-surface-2 text-xs text-ink transition-all active:scale-95" onclick="insertInteractiveBullet()" title="Bullet List" type="button">• List</button>
+<button class="px-2 py-1 rounded hover:bg-surface-2 text-xs text-ink transition-all active:scale-95" onclick="insertInteractiveTask()" title="Checklist" type="button">☑ Check</button>
+<button class="px-2 py-1 rounded hover:bg-surface-2 text-xs text-ink transition-all active:scale-95" onclick="insertCalloutTip()" title="Callout" type="button">💡 Tip</button>
+<button class="px-2 py-1 rounded hover:bg-surface-2 font-mono text-xs text-ink transition-all active:scale-95" onclick="applyFormatStyle('code', this)" title="Inline Code" type="button">&lt;/&gt;</button>
+</div>
+<div class="flex items-center space-x-2 flex-shrink-0 text-xs">
+<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-mono text-[10px]">WASM AST Sync</span>
+</div>
+</div>
+<!-- Scrollable Document Viewport (Height 470px) -->
+<div class="h-[470px] max-h-[470px] overflow-y-auto mac-scroll bg-white p-6 sm:p-10 space-y-6 text-ink selection:bg-purple-100 selection:text-accent transition-colors" id="doc-viewport">
+<!-- Document Header Area -->
+<div class="border-b border-border/70 pb-5" id="doc-header-border">
+<div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-accent-soft text-accent text-[11px] font-mono mb-3 font-semibold border border-accent/20">
+<span>● Local SQLite / WASM Storage</span>
+</div>
+<h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink outline-none" id="live-doc-title" oninput="updateWordCount()">
+          Product Architecture &amp; Local Sync
+        </h1>
+<div class="mt-2 flex flex-wrap items-center gap-3 text-[12px] text-ink-muted font-mono">
+<span id="live-last-mod">Modified moments ago</span>
+<span>·</span>
+<span id="live-word-count">438 words</span>
+<span>·</span>
+<span>2 min read</span>
+<span>·</span>
+<span class="text-accent font-semibold">IndexedDB.wal OK</span>
+</div>
+</div>
+<!-- Editable Intro Paragraph with Typing Cursor -->
+<div class="space-y-3">
+<p class="text-[14px] sm:text-[15.5px] leading-relaxed text-ink/90 outline-none p-2 rounded-lg transition-colors border border-transparent focus:border-accent/30 focus:bg-accent-soft/20" id="live-doc-body" oninput="updateWordCount()">
+          Inkframe is architected from the ground up for instantaneous responsiveness. Unlike typical browser editors that stream keystrokes across WebSockets to cloud clusters, Inkframe treats your local storage device as the immutable source of truth.
+        </p>
+<div class="flex items-center space-x-2 text-xs font-mono text-ink-muted px-2">
+<span class="inline-block w-2 h-2 rounded-full bg-accent animate-ping"></span>
+<span>Click anywhere in this document or toolbar to edit in real-time</span>
+</div>
+</div>
+<!-- Interactive Checklist Section -->
+<div class="p-4 rounded-xl bg-surface-2/60 border border-border space-y-2.5 transition-colors" id="checklist-box">
+<div class="flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase tracking-wider text-ink-muted">Sprint Deliverables &amp; Invariants</h3>
+<span class="text-[10px] font-mono text-accent font-medium">Click checkboxes to toggle</span>
+</div>
+<label class="flex items-start space-x-3 text-[13px] text-ink cursor-pointer select-none group">
+<input checked="" class="mt-0.5 rounded border-border-strong text-accent focus:ring-accent accent-accent transition-all cursor-pointer" onchange="toggleCheckItem(this)" type="checkbox"/>
+<span class="line-through text-ink-muted transition-all">Zero backend dependency for drafting, search, and storage</span>
+</label>
+<label class="flex items-start space-x-3 text-[13px] text-ink cursor-pointer select-none group">
+<input checked="" class="mt-0.5 rounded border-border-strong text-accent focus:ring-accent accent-accent transition-all cursor-pointer" onchange="toggleCheckItem(this)" type="checkbox"/>
+<span class="line-through text-ink-muted transition-all">Sub-millisecond AST parser with inline formatting markers</span>
+</label>
+<label class="flex items-start space-x-3 text-[13px] text-ink cursor-pointer select-none group">
+<input class="mt-0.5 rounded border-border-strong text-accent focus:ring-accent accent-accent transition-all cursor-pointer" onchange="toggleCheckItem(this)" type="checkbox"/>
+<span class="transition-all">Deterministic diffing algorithm for offline checkpoint rewinds</span>
+</label>
+<label class="flex items-start space-x-3 text-[13px] text-ink cursor-pointer select-none group">
+<input class="mt-0.5 rounded border-border-strong text-accent focus:ring-accent accent-accent transition-all cursor-pointer" onchange="toggleCheckItem(this)" type="checkbox"/>
+<span class="transition-all">One-click encrypted snapshot export via WebRTC peer data channels</span>
+</label>
+</div>
+<!-- Rich Violet Callout -->
+<div class="p-4 bg-accent-soft/70 border border-purple-200/90 rounded-xl text-[13px] text-ink flex items-start space-x-3 shadow-subtle-sm transition-colors" id="callout-box">
+<span class="text-base select-none">💡</span>
+<div class="leading-relaxed">
+<strong class="text-ink font-semibold">Offline Guarantee:</strong> You can disconnect your Wi-Fi, reload this window, and continue typing without loss of state. Document snapshots are serialized to <code class="font-mono px-1.5 py-0.5 rounded bg-white text-accent border border-border text-xs">IndexedDB.wal</code>.
+        </div>
+</div>
+<!-- Code Block with Syntax Highlighting and Copy Button -->
+<div>
+<div class="flex items-center justify-between px-3.5 py-1.5 bg-[#1F1F24] text-neutral-300 rounded-t-xl text-xs font-mono border-b border-neutral-700/60">
+<span class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-accent"></span>
+<span>indexeddb-engine.ts</span>
+</span>
+<button class="px-2.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[11px] text-white transition-all active:scale-95" id="hero-copy-code-btn" onclick="copyHeroSnippet(this)" type="button">
+            Copy
+          </button>
+</div>
+<pre class="p-4 bg-[#141417] text-neutral-200 rounded-b-xl overflow-x-auto text-[12px] font-mono leading-relaxed border border-t-0 border-[#232328]"><code><span class="text-purple-400">import</span> { openDB } <span class="text-purple-400">from</span> <span class="text-emerald-300">'idb'</span>;
+
+<span class="text-neutral-500">// Zero round-trip persistence pipe</span>
+<span class="text-purple-400">export async function</span> <span class="text-blue-300">persistDocument</span>(docId, markdownAST) {
+  <span class="text-purple-400">const</span> db = <span class="text-purple-400">await</span> openDB(<span class="text-emerald-300">'inkframe_core'</span>, <span class="text-amber-300">2</span>);
+  <span class="text-purple-400">const</span> tx = db.transaction(<span class="text-emerald-300">'documents'</span>, <span class="text-emerald-300">'readwrite'</span>);
+  
+  <span class="text-purple-400">await</span> tx.store.put({
+    id: docId,
+    content: markdownAST,
+    savedAt: performance.now(),
+    offlineVerified: <span class="text-amber-300">true</span>
+  });
+  <span class="text-purple-400">return</span> tx.done;
+}</code></pre>
+</div>
+<!-- Embedded Data Table: Benchmark vs Cloud sync speed -->
+<div>
+<div class="flex items-center justify-between mb-2">
+<h4 class="text-xs font-semibold uppercase tracking-wider text-ink-muted">Benchmark: Local Engine vs Cloud Sync</h4>
+<span class="text-[11px] text-ink-muted font-mono">Chrome 128 · M3 Max</span>
+</div>
+<div class="border border-border rounded-xl overflow-hidden shadow-subtle-sm">
+<table class="w-full text-left text-xs">
+<thead class="bg-surface-2/70 border-b border-border text-ink-muted font-medium">
+<tr>
+<th class="py-2.5 px-3 font-medium">Metric</th>
+<th class="py-2.5 px-3 font-semibold text-accent">Inkframe (Local)</th>
+<th class="py-2.5 px-3 font-medium">Traditional Cloud App</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border font-mono text-[11px]">
+<tr class="hover:bg-surface-2/40 transition-colors">
+<td class="py-2 px-3 font-sans text-ink font-medium">Keystroke latency</td>
+<td class="py-2 px-3 text-emerald-600 font-bold">&lt; 0.4 ms (Instant)</td>
+<td class="py-2 px-3 text-ink-muted">85 - 180 ms</td>
+</tr>
+<tr class="hover:bg-surface-2/40 transition-colors">
+<td class="py-2 px-3 font-sans text-ink font-medium">Network egress</td>
+<td class="py-2 px-3 text-emerald-600 font-bold">0 KB transferred</td>
+<td class="py-2 px-3 text-ink-muted">~2.4 MB / session</td>
+</tr>
+<tr class="hover:bg-surface-2/40 transition-colors">
+<td class="py-2 px-3 font-sans text-ink font-medium">Telemetry payload</td>
+<td class="py-2 px-3 text-emerald-600 font-bold">0 trackers</td>
+<td class="py-2 px-3 text-ink-muted">14 analytical tags</td>
+</tr>
+<tr class="hover:bg-surface-2/40 transition-colors">
+<td class="py-2 px-3 font-sans text-ink font-medium">Cold start time</td>
+<td class="py-2 px-3 text-emerald-600 font-bold">Instant (Offline cached)</td>
+<td class="py-2 px-3 text-ink-muted">1.8s - 3.4s server wait</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Safari / Editor Internal Bottom Status Bar -->
+<div class="px-5 py-2 bg-[#F6F6F8] border-t border-border flex flex-wrap items-center justify-between text-[11px] text-ink-muted font-mono select-none transition-colors" id="safari-status-bar">
+<div class="flex items-center space-x-3">
+<span class="flex items-center space-x-1.5 cursor-pointer" onclick="triggerSavePulse()">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="text-ink font-medium">Local DB Active</span>
+</span>
+<span>·</span>
+<span id="footer-word-count">438 words</span>
+<span>·</span>
+<span id="footer-char-count">2,892 characters</span>
+</div>
+<div class="flex items-center space-x-4">
+<span class="hidden sm:inline">UTF-8</span>
+<span class="text-accent font-semibold">Markdown Live AST</span>
+<span class="text-neutral-400">Ln 42, Col 18</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Trust Strip Chips -->
+<div class="mt-12 flex flex-wrap items-center justify-center gap-2 max-w-2xl" data-purpose="trust-strip">
+<span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-border/80 bg-white/80 backdrop-blur-md text-ink-muted text-[12px] font-medium shadow-subtle-sm hover:border-accent/30 transition-colors">
+<svg class="w-3.5 h-3.5 text-emerald-500 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Offline-first
+  </span>
+<span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-border/80 bg-white/80 backdrop-blur-md text-ink-muted text-[12px] font-medium shadow-subtle-sm hover:border-accent/30 transition-colors">
+<svg class="w-3.5 h-3.5 text-emerald-500 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    No account needed
+  </span>
+<span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-border/80 bg-white/80 backdrop-blur-md text-ink-muted text-[12px] font-medium shadow-subtle-sm hover:border-accent/30 transition-colors">
+<svg class="w-3.5 h-3.5 text-emerald-500 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Zero telemetry
+  </span>
+<span class="inline-flex items-center px-3.5 py-1.5 rounded-full border border-border/80 bg-white/80 backdrop-blur-md text-ink-muted text-[12px] font-medium shadow-subtle-sm hover:border-accent/30 transition-colors">
+<svg class="w-3.5 h-3.5 text-emerald-500 mr-1.5" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Export to PDF / MD / HTML
+  </span>
+</div>
+</div>
+</section>
+<!-- END: HeroSection -->
+<!-- BEGIN: FeatureGridSection -->
+<section class="py-20 md:py-28 px-6 relative" id="features">
+<div class="max-w-6xl mx-auto">
+<div class="text-center max-w-xl mx-auto mb-16">
+<span class="text-accent text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full bg-accent-soft border border-accent/20 inline-block mb-3.5 shadow-sm">
+        Designed for Focus
+      </span>
+<h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
+        Everything you need. Zero bloat.
+      </h2>
+<p class="mt-3 text-ink-muted text-[15px]">
+        Engineered with Raycast-speed responsiveness and Notion simplicity.
+      </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Card 1 (Wide: 7 cols) Slash commands with interactive menu simulator -->
+<div class="md:col-span-7 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-6 shadow-sm group-hover:scale-105 transition-transform">
+<span class="text-accent text-base font-bold font-mono">/</span>
+</div>
+<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-surface-2 text-ink-muted border border-border">
+            keyboard-first
+          </span>
+</div>
+<div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Slash commands</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-6 max-w-md">
+            Type <code class="font-mono text-accent bg-accent-soft px-1 rounded">/</code> to insert any block without leaving the keyboard. Headings, code, checklists, and quotes in a keystroke.
+          </p>
+</div>
+<!-- Interactive hover demo pills -->
+<div class="pt-3 border-t border-border/70 space-y-2">
+<div class="text-[11px] font-mono text-ink-muted flex items-center justify-between">
+<span>Hover or tap to preview block insert:</span>
+<span class="text-accent font-semibold text-[10px]" id="slash-preview-active">/table active</span>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<button class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-accent-soft border border-accent/30 text-xs font-mono text-accent hover:scale-105 transition-all shadow-sm" onclick="previewSlashAction('table', this)" type="button">
+<span class="font-bold">/</span><span>table</span>
+</button>
+<button class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border/80 text-xs font-mono text-ink transition-all hover:scale-105" onclick="previewSlashAction('checklist', this)" type="button">
+<span class="text-accent font-semibold">/</span><span>checklist</span>
+</button>
+<button class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border/80 text-xs font-mono text-ink transition-all hover:scale-105" onclick="previewSlashAction('callout', this)" type="button">
+<span class="text-accent font-semibold">/</span><span>callout</span>
+</button>
+<button class="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border/80 text-xs font-mono text-ink transition-all hover:scale-105" onclick="previewSlashAction('code', this)" type="button">
+<span class="text-accent font-semibold">/</span><span>code</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 (Narrow: 5 cols) Floating formatting with interactive selection simulation -->
+<div class="md:col-span-5 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div>
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-6 shadow-sm group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Floating formatting</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-4">
+            Select text for a quiet bar of quick formatting options that vanishes as soon as you keep typing.
+          </p>
+</div>
+<div class="relative pt-6 pb-2 mt-auto">
+<!-- Floating mini toolbar simulation -->
+<div class="absolute top-0 left-4 bg-ink text-white rounded-lg px-2.5 py-1 flex items-center space-x-2.5 text-xs shadow-lg shadow-black/20 border border-neutral-700 select-none animate-bounce">
+<span class="font-bold cursor-pointer hover:text-accent-soft">B</span>
+<span class="italic cursor-pointer hover:text-accent-soft">I</span>
+<span class="cursor-pointer hover:text-accent-soft">🔗</span>
+<span class="font-mono text-[10px] text-accent-soft cursor-pointer bg-neutral-800 px-1 py-0.5 rounded">&lt;/&gt;</span>
+</div>
+<p class="text-[13px] text-ink leading-relaxed font-sans bg-surface-2/70 border border-border/80 p-3.5 rounded-xl">
+            Focused on <span class="bg-purple-200/90 text-accent font-semibold px-1.5 py-0.5 rounded shadow-sm">zero-backend writing</span> on all devices.
+          </p>
+</div>
+</div>
+<!-- Card 3 (Narrow: 5 cols) Checklists & tables with interactive checkboxes -->
+<div class="md:col-span-5 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div>
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-6 shadow-sm group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Checklists &amp; tables</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-4">
+            Structured content that stays easy to scan and rearrange on the fly with instant tactile feedback.
+          </p>
+</div>
+<div class="space-y-2 p-3.5 rounded-xl bg-surface-2/70 border border-border/80 mt-auto text-xs">
+<label class="flex items-center space-x-2.5 text-ink cursor-pointer select-none">
+<input checked="" class="rounded border-border text-accent focus:ring-accent accent-accent cursor-pointer" onchange="this.nextElementSibling.classList.toggle('line-through'); this.nextElementSibling.classList.toggle('text-ink-muted');" type="checkbox"/>
+<span class="line-through text-ink-muted transition-all">Prepare architecture notes</span>
+</label>
+<label class="flex items-center space-x-2.5 text-ink cursor-pointer select-none">
+<input class="rounded border-border text-accent focus:ring-accent accent-accent cursor-pointer" onchange="this.nextElementSibling.classList.toggle('line-through'); this.nextElementSibling.classList.toggle('text-ink-muted');" type="checkbox"/>
+<span class="transition-all">Sync SQLite WASM state</span>
+</label>
+</div>
+</div>
+<!-- Card 4 (Wide: 7 cols) Instant share links with interactive toast copy -->
+<div class="md:col-span-7 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-6 shadow-sm group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-accent-soft text-accent border border-accent/25 font-semibold">
+            Instant P2P
+          </span>
+</div>
+<div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Instant share links</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-6 max-w-md">
+            Generate a lightweight read-only snapshot in one click. No registration, cookie banners, or server round-trip required.
+          </p>
+</div>
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-2/80 border border-border">
+<div class="flex items-center space-x-2 px-2.5 truncate">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="font-mono text-xs text-ink select-all truncate">inkframe.app/s/8f2a1c</span>
+</div>
+<button class="px-3.5 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg shadow-subtle-sm hover:bg-accent-hover transition-all active:scale-95 flex items-center space-x-1" onclick="copyCardShare(this)" type="button">
+<span>Copy</span>
+</button>
+</div>
+</div>
+<!-- Card 5 (Wide: 7 cols) Version history with clickable time nodes -->
+<div class="md:col-span-7 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center mb-6 shadow-sm group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-surface-2 text-ink-muted border border-border">
+            IndexedDB
+          </span>
+</div>
+<div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Version history</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-6 max-w-md">
+            Every local autosave creates an immutable checkpoint. Rewind time or branch your document without cloud sync dependencies.
+          </p>
+</div>
+<div class="space-y-2 pt-1 border-t border-border/70">
+<div class="text-[11px] font-mono text-ink-muted flex items-center justify-between">
+<span>Click timeline node to switch revision:</span>
+<span class="text-accent font-semibold" id="history-active-tag">Active: Checkpoint 14:02</span>
+</div>
+<div class="flex items-center space-x-2 overflow-x-auto pb-1">
+<button class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-accent-soft border border-accent/30 text-xs font-mono text-accent font-medium shadow-sm transition-all" onclick="selectRevision('Checkpoint 14:02', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-accent"></span>
+<span>Checkpoint 14:02</span>
+<span class="text-[10px] opacity-75">(current)</span>
+</button>
+<button class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border text-xs font-mono text-ink-muted transition-all" onclick="selectRevision('Checkpoint 13:45', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-neutral-400"></span>
+<span>Checkpoint 13:45</span>
+</button>
+<button class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border text-xs font-mono text-ink-muted transition-all" onclick="selectRevision('Checkpoint 11:20', this)" type="button">
+<span class="w-2 h-2 rounded-full bg-neutral-400"></span>
+<span>Checkpoint 11:20</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 6 (Narrow: 5 cols) Dark mode with live toggler -->
+<div class="md:col-span-5 glass-card rounded-2xl p-7 shadow-subtle-md hover:shadow-subtle-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+<div>
+<div class="flex items-center justify-between mb-6">
+<div class="w-10 h-10 rounded-xl bg-accent-soft flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+<svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<!-- Clickable live preview toggle button inside this card -->
+<button class="px-2.5 py-1 text-xs font-mono rounded-lg border border-border bg-surface-2 hover:bg-white text-ink transition-all active:scale-95 shadow-sm" onclick="toggleCardDarkMode()" type="button">
+              Toggle Mode 🌓
+            </button>
+</div>
+<h3 class="text-[19px] font-bold text-ink tracking-tight mb-2">Dark mode</h3>
+<p class="text-[14px] text-ink-muted leading-relaxed mb-4">
+            A true dark surface crafted with rich deep contrast and gentle typography tone for late nights.
+          </p>
+</div>
+<div class="p-3.5 rounded-xl bg-[#0E0E10] border border-[#232328] shadow-subtle-md text-white mt-auto dark-card-preview" id="interactive-dark-card">
+<div class="flex items-center justify-between text-[11px] text-neutral-400 font-mono mb-1.5">
+<div class="flex items-center space-x-1.5">
+<span class="w-2 h-2 rounded-full bg-[#7C3AED]"></span>
+<span id="dark-card-title">#0E0E10 Depth</span>
+</div>
+<span class="text-[10px] text-neutral-500" id="dark-card-tag">OLED ready</span>
+</div>
+<p class="text-xs text-neutral-300 font-sans" id="dark-card-body">High readability at 2 AM without eye strain.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: FeatureGridSection -->
+<!-- BEGIN: FeatureDetailsSection -->
+<section class="py-20 md:py-28 px-6 space-y-24 relative" id="shortcuts">
+<div class="max-w-[1140px] mx-auto space-y-24">
+<!-- Row 1: Type / for anything -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+<!-- Text Side -->
+<div class="max-w-md">
+<div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-accent-soft text-accent text-xs font-semibold mb-4 border border-accent/20">
+<span>Command Palette</span>
+</div>
+<h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink mb-4">
+      Type / for anything
+    </h2>
+<p class="text-[15.5px] text-ink-muted leading-relaxed">
+      No menus to hunt through. Press <kbd class="px-1.5 py-0.5 rounded bg-surface-2 border border-border font-mono text-ink text-xs">/</kbd> anywhere in the document to insert a heading, checklist, table, callout or image without taking your hands off the home row.
+    </p>
+<div class="mt-6 flex items-center space-x-3 text-xs font-mono text-ink-muted">
+<span class="px-2 py-1 rounded bg-white border border-border shadow-subtle-sm text-ink">↑ / ↓ to navigate</span>
+<span class="px-2 py-1 rounded bg-white border border-border shadow-subtle-sm text-ink">↵ to confirm</span>
+</div>
+</div>
+<!-- Simulation Card: Slash Popover with interactive click -->
+<div class="glass-card rounded-2xl p-6 sm:p-8 shadow-subtle-lg hover:border-accent/40 transition-all duration-300" data-purpose="slash-demo-card">
+<div class="h-2.5 bg-neutral-200/60 rounded-full w-48 mb-4"></div>
+<div class="inline-block px-2.5 py-1 mb-3 rounded-md text-xs font-mono bg-accent-soft text-accent border border-accent/25 font-semibold">
+      /table
+    </div>
+<div class="border border-border/80 rounded-xl bg-white shadow-subtle-md overflow-hidden text-sm mb-5">
+<div class="px-3 py-2 text-[11px] font-semibold tracking-wide text-ink-muted uppercase border-b border-border bg-surface-2/60 flex justify-between">
+<span>Insert block</span>
+<span class="font-mono text-[10px] text-accent">Interactive preview</span>
+</div>
+<div class="divide-y divide-border/60">
+<div class="px-4 py-2.5 flex items-center justify-between bg-accent-soft text-accent font-medium cursor-pointer transition-colors" onclick="showToast('Table block inserted!')">
+<div class="flex items-center space-x-3">
+<span class="w-3.5 h-3.5 border-2 border-accent rounded-sm"></span>
+<span>Table</span>
+</div>
+<span class="text-[10px] font-mono opacity-80">↵ Enter</span>
+</div>
+<div class="px-4 py-2.5 flex items-center space-x-3 text-ink hover:bg-surface-2 cursor-pointer transition-colors" onclick="showToast('Checklist block inserted!')">
+<span class="w-3.5 h-3.5 border border-ink-muted rounded-sm"></span>
+<span>Checklist</span>
+</div>
+<div class="px-4 py-2.5 flex items-center space-x-3 text-ink hover:bg-surface-2 cursor-pointer transition-colors" onclick="showToast('Callout block inserted!')">
+<span class="text-ink-muted font-serif">“</span>
+<span>Callout</span>
+</div>
+<div class="px-4 py-2.5 flex items-center space-x-3 text-ink hover:bg-surface-2 cursor-pointer transition-colors" onclick="showToast('Code block inserted!')">
+<span class="font-mono text-xs text-ink-muted">&lt;/&gt;</span>
+<span>Code block</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-2/70 border border-border rounded-xl p-3 font-mono text-[12px] text-ink">
+<div class="text-ink-muted mb-1 text-[11px]">// Local indexed storage snippet</div>
+<div><span class="text-accent font-bold">const</span> doc = <span class="text-accent font-bold">await</span> db.get(<span class="text-emerald-600">'draft'</span>);</div>
+</div>
+</div>
+</div>
+<!-- Row 2: Export and share, instantly -->
+<div class="pt-8">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<!-- Column 1 (Left): Interactive Frosted Share Card -->
+<div class="lg:col-span-5 w-full">
+<div class="glass-card rounded-2xl p-6 sm:p-7 border border-border/80 shadow-subtle-lg hover:border-accent/40 transition-all duration-300 relative overflow-hidden group">
+<!-- Card Header -->
+<div class="flex items-center justify-between pb-4 border-b border-border/70">
+<div class="flex items-center space-x-2.5">
+<div class="w-7 h-7 rounded-lg bg-accent-soft text-accent flex items-center justify-center font-bold text-xs shadow-sm">
+<svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</div>
+<div>
+<h3 class="text-sm font-bold text-ink tracking-tight">Share this document</h3>
+<span class="text-[11px] font-mono text-emerald-600 font-semibold">● Encrypted in browser</span>
+</div>
+</div>
+<span class="text-xs font-mono px-2 py-0.5 rounded bg-surface-2 text-ink-muted border border-border/70 cursor-pointer hover:text-ink transition-colors">ESC</span>
+</div>
+<!-- Card Body -->
+<div class="py-4 space-y-4">
+<p class="text-xs text-ink-muted leading-relaxed">
+            Anyone with this link gets a read-only snapshot. Revoke or purge it any time from your device.
+          </p>
+<!-- Share Link Box -->
+<div class="p-1.5 rounded-xl bg-surface-2/80 border border-border flex items-center justify-between gap-2 shadow-inner shadow-black/[0.02]">
+<div class="flex items-center space-x-2 pl-2 truncate min-w-0">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+<span class="font-mono text-xs text-ink truncate select-all">inkframe.app/s#8f2a1c9e74d1bf0a2c</span>
+</div>
+<button class="px-3.5 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg shadow-subtle-sm hover:bg-accent-hover transition-all active:scale-95 flex items-center space-x-1 flex-shrink-0" onclick="copyShareLink(this)" type="button">
+<span class="font-medium" id="share-btn-text">Copy</span>
+</button>
+</div>
+<!-- Quick Export Format Chips -->
+<div class="space-y-2 pt-1">
+<div class="text-[11px] font-mono text-ink-muted flex items-center justify-between">
+<span>Or direct standalone download:</span>
+<span class="text-accent font-semibold text-[10px]">Zero round-trip</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-border hover:border-accent/40 hover:bg-accent-soft/30 transition-all group/btn text-center shadow-subtle-sm" onclick="fakeDownload('Markdown (.md)')" type="button">
+<span class="font-mono font-bold text-xs text-accent">.md</span>
+<span class="text-[10px] text-ink-muted group-hover/btn:text-ink transition-colors mt-0.5">Export .md</span>
+</button>
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-border hover:border-accent/40 hover:bg-accent-soft/30 transition-all group/btn text-center shadow-subtle-sm" onclick="fakeDownload('PDF (.pdf)')" type="button">
+<span class="font-mono font-bold text-xs text-accent">.pdf</span>
+<span class="text-[10px] text-ink-muted group-hover/btn:text-ink transition-colors mt-0.5">Export .pdf</span>
+</button>
+<button class="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-border hover:border-accent/40 hover:bg-accent-soft/30 transition-all group/btn text-center shadow-subtle-sm" onclick="fakeDownload('HTML (.html)')" type="button">
+<span class="font-mono font-bold text-xs text-accent">&lt;/&gt;</span>
+<span class="text-[10px] text-ink-muted group-hover/btn:text-ink transition-colors mt-0.5">Export .html</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card Footer Reassurance -->
+<div class="pt-3 border-t border-border/70 flex items-center space-x-2 text-[11px] font-mono text-ink-muted">
+<span class="text-xs">🔒</span>
+<span class="truncate">AES-GCM 256-bit client-side encryption. Zero server knowledge.</span>
+</div>
+</div>
+</div>
+<!-- Column 2 (Right): Editorial Typography matching 'Type / for anything' -->
+<div class="lg:col-span-7 max-w-xl">
+<div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-accent-soft text-accent text-xs font-semibold mb-4 border border-accent/20">
+<span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+<span>Zero Round-Trip · Instant Export</span>
+</div>
+<h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink mb-4">
+        Export and share, instantly
+      </h2>
+<p class="text-[15.5px] text-ink-muted leading-relaxed mb-6">
+        Export cleanly styled Markdown, print-ready PDF, or self-contained HTML in a single keystroke. Share read-only snapshots encrypted right in your browser with zero server round-trips.
+      </p>
+<div class="space-y-3 pt-1">
+<div class="flex items-start space-x-3 text-xs sm:text-[13px] text-ink">
+<div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center font-bold flex-shrink-0 mt-0.5">✓</div>
+<p class="leading-relaxed"><strong class="font-semibold text-ink">End-to-end encrypted snapshot links:</strong> Key resides exclusively in the URL hash fragment. Zero logs, tracking, or cloud databases.</p>
+</div>
+<div class="flex items-start space-x-3 text-xs sm:text-[13px] text-ink">
+<div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center font-bold flex-shrink-0 mt-0.5">✓</div>
+<p class="leading-relaxed"><strong class="font-semibold text-ink">Pristine Markdown preservation:</strong> Exact serialization preserving frontmatter, checklists, code blocks, and math equations without conversion distortion.</p>
+</div>
+<div class="flex items-start space-x-3 text-xs sm:text-[13px] text-ink">
+<div class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center font-bold flex-shrink-0 mt-0.5">✓</div>
+<p class="leading-relaxed"><strong class="font-semibold text-ink">Crisp CSS-paged vector PDF:</strong> Tailored @media print stylesheets configured for bookish typography and exact paper margins.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: FeatureDetailsSection -->
+<!-- BEGIN: FAQSection -->
+<section class="py-20 md:py-28 px-6 border-t border-border/70 relative" id="faq">
+<div class="max-w-6xl mx-auto">
+<!-- Header & Intro -->
+<div class="text-center max-w-2xl mx-auto mb-14">
+<div class="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-accent-soft border border-accent/20 mb-4 shadow-sm text-accent text-xs font-bold tracking-wider uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+<span>Got Questions?</span>
+</div>
+<h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-ink mb-4">
+        Frequently Answered
+      </h2>
+<p class="text-ink-muted text-[15.5px] leading-relaxed">
+        Everything you need to know about Inkframe's offline-first architecture, local cryptography, and storage invariants.
+      </p>
+</div>
+<!-- Main Split Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+<!-- Left Sidebar: Category filters + Support Card -->
+<div class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+<div class="glass-card rounded-2xl p-6 border border-border/80 shadow-subtle-sm">
+<h3 class="text-xs font-mono font-bold uppercase tracking-wider text-ink-muted mb-3.5">
+            Filter by Category
+          </h3>
+<div class="flex flex-row lg:flex-col gap-2 flex-wrap" id="faq-category-pills">
+<button class="faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-accent text-white text-xs font-medium font-mono transition-all duration-200 shadow-sm w-full text-left" onclick="filterFaqCategory('all', this)" type="button">
+<span>All Questions</span>
+<span class="text-[10px] opacity-80 px-1.5 py-0.5 rounded bg-white/20">4</span>
+</button>
+<button class="faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-2/70 hover:bg-surface-2 text-ink-muted hover:text-ink text-xs font-medium font-mono transition-all duration-200 border border-border/70 w-full text-left" onclick="filterFaqCategory('storage', this)" type="button">
+<span>Storage &amp; Privacy</span>
+<span class="text-[10px] opacity-80 px-1.5 py-0.5 rounded bg-border">2</span>
+</button>
+<button class="faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-2/70 hover:bg-surface-2 text-ink-muted hover:text-ink text-xs font-medium font-mono transition-all duration-200 border border-border/70 w-full text-left" onclick="filterFaqCategory('sync', this)" type="button">
+<span>Sync &amp; Backups</span>
+<span class="text-[10px] opacity-80 px-1.5 py-0.5 rounded bg-border">1</span>
+</button>
+<button class="faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-2/70 hover:bg-surface-2 text-ink-muted hover:text-ink text-xs font-medium font-mono transition-all duration-200 border border-border/70 w-full text-left" onclick="filterFaqCategory('pwa', this)" type="button">
+<span>Offline &amp; PWA</span>
+<span class="text-[10px] opacity-80 px-1.5 py-0.5 rounded bg-border">1</span>
+</button>
+</div>
+</div>
+<!-- Quick Support / GitHub Card -->
+<div class="glass-card rounded-2xl p-6 border border-border/80 shadow-subtle-sm bg-gradient-to-br from-white/90 to-accent-soft/40 space-y-3">
+<div class="w-9 h-9 rounded-xl bg-accent-soft text-accent flex items-center justify-center font-bold text-sm shadow-sm">
+            💬
+          </div>
+<h4 class="text-[15px] font-bold text-ink tracking-tight">Have a specific invariant?</h4>
+<p class="text-xs text-ink-muted leading-relaxed">
+            Our roadmap, RFCs, and offline WASM algorithms are discussed publicly on GitHub Discussions.
+          </p>
+<a class="inline-flex items-center space-x-1.5 text-xs font-semibold text-accent hover:text-accent-hover font-mono pt-1 transition-colors group" href="https://github.com" rel="noopener noreferrer" target="_blank">
+<span>Open GitHub Discussions</span>
+<span class="group-hover:translate-x-1 transition-transform">→</span>
+</a>
+</div>
+</div>
+<!-- Right Column: Accordion List -->
+<div class="lg:col-span-8 space-y-4" id="faq-accordion-list">
+<!-- FAQ 1 (Storage & Privacy) - Open by default -->
+<div class="faq-item glass-card rounded-2xl border border-border/80 shadow-subtle-sm hover:border-accent/30 hover:shadow-subtle-md transition-all duration-200 overflow-hidden" data-category="storage">
+<button class="w-full py-5 px-6 sm:px-7 text-left flex justify-between items-center gap-4 focus:outline-none group" onclick="toggleFaqModern(this)" type="button">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-accent-soft text-accent border border-accent/20 flex-shrink-0">
+                Storage
+              </span>
+<span class="font-bold text-ink text-[15.5px] sm:text-[16.5px] group-hover:text-accent transition-colors">
+                Where is my document data stored?
+              </span>
+</div>
+<span class="faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-accent-soft text-accent font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm">
+              −
+            </span>
+</button>
+<div class="faq-body-content px-6 sm:px-7 pb-6 text-[14.5px] text-ink-muted leading-relaxed border-t border-border/50 pt-3.5" style="display: block;">
+<p class="mb-3">
+              Entirely within your browser's dedicated local storage runtime using <code class="px-1.5 py-0.5 rounded bg-surface-2 text-ink font-mono text-xs font-semibold border border-border">WASM SQLite</code> and <code class="px-1.5 py-0.5 rounded bg-surface-2 text-ink font-mono text-xs font-semibold border border-border">IndexedDB.wal</code>.
+            </p>
+<p>
+              Keystrokes, drafts, and preferences never touch external servers or cloud queues unless you explicitly generate an end-to-end encrypted peer share link.
+            </p>
+</div>
+</div>
+<!-- FAQ 2 (Storage & Privacy) -->
+<div class="faq-item glass-card rounded-2xl border border-border/80 shadow-subtle-sm hover:border-accent/30 hover:shadow-subtle-md transition-all duration-200 overflow-hidden" data-category="storage">
+<button class="w-full py-5 px-6 sm:px-7 text-left flex justify-between items-center gap-4 focus:outline-none group" onclick="toggleFaqModern(this)" type="button">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-purple-100 text-ink-muted border border-border flex-shrink-0">
+                Data Safety
+              </span>
+<span class="font-bold text-ink text-[15.5px] sm:text-[16.5px] group-hover:text-accent transition-colors">
+                What happens if I clear my browser cache or data?
+              </span>
+</div>
+<span class="faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-ink-muted font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm">
+              ＋
+            </span>
+</button>
+<div class="faq-body-content px-6 sm:px-7 pb-6 text-[14.5px] text-ink-muted leading-relaxed border-t border-border/50 pt-3.5" style="display: none;">
+<p class="mb-3">
+              Full browser storage purges or incognito session closures clear volatile local storage. Inkframe makes safety painless by allowing instantaneous exports to standard <code class="px-1.5 py-0.5 rounded bg-surface-2 text-accent font-mono text-xs font-semibold border border-border">Markdown (.md)</code>, clean HTML, or structured JSON workspace backups.
+            </p>
+<p>
+              You also maintain complete local revision checkpoint rewinds within any active document.
+            </p>
+</div>
+</div>
+<!-- FAQ 3 (Sync & Backups) -->
+<div class="faq-item glass-card rounded-2xl border border-border/80 shadow-subtle-sm hover:border-accent/30 hover:shadow-subtle-md transition-all duration-200 overflow-hidden" data-category="sync">
+<button class="w-full py-5 px-6 sm:px-7 text-left flex justify-between items-center gap-4 focus:outline-none group" onclick="toggleFaqModern(this)" type="button">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-purple-100 text-ink-muted border border-border flex-shrink-0">
+                Limits
+              </span>
+<span class="font-bold text-ink text-[15.5px] sm:text-[16.5px] group-hover:text-accent transition-colors">
+                Are there limits on shared links or document count?
+              </span>
+</div>
+<span class="faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-ink-muted font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm">
+              ＋
+            </span>
+</button>
+<div class="faq-body-content px-6 sm:px-7 pb-6 text-[14.5px] text-ink-muted leading-relaxed border-t border-border/50 pt-3.5" style="display: none;">
+<p class="mb-3">
+              No arbitrary limits. Because parsing and indexing operate entirely client-side on your processor, you are bounded solely by your machine's physical disk space.
+            </p>
+<p>
+              Shared snapshots are serialized into URL hash fragments with <code class="px-1.5 py-0.5 rounded bg-surface-2 text-ink font-mono text-xs font-semibold border border-border">AES-GCM</code> encryption, requiring zero central database allocation.
+            </p>
+</div>
+</div>
+<!-- FAQ 4 (Offline & PWA) -->
+<div class="faq-item glass-card rounded-2xl border border-border/80 shadow-subtle-sm hover:border-accent/30 hover:shadow-subtle-md transition-all duration-200 overflow-hidden" data-category="pwa">
+<button class="w-full py-5 px-6 sm:px-7 text-left flex justify-between items-center gap-4 focus:outline-none group" onclick="toggleFaqModern(this)" type="button">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex-shrink-0">
+                Offline PWA
+              </span>
+<span class="font-bold text-ink text-[15.5px] sm:text-[16.5px] group-hover:text-accent transition-colors">
+                Can I use Inkframe completely disconnected from Wi-Fi?
+              </span>
+</div>
+<span class="faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-ink-muted font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm">
+              ＋
+            </span>
+</button>
+<div class="faq-body-content px-6 sm:px-7 pb-6 text-[14.5px] text-ink-muted leading-relaxed border-t border-border/50 pt-3.5" style="display: none;">
+<p class="mb-3">
+              Absolutely. Inkframe functions as an installable <code class="px-1.5 py-0.5 rounded bg-surface-2 text-ink font-mono text-xs font-semibold border border-border">Progressive Web App (PWA)</code>. Once cached, all compiled WebAssembly and asset bundles execute with zero network requests.
+            </p>
+<p>
+              Enable Airplane Mode, restart your computer, or write at 35,000 feet — your canvas is unaffected.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: FAQSection -->
+<!-- BEGIN: FinalCTASection -->
+<section class="py-20 md:py-28 px-6 relative" id="interactive-playground">
+<div class="max-w-[1140px] mx-auto">
+<div class="relative overflow-hidden rounded-3xl p-12 md:p-20 text-center max-w-4xl mx-auto flex flex-col items-center glass-card border border-white/90 shadow-subtle-lg" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 239, 255, 0.75) 50%, rgba(255, 255, 255, 0.88) 100%);">
+<div aria-hidden="true" class="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br from-violet-300/30 to-purple-200/20 blur-3xl"></div>
+<div aria-hidden="true" class="pointer-events-none absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-gradient-to-tr from-indigo-200/30 to-violet-200/25 blur-3xl"></div>
+<span class="relative text-accent text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full bg-accent-soft border border-accent/20 mb-4 shadow-sm">
+        Instant Access
+      </span>
+<h2 class="relative text-3xl sm:text-5xl font-extrabold tracking-tight text-ink mb-4">
+        Ready to write?
+      </h2>
+<p class="relative text-[16px] text-ink-muted mb-8 max-w-md font-normal leading-relaxed">
+        No account, no setup, no telemetry. Just open the canvas and let your ideas flow.
+      </p>
+<div class="relative flex flex-wrap items-center justify-center gap-3">
+<button class="px-7 py-3.5 rounded-xl bg-accent text-white text-[15px] font-semibold hover:bg-accent-hover shadow-subtle-md hover:shadow-glow-accent transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] flex items-center space-x-2" onclick="startInstantEditor()">
+<span>Launch Editor Canvas</span>
+<span>→</span>
+</button>
+<button class="px-6 py-3.5 rounded-xl bg-white/90 border border-border text-ink text-[15px] font-medium hover:bg-surface-2 transition-all duration-200 active:scale-[0.98] shadow-subtle-sm" onclick="document.getElementById('editor-preview-card').scrollIntoView({behavior: 'smooth'})">
+          View interactive preview
+        </button>
+</div>
+<div class="relative mt-8 flex items-center space-x-4 text-xs font-mono text-ink-muted">
+<span class="flex items-center space-x-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>100% Free &amp; Open Core</span>
+</span>
+<span>·</span>
+<span>Works on macOS, Windows, Linux &amp; Mobile</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: FinalCTASection -->
+</main>
+<!-- END: MainContent -->
+<!-- Toast Notification Container -->
+<div class="fixed bottom-6 right-6 z-50 pointer-events-none" id="toast-container"></div>
+<!-- BEGIN: MainFooter (Continuous seamless canvas background, hairline top border) -->
+<footer class="border-t border-border/80 py-10 px-6 text-[13px] text-ink-muted bg-[#F7F6F3]">
+<div class="max-w-[1140px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center space-x-3">
+<span class="w-5 h-5 rounded bg-accent text-white text-[10px] font-bold flex items-center justify-center shadow-sm">I</span>
+<span>© 2026 Inkframe. Write beautifully. Stay offline.</span>
+</div>
+<div class="flex items-center space-x-6">
+<a class="hover:text-ink transition-colors" href="#features">Features</a>
+<a class="hover:text-ink transition-colors" href="#faq">Privacy Model</a>
+<a class="hover:text-ink transition-colors" href="https://github.com" rel="noopener noreferrer" target="_blank">GitHub</a>
+<span class="text-xs font-mono px-2 py-0.5 rounded bg-surface-2 border border-border text-ink">v1.4.2-wasm</span>
+</div>
+</div>
+</footer>
+<!-- END: MainFooter -->
+<!-- Interactive Scripts & State Handlers -->
+<script>
+  // Toast notification helper
+  function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = "pointer-events-auto flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-ink text-white text-xs font-medium shadow-2xl border border-white/10 transition-all duration-300";
+    toast.innerHTML = `<span class="text-accent-soft font-bold">✓</span><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(8px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 2400);
+  }
+
+  // Word count & timestamp recalculation
+  function updateWordCount() {
+    const title = document.getElementById('live-doc-title').innerText || '';
+    const body = document.getElementById('live-doc-body').innerText || '';
+    const combined = (title + ' ' + body).trim();
+    const words = combined ? combined.split(/\s+/).length : 0;
+    const chars = combined.length;
+    
+    document.getElementById('live-word-count').innerText = `${words} words`;
+    document.getElementById('footer-word-count').innerText = `${words} words`;
+    document.getElementById('footer-char-count').innerText = `${chars.toLocaleString()} characters`;
+    document.getElementById('live-last-mod').innerText = 'Just now';
+    triggerSavePulse();
+  }
+
+  function triggerSavePulse() {
+    const indicator = document.getElementById('autosave-indicator');
+    const txt = document.getElementById('autosave-text');
+    txt.innerText = 'Saving to WASM...';
+    setTimeout(() => {
+      txt.innerText = 'Saved locally ✓';
+    }, 400);
+  }
+
+  // Formatting buttons in Hero
+  function applyFormatStyle(style, btn) {
+    btn.classList.toggle('bg-accent-soft');
+    btn.classList.toggle('text-accent');
+    showToast(`Applied ${style} formatting to active block`);
+    triggerSavePulse();
+  }
+
+  function applyHeadingStyle(heading, btn) {
+    const title = document.getElementById('live-doc-title');
+    if (heading === 'h1') {
+      title.className = "text-2xl sm:text-3xl font-extrabold tracking-tight text-ink outline-none";
+    } else if (heading === 'h2') {
+      title.className = "text-xl sm:text-2xl font-bold tracking-tight text-ink outline-none";
+    } else {
+      title.className = "text-lg sm:text-xl font-semibold tracking-tight text-ink outline-none";
+    }
+    showToast(`Converted block to ${heading.toUpperCase()}`);
+    triggerSavePulse();
+  }
+
+  function insertInteractiveBullet() {
+    const body = document.getElementById('live-doc-body');
+    body.innerText += "\n• Sub-millisecond keystroke parsing verified";
+    updateWordCount();
+    showToast("Added bullet point item");
+  }
+
+  function insertInteractiveTask() {
+    const checklistBox = document.getElementById('checklist-box');
+    const label = document.createElement('label');
+    label.className = "flex items-start space-x-3 text-[13px] text-ink cursor-pointer select-none group";
+    label.innerHTML = `
+      <input type="checkbox" class="mt-0.5 rounded border-border-strong text-accent focus:ring-accent accent-accent transition-all cursor-pointer" onchange="toggleCheckItem(this)">
+      <span class="transition-all">Encrypted snapshot verified via WebRTC peer</span>
+    `;
+    checklistBox.appendChild(label);
+    showToast("Added new task invariant");
+  }
+
+  function insertCalloutTip() {
+    const body = document.getElementById('live-doc-body');
+    body.innerText += "\n💡 Pro-tip: Inkframe retains full offline AST state across device restarts.";
+    updateWordCount();
+    showToast("Inserted callout notice");
+  }
+
+  function toggleCheckItem(input) {
+    const span = input.nextElementSibling;
+    if (input.checked) {
+      span.classList.add('line-through', 'text-ink-muted');
+    } else {
+      span.classList.remove('line-through', 'text-ink-muted');
+    }
+    triggerSavePulse();
+  }
+
+  // Dark / Light Mode Switch in Hero Canvas
+  let heroIsDark = false;
+  function toggleHeroEditorTheme() {
+    heroIsDark = !heroIsDark;
+    const viewport = document.getElementById('doc-viewport');
+    const title = document.getElementById('live-doc-title');
+    const body = document.getElementById('live-doc-body');
+    const checklist = document.getElementById('checklist-box');
+    const callout = document.getElementById('callout-box');
+    const chromeBar = document.getElementById('safari-chrome-bar');
+    const tabBar = document.getElementById('safari-tab-bar');
+    const activeTab = document.getElementById('safari-active-tab');
+    const toolbar = document.getElementById('editor-toolbar-bar');
+    const statusBar = document.getElementById('safari-status-bar');
+    const themeBtnIcon = document.getElementById('theme-btn-icon');
+    const themeBtnText = document.getElementById('theme-btn-text');
+
+    if (heroIsDark) {
+      viewport.className = "h-[470px] max-h-[470px] overflow-y-auto mac-scroll bg-[#121215] p-6 sm:p-10 space-y-6 text-neutral-100 selection:bg-purple-900 selection:text-purple-200 transition-colors";
+      title.className = "text-2xl sm:text-3xl font-extrabold tracking-tight text-white outline-none";
+      body.className = "text-[14px] sm:text-[15.5px] leading-relaxed text-neutral-300 outline-none p-2 rounded-lg transition-colors border border-transparent focus:border-accent/30";
+      checklist.className = "p-4 rounded-xl bg-[#1A1A1F] border border-neutral-800 space-y-2.5 transition-colors text-neutral-200";
+      callout.className = "p-4 bg-purple-950/40 border border-purple-800/60 rounded-xl text-[13px] text-purple-200 flex items-start space-x-3 shadow-subtle-sm transition-colors";
+      chromeBar.className = "bg-[#18181D] border-b border-[#2A2A30] px-4 py-2.5 flex items-center justify-between gap-3 select-none transition-colors text-white";
+      tabBar.className = "bg-[#141418] border-b border-[#2A2A30] px-4 py-1.5 flex items-center justify-between text-xs select-none transition-colors";
+      activeTab.className = "inline-flex items-center space-x-1.5 px-3 py-1 bg-[#202026] border border-neutral-700 rounded-md shadow-subtle-sm font-mono text-[11px] font-medium text-white transition-colors";
+      toolbar.className = "sticky top-0 z-10 px-4 py-2 border-b border-[#2A2A30] bg-[#121215]/95 backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto text-[13px] text-neutral-400 transition-colors";
+      statusBar.className = "px-5 py-2 bg-[#141418] border-t border-[#2A2A30] flex flex-wrap items-center justify-between text-[11px] text-neutral-400 font-mono select-none transition-colors";
+      themeBtnIcon.innerText = "☀️";
+      themeBtnText.innerText = "Paper view";
+      showToast("Switched preview to OLED Dark Surface");
+    } else {
+      viewport.className = "h-[470px] max-h-[470px] overflow-y-auto mac-scroll bg-white p-6 sm:p-10 space-y-6 text-ink selection:bg-purple-100 selection:text-accent transition-colors";
+      title.className = "text-2xl sm:text-3xl font-extrabold tracking-tight text-ink outline-none";
+      body.className = "text-[14px] sm:text-[15.5px] leading-relaxed text-ink/90 outline-none p-2 rounded-lg transition-colors border border-transparent focus:border-accent/30 focus:bg-accent-soft/20";
+      checklist.className = "p-4 rounded-xl bg-surface-2/60 border border-border space-y-2.5 transition-colors text-ink";
+      callout.className = "p-4 bg-accent-soft/70 border border-purple-200/90 rounded-xl text-[13px] text-ink flex items-start space-x-3 shadow-subtle-sm transition-colors";
+      chromeBar.className = "bg-[#ECECEF]/95 border-b border-[#DEDEDE] px-4 py-2.5 flex items-center justify-between gap-3 select-none transition-colors";
+      tabBar.className = "bg-[#F6F6F8] border-b border-border/80 px-4 py-1.5 flex items-center justify-between text-xs select-none transition-colors";
+      activeTab.className = "inline-flex items-center space-x-1.5 px-3 py-1 bg-white border border-border/80 rounded-md shadow-subtle-sm font-mono text-[11px] font-medium text-ink transition-colors";
+      toolbar.className = "sticky top-0 z-10 px-4 py-2 border-b border-border/80 bg-white/95 backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto text-[13px] text-ink-muted transition-colors";
+      statusBar.className = "px-5 py-2 bg-[#F6F6F8] border-t border-border flex flex-wrap items-center justify-between text-[11px] text-ink-muted font-mono select-none transition-colors";
+      themeBtnIcon.innerText = "🌙";
+      themeBtnText.innerText = "Dark view";
+      showToast("Switched preview to Natural Paper Surface");
+    }
+  }
+
+  // Interactive Live Typing simulation
+  function demoTypingEffect() {
+    const docBody = document.getElementById('live-doc-body');
+    const demoSentences = [
+      " Keystrokes commit directly to local WASM memory with 0ms roundtrip delay.",
+      " Encrypted snapshots sync peer-to-peer without centralized storage.",
+      " Writing remains uncompromised, beautiful, and strictly private."
+    ];
+    const phrase = demoSentences[Math.floor(Math.random() * demoSentences.length)];
+    let index = 0;
+    
+    document.getElementById('editor-preview-card').scrollIntoView({behavior: 'smooth'});
+    docBody.focus();
+
+    const interval = setInterval(() => {
+      docBody.innerText += phrase[index];
+      index++;
+      updateWordCount();
+      if (index >= phrase.length) {
+        clearInterval(interval);
+        showToast("Live typing test simulation finished!");
+      }
+    }, 38);
+  }
+
+  // Copy Snippet
+  function copyHeroSnippet(btn) {
+    btn.innerText = 'Copied! ✓';
+    showToast("TypeScript persistence pipe copied to clipboard");
+    setTimeout(() => { btn.innerText = 'Copy'; }, 2000);
+  }
+
+  function copyHeroLink() {
+    showToast("Document share link copied: inkframe.app/doc/architecture-notes");
+  }
+
+  function copyCardShare(btn) {
+    btn.innerHTML = '<span>Copied! ✓</span>';
+    btn.classList.add('bg-emerald-600');
+    showToast("Snapshot share URL copied to clipboard");
+    setTimeout(() => {
+      btn.innerHTML = '<span>Copy</span>';
+      btn.classList.remove('bg-emerald-600');
+    }, 2000);
+  }
+
+  function copyShareLink(btn) {
+    const txt = document.getElementById('share-btn-text');
+    txt.innerText = 'Copied! ✓';
+    showToast("Private link copied to clipboard");
+    setTimeout(() => {
+      txt.innerText = 'Copy';
+    }, 2000);
+  }
+
+  // Revision picker
+  function selectRevision(revName, btn) {
+    document.getElementById('history-active-tag').innerText = `Active: ${revName}`;
+    btn.parentNode.querySelectorAll('button').forEach(b => {
+      b.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border text-xs font-mono text-ink-muted transition-all";
+    });
+    btn.className = "flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-accent-soft border border-accent/30 text-xs font-mono text-accent font-medium shadow-sm transition-all";
+    showToast(`Restored checkpoint from ${revName}`);
+  }
+
+  // Dark mode card preview switcher
+  let isCardDark = true;
+  function toggleCardDarkMode() {
+    isCardDark = !isCardDark;
+    const card = document.getElementById('interactive-dark-card');
+    const title = document.getElementById('dark-card-title');
+    const tag = document.getElementById('dark-card-tag');
+    const body = document.getElementById('dark-card-body');
+
+    if (isCardDark) {
+      card.className = "p-3.5 rounded-xl bg-[#0E0E10] border border-[#232328] shadow-subtle-md text-white mt-auto dark-card-preview";
+      title.innerText = "#0E0E10 Depth";
+      tag.innerText = "OLED ready";
+      body.innerText = "High readability at 2 AM without eye strain.";
+      showToast("Card preview: True OLED mode");
+    } else {
+      card.className = "p-3.5 rounded-xl bg-[#F4F1EA] border border-[#DDD7CD] shadow-subtle-md text-[#2B2925] mt-auto dark-card-preview";
+      title.innerText = "#F4F1EA Warm Sepia";
+      tag.innerText = "Daylight paper";
+      body.innerText = "Warm bookish contrast for bright daylight reading.";
+      showToast("Card preview: Warm Paper Sepia mode");
+    }
+  }
+
+  function previewSlashAction(type, btn) {
+    document.getElementById('slash-preview-active').innerText = `/${type} active`;
+    btn.parentNode.querySelectorAll('button').forEach(b => {
+      b.className = "flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-surface-2/80 hover:bg-accent-soft hover:text-accent border border-border/80 text-xs font-mono text-ink transition-all hover:scale-105";
+    });
+    btn.className = "flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-accent-soft border border-accent/30 text-xs font-mono text-accent hover:scale-105 transition-all shadow-sm";
+    showToast(`Previewing /${type} block schema`);
+  }
+
+  // Download simulation
+  function fakeDownload(format) {
+    showToast(`Prepared local export: Document.${format.toLowerCase()}`);
+  }
+
+  // Instant editor launcher
+  function startInstantEditor() {
+    document.getElementById('editor-preview-card').scrollIntoView({behavior: 'smooth'});
+    const body = document.getElementById('live-doc-body');
+    body.focus();
+    showToast("Editor canvas ready. Type away!");
+  }
+
+  // FAQ Accordion
+  function toggleFaqModern(btn) {
+    const item = btn.closest('.faq-item');
+    const body = item.querySelector('.faq-body-content');
+    const badge = item.querySelector('.faq-icon-badge');
+    const isCurrentlyOpen = body.style.display !== 'none';
+
+    document.querySelectorAll('#faq-accordion-list .faq-body-content').forEach(b => {
+      b.style.display = 'none';
+    });
+    document.querySelectorAll('#faq-accordion-list .faq-icon-badge').forEach(i => {
+      i.innerText = '＋';
+      i.className = 'faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-surface-2 text-ink-muted font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm';
+    });
+
+    if (!isCurrentlyOpen) {
+      body.style.display = 'block';
+      badge.innerText = '−';
+      badge.className = 'faq-icon-badge flex-shrink-0 w-8 h-8 rounded-full bg-accent-soft text-accent font-bold text-base flex items-center justify-center transition-all duration-200 shadow-sm';
+    }
+  }
+
+  function filterFaqCategory(cat, btn) {
+    const items = document.querySelectorAll('#faq-accordion-list .faq-item');
+    const pills = document.querySelectorAll('#faq-category-pills .faq-cat-btn');
+
+    pills.forEach(p => {
+      p.className = 'faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-2/70 hover:bg-surface-2 text-ink-muted hover:text-ink text-xs font-medium font-mono transition-all duration-200 border border-border/70 w-full text-left';
+    });
+    btn.className = 'faq-cat-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-accent text-white text-xs font-medium font-mono transition-all duration-200 shadow-sm w-full text-left';
+
+    items.forEach(item => {
+      if (cat === 'all' || item.dataset.category === cat) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+</script>
+</body></html>

@@ -39,7 +39,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
 @Component({
   selector: 'ink-table-toolbar',
-  standalone: true,
+
   imports: [
     CommonModule,
     MatButtonModule,

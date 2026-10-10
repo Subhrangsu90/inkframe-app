@@ -5,7 +5,7 @@ import { ToastMessage, ToastService } from './toast';
 
 @Component({
   selector: 'ink-toast-container',
-  standalone: true,
+
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

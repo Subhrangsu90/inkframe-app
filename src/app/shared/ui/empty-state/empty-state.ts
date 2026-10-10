@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'ink-empty-state',
-  standalone: true,
+
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

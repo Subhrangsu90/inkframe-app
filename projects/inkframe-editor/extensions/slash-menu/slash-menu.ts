@@ -4,7 +4,7 @@ import { EditorService } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-slash-menu',
-  standalone: true,
+
   imports: [MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

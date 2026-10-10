@@ -49,7 +49,7 @@ export class ConfirmDialogService {
 
 @Component({
   selector: 'ink-confirm-dialog',
-  standalone: true,
+
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

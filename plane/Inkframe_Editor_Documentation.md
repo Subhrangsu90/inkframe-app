@@ -1020,7 +1020,7 @@ import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 
 @Component({
   selector: 'ink-editor',
-  standalone: true,
+  
   imports: [ToolbarComponent, FloatingMenuComponent, SlashMenuComponent],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1146,7 +1146,7 @@ import { EditorService } from '../editor.service';
 
 @Component({
   selector: 'ink-floating-menu',
-  standalone: true,
+  
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (svc.floatingMenu(); as m) {
@@ -1175,7 +1175,7 @@ import { EditorService } from '../editor.service';
 
 @Component({
   selector: 'ink-slash-menu',
-  standalone: true,
+  
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (svc.slashMenu(); as m) {
@@ -1225,7 +1225,7 @@ const ICONS: Record<CalloutKind, string> = { info: 'ℹ️', warning: '⚠️', 
 
 @Component({
   selector: 'ink-callout-icon',
-  standalone: true,
+  
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button type="button" class="callout-icon" aria-label="Change callout type"

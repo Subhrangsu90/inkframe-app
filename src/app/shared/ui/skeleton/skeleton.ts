@@ -5,7 +5,7 @@ export type SkeletonVariant = 'text' | 'rect' | 'circle' | 'card' | 'bar' | 'edi
 
 @Component({
   selector: 'ink-skeleton',
-  standalone: true,
+
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

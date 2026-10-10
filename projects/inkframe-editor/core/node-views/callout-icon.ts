@@ -16,7 +16,7 @@ const ICONS: Record<CalloutKind, string> = {
 
 @Component({
   selector: 'ink-callout-icon',
-  standalone: true,
+
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button

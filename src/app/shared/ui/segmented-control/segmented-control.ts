@@ -16,7 +16,7 @@ export interface SegmentedControlOption<T = string> {
 
 @Component({
   selector: 'ink-segmented-control',
-  standalone: true,
+
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

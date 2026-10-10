@@ -21,7 +21,7 @@ export interface ImagePreviewPayload {
 
 @Component({
   selector: 'ink-image-lightbox',
-  standalone: true,
+
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

@@ -19,7 +19,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
 
 @Component({
   selector: 'ink-toolbar',
-  standalone: true,
+
   imports: [
     CommonModule,
     FormsModule,

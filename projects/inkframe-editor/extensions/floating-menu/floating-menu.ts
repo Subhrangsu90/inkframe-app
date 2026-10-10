@@ -9,7 +9,7 @@ import { EditorService, TEXT_COLORS } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-floating-menu',
-  standalone: true,
+
   imports: [
     FormsModule,
     MatButtonModule,

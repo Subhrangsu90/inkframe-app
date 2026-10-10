@@ -30,7 +30,7 @@ import {
 
 @Component({
   selector: 'ink-editor',
-  standalone: true,
+
   imports: [
     Toolbar,
     FloatingMenu,

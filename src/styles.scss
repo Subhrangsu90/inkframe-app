@@ -2,10 +2,61 @@
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
 @use '@angular/material' as mat;
+@use 'tailwindcss';
 
 /* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
 @use '@inkframe-ui/editor/styles';
 @use './tokens.scss';
+
+/* ── Tailwind v4 Theme Configuration (Mapping Inkframe Design Tokens) ── */
+@theme {
+  /* Surfaces & Canvas */
+  --color-ink-bg: var(--ink-bg);
+  --color-ink-surface: var(--ink-surface);
+  --color-ink-surface-2: var(--ink-surface-2);
+  --color-ink-surface-subtle: var(--ink-surface-subtle);
+
+  /* Hairline Borders */
+  --color-ink-border: var(--ink-border);
+  --color-ink-border-strong: var(--ink-border-strong);
+  --color-ink-border-focus: var(--ink-border-focus);
+
+  /* Typography */
+  --color-ink-text: var(--ink-text);
+  --color-ink-text-muted: var(--ink-text-muted);
+  --color-ink-text-heading: var(--ink-text-heading);
+
+  /* Curated Violet Accent */
+  --color-ink-accent: var(--ink-accent);
+  --color-ink-accent-hover: var(--ink-accent-hover);
+  --color-ink-accent-soft: var(--ink-accent-soft);
+  --color-ink-accent-text: var(--ink-accent-text);
+
+  /* Status Colors */
+  --color-ink-danger: var(--ink-danger);
+  --color-ink-danger-soft: var(--ink-danger-soft);
+  --color-ink-success: var(--ink-success);
+  --color-ink-success-soft: var(--ink-success-soft);
+  --color-ink-warning: var(--ink-warning);
+  --color-ink-warning-soft: var(--ink-warning-soft);
+
+  /* Micro-Elevation Shadows */
+  --shadow-ink-sm: var(--ink-shadow-sm);
+  --shadow-ink-md: var(--ink-shadow-md);
+  --shadow-ink-lg: var(--ink-shadow-lg);
+  --shadow-ink-page: var(--ink-shadow-page);
+  --shadow-ink-glass: var(--ink-shadow-glass);
+
+  /* Geometry & Radius */
+  --radius-ink-sm: var(--ink-radius-sm);
+  --radius-ink-md: var(--ink-radius-md);
+  --radius-ink-lg: var(--ink-radius-lg);
+  --radius-ink-pill: var(--ink-radius-pill);
+
+  /* Typography Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
 
 html {
   height: 100%;

@@ -22,8 +22,10 @@
     "@angular/platform-server": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@angular/ssr": "^22.1.6",
+    "@tailwindcss/postcss": "^4.3.3",
     "dompurify": "^3.4.16",
     "express": "^5.1.0",
+    "postcss": "^8.5.29",
     "prismjs": "^1.30.0",
     "prosemirror-commands": "^1.7.2",
     "prosemirror-dropcursor": "^1.8.4",
@@ -40,6 +42,7 @@
     "prosemirror-transform": "^1.12.2",
     "prosemirror-view": "^1.42.6",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.3.3",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

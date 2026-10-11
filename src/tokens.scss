@@ -65,6 +65,8 @@
 }
 
 :root[data-theme="dark"],
+html.dark,
+:root.dark,
 body[data-theme="dark"],
 body.theme-dark,
 .theme-dark {

@@ -4,3 +4,4 @@ export * from './skeleton/skeleton';
 export * from './empty-state/empty-state';
 export * from './confirm-dialog/confirm-dialog';
 export * from './segmented-control/segmented-control';
+export * from './icons/icon';

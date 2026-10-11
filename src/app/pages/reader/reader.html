@@ -1,1 +1,47 @@
-<h1>Reader</h1>
+<ng-template #headerLeft>
+  <div class="flex items-center gap-2 max-w-[260px] sm:max-w-md">
+    <ink-icon name="file-text" [size]="15" svgClass="text-ink-accent shrink-0" />
+    <span class="font-bold text-[14px] text-ink-text-heading truncate">{{ docTitle() }}</span>
+    <span class="px-2 py-0.5 rounded-full bg-ink-surface-2 text-[10px] text-ink-text-muted border border-ink-border shrink-0">
+      Reader Mode
+    </span>
+  </div>
+</ng-template>
+
+<ng-template #headerCenter>
+  <div class="font-medium text-xs text-ink-text-muted flex items-center gap-1.5">
+    <ink-icon name="shield-lock" [size]="13" svgClass="text-emerald-500" />
+    <span>Distraction-Free Reader</span>
+  </div>
+</ng-template>
+
+<ng-template #headerRight>
+  <div class="flex items-center gap-2">
+    <!-- Copy Reader Page Link -->
+    <button
+      type="button"
+      class="px-3 py-1.5 rounded-ink-sm border border-ink-border bg-ink-surface-2 text-ink-text text-xs font-semibold hover:bg-ink-surface-subtle hover:text-ink-accent transition-colors flex items-center gap-1.5"
+      (click)="copyShareLink()"
+      title="Copy Reader Page Link"
+    >
+      <ink-icon name="share" [size]="12" />
+      <span>Share Link</span>
+    </button>
+
+    <!-- Open in Editor Button -->
+    <a
+      [routerLink]="['/doc', docId()]"
+      class="px-3 py-1.5 rounded-ink-sm bg-ink-accent text-white text-xs font-semibold hover:bg-ink-accent-hover transition-colors flex items-center gap-1.5"
+      title="Open and edit this note in Editor"
+    >
+      <ink-icon name="edit" [size]="12" />
+      <span class="hidden sm:inline">Open in Editor</span>
+    </a>
+  </div>
+</ng-template>
+
+<div class="reader-content-body ink-scrollbar">
+  <article class="reader-paper">
+    <div class="ink-host" [innerHTML]="renderedHtml()"></div>
+  </article>
+</div>

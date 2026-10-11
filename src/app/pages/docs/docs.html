@@ -1,1 +1,262 @@
-<h1>Docs</h1>
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER LEFT: Page Title & Count Badge         -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerLeft>
+  <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-1.5 font-bold text-[15px] text-ink-text-heading">
+      <ink-icon name="folder" [size]="16" svgClass="text-ink-accent" />
+      <span>Documents</span>
+    </div>
+    <span class="count-pill">
+      {{ filteredDocs().length }}
+    </span>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER CENTER: Instant Filter Search Box      -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerCenter>
+  <div class="docs-search-bar">
+    <ink-icon name="search" [size]="14" svgClass="text-ink-text-muted shrink-0" />
+    <input
+      type="text"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      placeholder="Search documents by title..."
+      class="search-input"
+    />
+    @if (searchQuery()) {
+      <button
+        type="button"
+        class="search-clear-btn"
+        (click)="searchQuery.set('')"
+        title="Clear search"
+      >
+        <ink-icon name="close" [size]="12" />
+      </button>
+    }
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER RIGHT: Grid/List Toggle & New Doc      -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerRight>
+  <div class="flex items-center gap-2">
+    <!-- Grid / List Switcher -->
+    <div class="view-mode-pill">
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="viewMode() === 'grid'"
+        (click)="setViewMode('grid')"
+        title="Grid view"
+      >
+        <ink-icon name="layers" [size]="13" />
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        title="List view"
+      >
+        <ink-icon name="list" [size]="13" />
+      </button>
+    </div>
+
+    <!-- Primary "+ New Document" CTA -->
+    <button
+      type="button"
+      class="header-new-btn"
+      (click)="createNewDoc()"
+      title="Create a new document"
+    >
+      <ink-icon name="plus" [size]="14" />
+      <span>New Doc</span>
+    </button>
+  </div>
+</ng-template>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- MAIN DASHBOARD CONTENT                        -->
+  <!-- ═════════════════════════════════════════════ -->
+  <div class="docs-dashboard-body ink-scrollbar">
+    <!-- Template Starters Strip (Only if not searching) -->
+    @if (!searchQuery()) {
+      <section class="templates-section">
+        <h2 class="section-title">Start with a template</h2>
+        <div class="templates-grid">
+          @for (tpl of templates; track tpl.id) {
+            <div
+              class="template-card"
+              (click)="createFromTemplate(tpl)"
+              role="button"
+              tabindex="0"
+            >
+              <div class="template-icon-wrap">
+                <ink-icon [name]="tpl.icon" [size]="18" svgClass="text-ink-accent" />
+              </div>
+              <div class="template-content">
+                <span class="template-title">{{ tpl.title }}</span>
+                <span class="template-desc">{{ tpl.desc }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Documents Section -->
+    <section class="docs-list-section">
+      <div class="docs-list-header">
+        <h2 class="section-title">
+          {{ searchQuery() ? 'Search Results' : 'Recent Documents' }}
+        </h2>
+        @if (searchQuery()) {
+          <span class="text-xs text-ink-text-muted">
+            Found {{ filteredDocs().length }} results for "{{ searchQuery() }}"
+          </span>
+        }
+      </div>
+
+      <!-- GRID VIEW -->
+      @if (viewMode() === 'grid') {
+        <div class="docs-grid">
+          @for (doc of filteredDocs(); track doc.id) {
+            <a
+              [routerLink]="['/doc', doc.id]"
+              class="doc-card"
+            >
+              <div class="doc-card-top">
+                <div class="doc-card-icon">
+                  <ink-icon name="file-text" [size]="16" svgClass="text-ink-accent" />
+                </div>
+                <div class="doc-actions-wrap" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    class="action-btn"
+                    (click)="shareDocLink(doc.id, $event)"
+                    title="Copy shareable reader link"
+                  >
+                    <ink-icon name="share" [size]="12" />
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn"
+                    (click)="duplicateDoc(doc.id, $event)"
+                    title="Duplicate document"
+                  >
+                    <ink-icon name="copy" [size]="12" />
+                  </button>
+                  <button
+                    type="button"
+                    class="action-btn danger"
+                    (click)="deleteDoc(doc.id, $event)"
+                    title="Delete document"
+                  >
+                    <ink-icon name="trash" [size]="12" />
+                  </button>
+                </div>
+              </div>
+
+              <div class="doc-card-body">
+                <h3 class="doc-card-title">{{ doc.title }}</h3>
+                <p class="doc-card-snippet">
+                  {{ doc.wordCount > 0 ? (doc.wordCount + ' words written') : 'Empty note, ready for thoughts...' }}
+                </p>
+              </div>
+
+              <div class="doc-card-footer">
+                <span class="doc-time">{{ formatTime(doc.updatedAt) }}</span>
+                <span class="doc-badge">{{ doc.wordCount }} w</span>
+              </div>
+            </a>
+          } @empty {
+            <div class="empty-docs-container">
+              <div class="empty-icon-wrap">
+                <ink-icon name="search" [size]="28" svgClass="text-ink-text-muted" />
+              </div>
+              <h3 class="text-base font-semibold text-ink-text">No documents found</h3>
+              <p class="text-xs text-ink-text-muted max-w-sm text-center">
+                @if (searchQuery()) {
+                  No documents match your query "{{ searchQuery() }}". Try a different search term.
+                } @else {
+                  You don't have any documents yet. Create your first document to get started.
+                }
+              </p>
+              <button type="button" class="empty-action-btn" (click)="createNewDoc()">
+                <ink-icon name="plus" [size]="14" />
+                <span>Create Document</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- LIST VIEW -->
+      @if (viewMode() === 'list') {
+        <div class="docs-table-wrap">
+          <table class="docs-table">
+            <thead>
+              <tr>
+                <th class="th-title">Title</th>
+                <th class="th-words">Words</th>
+                <th class="th-time">Updated</th>
+                <th class="th-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (doc of filteredDocs(); track doc.id) {
+                <tr [routerLink]="['/doc', doc.id]" class="doc-table-row">
+                  <td class="td-title">
+                    <div class="flex items-center gap-2.5">
+                      <ink-icon name="file-text" [size]="15" svgClass="text-ink-accent" />
+                      <span class="font-medium text-ink-text">{{ doc.title }}</span>
+                    </div>
+                  </td>
+                  <td class="td-words font-mono text-xs text-ink-text-muted">{{ doc.wordCount }} words</td>
+                  <td class="td-time text-xs text-ink-text-muted">{{ formatTime(doc.updatedAt) }}</td>
+                  <td class="td-actions" (click)="$event.stopPropagation()">
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        class="action-btn"
+                        (click)="shareDocLink(doc.id, $event)"
+                        title="Copy shareable reader link"
+                      >
+                        <ink-icon name="share" [size]="13" />
+                      </button>
+                      <button
+                        type="button"
+                        class="action-btn"
+                        (click)="duplicateDoc(doc.id, $event)"
+                        title="Duplicate document"
+                      >
+                        <ink-icon name="copy" [size]="13" />
+                      </button>
+                      <button
+                        type="button"
+                        class="action-btn danger"
+                        (click)="deleteDoc(doc.id, $event)"
+                        title="Delete document"
+                      >
+                        <ink-icon name="trash" [size]="13" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center py-10 text-sm text-ink-text-muted">
+                    No documents found.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>

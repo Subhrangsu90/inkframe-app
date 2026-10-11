@@ -52,6 +52,7 @@ export class Theme {
     if (root) {
       root.setAttribute('data-theme', theme);
       root.style.colorScheme = theme;
+      root.classList.toggle('dark', theme === 'dark');
       if (theme === 'light') {
         root.classList.add('theme-light');
         root.classList.remove('theme-dark');
@@ -63,6 +64,7 @@ export class Theme {
     if (body) {
       body.setAttribute('data-theme', theme);
       body.style.colorScheme = theme;
+      body.classList.toggle('dark', theme === 'dark');
       if (theme === 'light') {
         body.classList.add('theme-light');
         body.classList.remove('theme-dark');
@@ -71,7 +73,7 @@ export class Theme {
         body.classList.remove('theme-light');
       }
     }
-}
+  }
 }
 
 // Backward compatibility alias

@@ -1,3 +1,10 @@
-<router-outlet />
+@if (isLanding()) {
+  <router-outlet />
+} @else {
+  <ink-app-shell>
+    <router-outlet />
+  </ink-app-shell>
+}
+
 <ink-toast-container />
 <ink-confirm-dialog />

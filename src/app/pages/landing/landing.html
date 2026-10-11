@@ -224,7 +224,8 @@
           <div
             class="rounded-[18px] sm:rounded-[24px] overflow-hidden border border-ink-border/60 bg-ink-surface shadow-inner">
             <!-- Title Bar with Interactive View Tabs -->
-            <div class="flex items-center justify-between gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-ink-surface border-b border-ink-border/60">
+            <div
+              class="flex items-center justify-between gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-ink-surface border-b border-ink-border/60">
               <!-- Traffic lights -->
               <div class="flex items-center gap-1.5 shrink-0">
                 <span class="w-3 h-3 rounded-full bg-red-400/80"></span>
@@ -233,26 +234,21 @@
               </div>
 
               <!-- Interactive Tab Switcher -->
-              <div class="flex items-center gap-1 p-0.5 bg-ink-surface-2 rounded-lg border border-ink-border/60 text-[11px] font-medium">
-                <button
-                  type="button"
-                  (click)="setHeroTab('rich')"
+              <div
+                class="flex items-center gap-1 p-0.5 bg-ink-surface-2 rounded-lg border border-ink-border/60 text-[11px] font-medium">
+                <button type="button" (click)="setHeroTab('rich')"
                   class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="heroTab() === 'rich' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
                   <ink-icon name="file-text" [size]="12" />
                   <span>Rich Canvas</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="setHeroTab('markdown')"
+                <button type="button" (click)="setHeroTab('markdown')"
                   class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="heroTab() === 'markdown' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
                   <ink-icon name="code" [size]="12" />
                   <span>Raw Markdown</span>
                 </button>
-                <button
-                  type="button"
-                  (click)="setHeroTab('split')"
+                <button type="button" (click)="setHeroTab('split')"
                   class="hidden sm:flex px-2.5 py-1 rounded-md transition-all items-center gap-1.5 cursor-pointer"
                   [class]="heroTab() === 'split' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
                   <ink-icon name="layers" [size]="12" />
@@ -332,17 +328,15 @@
                   <div
                     class="flex items-center justify-between px-3 py-1.5 bg-ink-surface-2 border-b border-ink-border/40">
                     <span class="text-[11px] font-mono text-ink-text-muted">typescript</span>
-                    <button
-                      type="button"
-                      (click)="copyCode()"
+                    <button type="button" (click)="copyCode()"
                       class="inline-flex items-center gap-1.5 text-[11px] font-mono transition-colors px-2 py-0.5 rounded cursor-pointer"
                       [class]="codeCopied() ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-ink-text-muted hover:text-ink-accent hover:bg-ink-accent-soft'">
                       @if (codeCopied()) {
-                        <ink-icon name="check" [size]="12" svgClass="text-emerald-500" />
-                        <span>Copied!</span>
+                      <ink-icon name="check" [size]="12" svgClass="text-emerald-500" />
+                      <span>Copied!</span>
                       } @else {
-                        <ink-icon name="copy" [size]="12" />
-                        <span>Copy</span>
+                      <ink-icon name="copy" [size]="12" />
+                      <span>Copy</span>
                       }
                     </button>
                   </div>
@@ -362,27 +356,46 @@
 
               <!-- VIEW 2: Raw Markdown -->
               @if (heroTab() === 'markdown') {
-              <div class="p-6 sm:p-8 min-h-[300px] text-start bg-ink-surface-subtle/50 font-mono text-xs sm:text-[13px] leading-relaxed overflow-x-auto">
+              <div
+                class="p-6 sm:p-8 min-h-[300px] text-start bg-ink-surface-subtle/50 font-mono text-xs sm:text-[13px] leading-relaxed overflow-x-auto">
                 <div class="flex gap-4">
                   <div class="text-ink-text-muted/40 select-none text-right shrink-0 space-y-1">
-                    <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div><div>11</div><div>12</div><div>13</div><div>14</div><div>15</div>
+                    <div>1</div>
+                    <div>2</div>
+                    <div>3</div>
+                    <div>4</div>
+                    <div>5</div>
+                    <div>6</div>
+                    <div>7</div>
+                    <div>8</div>
+                    <div>9</div>
+                    <div>10</div>
+                    <div>11</div>
+                    <div>12</div>
+                    <div>13</div>
+                    <div>14</div>
+                    <div>15</div>
                   </div>
                   <div class="space-y-1 text-ink-text font-mono flex-1">
                     <div class="text-ink-accent font-bold"># Welcome to Inkframe</div>
                     <div class="text-ink-text-muted/50"></div>
-                    <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing environment powered by ProseMirror.</div>
+                    <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing
+                      environment powered by ProseMirror.</div>
                     <div>Every word stays on your device—zero servers, zero telemetry.</div>
                     <div class="text-ink-text-muted/50"></div>
-                    <div>Use <span class="text-amber-500 font-semibold">`/slash commands`</span> to quickly insert headings, code blocks, and tables.</div>
+                    <div>Use <span class="text-amber-500 font-semibold">`/slash commands`</span> to quickly insert
+                      headings, code blocks, and tables.</div>
                     <div class="text-ink-text-muted/50"></div>
                     <div class="text-emerald-500">```typescript</div>
-                    <div class="text-ink-text-muted pl-4"><span class="text-purple-500">const</span> editor = <span class="text-purple-500">new</span> InkframeEditor({{ '{' }}</div>
+                    <div class="text-ink-text-muted pl-4"><span class="text-purple-500">const</span> editor = <span
+                        class="text-purple-500">new</span> InkframeEditor({{ '{' }}</div>
                     <div class="text-ink-text-muted pl-8">offline: <span class="text-emerald-500">true</span>,</div>
                     <div class="text-ink-text-muted pl-8">theme: <span class="text-orange-400">'minimal'</span></div>
                     <div class="text-ink-text-muted pl-4">{{ '}' }});</div>
                     <div class="text-emerald-500">```</div>
                     <div class="text-ink-text-muted/50"></div>
-                    <div class="text-ink-text-muted italic">&gt; "The best writing tool is the one that gets out of your way."<span class="editor-cursor"></span></div>
+                    <div class="text-ink-text-muted italic">&gt; "The best writing tool is the one that gets out of your
+                      way."<span class="editor-cursor"></span></div>
                   </div>
                 </div>
               </div>
@@ -390,17 +403,20 @@
 
               <!-- VIEW 3: Split View -->
               @if (heroTab() === 'split') {
-              <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink-border/50 min-h-[300px] text-start">
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink-border/50 min-h-[300px] text-start">
                 <!-- Left: Markdown -->
                 <div class="p-5 sm:p-6 bg-ink-surface-subtle/30 font-mono text-xs leading-relaxed overflow-x-auto">
-                  <div class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-accent">
+                  <div
+                    class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-accent">
                     <span>Source (.md)</span>
                     <span class="text-ink-text-muted">UTF-8</span>
                   </div>
                   <div class="space-y-1 text-ink-text font-mono">
                     <div class="text-ink-accent font-bold"># Welcome to Inkframe</div>
                     <div class="h-1"></div>
-                    <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing environment.</div>
+                    <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing
+                      environment.</div>
                     <div>Every word stays on your device.</div>
                     <div class="h-1"></div>
                     <div>Use <span class="text-amber-500">`/slash commands`</span> anywhere.</div>
@@ -413,14 +429,16 @@
 
                 <!-- Right: Rendered HTML Canvas -->
                 <div class="p-5 sm:p-6 bg-ink-surface font-sans text-xs leading-relaxed">
-                  <div class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-success">
+                  <div
+                    class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-success">
                     <span>Live Output Canvas</span>
                     <span class="text-emerald-500 font-semibold">● Instant</span>
                   </div>
                   <h2 class="text-base font-bold text-ink-text tracking-tight mb-2">Welcome to Inkframe</h2>
                   <p class="text-ink-text mb-2">A <strong>private</strong>, distraction-free writing environment.</p>
                   <p class="text-ink-text-muted mb-3">Every word stays on your device.</p>
-                  <div class="p-2 rounded bg-ink-surface-2 border border-ink-border/40 font-mono text-[11px] text-ink-text mb-2">
+                  <div
+                    class="p-2 rounded bg-ink-surface-2 border border-ink-border/40 font-mono text-[11px] text-ink-text mb-2">
                     const editor = new InkframeEditor();
                   </div>
                   <p class="text-ink-text-muted italic text-[11px] border-l border-ink-accent pl-2">
@@ -465,8 +483,7 @@
 
         <!-- CARD 1: Instant Multi-Format Export (lg:col-span-7) -->
         <ink-card variant="surface" hoverable padding="lg" radius="lg"
-          class="lg:col-span-7 flex flex-col justify-between spotlight-card"
-          (mousemove)="onSpotlightMouseMove($event)">
+          class="lg:col-span-7 flex flex-col justify-between spotlight-card" (mousemove)="onSpotlightMouseMove($event)">
           <!-- Top Visual: Document to Multi-Format Export Flow -->
           <div class="relative py-8 sm:py-10 flex items-center justify-center overflow-hidden">
             <!-- Pipeline connector track -->
@@ -811,25 +828,20 @@
 
           <!-- Interactive Quick Try Badges -->
           <div class="mb-6 space-y-2">
-            <div class="text-xs font-semibold uppercase tracking-wider text-ink-text-muted">Quick Simulator Shortcuts</div>
+            <div class="text-xs font-semibold uppercase tracking-wider text-ink-text-muted">Quick Simulator Shortcuts
+            </div>
             <div class="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                (click)="triggerShortcut('Bold text', isMac() ? '⌘ + B' : 'Ctrl + B')"
+              <button type="button" (click)="triggerShortcut('Bold text', isMac() ? '⌘ + B' : 'Ctrl + B')"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer">
                 <span>{{ isMac() ? '⌘ + B' : 'Ctrl + B' }}</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Bold)</span>
               </button>
-              <button
-                type="button"
-                (click)="triggerShortcut('Slash command menu', '/')"
+              <button type="button" (click)="triggerShortcut('Slash command menu', '/')"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer">
                 <span>/</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Menu)</span>
               </button>
-              <button
-                type="button"
-                (click)="triggerShortcut('Insert link', isMac() ? '⌘ + K' : 'Ctrl + K')"
+              <button type="button" (click)="triggerShortcut('Insert link', isMac() ? '⌘ + K' : 'Ctrl + K')"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer">
                 <span>{{ isMac() ? '⌘ + K' : 'Ctrl + K' }}</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Link)</span>
@@ -849,38 +861,42 @@
           <div class="flex items-center justify-between pb-3 mb-3 border-b border-ink-border text-xs">
             <div class="flex items-center gap-2">
               <span class="relative flex h-2.5 w-2.5">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
               <span class="font-semibold text-ink-text">Interactive Shortcut Simulator</span>
             </div>
-            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ink-surface-2 border border-ink-border/70 text-[11px] font-mono text-ink-text-muted">
+            <div
+              class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ink-surface-2 border border-ink-border/70 text-[11px] font-mono text-ink-text-muted">
               <span>{{ isMac() ? '⌘ macOS layout' : 'Ctrl layout' }}</span>
             </div>
           </div>
 
           <!-- Dynamic Live Trigger Feedback Banner -->
           @if (activeShortcut()) {
-            <div class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-accent-soft border border-ink-accent/30 flex items-center justify-between text-xs text-ink-accent font-medium shadow-sm transition-all duration-200">
-              <div class="flex items-center gap-2 truncate">
-                <ink-icon name="check" [size]="14" svgClass="text-ink-accent shrink-0" />
-                <span class="truncate">Simulated: <strong>{{ activeShortcut() }}</strong></span>
-              </div>
-              <span class="font-mono bg-ink-surface px-2 py-0.5 rounded border border-ink-accent/25 text-[11px] text-ink-accent shadow-xs shrink-0">
-                {{ lastPressedKeyDisplay() }}
-              </span>
+          <div
+            class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-accent-soft border border-ink-accent/30 flex items-center justify-between text-xs text-ink-accent font-medium shadow-sm transition-all duration-200">
+            <div class="flex items-center gap-2 truncate">
+              <ink-icon name="check" [size]="14" svgClass="text-ink-accent shrink-0" />
+              <span class="truncate">Simulated: <strong>{{ activeShortcut() }}</strong></span>
             </div>
+            <span
+              class="font-mono bg-ink-surface px-2 py-0.5 rounded border border-ink-accent/25 text-[11px] text-ink-accent shadow-xs shrink-0">
+              {{ lastPressedKeyDisplay() }}
+            </span>
+          </div>
           } @else {
-            <div class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-surface-2/60 border border-ink-border/40 flex items-center justify-between text-xs text-ink-text-muted">
-              <span class="text-[11px] truncate">Type shortcut on keyboard or click any row below to test</span>
-              <span class="text-[10px] font-mono text-ink-text-muted/70 shrink-0">Ready</span>
-            </div>
+          <div
+            class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-surface-2/60 border border-ink-border/40 flex items-center justify-between text-xs text-ink-text-muted">
+            <span class="text-[11px] truncate">Type shortcut on keyboard or click any row below to test</span>
+            <span class="text-[10px] font-mono text-ink-text-muted/70 shrink-0">Ready</span>
+          </div>
           }
 
           <div class="space-y-1.5">
             @for (shortcut of items; track shortcut.action) {
-            <button
-              type="button"
+            <button type="button"
               (click)="triggerShortcut(shortcut.action, (isMac() ? shortcut.macKeys.join(' + ') : shortcut.keys.join(' + ')))"
               class="w-full flex items-center justify-between py-2 px-3 rounded-ink-sm border transition-all duration-150 group cursor-pointer text-start select-none"
               [class.shortcut-active-row]="activeShortcut() === shortcut.action"
@@ -888,9 +904,7 @@
               [class.border-transparent]="activeShortcut() !== shortcut.action"
               [class.hover:border-ink-border]="activeShortcut() !== shortcut.action"
               [class.hover:bg-ink-surface-2]="activeShortcut() !== shortcut.action">
-              <span
-                class="text-sm transition-colors"
-                [class.text-ink-accent]="activeShortcut() === shortcut.action"
+              <span class="text-sm transition-colors" [class.text-ink-accent]="activeShortcut() === shortcut.action"
                 [class.font-semibold]="activeShortcut() === shortcut.action"
                 [class.text-ink-text-muted]="activeShortcut() !== shortcut.action"
                 [class.group-hover:text-ink-text]="activeShortcut() !== shortcut.action">
@@ -898,7 +912,8 @@
               </span>
               <div class="flex items-center gap-1 shrink-0">
                 @for (key of (isMac() ? shortcut.macKeys : shortcut.keys); track key) {
-                <span class="kbd" [class.bg-ink-accent]="activeShortcut() === shortcut.action" [class.text-white]="activeShortcut() === shortcut.action">{{ key }}</span>
+                <span class="kbd" [class.bg-ink-accent]="activeShortcut() === shortcut.action"
+                  [class.text-white]="activeShortcut() === shortcut.action">{{ key }}</span>
                 }
               </div>
             </button>
@@ -1173,10 +1188,10 @@
     <div
       class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-ink-border/40 gap-4 mb-8 sm:mb-12">
       <p class="text-xs text-ink-text-muted">
-        © 2025 Inkframe. Open source under MIT License.
+        © 2026 Inkframe. Open source under MIT License.
       </p>
       <p class="text-xs text-ink-text-muted">
-        Built with ♥ using Angular, ProseMirror & PrismJS.
+        Built with ❤️ by Subhrangsu Bera.
       </p>
     </div>
 

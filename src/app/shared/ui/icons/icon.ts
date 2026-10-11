@@ -37,7 +37,18 @@ export type InkIconName =
   | 'bell'
   | 'search'
   | 'folder'
-  | 'external-link';
+  | 'external-link'
+  | 'sidebar'
+  | 'plus'
+  | 'trash'
+  | 'more-vertical'
+  | 'edit'
+  | 'settings'
+  | 'share'
+  | 'eye'
+  | 'chevron-down'
+  | 'chevron-right'
+  | 'chevron-left';
 
 @Component({
   selector: 'ink-icon',
@@ -198,9 +209,49 @@ export type InkIconName =
           <path fill-rule="evenodd" clip-rule="evenodd"
             d="M3 4a2 2 0 0 1 2-2h4a2 2 0 0 1 1.414.586L12.828 5H19a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4zm2 3v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7H5z" />
         }
-        @case ('external-link') {
+        @case ('sidebar') {
           <path fill-rule="evenodd" clip-rule="evenodd"
-            d="M14 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 1 1-2 0V5.414l-7.293 7.293a1 1 0 0 1-1.414-1.414L18.586 4H15a1 1 0 0 1-1-1zM4 6a2 2 0 0 1 2-2h5a1 1 0 1 1 0 2H6v12h12v-5a1 1 0 1 1 2 0v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" />
+            d="M3 5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V5zm6 0H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3V5zm2 14h7a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-7v14z" />
+        }
+        @case ('plus') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1z" />
+        }
+        @case ('trash') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M9 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1v13a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6H3a1 1 0 1 1 0-2h4V3zm2 1v0h2V4h-2zm-5 2v13a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6H6zm3 3a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1zm6 0a1 1 0 0 1 1 1v7a1 1 0 1 1-2 0v-7a1 1 0 0 1 1-1z" />
+        }
+        @case ('more-vertical') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+        }
+        @case ('edit') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M14.293 2.293a1 1 0 0 1 1.414 0l6 6a1 1 0 0 1 0 1.414l-11 11A1 1 0 0 1 10 21H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 .293-.707l11-11zm1.414 2.828L5 15.828V19h3.172l10.707-10.707-3.172-3.172z" />
+        }
+        @case ('settings') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M11.078 2.05a1 1 0 0 1 1.844 0l.477 1.258a1 1 0 0 0 .848.616l1.345.138a1 1 0 0 1 .922 1.6l-.887 1.018a1 1 0 0 0-.262 1.018l.45 1.267a1 1 0 0 1-1.303 1.304l-1.268-.45a1 1 0 0 0-1.018.262l-1.018.887a1 1 0 0 1-1.6-.922l-.138-1.345a1 1 0 0 0-.616-.848L2.05 12.922a1 1 0 0 1 0-1.844l1.258-.477a1 1 0 0 0 .616-.848l.138-1.345a1 1 0 0 1 1.6-.922l1.018.887a1 1 0 0 0 1.018-.262l1.268-.45a1 1 0 0 1 1.304 1.303l-.45 1.268a1 1 0 0 0 .262 1.018l.887 1.018a1 1 0 0 1-.922 1.6l-1.345-.138a1 1 0 0 0-.848.616L11.078 2.05zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+        }
+        @case ('chevron-down') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M5.293 8.293a1 1 0 0 1 1.414 0L12 13.586l5.293-5.293a1 1 0 1 1 1.414 1.414l-6 6a1 1 0 0 1-1.414 0l-6-6a1 1 0 0 1 0-1.414z" />
+        }
+        @case ('chevron-right') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M8.293 5.293a1 1 0 0 1 1.414 0l6 6a1 1 0 0 1 0 1.414l-6 6a1 1 0 0 1-1.414-1.414L13.586 12 8.293 6.707a1 1 0 0 1 0-1.414z" />
+        }
+        @case ('chevron-left') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M15.707 5.293a1 1 0 0 1 0 1.414L10.414 12l5.293 5.293a1 1 0 0 1-1.414 1.414l-6-6a1 1 0 0 1 0-1.414l6-6a1 1 0 0 1 1.414 0z" />
+        }
+        @case ('share') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" />
+        }
+        @case ('eye') {
+          <path fill-rule="evenodd" clip-rule="evenodd"
+            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
         }
         @default {
           <circle cx="12" cy="12" r="10" />

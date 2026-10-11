@@ -24,6 +24,12 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "projects/inkframe-editor/src",
+                "dist/inkframe-editor"
+              ]
+            },
             "assets": [
               {
                 "glob": "**/*",

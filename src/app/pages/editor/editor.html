@@ -114,14 +114,14 @@
           </div>
 
           <p class="share-popover-desc">
-            Anyone with this link can view this document in distraction-free reader mode.
+            Anyone with this link can view this document anywhere with zero backend or account required.
           </p>
 
           <div class="share-link-box">
             <input
               type="text"
               readonly
-              [value]="getReaderUrl()"
+              [value]="shareUrl() || 'Generating shareable link...'"
               class="share-link-input font-mono"
               #shareInput
               (click)="shareInput.select()"
@@ -139,13 +139,14 @@
 
           <div class="share-popover-footer">
             <a
-              [routerLink]="['/s', currentDocId()]"
+              [href]="shareUrl() || ('/s/' + currentDocId())"
+              target="_blank"
               (click)="showShareMenu.set(false)"
               class="preview-reader-link"
               title="Open reader page"
             >
               <ink-icon name="external-link" [size]="12" />
-              <span>Open Reader Page</span>
+              <span>Open Reader View</span>
             </a>
           </div>
         </div>
@@ -166,30 +167,19 @@
 </ng-template>
 
 <!-- ═════════════════════════════════════════════ -->
-<!-- MAIN WORKSPACE VIEW (Rich / Markdown / Split) -->
+<!-- MAIN WORKSPACE VIEW (Rich Canvas / Preview)  -->
 <!-- ═════════════════════════════════════════════ -->
-<div class="editor-workspace-body">
-  <!-- VIEW 1: Rich Canvas (ProseMirror WYSIWYG) -->
-  <div class="view-panel rich-view-panel" [class.hidden]="activeView() !== 'rich'">
+<div class="editor-workspace-body" [class.is-preview]="activeView() === 'preview'">
+  <div class="view-panel editor-view-panel">
     <div class="editor-scroll-container">
       <ink-editor
         #editorComp
         [initialDoc]="currentStoredDoc()"
         [extensions]="extensions()"
-        [showToolbar]="showToolbar()"
+        [editable]="activeView() === 'rich'"
+        [showToolbar]="activeView() === 'rich' && showToolbar()"
         (changed)="onDocChanged($event)"
       />
     </div>
   </div>
-
-  <!-- VIEW 2: Clean Document Preview -->
-  @if (activeView() === 'preview') {
-    <div class="view-panel preview-view-panel ink-scrollbar">
-      <div class="preview-paper-container">
-        <article class="preview-paper">
-          <div class="ink-host" [innerHTML]="renderedPreviewHtml()"></div>
-        </article>
-      </div>
-    </div>
-  }
 </div>

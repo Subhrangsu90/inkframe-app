@@ -1000,6 +1000,30 @@ describe('Inkframe Core', () => {
           view.destroy();
         }
 
+      });
+    });
+
+    describe('Preview and Read-Only State', () => {
+      it('toggles ProseMirror-preview class when view is in read-only or editable mode', () => {
+        const container = document.createElement('div');
+        const doc = schema.node('doc', null, [
+          schema.nodes['paragraph'].create(null, [schema.text('Test preview')]),
+        ]);
+        const state = EditorState.create({ doc, schema });
+        let editable = false;
+        const view = new EditorView(container, {
+          state,
+          editable: () => editable,
+        });
+        view.dom.classList.toggle('ProseMirror-preview', !editable);
+
+        expect(view.dom.classList.contains('ProseMirror-preview')).toBe(true);
+
+        editable = true;
+        view.dom.classList.toggle('ProseMirror-preview', !editable);
+        expect(view.dom.classList.contains('ProseMirror-preview')).toBe(false);
+
+        view.destroy();
         container.remove();
       });
     });

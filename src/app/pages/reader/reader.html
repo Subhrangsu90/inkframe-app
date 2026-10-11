@@ -1,47 +1,78 @@
-<ng-template #headerLeft>
-  <div class="flex items-center gap-2 max-w-[260px] sm:max-w-md">
-    <ink-icon name="file-text" [size]="15" svgClass="text-ink-accent shrink-0" />
-    <span class="font-bold text-[14px] text-ink-text-heading truncate">{{ docTitle() }}</span>
-    <span class="px-2 py-0.5 rounded-full bg-ink-surface-2 text-[10px] text-ink-text-muted border border-ink-border shrink-0">
-      Reader Mode
-    </span>
-  </div>
-</ng-template>
+<div class="reader-layout">
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- MINIMAL READER HEADER: BRAND, TITLE & SHARE   -->
+  <!-- ═════════════════════════════════════════════ -->
+  <header class="reader-header">
+    <div class="reader-header-inner">
+      <!-- Left: Branding -->
+      <a routerLink="/" class="reader-brand" title="Back to Inkframe">
+        <span class="reader-brand-badge">I</span>
+        <span class="reader-brand-name">Inkframe</span>
+      </a>
 
-<ng-template #headerCenter>
-  <div class="font-medium text-xs text-ink-text-muted flex items-center gap-1.5">
-    <ink-icon name="shield-lock" [size]="13" svgClass="text-emerald-500" />
-    <span>Distraction-Free Reader</span>
-  </div>
-</ng-template>
+      <!-- Center: Document Title -->
+      <div class="reader-title-wrap">
+        <span class="reader-title truncate" [title]="docTitle()">{{ docTitle() }}</span>
+      </div>
 
-<ng-template #headerRight>
-  <div class="flex items-center gap-2">
-    <!-- Copy Reader Page Link -->
-    <button
-      type="button"
-      class="px-3 py-1.5 rounded-ink-sm border border-ink-border bg-ink-surface-2 text-ink-text text-xs font-semibold hover:bg-ink-surface-subtle hover:text-ink-accent transition-colors flex items-center gap-1.5"
-      (click)="copyShareLink()"
-      title="Copy Reader Page Link"
-    >
-      <ink-icon name="share" [size]="12" />
-      <span>Share Link</span>
-    </button>
+      <!-- Right: Action Icons (Share & Theme) -->
+      <div class="reader-actions">
+        <!-- Share Icon Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="copyShareLink()"
+          title="Copy Share Link"
+          aria-label="Share Link"
+        >
+          <ink-icon name="share" [size]="16" />
+        </button>
 
-    <!-- Open in Editor Button -->
-    <a
-      [routerLink]="['/doc', docId()]"
-      class="px-3 py-1.5 rounded-ink-sm bg-ink-accent text-white text-xs font-semibold hover:bg-ink-accent-hover transition-colors flex items-center gap-1.5"
-      title="Open and edit this note in Editor"
-    >
-      <ink-icon name="edit" [size]="12" />
-      <span class="hidden sm:inline">Open in Editor</span>
-    </a>
-  </div>
-</ng-template>
+        <!-- Theme Toggle Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="toggleTheme()"
+          [title]="isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          aria-label="Toggle Theme"
+        >
+          <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="16" />
+        </button>
 
-<div class="reader-content-body ink-scrollbar">
-  <article class="reader-paper">
-    <div class="ink-host" [innerHTML]="renderedHtml()"></div>
-  </article>
+        <!-- Open or Save to Editor Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="openInEditor()"
+          [title]="isSharedPayload() ? 'Save to my notes & edit' : 'Open in Editor'"
+          [attr.aria-label]="isSharedPayload() ? 'Save and edit' : 'Open in Editor'"
+        >
+          <ink-icon name="edit" [size]="15" />
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- A4 READING CANVAS (Centered & Clean)          -->
+  <!-- ═════════════════════════════════════════════ -->
+  <main class="reader-viewport ink-scrollbar">
+    <div class="reader-canvas">
+      <article class="reader-a4-sheet" (click)="onSheetClick($event)">
+        <div class="ink-host ProseMirror ProseMirror-preview" [innerHTML]="renderedHtml()"></div>
+      </article>
+    </div>
+  </main>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- IMAGE LIGHTBOX / PREVIEW MODAL                -->
+  <!-- ═════════════════════════════════════════════ -->
+  @if (previewImage(); as preview) {
+    <ink-image-lightbox
+      [src]="preview.src"
+      [alt]="preview.alt"
+      [title]="preview.title"
+      (closed)="previewImage.set(null)"
+    />
+  }
 </div>

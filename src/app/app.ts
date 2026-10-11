@@ -19,20 +19,23 @@ import { AppShellComponent } from './shared/layout/app-shell/app-shell';
 })
 export class App {
   private readonly router = inject(Router);
-  readonly isLanding = signal<boolean>(true);
+  readonly isStandalone = signal<boolean>(true);
 
   constructor() {
-    // Check initial route
-    const currentUrl = this.normalizeUrl(this.router.url);
-    this.isLanding.set(currentUrl === '' || currentUrl === '/');
+    this.updateStandalone(this.router.url);
 
-    // Subscribe to navigation events
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        const url = this.normalizeUrl(event.urlAfterRedirects);
-        this.isLanding.set(url === '' || url === '/');
+        this.updateStandalone(event.urlAfterRedirects);
       });
+  }
+
+  private updateStandalone(rawUrl: string): void {
+    const url = this.normalizeUrl(rawUrl);
+    // Standalone routes: Landing page ('/' or '') and Reader page ('/s/...')
+    const standalone = url === '' || url === '/' || url.startsWith('/s/') || url.startsWith('/s');
+    this.isStandalone.set(standalone);
   }
 
   private normalizeUrl(url: string): string {

@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
 
+export type { StoredDoc };
+
 export interface DocMeta {
   id: string;
   title: string;

@@ -41,5 +41,25 @@
       "default": "./styles/*"
     }
   },
+  "description": "Modular distraction-free block & Markdown ProseMirror document editor component for Angular",
+  "keywords": [
+    "angular",
+    "editor",
+    "prosemirror",
+    "markdown",
+    "wysiwyg",
+    "rich-text",
+    "block-editor"
+  ],
+  "author": "Inkframe Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Subhrangsu90/inkframe-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Subhrangsu90/inkframe-app/issues"
+  },
+  "homepage": "https://github.com/Subhrangsu90/inkframe-app#readme",
   "sideEffects": false
 }

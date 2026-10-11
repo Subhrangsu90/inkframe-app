@@ -428,6 +428,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
           @if (svc.hasExtension('image')) {
             <button type="button"
                     class="ink-tb-icon-btn"
+                    #imageTrigger="matMenuTrigger"
                     aria-label="Insert image"
                     matTooltip="Insert image"
                     [matMenuTriggerFor]="imageMenu">
@@ -456,7 +457,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
                            #fileInput
                            style="display:none"
                            accept="image/*"
-                           (change)="onFileSelected($event)">
+                           (change)="onFileSelected($event, imageTrigger)">
                     <button type="button"
                             class="ink-image-upload-box"
                             (click)="fileInput.click()">
@@ -468,6 +469,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
                            class="ink-image-url-input"
                            [(ngModel)]="imageUrl"
                            (ngModelChange)="onImageUrlChange()"
+                           (keydown.enter)="embedImageLink(imageTrigger)"
                            placeholder="Paste image URL (https://...)">
                     <div class="ink-image-preview-box">
                       @if (imageUrl.trim()) {
@@ -494,7 +496,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
                     <button type="button"
                             class="ink-image-submit-btn"
                             [disabled]="!imageUrl.trim()"
-                            (click)="embedImageLink()">
+                            (click)="embedImageLink(imageTrigger)">
                       Embed image
                     </button>
                   }
@@ -1148,20 +1150,22 @@ export class Toolbar implements OnDestroy {
     trigger.closeMenu();
   }
 
-  protected onFileSelected(event: Event): void {
+  protected onFileSelected(event: Event, trigger?: MatMenuTrigger): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (file) {
       this.svc.insertImage(file);
       input.value = '';
+      trigger?.closeMenu();
     }
   }
 
-  protected embedImageLink(): void {
+  protected embedImageLink(trigger?: MatMenuTrigger): void {
     if (this.imageUrl.trim()) {
       this.svc.insertImage(this.imageUrl.trim());
       this.imageUrl = '';
       this.previewError = false;
+      trigger?.closeMenu();
     }
   }
 

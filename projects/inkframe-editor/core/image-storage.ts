@@ -208,6 +208,8 @@ class ImageStorage {
           this.blobToDataUrl(blob).then(resolve);
           return;
         }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);

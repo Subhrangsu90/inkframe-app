@@ -2,11 +2,11 @@
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
 @use '@angular/material' as mat;
-@use 'tailwindcss';
+// @use 'tailwindcss';
 
 /* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
-@use '@inkframe-ui/editor/styles';
-@use './tokens.scss';
+@import '../projects/inkframe-editor/src/styles/index.scss';
+@import './tokens.scss';
 
 /* ── Tailwind v4 Theme Configuration (Mapping Inkframe Design Tokens) ── */
 @theme {
@@ -133,3 +133,38 @@ select {
     font-size: inherit;
   }
 }
+
+/* Hide table and image editing chrome in Preview / Read-only */
+.is-preview,
+.ProseMirror-preview,
+.ProseMirror[contenteditable="false"] {
+  .ink-table-row-handle,
+  .ink-table-col-corner-dot,
+  .ink-table-col-header-handle,
+  .ink-table-row-dot,
+  .ink-table-col-dot,
+  .ink-table-add-row-btn,
+  .ink-table-add-col-btn,
+  .ink-table-col-opt-btn,
+  .column-resize-handle,
+  .ink-table-cell-placeholder,
+  .ink-image-toolbar,
+  .ink-image-resize-handle,
+  .ink-image-size-badge {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+
+  .ink-image-wrapper {
+    outline: none !important;
+  }
+
+  img.ink-image,
+  .ink-image {
+    cursor: zoom-in !important;
+    pointer-events: auto !important;
+  }
+}
+

@@ -13,7 +13,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Editor } from '@inkframe-ui/editor';
 import {
   DEFAULT_EXTENSIONS,
@@ -30,7 +29,6 @@ import {
   StoredDoc,
   SCHEMA_VERSION,
   docToMarkdown,
-  docToHtml,
   schema,
 } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../../shared/layout/layout.service';
@@ -38,6 +36,7 @@ import { DocumentManager, extractDocTitle, extractDocWordCount } from '../../cor
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import { InkIcon } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
+import { buildShareableUrl } from '../../core/share-codec';
 
 // Custom plugin demo
 const CustomPluginDemo: EditorExtension = createExtension({
@@ -75,7 +74,6 @@ export type EditorViewTab = 'rich' | 'preview';
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     Editor,
     InkIcon,
   ],
@@ -89,7 +87,6 @@ export class EditorView implements OnInit {
   private readonly docManager = inject(DocumentManager);
   private readonly layout = inject(LayoutService);
   private readonly toast = inject(ToastService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   readonly editorRef = viewChild<Editor>('editorComp');
 
@@ -130,20 +127,8 @@ export class EditorView implements OnInit {
   readonly showToolbar = computed(() => this.activePreset() !== 'zen');
   readonly showPresetMenu = signal<boolean>(false);
   readonly showShareMenu = signal<boolean>(false);
+  readonly shareUrl = signal<string>('');
   readonly isEditingTitle = signal<boolean>(false);
-
-  // Live rendered HTML for Preview tab
-  readonly renderedPreviewHtml = computed<SafeHtml>(() => {
-    const stored = this.currentStoredDoc();
-    if (!stored?.doc) return '';
-    try {
-      const pmNode = schema.nodeFromJSON(stored.doc);
-      const rawHtml = docToHtml(pmNode);
-      return this.sanitizer.bypassSecurityTrustHtml(rawHtml);
-    } catch {
-      return '';
-    }
-  });
 
   readonly extensions = computed<EditorExtension[]>(() => {
     switch (this.activePreset()) {
@@ -306,22 +291,30 @@ export class EditorView implements OnInit {
   }
 
   // ── Share Reader Link Actions ────────────────────────────────────
-  toggleShareMenu(): void {
-    this.showShareMenu.set(!this.showShareMenu());
-  }
-
-  getReaderUrl(): string {
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/s/${this.currentDocId()}`;
+  async toggleShareMenu(): Promise<void> {
+    const next = !this.showShareMenu();
+    this.showShareMenu.set(next);
+    if (next) {
+      await this.updateShareUrl();
     }
-    return `/s/${this.currentDocId()}`;
   }
 
-  copyReaderLink(): void {
-    const url = this.getReaderUrl();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      this.toast.success('Reader page link copied to clipboard!');
+  async updateShareUrl(): Promise<void> {
+    const doc = this.currentStoredDoc();
+    if (doc) {
+      const url = await buildShareableUrl(doc, this.docTitle());
+      this.shareUrl.set(url);
+    }
+  }
+
+  async copyReaderLink(): Promise<void> {
+    if (!this.shareUrl()) {
+      await this.updateShareUrl();
+    }
+    const url = this.shareUrl();
+    if (url && typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      this.toast.success('Shareable link copied to clipboard!');
       this.showShareMenu.set(false);
     }
   }

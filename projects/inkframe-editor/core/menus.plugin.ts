@@ -65,6 +65,12 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
       const render = () => {
         raf = 0;
+        if (!view.editable) {
+          hooks.onSlashMenu(null);
+          hooks.onFloatingMenu(null);
+          hooks.onTableMenu?.(null);
+          return;
+        }
         const { state } = view;
         const slash = slashKey.getState(state)!;
         const vp = view.dom.closest('.ink-editor-viewport') as HTMLElement | null;

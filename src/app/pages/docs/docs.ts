@@ -18,6 +18,7 @@ import { DocumentManager, DocMeta, formatRelativeTime } from '../../core/documen
 import { InkIcon, InkIconName } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
+import { buildShareableUrl } from '../../core/share-codec';
 
 export interface TemplateStarter {
   id: string;
@@ -199,13 +200,23 @@ export class Docs implements OnInit {
     await this.layout.deleteDoc(id, event);
   }
 
-  shareDocLink(id: string, event: Event): void {
+  async shareDocLink(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     event.preventDefault();
-    if (typeof window !== 'undefined' && navigator.clipboard) {
-      const url = `${window.location.origin}/s/${id}`;
-      navigator.clipboard.writeText(url);
-      this.toast.success('Reader link copied to clipboard!');
+    try {
+      const doc = await this.docManager.getDoc(id);
+      if (doc) {
+        const meta = this.layout.documents().find((d: DocMeta) => d.id === id);
+        const url = await buildShareableUrl(doc, meta?.title);
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(url);
+          this.toast.success('Shareable link copied to clipboard!');
+        }
+      } else {
+        this.toast.error('Document not found');
+      }
+    } catch {
+      this.toast.error('Failed to copy share link');
     }
   }
 }

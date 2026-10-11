@@ -61,7 +61,7 @@ function buildTableDecorations(doc: PMNode): DecorationSet {
               e.preventDefault();
               e.stopPropagation();
               const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view) {
+              if (view && view.editable) {
                 view.focus();
                 const tr = view.state.tr.setSelection(
                   Selection.near(view.state.doc.resolve(cellPos + 1)),
@@ -117,7 +117,7 @@ function buildTableDecorations(doc: PMNode): DecorationSet {
               e.preventDefault();
               e.stopPropagation();
               const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view) {
+              if (view && view.editable) {
                 view.focus();
                 const tr = view.state.tr.setSelection(
                   Selection.near(view.state.doc.resolve(cellPos + 1)),
@@ -142,7 +142,7 @@ function buildTableDecorations(doc: PMNode): DecorationSet {
               e.preventDefault();
               e.stopPropagation();
               const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view) {
+              if (view && view.editable) {
                 view.focus();
                 const tr = view.state.tr.setSelection(
                   Selection.near(view.state.doc.resolve(cellPos + 1)),

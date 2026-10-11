@@ -132,6 +132,7 @@ export class CodeBlockNodeView implements NodeView {
     this.deleteBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (!this.view.editable) return;
       const pos = this.getPos();
       if (pos != null) {
         this.view.dispatch(
@@ -188,6 +189,7 @@ export class CodeBlockNodeView implements NodeView {
   }
 
   private toggleLanguageMenu(): void {
+    if (!this.view.editable) return;
     if (this.isMenuOpen) {
       this.closeLanguageMenu();
     } else {

@@ -16,7 +16,7 @@
   }
 
   p {
-    margin: 0.75rem 0;
+    margin: 0;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -1364,3 +1364,40 @@ td:hover .ink-table-col-header-handle,
 .resize-cursor {
   cursor: col-resize !important;
 }
+
+/* Hide all table and image editing handles, toolbars, and buttons in Preview / Read-only */
+.ProseMirror-preview,
+.ProseMirror[contenteditable="false"],
+.is-preview,
+.ink-editor-wrapper.is-preview,
+.editor-workspace-body.is-preview {
+  .ink-table-row-handle,
+  .ink-table-col-corner-dot,
+  .ink-table-col-header-handle,
+  .ink-table-row-dot,
+  .ink-table-col-dot,
+  .ink-table-add-row-btn,
+  .ink-table-add-col-btn,
+  .ink-table-col-opt-btn,
+  .column-resize-handle,
+  .ink-table-cell-placeholder,
+  .ink-image-toolbar,
+  .ink-image-resize-handle,
+  .ink-image-size-badge {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+
+  .ink-image-wrapper {
+    outline: none !important;
+  }
+
+  img.ink-image,
+  .ink-image {
+    cursor: zoom-in !important;
+    pointer-events: auto !important;
+  }
+}
+

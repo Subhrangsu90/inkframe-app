@@ -248,6 +248,7 @@ export class EditorService implements EditorHooks {
         self.afterUpdate(next, tr.docChanged);
       },
     });
+    this.view.dom.classList.toggle('ProseMirror-preview', !this.editableFlag);
     this.syncSignals(this.view.state);
     if (typeof window !== 'undefined') {
       (window as any).__ink_active_view__ = this.view;
@@ -263,6 +264,7 @@ export class EditorService implements EditorHooks {
   }
 
   focus(): void {
+    if (!this.editableFlag) return;
     this.view?.focus();
   }
 
@@ -293,7 +295,16 @@ export class EditorService implements EditorHooks {
 
   setEditable(editable: boolean): void {
     this.editableFlag = editable;
-    this.view?.setProps({ editable: () => editable });
+    if (this.view) {
+      this.view.setProps({ editable: () => this.editableFlag });
+      this.view.dom.classList.toggle('ProseMirror-preview', !editable);
+      if (!editable) {
+        this.view.dom.blur();
+        this.floatingMenu.set(null);
+        this.slashMenu.set(null);
+        this.tableMenu.set(null);
+      }
+    }
   }
 
   private createState(

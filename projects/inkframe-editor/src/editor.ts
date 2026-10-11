@@ -10,6 +10,7 @@ import {
   input,
   output,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import {
   EditorService,
@@ -32,7 +33,7 @@ import {
 
 @Component({
   selector: 'ink-editor',
-
+  encapsulation: ViewEncapsulation.None,
   imports: [
     Toolbar,
     FloatingMenu,
@@ -43,18 +44,20 @@ import {
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ink-editor-wrapper">
-      @if (showToolbar()) {
+    <div class="ink-editor-wrapper" [class.is-preview]="!editable()">
+      @if (showToolbar() && editable()) {
         <ink-toolbar />
       }
       <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
         <div class="ink-doc-page">
-          <div #host class="ink-host"></div>
+          <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
         </div>
       </div>
-      <ink-floating-menu />
-      <ink-table-toolbar />
-      <ink-slash-menu />
+      @if (editable()) {
+        <ink-floating-menu />
+        <ink-table-toolbar />
+        <ink-slash-menu />
+      }
       @if (svc.imagePreview(); as preview) {
         <ink-image-lightbox
           [src]="preview.src"
@@ -81,6 +84,57 @@ import {
       @media (min-width: 768px) {
         border-radius: 12px;
         height: clamp(580px, 76vh, 900px);
+      }
+
+      &.is-preview {
+        .ink-editor-viewport,
+        .ink-host,
+        .ProseMirror {
+          cursor: default;
+        }
+        .ink-task-checkbox {
+          cursor: default !important;
+          pointer-events: none !important;
+        }
+        .callout-icon {
+          cursor: default !important;
+          pointer-events: none !important;
+        }
+        .ink-code-tool-btn.delete-btn {
+          display: none !important;
+        }
+        .ink-lang-caret {
+          display: none !important;
+        }
+        .ink-code-lang-btn {
+          cursor: default !important;
+          pointer-events: none !important;
+        }
+        .ink-code-lang-menu {
+          display: none !important;
+        }
+        .ink-image-toolbar,
+        .ink-image-resize-handle,
+        .ink-image-size-badge {
+          display: none !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          opacity: 0 !important;
+        }
+        .ink-image-wrapper {
+          outline: none !important;
+        }
+        img.ink-image,
+        .ink-image {
+          cursor: zoom-in !important;
+          pointer-events: auto !important;
+        }
+        .ink-doc-page {
+          &:focus-within {
+            box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
+            border-color: var(--ink-border-subtle, #282a30);
+          }
+        }
       }
     }
     .ink-editor-viewport {
@@ -220,6 +274,7 @@ export class Editor {
   }
 
   protected onViewportClick(event: MouseEvent): void {
+    if (!this.editable()) return;
     const target = event.target as HTMLElement;
     if (
       target.classList.contains('ink-editor-viewport') ||

@@ -85,7 +85,7 @@ describe('share-codec', () => {
     const decoded = await decompressSharedDoc(hash);
     expect(decoded).not.toBeNull();
     expect(decoded!.title).toBe('Image Document');
-    const content = decoded!.doc.doc['content'] as any[];
+    const content = (decoded!.doc.doc as { content: any[] }).content;
     expect(content[1]['type']).toBe('image');
     expect(content[1]['attrs']['src']).toContain('https://images.unsplash.com');
   });

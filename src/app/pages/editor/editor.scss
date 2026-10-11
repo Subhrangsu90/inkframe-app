@@ -11,31 +11,51 @@
 .header-doc-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
+}
+
+.doc-icon-tile {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ink-radius-sm);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-accent-soft);
+  color: var(--ink-accent);
+  flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+  }
 }
 
 .header-title-btn {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   background: transparent;
   border: 1px solid transparent;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: var(--ink-radius-sm);
   color: var(--ink-text-heading);
   font-weight: 600;
   font-size: 13.5px;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  max-width: 220px;
-  transition: all var(--ink-transition-fast);
+  max-width: min(240px, 38vw);
+  transition: background-color var(--ink-transition-fast), border-color var(--ink-transition-fast);
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     background: var(--ink-surface-2);
     border-color: var(--ink-border);
+    outline: none;
 
     .edit-icon {
-      opacity: 1;
+      opacity: 0.9;
     }
   }
 
@@ -46,7 +66,9 @@
   }
 
   .edit-icon {
-    opacity: 0.4;
+    flex-shrink: 0;
+    color: var(--ink-text-muted);
+    opacity: 0;
     transition: opacity var(--ink-transition-fast);
   }
 }
@@ -55,41 +77,41 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--ink-text-heading);
-  background: var(--ink-surface-2);
+  background: var(--ink-surface);
   border: 1px solid var(--ink-accent);
+  box-shadow: 0 0 0 3px var(--ink-border-focus);
   border-radius: var(--ink-radius-sm);
-  padding: 2px 8px;
+  padding: 3px 8px;
   outline: none;
-  width: 180px;
-  max-width: 240px;
+  width: min(240px, 38vw);
 }
 
-.save-status-badge {
-  display: flex;
+.save-status {
+  display: none;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--ink-text-muted);
-  padding: 1px 6px;
-  border-radius: var(--ink-radius-pill);
-  background: var(--ink-surface-2);
-  border: 1px solid var(--ink-border);
   flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+  }
 
   .status-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background-color: var(--ink-success);
-    transition: background-color 0.2s ease;
+    box-shadow: 0 0 0 3px var(--ink-success-soft);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  &.saving {
-    .status-dot {
-      background-color: var(--ink-warning);
-      animation: pulse 1s infinite;
-    }
+  &.saving .status-dot {
+    background-color: var(--ink-warning);
+    box-shadow: 0 0 0 3px var(--ink-warning-soft);
+    animation: pulse 1s infinite;
   }
 }
 
@@ -99,7 +121,7 @@
 }
 
 /* ═══════════════════════════════════════════════ */
-/* HEADER CENTER: 3 Tabs (Landing Preview Style)   */
+/* HEADER CENTER: Edit / Preview                   */
 /* ═══════════════════════════════════════════════ */
 .header-tabs-group {
   display: flex;
@@ -111,41 +133,56 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 2.5px;
+  padding: 3px;
   background: var(--ink-surface-2);
   border: 1px solid var(--ink-border);
   border-radius: var(--ink-radius-md);
 }
 
 .tab-btn {
+  height: 26px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 11px;
-  font-size: 12px;
+  padding: 0 12px;
+  font-size: 12.5px;
   font-weight: 500;
-  border-radius: var(--ink-radius-sm);
+  border-radius: 7px;
   border: none;
   background: transparent;
   color: var(--ink-text-muted);
   cursor: pointer;
-  transition: all var(--ink-transition-fast);
+  transition: color var(--ink-transition-fast), background-color var(--ink-transition-fast),
+    box-shadow var(--ink-transition-fast);
   white-space: nowrap;
 
   &:hover {
     color: var(--ink-text);
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+
   &.active {
     background: var(--ink-surface);
     color: var(--ink-text-heading);
     font-weight: 600;
-    box-shadow: var(--ink-shadow-sm);
+    box-shadow: var(--ink-shadow-sm), 0 0 0 1px var(--ink-border);
+  }
+
+  span {
+    display: none;
+
+    @media (min-width: 480px) {
+      display: inline;
+    }
   }
 }
 
 /* ═══════════════════════════════════════════════ */
-/* HEADER RIGHT: Word Count, Presets & Export      */
+/* HEADER RIGHT: Word Count, Share & Export        */
 /* ═══════════════════════════════════════════════ */
 .header-actions {
   display: flex;
@@ -153,46 +190,64 @@
   gap: 8px;
 }
 
-.word-count-badge {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--ink-text-muted);
-  padding: 3px 7px;
-  border-radius: var(--ink-radius-sm);
-  background: var(--ink-surface-2);
-  border: 1px solid var(--ink-border);
+.word-count {
   display: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-muted);
+  white-space: nowrap;
+  padding-right: 4px;
 
-  @media (min-width: 640px) {
-    display: inline-block;
+  @media (min-width: 900px) {
+    display: inline;
   }
 }
-
-
 
 .share-dropdown-wrap {
   position: relative;
 }
 
-.share-btn {
-  height: 30px;
-  padding: 0 10px;
+.share-btn,
+.export-btn {
+  height: 32px;
+  padding: 0 11px;
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
   border-radius: var(--ink-radius-sm);
-  background: var(--ink-surface-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--ink-transition-fast), border-color var(--ink-transition-fast),
+    color var(--ink-transition-fast), box-shadow var(--ink-transition-fast);
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+}
+
+.share-btn {
+  background: var(--ink-surface);
   border: 1px solid var(--ink-border);
   color: var(--ink-text);
-  cursor: pointer;
-  transition: all var(--ink-transition-fast);
+  box-shadow: var(--ink-shadow-sm);
 
   &:hover {
-    background: var(--ink-surface-subtle);
+    background: var(--ink-surface-2);
     border-color: var(--ink-border-strong);
-    color: var(--ink-accent);
+  }
+}
+
+.export-btn {
+  background: var(--ink-accent);
+  border: 1px solid transparent;
+  color: var(--ink-accent-contrast, #fff);
+  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  &:hover {
+    background: var(--ink-accent-hover);
   }
 }
 
@@ -206,18 +261,23 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 320px;
-  max-width: 90vw;
+  width: 340px;
+  max-width: calc(100vw - 24px);
   background: var(--ink-surface);
   border: 1px solid var(--ink-border-strong);
   border-radius: var(--ink-radius-md);
   box-shadow: var(--ink-shadow-lg);
-  padding: 14px;
+  padding: 16px;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  animation: fadeIn 0.15s ease-out;
+  gap: 12px;
+  animation: popoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
 }
 
 .share-popover-header {
@@ -227,8 +287,8 @@
 }
 
 .close-share-btn {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--ink-radius-sm);
   display: flex;
   align-items: center;
@@ -245,9 +305,9 @@
 }
 
 .share-popover-desc {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--ink-text-muted);
-  line-height: 1.45;
+  line-height: 1.5;
   margin: 0;
 }
 
@@ -258,7 +318,7 @@
   background: var(--ink-surface-2);
   border: 1px solid var(--ink-border);
   border-radius: var(--ink-radius-sm);
-  padding: 3px 4px 3px 8px;
+  padding: 4px 4px 4px 10px;
 }
 
 .share-link-input {
@@ -266,37 +326,37 @@
   min-width: 0;
   background: transparent;
   border: none;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ink-text);
   outline: none;
   user-select: all;
 }
 
 .share-copy-action-btn {
-  height: 26px;
-  padding: 0 9px;
+  height: 28px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  border-radius: var(--ink-radius-sm);
+  gap: 5px;
+  border-radius: 5px;
   background: var(--ink-accent);
   color: #fff;
   border: none;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity var(--ink-transition-fast);
+  transition: background-color var(--ink-transition-fast);
   flex-shrink: 0;
 
   &:hover {
-    opacity: 0.9;
+    background: var(--ink-accent-hover);
   }
 }
 
 .share-popover-footer {
   display: flex;
   justify-content: flex-end;
-  padding-top: 6px;
+  padding-top: 10px;
   border-top: 1px solid var(--ink-border);
 }
 
@@ -304,36 +364,15 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--ink-accent);
+  color: var(--ink-accent-text);
   text-decoration: none;
   transition: opacity var(--ink-transition-fast);
 
   &:hover {
-    opacity: 0.8;
     text-decoration: underline;
-  }
-}
-
-.export-btn {
-  height: 30px;
-  padding: 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  border-radius: var(--ink-radius-sm);
-  background: var(--ink-accent-soft);
-  border: 1px solid var(--ink-accent);
-  color: var(--ink-accent-text);
-  cursor: pointer;
-  transition: all var(--ink-transition-fast);
-
-  &:hover {
-    background: var(--ink-accent);
-    color: #fff;
+    text-underline-offset: 2px;
   }
 }
 
@@ -361,21 +400,22 @@
   }
 }
 
-
-
+/* The editor fills whatever height the screen leaves below the header. */
 .editor-scroll-container {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 12px 14px 20px;
+  padding: 8px;
 
   @media (min-width: 768px) {
-    padding: 18px 24px 32px;
+    padding: 14px 18px 18px;
   }
 
   ink-editor {
+    --ink-editor-height: 100%;
+    --ink-editor-min-height: 320px;
     flex: 1 1 0;
     min-height: 0;
     display: flex;
@@ -384,6 +424,10 @@
 }
 
 :host ::ng-deep {
+  .editor-scroll-container .ink-editor-wrapper {
+    box-shadow: var(--ink-shadow-sm);
+  }
+
   .editor-workspace-body.is-preview,
   .is-preview,
   .ProseMirror-preview,
@@ -405,5 +449,3 @@
     }
   }
 }
-
-

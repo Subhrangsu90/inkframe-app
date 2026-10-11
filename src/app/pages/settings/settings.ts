@@ -15,7 +15,7 @@ import { ThemeService, AppTheme } from '@inkframe-ui/editor/core';
 import { DocumentManager } from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import { InkIcon } from '../../shared/ui/icons/icon';
-import { ToastService } from '../../shared/ui';
+import { ConfirmDialogService, ToastService } from '../../shared/ui';
 import { LayoutService } from '../../shared/layout/layout.service';
 
 @Component({
@@ -33,19 +33,18 @@ export class Settings implements OnInit {
   readonly themeService = inject(ThemeService);
   private readonly docManager = inject(DocumentManager);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   readonly layout = inject(LayoutService);
 
   // Dynamic header templates
   readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
-  readonly headerCenterTpl = viewChild<TemplateRef<any>>('headerCenter');
 
   constructor() {
     effect(() => {
       const left = this.headerLeftTpl();
-      const center = this.headerCenterTpl();
       this.layout.setHeaderTemplates({
         left: left ?? null,
-        center: center ?? null,
+        center: null,
         right: null,
       });
     });
@@ -55,7 +54,10 @@ export class Settings implements OnInit {
     });
   }
 
-  readonly activeTab = signal<'general' | 'appearance' | 'storage'>('general');
+  readonly themeOptions: { id: AppTheme; name: string }[] = [
+    { id: 'light', name: 'Light' },
+    { id: 'dark', name: 'Dark' },
+  ];
   readonly currentTheme = computed(() => this.themeService.theme());
   readonly docCount = signal<number>(0);
   readonly storageUsed = signal<string>('0 KB');
@@ -67,21 +69,22 @@ export class Settings implements OnInit {
   async updateStats(): Promise<void> {
     const docs = await this.docManager.getIndex();
     this.docCount.set(docs.length);
-    if (typeof localStorage !== 'undefined') {
-      let totalBytes = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k?.startsWith('inkframe')) {
-          totalBytes += (localStorage.getItem(k) || '').length * 2;
-        }
-      }
-      this.storageUsed.set((totalBytes / 1024).toFixed(1) + ' KB');
+    // Documents and images live in IndexedDB, so ask the browser for the
+    // origin's total usage rather than counting localStorage.
+    if (typeof navigator !== 'undefined' && navigator.storage?.estimate) {
+      try {
+        const { usage = 0 } = await navigator.storage.estimate();
+        this.storageUsed.set(
+          usage >= 1024 * 1024
+            ? (usage / (1024 * 1024)).toFixed(1) + ' MB'
+            : (usage / 1024).toFixed(1) + ' KB',
+        );
+      } catch {}
     }
   }
 
-  setTheme(theme: AppTheme): void {
-    this.themeService.setTheme(theme);
-    this.toast.info(`Theme set to ${theme}`);
+  setTheme(theme: AppTheme, event?: Event): void {
+    this.themeService.setTheme(theme, event);
   }
 
   async restoreSampleDoc(): Promise<void> {
@@ -96,14 +99,24 @@ export class Settings implements OnInit {
   }
 
   async clearStorage(): Promise<void> {
-    if (typeof window !== 'undefined' && confirm('Are you sure you want to clear all local documents? This cannot be undone.')) {
-      try {
-        localStorage.clear();
-        await this.restoreSampleDoc();
-        this.toast.warning('Storage cleared and re-initialized');
-      } catch {
-        this.toast.error('Failed to clear storage');
-      }
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete all data?',
+      message:
+        'This permanently deletes every document and image stored on this device. Export anything you want to keep first. This cannot be undone.',
+      confirmText: 'Delete everything',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      icon: 'delete_outline',
+    });
+    if (!confirmed) return;
+    try {
+      await this.docManager.clearAll();
+      await this.docManager.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
+      await this.layout.refreshDocs();
+      await this.updateStats();
+      this.toast.warning('All documents deleted. A fresh welcome document was created.');
+    } catch {
+      this.toast.error('Failed to clear storage');
     }
   }
 }

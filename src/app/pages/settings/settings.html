@@ -1,184 +1,146 @@
 <!-- ═════════════════════════════════════════════ -->
-<!-- HEADER LEFT: Settings Title                  -->
+<!-- HEADER LEFT: Page Title                       -->
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerLeft>
-  <div class="flex items-center gap-2">
-    <ink-icon name="settings" [size]="16" svgClass="text-ink-accent" />
-    <span class="font-bold text-[15px] text-ink-text-heading">Settings</span>
+  <div class="page-heading">
+    <span class="page-icon"><ink-icon name="settings" [size]="14" /></span>
+    <span class="page-title">Settings</span>
   </div>
 </ng-template>
 
-<!-- ═════════════════════════════════════════════ -->
-<!-- HEADER CENTER: Settings Category Tabs         -->
-<!-- ═════════════════════════════════════════════ -->
-<ng-template #headerCenter>
-  <div class="settings-tabs-group">
-    <div class="segmented-pill">
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="activeTab() === 'general'"
-        (click)="activeTab.set('general')"
-      >
-        <span>General</span>
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="activeTab() === 'appearance'"
-        (click)="activeTab.set('appearance')"
-      >
-        <span>Appearance</span>
-      </button>
-      <button
-        type="button"
-        class="tab-btn"
-        [class.active]="activeTab() === 'storage'"
-        (click)="activeTab.set('storage')"
-      >
-        <span>Storage</span>
-      </button>
-    </div>
+<div class="settings-body ink-scrollbar">
+  <div class="settings-container">
+    <header class="page-intro">
+      <h1 class="intro-title">Settings</h1>
+      <p class="intro-desc">Preferences and data for this browser. Nothing here leaves your device.</p>
+    </header>
+
+    <!-- APPEARANCE -->
+    <section class="settings-section" aria-labelledby="appearance-heading">
+      <div class="section-label">
+        <h2 id="appearance-heading" class="section-title">Appearance</h2>
+        <p class="section-desc">Choose how Inkframe looks. Applies to the editor, previews and shared links you open.</p>
+      </div>
+
+      <div class="theme-options" role="group" aria-label="Theme">
+        @for (option of themeOptions; track option.id) {
+          <button
+            type="button"
+            class="theme-option"
+            [class.active]="currentTheme() === option.id"
+            [attr.aria-pressed]="currentTheme() === option.id"
+            (click)="setTheme(option.id, $event)"
+          >
+            <span class="theme-preview" [class]="'preview-' + option.id" aria-hidden="true">
+              <span class="pv-sidebar">
+                <span class="pv-dot accent"></span>
+                <span class="pv-bar len-70"></span>
+                <span class="pv-bar len-50"></span>
+                <span class="pv-bar len-60"></span>
+              </span>
+              <span class="pv-main">
+                <span class="pv-header"></span>
+                <span class="pv-page">
+                  <span class="pv-bar heading"></span>
+                  <span class="pv-bar len-90"></span>
+                  <span class="pv-bar len-75"></span>
+                  <span class="pv-bar len-60"></span>
+                </span>
+              </span>
+            </span>
+            <span class="theme-meta">
+              <span class="theme-name">{{ option.name }}</span>
+              <span class="theme-check" aria-hidden="true">
+                <ink-icon name="check" [size]="11" [strokeWidth]="3" />
+              </span>
+            </span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- STORAGE -->
+    <section class="settings-section" aria-labelledby="storage-heading">
+      <div class="section-label">
+        <h2 id="storage-heading" class="section-title">Storage</h2>
+        <p class="section-desc">Documents and images are saved in this browser's storage (IndexedDB).</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Documents</span>
+          <span class="stat-value">{{ docCount() }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Space used</span>
+          <span class="stat-value">{{ storageUsed() }}</span>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Welcome guide</span>
+            <span class="setting-desc">Add the welcome document back to your documents.</span>
+          </div>
+          <button type="button" class="secondary-btn" (click)="restoreSampleDoc()">Restore</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DANGER ZONE -->
+    <section class="settings-section" aria-labelledby="danger-heading">
+      <div class="section-label">
+        <h2 id="danger-heading" class="section-title">Danger zone</h2>
+      </div>
+
+      <div class="settings-card danger-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Delete all data</span>
+            <span class="setting-desc">
+              Permanently deletes every document and image in this browser. Your theme is kept. Export anything you
+              need first.
+            </span>
+          </div>
+          <button type="button" class="danger-btn" (click)="clearStorage()">Delete all data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="settings-section" aria-labelledby="about-heading">
+      <div class="section-label">
+        <h2 id="about-heading" class="section-title">About</h2>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Private by design</span>
+            <span class="setting-desc">No account and no server. Share links carry the document inside the link itself.</span>
+          </div>
+          <span class="status-chip"><span class="chip-dot"></span>Local only</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Source code</span>
+            <span class="setting-desc">Built with Angular and ProseMirror. The code is on GitHub.</span>
+          </div>
+          <a class="link-btn" href="https://github.com/Subhrangsu90/inkframe-app" target="_blank" rel="noopener">
+            GitHub <ink-icon name="external-link" [size]="12" />
+          </a>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Report a problem</span>
+            <span class="setting-desc">Found a bug or have an idea? Open an issue.</span>
+          </div>
+          <a class="link-btn" href="https://github.com/Subhrangsu90/inkframe-app/issues" target="_blank" rel="noopener">
+            Issues <ink-icon name="external-link" [size]="12" />
+          </a>
+        </div>
+      </div>
+    </section>
   </div>
-</ng-template>
-
-  <!-- ═════════════════════════════════════════════ -->
-  <!-- MAIN SETTINGS BODY                            -->
-  <!-- ═════════════════════════════════════════════ -->
-  <div class="settings-body ink-scrollbar">
-    <div class="settings-container">
-      <!-- GENERAL TAB -->
-      @if (activeTab() === 'general') {
-        <div class="settings-section">
-          <h2 class="section-title">Application Overview</h2>
-          <div class="settings-card">
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">Local-First Architecture</span>
-                <span class="setting-desc">Inkframe operates 100% inside your browser. No data ever leaves your device.</span>
-              </div>
-              <span class="status-chip success">Active</span>
-            </div>
-
-            <div class="setting-divider"></div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">ProseMirror Editor Engine</span>
-                <span class="setting-desc">Rich-text markdown schema with modular plugins and TipTap-style extensibility.</span>
-              </div>
-              <span class="status-chip accent">v1.4.0</span>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- APPEARANCE TAB -->
-      @if (activeTab() === 'appearance') {
-        <div class="settings-section">
-          <h2 class="section-title">Theme & Visual Style</h2>
-          <p class="section-desc">Choose between obsidian dark mode or warm daylight aesthetic.</p>
-
-          <div class="theme-cards-grid">
-            <!-- Dark Theme Card -->
-            <div
-              class="theme-card"
-              [class.active]="currentTheme() === 'dark'"
-              (click)="setTheme('dark')"
-            >
-              <div class="theme-card-preview dark-preview">
-                <div class="preview-bar">
-                  <div class="preview-dot red"></div>
-                  <div class="preview-dot yellow"></div>
-                  <div class="preview-dot green"></div>
-                </div>
-                <div class="preview-content">
-                  <div class="preview-line short accent"></div>
-                  <div class="preview-line long"></div>
-                  <div class="preview-line medium"></div>
-                </div>
-              </div>
-              <div class="theme-card-meta">
-                <span class="theme-name">Obsidian Dark</span>
-                <span class="theme-badge">Default</span>
-              </div>
-            </div>
-
-            <!-- Light Theme Card -->
-            <div
-              class="theme-card"
-              [class.active]="currentTheme() === 'light'"
-              (click)="setTheme('light')"
-            >
-              <div class="theme-card-preview light-preview">
-                <div class="preview-bar">
-                  <div class="preview-dot red"></div>
-                  <div class="preview-dot yellow"></div>
-                  <div class="preview-dot green"></div>
-                </div>
-                <div class="preview-content">
-                  <div class="preview-line short accent"></div>
-                  <div class="preview-line long"></div>
-                  <div class="preview-line medium"></div>
-                </div>
-              </div>
-              <div class="theme-card-meta">
-                <span class="theme-name">Warm Daylight</span>
-                <span class="theme-badge">Clean</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- STORAGE TAB -->
-      @if (activeTab() === 'storage') {
-        <div class="settings-section">
-          <h2 class="section-title">Device Storage & Privacy</h2>
-          <div class="settings-card">
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">Stored Documents</span>
-                <span class="setting-desc">Total notes indexed in local IndexedDB storage.</span>
-              </div>
-              <span class="stat-value font-mono">{{ docCount() }}</span>
-            </div>
-
-            <div class="setting-divider"></div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">Storage Consumed</span>
-                <span class="setting-desc">Local payload footprint on this computer.</span>
-              </div>
-              <span class="stat-value font-mono">{{ storageUsed() }}</span>
-            </div>
-
-            <div class="setting-divider"></div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">Restore Welcome Tutorial</span>
-                <span class="setting-desc">Re-seed the comprehensive interactive guide note.</span>
-              </div>
-              <button type="button" class="action-btn-sm" (click)="restoreSampleDoc()">
-                Restore Doc
-              </button>
-            </div>
-
-            <div class="setting-divider"></div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label text-red-500">Purge Storage</span>
-                <span class="setting-desc">Delete all local documents and reset storage index.</span>
-              </div>
-              <button type="button" class="danger-btn-sm" (click)="clearStorage()">
-                Clear All
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
+</div>

@@ -69,13 +69,18 @@ import {
     </div>
   `,
   styles: `
+    /*
+     * Height: set --ink-editor-height on <ink-editor> to size the editor, for
+     * example 100% to fill a flex or grid cell. Without it the editor sizes
+     * itself to the viewport.
+     */
     .ink-editor-wrapper {
       border: 1px solid var(--ink-border-default, #2e3036);
       border-radius: 8px;
       overflow: hidden;
       background: var(--ink-bg-wrapper, #141518);
-      height: calc(100dvh - 128px);
-      min-height: 460px;
+      height: var(--ink-editor-height, calc(100dvh - 128px));
+      min-height: var(--ink-editor-min-height, 460px);
       display: flex;
       flex-direction: column;
       position: relative;
@@ -83,7 +88,7 @@ import {
 
       @media (min-width: 768px) {
         border-radius: 12px;
-        height: clamp(580px, 76vh, 900px);
+        height: var(--ink-editor-height, clamp(580px, 76vh, 900px));
       }
 
       &.is-preview {
@@ -183,15 +188,16 @@ import {
       border: 1px solid var(--ink-border-subtle, #282a30);
       border-radius: 6px;
       box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
-      min-height: calc(100dvh - 180px);
-      height: auto;
+      /* At least as tall as the visible canvas, whatever the screen size. */
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
       box-sizing: border-box;
       transition: box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 
       @media (min-width: 768px) {
         border-radius: 8px;
-        min-height: 880px;
       }
 
       &:focus-within {
@@ -199,9 +205,11 @@ import {
       }
     }
     .ink-host {
+      flex: 1 0 auto;
+      display: flex;
+      flex-direction: column;
       padding: 1.25rem 0.85rem 2.5rem;
       outline: none;
-      min-height: calc(100dvh - 200px);
       box-sizing: border-box;
       cursor: text;
 
@@ -211,19 +219,16 @@ import {
 
       @media (min-width: 900px) {
         padding: 3rem 3.5rem 4rem;
-        min-height: 880px;
       }
     }
     .ink-host :first-child {
       margin-top: 0;
     }
+    /* Fills the page, so a click anywhere below the last line still focuses the editor. */
     .ink-host .ProseMirror {
-      min-height: calc(100dvh - 220px);
+      flex: 1 0 auto;
+      min-height: 0;
       outline: none;
-
-      @media (min-width: 768px) {
-        min-height: 760px;
-      }
     }
   `,
 })
@@ -232,12 +237,8 @@ export class Editor {
   private readonly zone = inject(NgZone);
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
+  private readonly destroyRef = inject(DestroyRef);
   private timer?: ReturnType<typeof setTimeout>;
-
-  // Registered before the outputs below are created: destroy hooks run in
-  // registration order, so pending edits are emitted while `changed` still
-  // has listeners (an output cannot emit once its own destroy hook has run).
-  private readonly flushOnDestroy = inject(DestroyRef).onDestroy(() => this.flush());
 
   /** Read once at mount. Use loadDoc() to replace the document later. */
   readonly initialDoc = input<StoredDoc | null>(null);
@@ -260,6 +261,21 @@ export class Editor {
       if (this.viewport()?.nativeElement) {
         this.viewport()!.nativeElement.scrollTop = 0;
       }
+
+      // Emit pending edits when the tab is hidden or closed: browsers may
+      // discard the page afterwards without running any destroy hooks.
+      const doc = this.host().nativeElement.ownerDocument;
+      const win = doc.defaultView;
+      const onVisibilityChange = () => {
+        if (doc.visibilityState === 'hidden') this.flush();
+      };
+      const onPageHide = () => this.flush();
+      doc.addEventListener('visibilitychange', onVisibilityChange);
+      win?.addEventListener('pagehide', onPageHide);
+      this.destroyRef.onDestroy(() => {
+        doc.removeEventListener('visibilitychange', onVisibilityChange);
+        win?.removeEventListener('pagehide', onPageHide);
+      });
     });
 
     effect(() => this.svc.setEditable(this.editable()));
@@ -272,7 +288,11 @@ export class Editor {
       }
     });
 
-    inject(DestroyRef).onDestroy(() => {
+    // Note: `changed` cannot be emitted from here. By the time destroy hooks
+    // run, Angular has already removed the parent's (changed) listener, so
+    // hosts must call flush() before the editor is destroyed (for example in
+    // a canDeactivate guard). Pending edits are discarded otherwise.
+    this.destroyRef.onDestroy(() => {
       clearTimeout(this.timer);
       this.svc.destroy();
     });

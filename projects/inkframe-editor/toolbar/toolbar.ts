@@ -4,8 +4,10 @@ import {
   ElementRef,
   OnDestroy,
   afterNextRender,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -15,7 +17,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } from '@inkframe-ui/editor/core';
+import {
+  EditorService,
+  ThemeService,
+  TEXT_COLORS,
+  COMMON_EMOJIS,
+  ColorSwatch,
+  focusLinkInput,
+} from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-toolbar',
@@ -652,7 +661,7 @@ import { EditorService, ThemeService, TEXT_COLORS, COMMON_EMOJIS, ColorSwatch } 
                 class="ink-tb-icon-btn ink-tb-theme-toggle"
                 [attr.aria-label]="themeService.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
                 [matTooltip]="themeService.theme() === 'dark' ? 'Switch to Light mode' : 'Switch to Dark mode'"
-                (click)="themeService.toggleTheme()">
+                (click)="themeService.toggleTheme($event)">
           <mat-icon>{{ themeService.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
         </button>
       </div>
@@ -956,6 +965,8 @@ export class Toolbar implements OnDestroy {
   protected readonly emojis: string[] = COMMON_EMOJIS;
 
   protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');
+  private readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
+  private handledLinkRequests = this.svc.linkEditorRequests();
   protected readonly canScrollLeft = signal(false);
   protected readonly canScrollRight = signal(false);
 
@@ -970,6 +981,14 @@ export class Toolbar implements OnDestroy {
   constructor() {
     afterNextRender(() => {
       this.initToolbarScroll();
+    });
+
+    // Mod-k: the toolbar handles it unless the floating menu is showing.
+    effect(() => {
+      const requests = this.svc.linkEditorRequests();
+      if (requests === this.handledLinkRequests) return;
+      this.handledLinkRequests = requests;
+      if (!untracked(() => this.svc.floatingMenu())) this.linkTrigger()?.openMenu();
     });
   }
 
@@ -1135,6 +1154,7 @@ export class Toolbar implements OnDestroy {
 
   protected onLinkMenuOpened(): void {
     this.linkUrl = this.svc.getLinkHref() || '';
+    focusLinkInput();
   }
 
   protected applyLink(trigger: MatMenuTrigger): void {

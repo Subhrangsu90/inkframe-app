@@ -246,7 +246,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ### 4.1 Baseline (2026-10-11)
 
-- **Tests:** 110 unit tests pass (Vitest): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, the editor service against the extension-built schema, share codec and document storage.
+- **Tests:** 116 tests pass through the Angular CLI test runner (`npm test`): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
 - **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 542 kB raw, 127 kB transferred.
 - **Recently fixed:**
   - **Editor and Markdown:** toolbar commands now use the live schema; Markdown import is lossless for the formats export writes.
@@ -258,11 +259,11 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 | # | Blocker | Where | Fix |
 | --- | --- | --- | --- |
-| B1 | Fonts and icons load from Google | `src/index.html` | Self-host Inter, JetBrains Mono and Material Symbols (or switch icons to the inline `ink-icon` set). |
-| B2 | Landing page promises features that don't exist | `src/app/pages/landing/landing.html` | Apply [section 2.5](#25-messaging) and [2.6](#26-claims-we-must-not-make-yet). |
-| B3 | "Clear all data" leaves documents in IndexedDB | `src/app/pages/settings/settings.ts` | Delete the IndexedDB database; use the confirm dialog. |
+| B1 | ~~Fonts and icons load from Google~~ | `src/index.html` | ✅ Done in M0. Inter and JetBrains Mono are self-hosted (Fontsource); Material Symbols is a 6.4 kB subset of the 65 icons in use (`npm run icons:build`). |
+| B2 | ~~Landing page promises features that don't exist~~ | `src/app/pages/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
+| B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/pages/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
 | B4 | History button does nothing | `toolbar.ts` → `historyRequested` | Build version history (M2) or hide the button until then. |
-| B5 | `Ctrl+K` advertised but unbound | `default-extensions.ts` (LinkExtension) | Add a `Mod-k` keymap that opens the link popover. |
+| B5 | ~~`Ctrl+K` advertised but unbound~~ | `default-extensions.ts` (LinkExtension) | ✅ Done in M0. Opens the floating menu's link popover when text is selected, otherwise the toolbar's; the URL field is focused. |
 | B6 | SSR server rejects every host | `angular.json` → `security.allowedHosts: []` | Set production hosts, or `NG_ALLOWED_HOSTS` at deploy time. |
 | B7 | No backup and restore | Settings | Build it (M2). Local-only storage without a backup is a data-loss risk. |
 | B8 | README is the Angular CLI placeholder | `README.md` | Product README plus library README ([section 8](#8-library-productization-inkframe-uieditor)). |
@@ -271,7 +272,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 - **Dead preset code:** the editor page defines extension presets and a demo plugin with no UI. Either expose presets in a developer playground or remove them.
 - **Legacy APIs:** `buildPlugins()`, `SLASH_ITEMS` and the static `schema` export predate the extension system. Deprecate them in the library's public API and point users to `ExtensionManager` and `DEFAULT_EXTENSIONS`.
-- **Component tests can't run:** plain Vitest compiles Angular in JIT mode without signal-query support. Switch the test runner to the Angular CLI's Vitest builder (`ng test`) or add an Angular Vitest plugin.
+- ~~**Component tests can't run.**~~ Resolved in M0: tests run through `ng test` (AOT, type-checked). The first component test found that `<ink-editor>` cannot emit edits while being destroyed; edits are now flushed by a `canDeactivate` guard and on `visibilitychange` / `pagehide`.
+- **No linter:** add `angular-eslint` and a `lint` step to CI.
 - **Formatting isn't enforced:** most files fail `prettier --check`. Format the codebase in one dedicated commit, then add `format:check` to CI.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
 - **Long share links:** images are inlined, so share links can reach hundreds of kilobytes. Some chat apps truncate long URLs; document the limit and warn in the share dialog.
@@ -292,13 +294,15 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 
 ### M0: Stabilize and make the claims true
 
+**Status (2026-10-12):** done except the format check, which needs the one-time formatting commit described in [4.3](#43-technical-debt-fix-during-m0m2), and linting (no linter is configured yet).
+
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Self-host fonts and icons (B1) | S | Network panel shows no third-party requests in the editor. |
-| Fix "Clear all data" (B3) and bind `Mod-k` (B5) | S | Tests cover both. |
-| Landing page copy rewrite (B2) | S | Every claim maps to a ✅ row in [section 3](#3-what-full-wysiwyg-means-scope-and-status). |
-| Angular test runner for component tests | M | Editor component tests (flush on switch and destroy) run in CI. |
-| CI pipeline: lint, format check, tests, both builds | S | Required for merging to `master`. |
+| ✅ Self-host fonts and icons (B1) | S | Network panel shows no third-party requests in the editor. CI enforces it. |
+| ✅ Fix "Clear all data" (B3) and bind `Mod-k` (B5) | S | Tests cover both. |
+| ✅ Landing page copy rewrite (B2) | S | Every claim maps to a ✅ row in [section 3](#3-what-full-wysiwyg-means-scope-and-status). |
+| ✅ Angular test runner for component tests | M | Editor component tests (flush on switch, before destroy and on page hide) run in CI. |
+| 🟡 CI pipeline: lint, format check, tests, both builds | S | Tests, builds, icon check and third-party check run. Lint and format check still to add. Make the workflow required for merging to `master` in the GitHub branch settings. |
 
 ### M1: WYSIWYG completeness (all P0 editing features)
 

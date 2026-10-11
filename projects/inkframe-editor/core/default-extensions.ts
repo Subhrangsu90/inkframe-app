@@ -537,6 +537,12 @@ export const CalloutExtension = createExtension({
 export const LinkExtension = createExtension({
   name: 'link',
   marks: { link },
+  keymaps: (ctx) => ({
+    'Mod-k': () => {
+      ctx.service.requestLinkEditor();
+      return true; // also stops the browser's own Ctrl+K (address bar search)
+    },
+  }),
   toolbarItems: [
     {
       id: 'link',

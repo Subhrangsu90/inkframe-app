@@ -209,6 +209,11 @@ export class EditorView implements OnInit {
     }
   }
 
+  /** Emits any debounced edits now so they are saved (called before leaving the page). */
+  flushPendingEdits(): void {
+    this.editorRef()?.flush();
+  }
+
   // ── Tab Switching (Rich Canvas / Preview) ────────────────────────
   setActiveView(tab: EditorViewTab): void {
     this.activeView.set(tab);

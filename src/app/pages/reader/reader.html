@@ -32,7 +32,7 @@
         <button
           type="button"
           class="reader-icon-btn"
-          (click)="toggleTheme()"
+          (click)="toggleTheme($event)"
           [title]="isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
           aria-label="Toggle Theme"
         >

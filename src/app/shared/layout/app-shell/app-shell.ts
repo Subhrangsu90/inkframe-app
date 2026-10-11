@@ -30,8 +30,8 @@ export class AppShellComponent {
     return formatRelativeTime(timestamp);
   }
 
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
+  toggleTheme(event: Event): void {
+    this.themeService.toggleTheme(event);
   }
 
   onCreateNewDoc(): void {

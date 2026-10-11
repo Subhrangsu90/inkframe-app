@@ -170,6 +170,17 @@ export class EditorService implements EditorHooks {
     this.openHistoryRequested.update((n) => n + 1);
   }
 
+  /**
+   * Incremented when the user asks to add or edit a link (`Mod-k`). The
+   * floating menu opens its link popover when it is showing, otherwise the
+   * toolbar opens its own.
+   */
+  readonly linkEditorRequests = signal(0);
+
+  requestLinkEditor(): void {
+    this.linkEditorRequests.update((n) => n + 1);
+  }
+
   readonly tableMenu = signal<TableMenuState | null>(null, {
     equal: (a, b) =>
       a === b ||

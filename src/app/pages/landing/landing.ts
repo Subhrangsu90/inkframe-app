@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { revealThemeChange } from '@inkframe-ui/editor/core';
 import { InkIcon, Card, Button } from '../../shared/ui';
 
 @Component({
@@ -27,7 +28,7 @@ export class Landing implements OnDestroy {
   headerScrolled = signal(false);
   mockupTransform = signal('perspective(1200px) rotateX(16deg) scale(0.94)');
 
-  heroTab = signal<'rich' | 'markdown' | 'split'>('rich');
+  heroTab = signal<'rich' | 'markdown'>('rich');
   codeCopied = signal(false);
   activeShortcut = signal<string | null>(null);
   lastPressedKeyDisplay = signal<string | null>(null);
@@ -40,87 +41,13 @@ export class Landing implements OnDestroy {
     { keys: ['Ctrl', 'B'], macKeys: ['⌘', 'B'], action: 'Bold text' },
     { keys: ['Ctrl', 'I'], macKeys: ['⌘', 'I'], action: 'Italic text' },
     { keys: ['Ctrl', 'K'], macKeys: ['⌘', 'K'], action: 'Insert link' },
-    { keys: ['Ctrl', 'Shift', 'X'], macKeys: ['⌘', 'Shift', 'X'], action: 'Strikethrough' },
+    { keys: ['Ctrl', 'Shift', 'S'], macKeys: ['⌘', 'Shift', 'S'], action: 'Strikethrough' },
     { keys: ['/'], macKeys: ['/'], action: 'Slash command menu' },
     { keys: ['Ctrl', 'Z'], macKeys: ['⌘', 'Z'], action: 'Undo' },
     { keys: ['Ctrl', 'Shift', 'Z'], macKeys: ['⌘', 'Shift', 'Z'], action: 'Redo' },
-    { keys: ['Ctrl', 'S'], macKeys: ['⌘', 'S'], action: 'Save document' },
+    { keys: ['Ctrl', 'Shift', '8'], macKeys: ['⌘', 'Shift', '8'], action: 'Bulleted list' },
   ];
 
-  readonly pricingPlans = [
-    {
-      name: 'Community',
-    price: 'Free',
-      period: 'forever',
-        description: 'For writers who value simplicity and privacy.',
-          featured: false,
-            features: [
-              'Unlimited local documents',
-              'Full ProseMirror editor',
-              'Markdown & HTML export',
-              'Syntax highlighting',
-              'Zero telemetry guarantee',
-              'Open source codebase',
-            ],
-              cta: 'Start Writing',
-    },
-{
-  name: 'Writer Pro',
-    price: '$9',
-      period: '/month',
-        description: 'For serious writers who need advanced tools.',
-          featured: true,
-            features: [
-              'Everything in Community',
-              'Custom typography presets',
-              'Advanced document search',
-              'Local encrypted backups',
-              'Table & diagram support',
-              'Priority feature requests',
-            ],
-              cta: 'Upgrade to Pro',
-    },
-{
-  name: 'Sponsor',
-    price: '$29',
-      period: '/month',
-        description: 'Support independent open-source development.',
-          featured: false,
-            features: [
-              'Everything in Writer Pro',
-              'Early access to features',
-              'Name in contributors list',
-              'Direct developer access',
-              'Custom plugin support',
-              'Shape the roadmap',
-            ],
-              cta: 'Become a Sponsor',
-    },
-  ];
-
-  readonly testimonials = [
-  {
-    name: 'Sarah Chen',
-    role: 'Technical Writer',
-    quote:
-      'Inkframe replaced three tools for me. The offline-first approach means I can write on flights, in cafes, anywhere—without worrying about connectivity.',
-    avatar: 'SC',
-  },
-  {
-    name: 'Marcus Rivera',
-    role: 'Developer Advocate',
-    quote:
-      'The slash commands and PrismJS integration make documenting code a joy. It feels like VSCode met Notion, but without the cloud dependency.',
-    avatar: 'MR',
-  },
-  {
-    name: 'Aiko Tanaka',
-    role: 'Privacy Researcher',
-    quote:
-      'Finally, a writing tool that respects privacy by design. Zero telemetry, fully local—this is how software should be built.',
-    avatar: 'AT',
-  },
-];
 
 constructor() {
   afterNextRender(() => {
@@ -182,7 +109,7 @@ ngOnDestroy(): void {
   }
 
 /* ── Hero Mockup Tabs & Copy Code ── */
-setHeroTab(tab: 'rich' | 'markdown' | 'split'): void {
+setHeroTab(tab: 'rich' | 'markdown'): void {
   this.heroTab.set(tab);
 }
 
@@ -267,10 +194,12 @@ onEscape(): void {
 }
   }
 
-toggleTheme(): void {
+toggleTheme(event: Event): void {
   const newDark = !this.isDark();
-  this.isDark.set(newDark);
-  this.applyTheme(newDark);
+  revealThemeChange(document, event, () => {
+    this.isDark.set(newDark);
+    this.applyTheme(newDark);
+  });
   localStorage.setItem('inkframe-theme', newDark ? 'dark' : 'light');
 }
 

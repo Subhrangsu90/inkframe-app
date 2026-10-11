@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, untracked, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, TEXT_COLORS } from '@inkframe-ui/editor/core';
+import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-floating-menu',
@@ -276,6 +276,7 @@ export class FloatingMenu {
   protected readonly colorTrigger = viewChild<MatMenuTrigger>('colorTrigger');
   protected readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
   protected linkUrl = '';
+  private handledLinkRequests = this.svc.linkEditorRequests();
 
   constructor() {
     effect(() => {
@@ -284,10 +285,19 @@ export class FloatingMenu {
         this.linkTrigger()?.closeMenu();
       }
     });
+
+    // Mod-k: this menu handles it while it is showing (text is selected).
+    effect(() => {
+      const requests = this.svc.linkEditorRequests();
+      if (requests === this.handledLinkRequests) return;
+      this.handledLinkRequests = requests;
+      if (untracked(() => this.svc.floatingMenu())) this.linkTrigger()?.openMenu();
+    });
   }
 
   protected onLinkMenuOpened(): void {
     this.linkUrl = this.svc.getLinkHref() || '';
+    focusLinkInput();
   }
 
   protected applyLink(): void {

@@ -3,7 +3,7 @@
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerLeft>
   <div class="header-doc-meta">
-    <ink-icon name="file-text" [size]="15" svgClass="text-ink-accent shrink-0" />
+    <span class="doc-icon-tile"><ink-icon name="file-text" [size]="14" /></span>
 
     <!-- Editable Doc Title -->
     @if (isEditingTitle()) {
@@ -30,11 +30,9 @@
     }
 
     <!-- Live Autosave Status Indicator -->
-    <div class="save-status-badge" [class.saving]="saveStatus() === 'saving'">
+    <div class="save-status" [class.saving]="saveStatus() === 'saving'" role="status">
       <span class="status-dot"></span>
-      <span class="status-label">
-        {{ saveStatus() === 'saving' ? 'Saving...' : 'Saved' }}
-      </span>
+      <span class="status-label">{{ saveStatus() === 'saving' ? 'Saving…' : 'Saved' }}</span>
     </div>
   </div>
 </ng-template>
@@ -53,10 +51,10 @@
         class="tab-btn"
         [class.active]="activeView() === 'rich'"
         (click)="setActiveView('rich')"
-        title="Visual editor mode"
+        title="Edit the document"
       >
-        <ink-icon name="file-text" [size]="13" />
-        <span>Rich Canvas</span>
+        <ink-icon name="edit" [size]="13" />
+        <span>Edit</span>
       </button>
 
       <!-- TAB 2: Preview -->
@@ -67,7 +65,7 @@
         class="tab-btn"
         [class.active]="activeView() === 'preview'"
         (click)="setActiveView('preview')"
-        title="Document preview mode"
+        title="Preview the document as readers see it"
       >
         <ink-icon name="eye" [size]="13" />
         <span>Preview</span>
@@ -82,9 +80,7 @@
 <ng-template #headerRight>
   <div class="header-actions">
     <!-- Word Count Badge -->
-    <span class="word-count-badge">
-      {{ wordCount() }} words
-    </span>
+    <span class="word-count">{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
 
     <!-- Share Reader Page Link Popover / Button -->
     <div class="share-dropdown-wrap">

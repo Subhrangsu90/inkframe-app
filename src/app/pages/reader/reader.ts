@@ -141,8 +141,8 @@ export class Reader implements OnInit {
     }
   }
 
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
+  toggleTheme(event: Event): void {
+    this.themeService.toggleTheme(event);
   }
 
   async copyShareLink(): Promise<void> {

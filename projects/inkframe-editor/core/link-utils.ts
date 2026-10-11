@@ -29,3 +29,11 @@ export function sanitizeCssLength(raw: unknown): string | null {
   const value = String(raw).trim();
   return CSS_LENGTH.test(value) ? value : null;
 }
+
+/** Focuses the URL field once the link popover has rendered in the overlay. */
+export function focusLinkInput(): void {
+  if (typeof document === 'undefined') return;
+  setTimeout(() =>
+    document.querySelector<HTMLInputElement>('.cdk-overlay-container .ink-link-url-input')?.focus(),
+  );
+}

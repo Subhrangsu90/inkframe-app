@@ -39,8 +39,32 @@
     font-size: 1.15rem;
     @media (min-width: 768px) { font-size: 1.25rem; }
   }
+  h4 { font-size: 1.05rem; }
+  h5 { font-size: 1rem; }
+  h6 {
+    font-size: 0.9rem;
+    color: var(--ink-text-secondary);
+  }
+
+  // Every list property is declared here rather than left to browser
+  // defaults: CSS resets such as Tailwind's preflight set `list-style: none`
+  // on all ul/ol, which removes bullets and numbers from documents.
+  ul { list-style-type: disc; }
+  ul ul { list-style-type: circle; }
+  ul ul ul { list-style-type: square; }
+  ol { list-style-type: decimal; }
+  ol ol { list-style-type: lower-alpha; }
+  ol ol ol { list-style-type: lower-roman; }
+
+  li::marker {
+    color: var(--ink-text-secondary);
+  }
+  ol > li::marker {
+    font-variant-numeric: tabular-nums;
+  }
 
   ul, ol {
+    list-style-position: outside;
     padding-left: 1.5rem;
     margin: 0.75rem 0;
 
@@ -115,7 +139,7 @@
     padding: 1rem 1.25rem;
     border-radius: 8px;
     border: 1px solid var(--ink-border-default);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
     font-size: 0.88rem;
     line-height: 1.6;
     overflow-x: auto;
@@ -133,7 +157,7 @@
     color: var(--ink-accent-light, #a78bfa);
     padding: 0.15rem 0.4rem;
     border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
     font-size: 0.86em;
     border: 1px solid var(--ink-border-subtle);
   }
@@ -615,10 +639,16 @@ img.ink-image {
     }
   }
 
+  /* The container already provides the vertical spacing. */
+  img.ink-image {
+    margin: 0;
+  }
+
   .ink-image-caption {
-    font-size: 0.85rem;
-    color: var(--mat-sys-on-surface-variant, #666);
-    margin-top: 6px;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--ink-text-secondary, #666);
+    margin-top: 0.5rem;
     text-align: center;
   }
 }
@@ -728,7 +758,7 @@ img.ink-image {
   border-radius: 10px;
   overflow: visible;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-family: 'JetBrains Mono Variable', 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
 
   &:hover,
   &.selected {

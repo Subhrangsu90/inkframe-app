@@ -40,6 +40,9 @@
               "node_modules/prosemirror-view/style/prosemirror.css",
               "node_modules/prosemirror-gapcursor/style/gapcursor.css",
               "node_modules/prosemirror-tables/style/tables.css",
+              "node_modules/@fontsource-variable/inter/index.css",
+              "node_modules/@fontsource-variable/jetbrains-mono/index.css",
+              "projects/inkframe-editor/src/styles/fonts/icons.css",
               "src/styles.scss"
             ],
             "server": "src/main.server.ts",
@@ -122,7 +125,11 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/inkframe-editor/tsconfig.spec.json"
+            "tsConfig": "projects/inkframe-editor/tsconfig.spec.json",
+            "include": [
+              "**/*.spec.ts",
+              "../**/*.spec.ts"
+            ]
           }
         }
       }

@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   effect,
   inject,
   signal,
@@ -19,6 +20,17 @@ import { InkIcon, InkIconName } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
 import { buildShareableUrl } from '../../core/share-codec';
+
+type ViewMode = 'grid' | 'list';
+const VIEW_MODE_KEY = 'inkframe-docs-view';
+
+function savedViewMode(): ViewMode {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
 
 export interface TemplateStarter {
   id: string;
@@ -40,6 +52,9 @@ export interface TemplateStarter {
   templateUrl: './docs.html',
   styleUrl: './docs.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown)': 'onDocumentKeydown($event)',
+  },
 })
 export class Docs implements OnInit {
   readonly layout = inject(LayoutService);
@@ -51,6 +66,7 @@ export class Docs implements OnInit {
   readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
   readonly headerCenterTpl = viewChild<TemplateRef<any>>('headerCenter');
   readonly headerRightTpl = viewChild<TemplateRef<any>>('headerRight');
+  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   constructor() {
     effect(() => {
@@ -70,8 +86,7 @@ export class Docs implements OnInit {
   }
 
   readonly searchQuery = signal<string>('');
-  readonly viewMode = signal<'grid' | 'list'>('grid');
-  readonly filterTab = signal<'all' | 'recent'>('all');
+  readonly viewMode = signal<ViewMode>(savedViewMode());
 
   readonly templates: TemplateStarter[] = [
     {
@@ -156,14 +171,29 @@ export class Docs implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.layout.refreshDocs();
+    if (await this.docManager.backfillExcerpts()) {
+      await this.layout.refreshDocs();
+    }
+  }
+
+  /** "/" focuses search, as in most document apps. */
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    event.preventDefault();
+    this.searchInput()?.nativeElement.focus();
   }
 
   formatTime(timestamp: number): string {
     return formatRelativeTime(timestamp);
   }
 
-  setViewMode(mode: 'grid' | 'list'): void {
+  setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {}
   }
 
   async createNewDoc(): Promise<void> {

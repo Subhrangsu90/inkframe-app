@@ -10,6 +10,8 @@ export interface DocMeta {
   wordCount: number;
   createdAt: number;
   updatedAt: number;
+  /** Plain-text preview of the body. Missing on entries saved before previews existed. */
+  excerpt?: string;
 }
 
 const INDEX_KEY = 'inkframe_docs_index';
@@ -39,6 +41,34 @@ export function extractDocTitle(stored: StoredDoc): string {
     }
   } catch {}
   return 'Untitled Document';
+}
+
+function plainText(node: any): string {
+  if (!node) return '';
+  if (typeof node.text === 'string') return node.text;
+  if (node.type === 'hard_break') return ' ';
+  if (!Array.isArray(node.content)) return '';
+  // Text runs inside one paragraph join directly; separate blocks get a space.
+  const inline = node.content.every((c: any) => typeof c.text === 'string' || c.type === 'hard_break');
+  return node.content.map(plainText).join(inline ? '' : ' ');
+}
+
+/**
+ * A short plain-text preview of a document for lists and cards. The leading
+ * heading is skipped when it is the document's title.
+ */
+export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180): string {
+  try {
+    const blocks: any[] = (stored?.doc as any)?.content ?? [];
+    const first = blocks[0];
+    const body =
+      first?.type === 'heading' && plainText(first).trim() === title.trim() ? blocks.slice(1) : blocks;
+    const text = body.map(plainText).join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength).replace(/\s+\S*$/, '') + '…';
+  } catch {
+    return '';
+  }
 }
 
 export function extractDocWordCount(stored: StoredDoc): number {
@@ -161,6 +191,7 @@ export class DocumentManager {
   async saveDoc(id: string, doc: StoredDoc, explicitTitle?: string): Promise<DocMeta> {
     const title = explicitTitle || extractDocTitle(doc);
     const wordCount = extractDocWordCount(doc);
+    const excerpt = extractDocExcerpt(doc, title);
     const now = Date.now();
 
     // Persist doc content
@@ -175,6 +206,7 @@ export class DocumentManager {
         ...index[existingIdx],
         title,
         wordCount,
+        excerpt,
         updatedAt: now,
       };
       index[existingIdx] = meta;
@@ -183,6 +215,7 @@ export class DocumentManager {
         id,
         title,
         wordCount,
+        excerpt,
         createdAt: now,
         updatedAt: now,
       };
@@ -194,6 +227,22 @@ export class DocumentManager {
     await this.saveIndex(index);
     this.setActiveDocId(id);
     return meta;
+  }
+
+  /**
+   * Adds previews to index entries saved before previews existed. Returns
+   * whether anything changed. Edit times are left untouched.
+   */
+  async backfillExcerpts(): Promise<boolean> {
+    const index = await this.getIndex();
+    const missing = index.filter((meta) => meta.excerpt === undefined);
+    if (missing.length === 0) return false;
+    for (const meta of missing) {
+      const doc = await this.getDoc(meta.id);
+      meta.excerpt = doc ? extractDocExcerpt(doc, meta.title) : '';
+    }
+    await this.saveIndex(index);
+    return true;
   }
 
   async createDoc(
@@ -243,6 +292,28 @@ export class DocumentManager {
     const nextId = index[0].id;
     this.setActiveDocId(nextId);
     return nextId;
+  }
+
+  /**
+   * Permanently deletes every document and image on this device. Preferences
+   * such as the theme and sidebar state are kept.
+   */
+  async clearAll(): Promise<void> {
+    await imageStorage.clearAll();
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const keys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+        for (const key of keys) {
+          if (
+            key &&
+            (key.startsWith('inkframe_doc') || key === ACTIVE_ID_KEY || key === LEGACY_SAVED_KEY)
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    } catch {}
+    this.legacyDropped = false;
   }
 
   async duplicateDoc(id: string): Promise<{ meta: DocMeta; doc: StoredDoc }> {

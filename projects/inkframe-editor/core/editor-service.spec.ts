@@ -140,6 +140,14 @@ describe('EditorService with the extension-built schema', () => {
     expect(view.state.doc.firstChild!.type.name).toBe('table');
   });
 
+  it('Mod-k requests the link editor instead of reaching the browser', () => {
+    const view = mount(paragraphDoc('hello'));
+    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true });
+    const handled = view.someProp('handleKeyDown', (f: any) => f(view, event));
+    expect(handled).toBe(true);
+    expect(svc.linkEditorRequests()).toBe(1);
+  });
+
   it('setDoc throws on an unparseable document and leaves the current one in place', () => {
     const view = mount(paragraphDoc('keep me'));
     const bad: StoredDoc = {

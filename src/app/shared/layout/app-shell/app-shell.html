@@ -194,7 +194,7 @@
         <button
           type="button"
           class="theme-toggle-btn"
-          (click)="toggleTheme()"
+          (click)="toggleTheme($event)"
           [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
           title="Toggle light / dark mode"
         >

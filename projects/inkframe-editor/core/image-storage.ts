@@ -47,7 +47,16 @@ class ImageStorage {
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+        // Release the connection when another tab deletes or upgrades the
+        // database; otherwise that request stays blocked indefinitely.
+        db.onversionchange = () => {
+          db.close();
+          this.dbPromise = null;
+        };
+        resolve(db);
+      };
       request.onerror = () => {
         console.error('Failed to open IndexedDB:', request.error);
         resolve(null);
@@ -460,6 +469,30 @@ class ImageStorage {
         }
       } catch {}
     }
+  }
+
+  /**
+   * Permanently deletes the whole database (all documents and images) and
+   * clears in-memory caches. Resolves once the deletion has completed.
+   */
+  async clearAll(): Promise<void> {
+    for (const url of this.urlCache.values()) URL.revokeObjectURL(url);
+    this.urlCache.clear();
+    this.dataUrlCache.clear();
+    this.blobCache.clear();
+    if (!this.isBrowser() || typeof indexedDB === 'undefined') return;
+
+    const db = await this.dbPromise;
+    db?.close();
+    this.dbPromise = null;
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+      // Other tabs close their connections via onversionchange; if one cannot,
+      // deletion completes as soon as it does, so keep waiting.
+      req.onblocked = () => console.warn('Waiting for other Inkframe tabs to release storage…');
+    });
   }
 
   /**

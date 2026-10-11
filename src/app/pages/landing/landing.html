@@ -66,17 +66,13 @@
         class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
         Shortcuts
       </a>
-      <a href="#pricing"
-        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
-        Pricing
-      </a>
     </nav>
 
     <!-- Right actions -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
       <!-- GitHub Link -->
-      <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-ink-md flex items-center justify-center
+      <a href="https://github.com/Subhrangsu90/inkframe-app" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-ink-md flex items-center justify-center
         text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2
         border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         aria-label="View on GitHub">
@@ -84,7 +80,7 @@
       </a>
 
       <!-- Theme Toggle -->
-      <button (click)="toggleTheme()" type="button" class="w-9 h-9 rounded-ink-md flex items-center justify-center
+      <button (click)="toggleTheme($event)" type="button" class="w-9 h-9 rounded-ink-md flex items-center justify-center
         text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2
         border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -127,11 +123,7 @@
       class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       Shortcuts
     </a>
-    <a href="#pricing" (click)="closeMobileMenu()"
-      class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
-      Pricing
-    </a>
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" (click)="closeMobileMenu()"
+    <a href="https://github.com/Subhrangsu90/inkframe-app" target="_blank" rel="noopener noreferrer" (click)="closeMobileMenu()"
       class="flex items-center justify-between px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       <span class="flex items-center gap-2">
         <ink-icon name="github" [size]="16" />
@@ -177,9 +169,9 @@
           <span class="ink-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-ink-accent"></span>
         </span>
-        <span class="text-ink-text-muted">Private, local-first markdown app</span>
+        <span class="text-ink-text-muted">Private WYSIWYG document editor</span>
         <span class="text-ink-border-strong font-mono">/</span>
-        <span class="text-ink-accent font-semibold tracking-tight">Zero tracking</span>
+        <span class="text-ink-accent font-semibold tracking-tight">No account needed</span>
       </div>
 
       <!-- Headline -->
@@ -190,16 +182,16 @@
         Write beautifully.
         <br class="hidden sm:block" />
         <span class="text-ink-accent">
-          Stay completely offline.
+          Keep it yours.
         </span>
       </h1>
 
       <!-- Subheading -->
       <p class="animate-fade-in-up delay-200
         mt-6 text-base sm:text-lg text-ink-text-muted leading-relaxed max-w-2xl">
-        A distraction-free ProseMirror editor that lives entirely on your device.
-        Rich formatting, slash commands, syntax highlighting, and instant export—all
-        without a single network request.
+        A full WYSIWYG document editor that lives on your device: no account, no server,
+        no tracking. Headings, tables, code, callouts and checklists, formatted as you type,
+        with clean Markdown out when you need it.
       </p>
 
       <!-- Dual CTAs -->
@@ -240,19 +232,13 @@
                   class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="heroTab() === 'rich' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
                   <ink-icon name="file-text" [size]="12" />
-                  <span>Rich Canvas</span>
+                  <span>Document</span>
                 </button>
                 <button type="button" (click)="setHeroTab('markdown')"
                   class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="heroTab() === 'markdown' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
                   <ink-icon name="code" [size]="12" />
-                  <span>Raw Markdown</span>
-                </button>
-                <button type="button" (click)="setHeroTab('split')"
-                  class="hidden sm:flex px-2.5 py-1 rounded-md transition-all items-center gap-1.5 cursor-pointer"
-                  [class]="heroTab() === 'split' ? 'bg-ink-surface text-ink-text font-semibold shadow-sm' : 'text-ink-text-muted hover:text-ink-text'">
-                  <ink-icon name="layers" [size]="12" />
-                  <span>Split View</span>
+                  <span>Markdown export</span>
                 </button>
               </div>
 
@@ -260,8 +246,8 @@
               <div class="flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 bg-ink-surface-2
                 rounded-ink-sm text-[11px] text-ink-text-muted border border-ink-border/40 shrink-0">
                 <ink-icon name="shield-lock" [size]="12" svgClass="mr-1 text-emerald-500" />
-                <span class="hidden sm:inline">Offline & Private</span>
-                <span class="sm:hidden">Offline</span>
+                <span class="hidden sm:inline">Stored on this device</span>
+                <span class="sm:hidden">Private</span>
               </div>
             </div>
 
@@ -314,7 +300,7 @@
                 <h1 class="text-2xl sm:text-3xl font-bold text-ink-text tracking-tight mb-4">Welcome to Inkframe</h1>
                 <p class="text-ink-text leading-relaxed mb-4">
                   A <strong>private</strong>, distraction-free writing environment powered by ProseMirror.
-                  Every word stays on your device—no servers, no accounts, no tracking.
+                  Every word stays on your device: no servers, no accounts, no tracking.
                 </p>
                 <p class="text-ink-text-muted leading-relaxed mb-6">
                   Use <span
@@ -340,11 +326,9 @@
                       }
                     </button>
                   </div>
-                  <pre class="px-4 py-3 bg-ink-surface-subtle text-sm font-mono leading-relaxed overflow-x-auto"><code class="text-ink-text"><span class="text-purple-500">const</span> <span class="text-blue-500">editor</span> = <span class="text-purple-500">new</span> <span class="text-amber-600">InkframeEditor</span>({{ '{' }}
-  <span class="text-blue-500">offline</span>: <span class="text-emerald-500">true</span>,
-  <span class="text-blue-500">theme</span>: <span class="text-orange-500">'minimal'</span>,
-  <span class="text-blue-500">plugins</span>: [<span class="text-orange-500">'syntax-highlight'</span>, <span class="text-orange-500">'slash-commands'</span>]
-{{ '}' }});</code></pre>
+                  <pre class="px-4 py-3 bg-ink-surface-subtle text-sm font-mono leading-relaxed overflow-x-auto"><code class="text-ink-text"><span class="text-slate-500">// Export the document as Markdown</span>
+<span class="text-purple-500">const</span> <span class="text-blue-500">markdown</span> = <span class="text-blue-500">editor</span>.<span class="text-amber-600">getMarkdown</span>();
+<span class="text-amber-600">download</span>(<span class="text-orange-500">'notes.md'</span>, <span class="text-blue-500">markdown</span>);</code></pre>
                 </div>
 
                 <blockquote
@@ -381,17 +365,15 @@
                     <div class="text-ink-text-muted/50"></div>
                     <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing
                       environment powered by ProseMirror.</div>
-                    <div>Every word stays on your device—zero servers, zero telemetry.</div>
+                    <div>Every word stays on your device: no servers, no accounts, no tracking.</div>
                     <div class="text-ink-text-muted/50"></div>
                     <div>Use <span class="text-amber-500 font-semibold">`/slash commands`</span> to quickly insert
                       headings, code blocks, and tables.</div>
                     <div class="text-ink-text-muted/50"></div>
                     <div class="text-emerald-500">```typescript</div>
-                    <div class="text-ink-text-muted pl-4"><span class="text-purple-500">const</span> editor = <span
-                        class="text-purple-500">new</span> InkframeEditor({{ '{' }}</div>
-                    <div class="text-ink-text-muted pl-8">offline: <span class="text-emerald-500">true</span>,</div>
-                    <div class="text-ink-text-muted pl-8">theme: <span class="text-orange-400">'minimal'</span></div>
-                    <div class="text-ink-text-muted pl-4">{{ '}' }});</div>
+                    <div class="text-ink-text-muted pl-4">// Export the document as Markdown</div>
+                    <div class="text-ink-text-muted pl-4"><span class="text-purple-500">const</span> markdown = editor.getMarkdown();</div>
+                    <div class="text-ink-text-muted pl-4">download(<span class="text-orange-400">'notes.md'</span>, markdown);</div>
                     <div class="text-emerald-500">```</div>
                     <div class="text-ink-text-muted/50"></div>
                     <div class="text-ink-text-muted italic">&gt; "The best writing tool is the one that gets out of your
@@ -401,52 +383,6 @@
               </div>
               }
 
-              <!-- VIEW 3: Split View -->
-              @if (heroTab() === 'split') {
-              <div
-                class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink-border/50 min-h-[300px] text-start">
-                <!-- Left: Markdown -->
-                <div class="p-5 sm:p-6 bg-ink-surface-subtle/30 font-mono text-xs leading-relaxed overflow-x-auto">
-                  <div
-                    class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-accent">
-                    <span>Source (.md)</span>
-                    <span class="text-ink-text-muted">UTF-8</span>
-                  </div>
-                  <div class="space-y-1 text-ink-text font-mono">
-                    <div class="text-ink-accent font-bold"># Welcome to Inkframe</div>
-                    <div class="h-1"></div>
-                    <div>A <span class="text-purple-400 font-bold">**private**</span>, distraction-free writing
-                      environment.</div>
-                    <div>Every word stays on your device.</div>
-                    <div class="h-1"></div>
-                    <div>Use <span class="text-amber-500">`/slash commands`</span> anywhere.</div>
-                    <div class="h-1"></div>
-                    <div class="text-emerald-500">```typescript</div>
-                    <div class="text-ink-text-muted pl-2">const editor = new InkframeEditor();</div>
-                    <div class="text-emerald-500">```</div>
-                  </div>
-                </div>
-
-                <!-- Right: Rendered HTML Canvas -->
-                <div class="p-5 sm:p-6 bg-ink-surface font-sans text-xs leading-relaxed">
-                  <div
-                    class="flex items-center justify-between pb-2 mb-3 border-b border-ink-border/40 text-[10px] uppercase font-bold text-ink-success">
-                    <span>Live Output Canvas</span>
-                    <span class="text-emerald-500 font-semibold">● Instant</span>
-                  </div>
-                  <h2 class="text-base font-bold text-ink-text tracking-tight mb-2">Welcome to Inkframe</h2>
-                  <p class="text-ink-text mb-2">A <strong>private</strong>, distraction-free writing environment.</p>
-                  <p class="text-ink-text-muted mb-3">Every word stays on your device.</p>
-                  <div
-                    class="p-2 rounded bg-ink-surface-2 border border-ink-border/40 font-mono text-[11px] text-ink-text mb-2">
-                    const editor = new InkframeEditor();
-                  </div>
-                  <p class="text-ink-text-muted italic text-[11px] border-l border-ink-accent pl-2">
-                    "Zero latency writing."<span class="editor-cursor"></span>
-                  </p>
-                </div>
-              </div>
-              }
             </div>
           </div>
         </div>
@@ -473,15 +409,15 @@
           <span class="text-ink-text-muted font-medium"> Nothing you don't.</span>
         </h2>
         <p class="mt-4 text-ink-text-muted text-base max-w-xl mx-auto leading-relaxed">
-          Built with intention—every feature exists because writers asked for it.
-          No bloat, no subscriptions, no compromise.
+          A focused editor with the blocks you actually use.
+          No sign-up, no bloat, nothing uploaded.
         </p>
       </div>
 
       <!-- Bento Grid (Aceternity 4-Card Asymmetric Arrangement) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-        <!-- CARD 1: Instant Multi-Format Export (lg:col-span-7) -->
+        <!-- CARD 1: Export and Share (lg:col-span-7) -->
         <ink-card variant="surface" hoverable padding="lg" radius="lg"
           class="lg:col-span-7 flex flex-col justify-between spotlight-card" (mousemove)="onSpotlightMouseMove($event)">
           <!-- Top Visual: Document to Multi-Format Export Flow -->
@@ -531,12 +467,12 @@
                     <span class="text-ink-success text-[10px] font-semibold">.md</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-ink-text">Clean HTML</span>
-                    <span class="text-ink-accent text-[10px] font-semibold">.html</span>
+                    <span class="text-ink-text">Share link</span>
+                    <span class="text-ink-accent text-[10px] font-semibold">/s#…</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-ink-text">Print Ready</span>
-                    <span class="text-ink-text-muted text-[10px] font-semibold">.pdf</span>
+                    <span class="text-ink-text">Reader view</span>
+                    <span class="text-ink-text-muted text-[10px] font-semibold">read-only</span>
                   </div>
                 </div>
               </ink-card>
@@ -546,11 +482,11 @@
           <!-- Bottom Text in card-footer -->
           <div card-footer class="mt-4 pt-6">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
-              Instant multi-format export
+              Export and share in one click
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Export your writing directly to Markdown, clean HTML, or print-ready PDF in a single keystroke. Zero
-              formatting lost, pure client-side conversion without servers.
+              Download clean Markdown, or share a read-only link that carries the whole document. The link is
+              opened in the reader's browser, so no server ever sees your words.
             </p>
           </div>
         </ink-card>
@@ -565,8 +501,8 @@
               Intuitive writing workflow
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Stay in flow state with contextual formatting bubble menus, fluid markdown shortcuts, and live reading
-              statistics.
+              Stay in flow with a formatting menu that appears on selection, Markdown-style shortcuts as you type,
+              and a live word count.
             </p>
           </div>
 
@@ -606,7 +542,7 @@
               <span
                 class="bg-ink-accent-soft text-ink-accent-text font-medium px-1 py-0.5 rounded border-b-2 border-ink-accent">every
                 word stays on your device</span>
-              <span> without network requests.</span>
+              <span>, and nothing is ever uploaded.</span>
             </div>
 
             <!-- Live Session Metrics Footer -->
@@ -616,7 +552,7 @@
                 <ink-icon name="file-text" [size]="13" svgClass="text-ink-accent" />
                 <span class="font-semibold text-ink-text">1,420 words</span>
               </div>
-              <span>5 min read</span>
+              <span>On this device</span>
               <span class="text-ink-success flex items-center gap-1 font-semibold">
                 <span class="w-1.5 h-1.5 rounded-full bg-ink-success"></span>
                 Autosaved
@@ -625,18 +561,18 @@
           </ink-card>
         </ink-card>
 
-        <!-- CARD 3: Zero Cloud & Local-First (lg:col-span-5) -->
+        <!-- CARD 3: No Cloud, No Account (lg:col-span-5) -->
         <ink-card variant="surface" hoverable padding="lg" radius="lg"
           class="lg:col-span-5 flex flex-col justify-between min-h-[420px] overflow-hidden spotlight-card"
           (mousemove)="onSpotlightMouseMove($event)">
           <!-- Top Text in card-header -->
           <div card-header class="relative z-10 mb-4">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
-              Zero cloud, true local-first
+              No cloud. No account.
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Zero servers, zero tracking, zero latency. Every document lives encrypted on your device, accessible
-              completely offline anywhere on earth.
+              Documents and images are stored in your browser, on this device. Nothing you write is uploaded,
+              and there is no tracking of any kind.
             </p>
           </div>
 
@@ -786,11 +722,11 @@
               <div
                 class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
                 <div class="w-7 h-7 rounded bg-ink-surface-2 flex items-center justify-center">
-                  <ink-icon name="download" [size]="15" svgClass="text-ink-text-muted" />
+                  <ink-icon name="layers" [size]="15" svgClass="text-ink-text-muted" />
                 </div>
                 <div>
-                  <div class="text-xs font-semibold text-ink-text">Export Document</div>
-                  <div class="text-[10px] text-ink-text-muted">Markdown, HTML or PDF</div>
+                  <div class="text-xs font-semibold text-ink-text">Table</div>
+                  <div class="text-[10px] text-ink-text-muted">Rows, columns and headers</div>
                 </div>
               </div>
             </div>
@@ -822,8 +758,8 @@
             <span class="text-ink-accent"> the keyboard.</span>
           </h2>
           <p class="text-ink-text-muted text-base leading-relaxed mb-6">
-            Every formatting action, every navigation command, every export—accessible
-            through intuitive keyboard shortcuts. Write at the speed of thought.
+            Every formatting action, heading and list has a keyboard shortcut, and
+            <span class="font-mono">/</span> opens every block. Write at the speed of thought.
           </p>
 
           <!-- Interactive Quick Try Badges -->
@@ -930,170 +866,6 @@
 
   <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
 
-  <!-- ═══════════════════════════════ -->
-  <!-- SECTION 6: Pricing              -->
-  <!-- ═══════════════════════════════ -->
-  <section class="py-20 md:py-28 px-6" id="pricing">
-    <div class="max-w-[1080px] mx-auto">
-      <!-- Section Header -->
-      <div class="text-center mb-14">
-        <div class="inline-flex items-center px-3 py-1 rounded-ink-pill
-          bg-ink-accent-soft border border-ink-accent/20 text-xs font-semibold
-          text-ink-accent tracking-wide uppercase mb-4">
-          Simple Pricing
-        </div>
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-[-0.03em] text-ink-text-heading">
-          Start free.
-          <span class="text-ink-text-muted font-medium"> Upgrade when ready.</span>
-        </h2>
-        <p class="mt-4 text-ink-text-muted text-base max-w-xl mx-auto leading-relaxed">
-          The core editor is free and open source. Pro features and sponsorship
-          support independent development.
-        </p>
-      </div>
-
-      <!-- Pricing Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        @for (plan of pricingPlans; track plan.name) {
-        <ink-card [variant]="plan.featured ? 'featured' : 'surface'" hoverable padding="lg" radius="lg"
-          class="flex flex-col relative h-full">
-
-          <!-- Featured badge -->
-          @if (plan.featured) {
-          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-            <span class="px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider
-                  text-white bg-ink-accent
-                  rounded-ink-pill shadow-sm border border-ink-border">
-              Most Popular
-            </span>
-          </div>
-          }
-
-          <!-- Plan header in card-header -->
-          <div card-header class="mb-2">
-            <h3 class="text-xl font-bold text-ink-text-heading mb-1.5">{{ plan.name }}</h3>
-            <p class="text-sm text-ink-text-muted mb-4 leading-relaxed">{{ plan.description }}</p>
-            <div class="flex items-baseline gap-1">
-              <span class="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink-text-heading">
-                {{ plan.price }}
-              </span>
-              <span class="text-sm text-ink-text-muted font-medium">{{ plan.period }}</span>
-            </div>
-          </div>
-
-          <!-- Features list in card body -->
-          <ul class="space-y-3.5 mb-8 flex-1 pt-4 border-t border-ink-border">
-            @for (feature of plan.features; track feature) {
-            <li class="flex items-start gap-2.5 text-sm text-ink-text">
-              <span class="w-5 h-5 rounded-full bg-ink-accent-soft flex items-center justify-center shrink-0 mt-0.5">
-                <ink-icon name="check" [size]="13" svgClass="text-ink-accent" />
-              </span>
-              <span class="leading-snug">{{ feature }}</span>
-            </li>
-            }
-          </ul>
-
-          <!-- CTA in card-footer -->
-          <div card-footer class="mt-auto pt-0 border-t-0">
-            <a ink-btn [variant]="plan.featured ? 'primary' : 'secondary'" pill fullWidth routerLink="/docs">
-              {{ plan.cta }}
-            </a>
-          </div>
-        </ink-card>
-        }
-      </div>
-    </div>
-  </section>
-
-  <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
-
-  <!-- ═══════════════════════════════════ -->
-  <!-- SECTION 7: Testimonials & Trust     -->
-  <!-- ═══════════════════════════════════ -->
-  <section class="py-20 md:py-28 px-6">
-    <div class="max-w-[1080px] mx-auto">
-      <!-- Section Header -->
-      <div class="text-center mb-14">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-[-0.03em] text-ink-text-heading">
-          Writers love Inkframe.
-        </h2>
-        <p class="mt-4 text-ink-text-muted text-base max-w-xl mx-auto leading-relaxed">
-          Join thousands of writers, developers, and privacy advocates who've made
-          Inkframe their daily writing companion.
-        </p>
-      </div>
-
-      <!-- Testimonials Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        @for (testimonial of testimonials; track testimonial.name) {
-        <ink-card variant="surface" hoverable padding="lg" radius="lg" class="flex flex-col justify-between h-full">
-
-          <!-- Stars in card-header -->
-          <div card-header>
-            <div class="flex gap-1 mb-2">
-              @for (star of [1,2,3,4,5]; track star) {
-              <ink-icon name="star" [size]="16" svgClass="text-amber-400" />
-              }
-            </div>
-          </div>
-
-          <!-- Quote in body -->
-          <p class="text-sm text-ink-text leading-relaxed mb-6 italic">
-            "{{ testimonial.quote }}"
-          </p>
-
-          <!-- Author in card-footer -->
-          <div card-footer class="flex items-center gap-3 pt-3">
-            <div class="w-10 h-10 rounded-full bg-ink-accent
-                flex items-center justify-center text-white text-xs font-bold shadow-sm">
-              {{ testimonial.avatar }}
-            </div>
-            <div>
-              <div class="text-sm font-semibold text-ink-text-heading">{{ testimonial.name }}</div>
-              <div class="text-xs text-ink-text-muted">{{ testimonial.role }}</div>
-            </div>
-          </div>
-        </ink-card>
-        }
-      </div>
-
-      <!-- Trust Bar -->
-      <div class="mt-14 text-center">
-        <ink-card variant="surface" padding="md" radius="lg" class="inline-block">
-          <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-4 py-1">
-            <!-- Stacked Avatars -->
-            <div class="flex -space-x-2">
-              @for (t of testimonials; track t.name) {
-              <div class="w-8 h-8 rounded-full bg-ink-accent
-                  flex items-center justify-center text-white text-[10px] font-bold
-                  border-2 border-ink-surface ring-0">
-                {{ t.avatar }}
-              </div>
-              }
-              <div class="w-8 h-8 rounded-full bg-ink-surface-2 flex items-center justify-center
-                text-[10px] font-bold text-ink-text-muted border-2 border-ink-surface">
-                +2k
-              </div>
-            </div>
-            <div class="text-center sm:text-left">
-              <!-- Stars -->
-              <div class="flex justify-center sm:justify-start gap-0.5 mb-0.5">
-                @for (star of [1,2,3,4,5]; track star) {
-                <ink-icon name="star" [size]="14" svgClass="text-amber-400" />
-                }
-              </div>
-              <p class="text-sm text-ink-text-muted">
-                Trusted by <span class="font-semibold text-ink-text">2,000+</span> writers worldwide
-              </p>
-            </div>
-          </div>
-        </ink-card>
-      </div>
-    </div>
-  </section>
-
-  <div class="ink-beam-divider max-w-4xl mx-auto my-4 opacity-75"></div>
-
   <!-- ═════════════════════════════════ -->
   <!-- SECTION 8: Final CTA              -->
   <!-- ═════════════════════════════════ -->
@@ -1120,9 +892,9 @@
 <!-- ═══════════════════════════════ -->
 <footer class="relative border-t border-ink-border/60 overflow-hidden">
   <div class="max-w-[1080px] mx-auto px-6 pt-16 pb-8">
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-8 mb-14">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-14">
       <!-- Brand Column -->
-      <div class="col-span-2 md:col-span-1">
+      <div class="col-span-2">
         <div class="flex items-center space-x-2.5 mb-4">
           <span class="w-7 h-7 rounded-ink-sm bg-ink-accent
             flex items-center justify-center text-white text-xs font-bold shadow-sm">
@@ -1131,7 +903,7 @@
           <span class="font-bold text-[17px] tracking-tight text-ink-text">Inkframe</span>
         </div>
         <p class="text-sm text-ink-text-muted leading-relaxed max-w-[200px]">
-          A private, local-first markdown editor. Write beautifully, stay offline.
+          A private WYSIWYG document editor. Write beautifully, keep it yours.
         </p>
       </div>
 
@@ -1140,8 +912,6 @@
         <h4 class="text-xs font-semibold text-ink-text uppercase tracking-wider mb-4">Product</h4>
         <ul class="space-y-2.5">
           <li><a href="#features" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Features</a>
-          </li>
-          <li><a href="#pricing" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Pricing</a>
           </li>
           <li><a href="#shortcuts"
               class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Shortcuts</a></li>
@@ -1154,32 +924,12 @@
       <div>
         <h4 class="text-xs font-semibold text-ink-text uppercase tracking-wider mb-4">Resources</h4>
         <ul class="space-y-2.5">
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Documentation</a>
-          </li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Changelog</a></li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Blog</a></li>
-        </ul>
-      </div>
-
-      <!-- Community -->
-      <div>
-        <h4 class="text-xs font-semibold text-ink-text uppercase tracking-wider mb-4">Community</h4>
-        <ul class="space-y-2.5">
-          <li><a href="https://github.com" target="_blank" rel="noopener"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">GitHub</a></li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Discord</a></li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Twitter / X</a></li>
-        </ul>
-      </div>
-
-      <!-- Legal -->
-      <div>
-        <h4 class="text-xs font-semibold text-ink-text uppercase tracking-wider mb-4">Legal</h4>
-        <ul class="space-y-2.5">
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Privacy</a></li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Terms</a></li>
-          <li><a href="#" class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">License (MIT)</a>
-          </li>
+          <li><a href="https://github.com/Subhrangsu90/inkframe-app#readme" target="_blank" rel="noopener noreferrer"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Documentation</a></li>
+          <li><a href="https://github.com/Subhrangsu90/inkframe-app" target="_blank" rel="noopener noreferrer"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Source code</a></li>
+          <li><a href="https://github.com/Subhrangsu90/inkframe-app/issues" target="_blank" rel="noopener noreferrer"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors">Report a problem</a></li>
         </ul>
       </div>
     </div>

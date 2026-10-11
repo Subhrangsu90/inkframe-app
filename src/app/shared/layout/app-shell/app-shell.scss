@@ -1,6 +1,7 @@
 .app-layout-root {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   position: relative;
@@ -30,6 +31,7 @@
   width: 260px;
   min-width: 260px;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background-color: var(--ink-surface);
@@ -443,6 +445,7 @@
   flex: 1 1 0;
   min-width: 0;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

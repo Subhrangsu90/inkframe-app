@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import type { EditorView } from './pages/editor/editor';
 
 export const routes: Routes = [
   // Landing Page
@@ -19,6 +20,9 @@ export const routes: Routes = [
     path: 'doc/:id',
     loadComponent: () =>
       import('./pages/editor/editor').then((m) => m.EditorView),
+    // Save debounced edits before the editor is destroyed: once destruction
+    // starts, the editor can no longer emit them.
+    canDeactivate: [(page: EditorView) => (page.flushPendingEdits(), true)],
   },
   // Redirect editor/ to docs
   {

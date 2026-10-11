@@ -33,6 +33,7 @@
 17. [Pitfalls checklist](#17-pitfalls-checklist)
 18. [Changelog: what was fixed from the original plan](#18-changelog-what-was-fixed-from-the-original-plan)
 19. [Resources](#19-resources)
+20. [Modular Extension & Plugin Architecture (Option C)](#20-modular-extension--plugin-architecture-option-c)
 
 ---
 
@@ -1616,3 +1617,179 @@ it('Enter in a list creates a new list item', () => {
 - Yjs + ProseMirror: https://github.com/yjs/y-prosemirror
 - DOMPurify: https://github.com/cure53/DOMPurify
 - Angular signals: https://angular.dev/guide/signals
+
+---
+
+## 20. Modular Extension & Plugin Architecture (Option C)
+
+### 20.1 Overview
+
+Inkframe features a TipTap-inspired modular plugin/extension architecture (`@inkframe-ui/editor/core`). Rather than having every tool hardcoded into a monolithic toolbar and fixed ProseMirror schema, every feature in Inkframe is an independent, self-contained `EditorExtension`.
+
+Extensions encapsulate:
+- **Schema**: Node and mark specs added dynamically to the active ProseMirror schema.
+- **Keymaps**: Shortcuts bound to commands.
+- **Input Rules**: Markdown shortcuts (e.g., `# `, `* `, `> `, `[ ] `).
+- **ProseMirror Plugins**: Transaction listeners, decorations, and state fields.
+- **Node Views**: Custom block and mark renderers (e.g., Code Block gutters, Task list checkboxes).
+- **Toolbar Items**: Conditional toolbar buttons or custom plugin action buttons with active indicators.
+- **Slash Commands**: `/` quick-insert palette entries.
+- **Floating Menu Items**: Selection bubble actions.
+
+---
+
+### 20.2 Extension Contract (`EditorExtension`)
+
+```typescript
+export interface EditorExtension {
+  readonly name: string;
+  readonly type?: 'node' | 'mark' | 'extension';
+  readonly group?: ExtensionGroup; // 'essential' | 'formatting' | 'block' | 'insert' | 'advanced'
+
+  addNodes?(): Record<string, NodeSpec>;
+  addMarks?(): Record<string, MarkSpec>;
+  addKeymap?(ctx: ExtensionContext): Record<string, Command>;
+  addInputRules?(ctx: ExtensionContext): InputRule[];
+  addProseMirrorPlugins?(ctx: ExtensionContext): Plugin[];
+  addNodeViews?(ctx: ExtensionContext): Record<string, (node: any, view: any, getPos: () => number | undefined) => any>;
+  addToolbarItems?(ctx: ExtensionContext): ToolbarItemDef[];
+  addSlashItems?(ctx: ExtensionContext): SlashItemDef[];
+  addFloatingItems?(ctx: ExtensionContext): FloatingItemDef[];
+}
+```
+
+Extensions can be created declaratively via `createExtension(config)`:
+
+```typescript
+import { createExtension } from '@inkframe-ui/editor/core';
+
+export const HighlightExtension = createExtension({
+  name: 'highlight',
+  type: 'mark',
+  addMarks() {
+    return {
+      highlight: {
+        parseDOM: [{ tag: 'mark' }],
+        toDOM: () => ['mark', 0],
+      },
+    };
+  },
+  addToolbarItems(ctx) {
+    return [{
+      id: 'highlight',
+      label: 'Highlight',
+      icon: 'format_ink_highlighter',
+      group: 'formatting',
+      isActive: () => ctx.editor.isMarkActive('highlight'),
+      run: () => ctx.editor.toggleMark('highlight'),
+    }];
+  },
+});
+```
+
+---
+
+### 20.3 Using Extensions in Angular Templates
+
+#### Full Default Suite (StarterKit)
+By default, `<ink-editor>` includes all 26 built-in tools (`DEFAULT_EXTENSIONS`):
+```html
+<ink-editor />
+```
+
+#### Picking Tools One-by-One (Minimal Mode)
+Supply an array of only the extensions you want. Unselected tools are excluded from the schema, keymaps, toolbar, slash commands, and floating menus:
+
+```typescript
+import { Component } from '@angular/core';
+import { InkEditor } from '@inkframe-ui/editor';
+import {
+  DocExtension,
+  ParagraphExtension,
+  TextExtension,
+  HistoryExtension,
+  BoldExtension,
+  ItalicExtension,
+  HeadingExtension,
+  BulletListExtension,
+} from '@inkframe-ui/editor/core';
+
+@Component({
+  imports: [InkEditor],
+  template: `
+    <ink-editor [extensions]="myTools" />
+  `,
+})
+export class MyEditorComponent {
+  myTools = [
+    DocExtension,
+    ParagraphExtension,
+    TextExtension,
+    HistoryExtension,
+    BoldExtension,
+    ItalicExtension,
+    HeadingExtension,
+    BulletListExtension,
+  ];
+}
+```
+
+#### Custom Plugin Registration
+Include your custom extension in the `[extensions]` array:
+
+```typescript
+const StarStampExtension = createExtension({
+  name: 'star_stamp',
+  addToolbarItems: (ctx) => [{
+    id: 'star_stamp',
+    label: 'Star',
+    icon: 'star',
+    group: 'custom',
+    run: () => {
+      const view = ctx.editor.view();
+      if (!view) return;
+      const { tr } = view.state;
+      view.dispatch(tr.insertText(' ⭐ '));
+    },
+  }],
+});
+
+// Pass to <ink-editor [extensions]="[...DEFAULT_EXTENSIONS, StarStampExtension]" />
+```
+
+#### Zen Mode (Canvas-Only without Top Toolbar)
+Omit the top toolbar entirely with `[showToolbar]="false"`. The editor remains functional with the floating bubble menu and `/` slash commands:
+
+```html
+<ink-editor [showToolbar]="false" />
+```
+
+---
+
+### 20.4 Built-In Extension Reference
+
+| Extension Name | Type | Group | Capabilities Provided |
+| --- | --- | --- | --- |
+| `doc`, `paragraph`, `text` | Node | Essential | Core document hierarchy |
+| `hard_break` | Node | Essential | `Shift+Enter` line breaks |
+| `history` | Extension | Essential | Undo (`Ctrl+Z`), Redo (`Ctrl+Y`) & toolbar history buttons |
+| `bold` | Mark | Formatting | `Ctrl+B`, `**bold**`, Toolbar Bold button |
+| `italic` | Mark | Formatting | `Ctrl+I`, `*italic*`, Toolbar Italic button |
+| `underline` | Mark | Formatting | `Ctrl+U`, Toolbar Underline button |
+| `strike` | Mark | Formatting | `Ctrl+Shift+S`, `~~strike~~`, Toolbar Strike button |
+| `code` | Mark | Formatting | Inline code `` `code` `` |
+| `subscript`, `superscript` | Mark | Formatting | Subscript (`Ctrl+Shift+,`), Superscript (`Ctrl+Shift+.`) |
+| `text_color` | Mark | Formatting | Text color palette |
+| `small` | Mark | Formatting | Fine-print styling |
+| `clear_formatting` | Extension | Formatting | Remove all marks & reset block type (`Ctrl+\`) |
+| `heading` | Node | Block | Heading 1–6 (`# ` to `###### `) |
+| `blockquote` | Node | Block | Quote blocks (`> `) |
+| `code_block` | Node | Block | Multi-language syntax code fences (`` ``` ``) |
+| `bullet_list`, `ordered_list` | Node | Block | Bulleted (`* `) and numbered (`1. `) lists |
+| `task_list` | Node | Block | Interactive task lists (`[ ] `, `[x] `) |
+| `table` | Node | Block | ProseMirror tables with cell selection & toolbar |
+| `callout` | Node | Block | Alert boxes (info, warning, success, danger) |
+| `link` | Mark | Insert | Hyperlinks & safety validation |
+| `image` | Node | Insert | Drag-and-drop & IndexedDB image storage |
+| `divider` | Node | Insert | Horizontal rules (`---`) |
+

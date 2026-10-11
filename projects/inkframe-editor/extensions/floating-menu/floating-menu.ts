@@ -26,87 +26,116 @@ import { EditorService, TEXT_COLORS } from '@inkframe-ui/editor/core';
            [style.left.px]="m.left" [style.top.px]="m.top"
            (mousedown)="$event.preventDefault()">
         <!-- Typography marks (disabled if code is active) -->
-        <button mat-icon-button
-                aria-label="Bold"
-                matTooltip="Bold (Ctrl+B)"
-                [attr.aria-pressed]="svc.isBold()"
-                [class.active]="svc.isBold()"
-                [disabled]="svc.isCode()"
-                (click)="svc.toggleBold()">
-          <mat-icon>format_bold</mat-icon>
-        </button>
-        <button mat-icon-button
-                aria-label="Italic"
-                matTooltip="Italic (Ctrl+I)"
-                [attr.aria-pressed]="svc.isItalic()"
-                [class.active]="svc.isItalic()"
-                [disabled]="svc.isCode()"
-                (click)="svc.toggleItalic()">
-          <mat-icon>format_italic</mat-icon>
-        </button>
-        <button mat-icon-button
-                aria-label="Underline"
-                matTooltip="Underline (Ctrl+U)"
-                [attr.aria-pressed]="svc.isUnderline()"
-                [class.active]="svc.isUnderline()"
-                [disabled]="svc.isCode()"
-                (click)="svc.toggleUnderline()">
-          <mat-icon>format_underlined</mat-icon>
-        </button>
-        <button mat-icon-button
-                aria-label="Strikethrough"
-                matTooltip="Strikethrough (Ctrl+Shift+S)"
-                [attr.aria-pressed]="svc.isStrike()"
-                [class.active]="svc.isStrike()"
-                [disabled]="svc.isCode()"
-                (click)="svc.toggleStrike()">
-          <mat-icon>strikethrough_s</mat-icon>
-        </button>
-
-        <mat-divider vertical />
+        @if (svc.hasExtension('bold')) {
+          <button mat-icon-button
+                  aria-label="Bold"
+                  matTooltip="Bold (Ctrl+B)"
+                  [attr.aria-pressed]="svc.isBold()"
+                  [class.active]="svc.isBold()"
+                  [disabled]="svc.isCode()"
+                  (click)="svc.toggleBold()">
+            <mat-icon>format_bold</mat-icon>
+          </button>
+        }
+        @if (svc.hasExtension('italic')) {
+          <button mat-icon-button
+                  aria-label="Italic"
+                  matTooltip="Italic (Ctrl+I)"
+                  [attr.aria-pressed]="svc.isItalic()"
+                  [class.active]="svc.isItalic()"
+                  [disabled]="svc.isCode()"
+                  (click)="svc.toggleItalic()">
+            <mat-icon>format_italic</mat-icon>
+          </button>
+        }
+        @if (svc.hasExtension('underline')) {
+          <button mat-icon-button
+                  aria-label="Underline"
+                  matTooltip="Underline (Ctrl+U)"
+                  [attr.aria-pressed]="svc.isUnderline()"
+                  [class.active]="svc.isUnderline()"
+                  [disabled]="svc.isCode()"
+                  (click)="svc.toggleUnderline()">
+            <mat-icon>format_underlined</mat-icon>
+          </button>
+        }
+        @if (svc.hasExtension('strike')) {
+          <button mat-icon-button
+                  aria-label="Strikethrough"
+                  matTooltip="Strikethrough (Ctrl+Shift+S)"
+                  [attr.aria-pressed]="svc.isStrike()"
+                  [class.active]="svc.isStrike()"
+                  [disabled]="svc.isCode()"
+                  (click)="svc.toggleStrike()">
+            <mat-icon>strikethrough_s</mat-icon>
+          </button>
+        }
 
         <!-- Code toggle (individual formatting) -->
-        <button mat-icon-button
-                aria-label="Inline code"
-                matTooltip="Code (Ctrl+E)"
-                [attr.aria-pressed]="svc.isCode()"
-                [class.active]="svc.isCode()"
-                (click)="svc.toggleCode()">
-          <mat-icon>code</mat-icon>
-        </button>
+        @if (svc.hasExtension('code')) {
+          <button mat-icon-button
+                  aria-label="Inline code"
+                  matTooltip="Code (Ctrl+E)"
+                  [attr.aria-pressed]="svc.isCode()"
+                  [class.active]="svc.isCode()"
+                  (click)="svc.toggleCode()">
+            <mat-icon>code</mat-icon>
+          </button>
+        }
 
         <!-- Text Color -->
-        <button mat-icon-button
-                #colorTrigger="matMenuTrigger"
-                aria-label="Text color"
-                matTooltip="Text color"
-                [disabled]="svc.isCode()"
-                [class.active]="colorTrigger.menuOpen || !!svc.currentColor()"
-                [matMenuTriggerFor]="floatingColorMenu">
-          <mat-icon [style.color]="svc.isCode() ? 'inherit' : (svc.currentColor() || 'inherit')">format_color_text</mat-icon>
-        </button>
+        @if (svc.hasExtension('textColor')) {
+          <button mat-icon-button
+                  #colorTrigger="matMenuTrigger"
+                  aria-label="Text color"
+                  matTooltip="Text color"
+                  [disabled]="svc.isCode()"
+                  [class.active]="colorTrigger.menuOpen || !!svc.currentColor()"
+                  [matMenuTriggerFor]="floatingColorMenu">
+            <mat-icon [style.color]="svc.isCode() ? 'inherit' : (svc.currentColor() || 'inherit')">format_color_text</mat-icon>
+          </button>
+        }
 
         <!-- Link -->
-        <button mat-icon-button
-                #linkTrigger="matMenuTrigger"
-                aria-label="Link"
-                matTooltip="Link (Ctrl+K)"
-                [attr.aria-pressed]="svc.isLink()"
-                [class.active]="linkTrigger.menuOpen || svc.isLink()"
-                [matMenuTriggerFor]="floatingLinkMenu"
-                (menuOpened)="onLinkMenuOpened()">
-          <mat-icon>link</mat-icon>
-        </button>
+        @if (svc.hasExtension('link')) {
+          <button mat-icon-button
+                  #linkTrigger="matMenuTrigger"
+                  aria-label="Link"
+                  matTooltip="Link (Ctrl+K)"
+                  [attr.aria-pressed]="svc.isLink()"
+                  [class.active]="linkTrigger.menuOpen || svc.isLink()"
+                  [matMenuTriggerFor]="floatingLinkMenu"
+                  (menuOpened)="onLinkMenuOpened()">
+            <mat-icon>link</mat-icon>
+          </button>
+        }
 
-        <mat-divider vertical />
+        <!-- Custom floating items -->
+        @for (item of svc.customFloatingItems(); track item.id) {
+          <button mat-icon-button
+                  [attr.aria-label]="item.label || item.id"
+                  [matTooltip]="item.tooltip || item.label || item.id"
+                  [attr.aria-pressed]="item.isActive?.(svc)"
+                  [class.active]="item.isActive?.(svc)"
+                  [disabled]="item.isDisabled?.(svc)"
+                  (click)="item.run(svc)">
+            @if (item.glyph) {
+              <span>{{ item.glyph }}</span>
+            } @else if (item.icon) {
+              <mat-icon>{{ item.icon }}</mat-icon>
+            }
+          </button>
+        }
 
         <!-- Clear formatting -->
-        <button mat-icon-button
-                aria-label="Clear formatting"
-                matTooltip="Clear formatting (Ctrl+\\)"
-                (click)="svc.clearFormatting()">
-          <mat-icon>format_clear</mat-icon>
-        </button>
+        @if (svc.hasExtension('clear_formatting')) {
+          <button mat-icon-button
+                  aria-label="Clear formatting"
+                  matTooltip="Clear formatting (Ctrl+\\)"
+                  (click)="svc.clearFormatting()">
+            <mat-icon>format_clear</mat-icon>
+          </button>
+        }
       </div>
     }
 

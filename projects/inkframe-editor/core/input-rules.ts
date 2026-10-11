@@ -9,7 +9,7 @@ import { findWrapping } from 'prosemirror-transform';
 import { schema } from './schema';
 
 /** Wraps text matched by group 1 in a mark: **bold**, _italic_, `code`. */
-function markRule(re: RegExp, type: MarkType): InputRule {
+export function markRule(re: RegExp, type: MarkType): InputRule {
   return new InputRule(re, (state, match, start, end) => {
     const inner = match[1];
     const lead = /^\s/.test(match[0]) ? 1 : 0; // some patterns capture one leading space

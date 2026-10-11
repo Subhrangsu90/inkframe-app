@@ -43,6 +43,9 @@ import {
 } from 'prosemirror-tables';
 import { SLASH_ITEMS, SlashItem } from './slash-items';
 import { CalloutNodeView } from './node-views/callout.node-view';
+import { EditorExtension } from './extension-types';
+import { ExtensionManager } from './extension-manager';
+import { DEFAULT_EXTENSIONS } from './default-extensions';
 import { ImageNodeView } from './node-views/image.node-view';
 import { TaskItemNodeView } from './node-views/task-item.node-view';
 import { CodeBlockNodeView } from './node-views/code-block.node-view';
@@ -58,6 +61,7 @@ export interface MountOptions {
   doc?: StoredDoc | null;
   editable?: boolean;
   onChange?: () => void;
+  extensions?: EditorExtension[];
 }
 
 const sameBlock = (a: BlockInfo, b: BlockInfo) =>
@@ -77,6 +81,38 @@ export class EditorService implements EditorHooks {
   view?: EditorView;
   private onChange?: () => void;
   private editableFlag = true;
+
+  // ── Modular Extension System ─────────────────────────────────────
+  readonly extensions = signal<EditorExtension[]>(DEFAULT_EXTENSIONS);
+  readonly extensionManager = computed(
+    () => new ExtensionManager(this.extensions(), this, this),
+  );
+
+  get envInjector(): EnvironmentInjector {
+    return this.env;
+  }
+
+  get appReference(): ApplicationRef {
+    return this.appRef;
+  }
+
+  setExtensions(extensions: EditorExtension[]): void {
+    this.extensions.set(extensions);
+  }
+
+  hasExtension(name: string): boolean {
+    return this.extensionManager().has(name);
+  }
+
+  readonly customToolbarItems = computed(() =>
+    this.extensionManager().getToolbarItems().filter(
+      (item) => !item.group || item.group === 'custom' || item.group === 'action',
+    ),
+  );
+
+  readonly customFloatingItems = computed(() =>
+    this.extensionManager().getFloatingItems(),
+  );
 
   // ── UI-facing state ──────────────────────────────────────────────
   readonly isBold = signal(false);
@@ -130,7 +166,8 @@ export class EditorService implements EditorHooks {
   readonly slashActive = signal(0);
   readonly slashItems = computed(() => {
     const q = this.slashMenu()?.query.toLowerCase() ?? '';
-    return SLASH_ITEMS.filter(
+    const items = this.extensionManager().getSlashItems();
+    return items.filter(
       (i) =>
         !q ||
         i.label.toLowerCase().includes(q) ||
@@ -148,6 +185,9 @@ export class EditorService implements EditorHooks {
 
   // ── Lifecycle ────────────────────────────────────────────────────
   mount(el: HTMLElement, opts: MountOptions = {}): void {
+    if (opts.extensions) {
+      this.extensions.set(opts.extensions);
+    }
     if (opts.doc) {
       this.currentDocSnapshot = opts.doc;
     }
@@ -176,6 +216,7 @@ export class EditorService implements EditorHooks {
           new TaskItemNodeView(node, view, getPos),
         code_block: (node, view, getPos) =>
           new CodeBlockNodeView(node, view, getPos),
+        ...this.extensionManager().buildNodeViews(),
       },
       handlePaste: (view, event) => {
         const files = event.clipboardData?.files;
@@ -257,10 +298,13 @@ export class EditorService implements EditorHooks {
 
   private createState(
     stored?: StoredDoc | null,
-    plugins: readonly Plugin[] = buildPlugins(this),
+    plugins?: readonly Plugin[],
   ) {
-    const doc = stored ? schema.nodeFromJSON(migrate(stored)) : undefined;
-    return EditorState.create({ schema, doc, plugins });
+    const mgr = this.extensionManager();
+    const currentSchema = mgr.schema;
+    const activePlugins = plugins ?? mgr.buildPlugins();
+    const doc = stored ? currentSchema.nodeFromJSON(migrate(stored)) : undefined;
+    return EditorState.create({ schema: currentSchema, doc, plugins: activePlugins });
   }
 
   private afterUpdate(state: EditorState, docChanged: boolean): void {
@@ -270,31 +314,35 @@ export class EditorService implements EditorHooks {
 
   private syncSignals(state: EditorState): void {
     const { from, to, empty, $from } = state.selection;
-    const active = (type: MarkType) =>
-      empty
+    const active = (type?: MarkType) =>
+      !type
+        ? false
+        : empty
         ? !!type.isInSet(state.storedMarks ?? $from.marks())
         : state.doc.rangeHasMark(from, to, type);
 
-    this.isBold.set(active(schema.marks['strong']));
-    this.isItalic.set(active(schema.marks['em']));
-    this.isCode.set(active(schema.marks['code']));
-    this.isLink.set(active(schema.marks['link']));
-    this.isUnderline.set(active(schema.marks['underline']));
-    this.isStrike.set(active(schema.marks['strikethrough']));
-    this.isSubscript.set(active(schema.marks['subscript']));
-    this.isSuperscript.set(active(schema.marks['superscript']));
-    this.isSmall.set(active(schema.marks['small']));
+    this.isBold.set(active(state.schema.marks['strong']));
+    this.isItalic.set(active(state.schema.marks['em']));
+    this.isCode.set(active(state.schema.marks['code']));
+    this.isLink.set(active(state.schema.marks['link']));
+    this.isUnderline.set(active(state.schema.marks['underline']));
+    this.isStrike.set(active(state.schema.marks['strikethrough']));
+    this.isSubscript.set(active(state.schema.marks['subscript']));
+    this.isSuperscript.set(active(state.schema.marks['superscript']));
+    this.isSmall.set(active(state.schema.marks['small']));
 
-    const textColorMark = schema.marks['textColor'];
+    const textColorMark = state.schema.marks['textColor'];
     let color: string | null = null;
-    if (empty) {
-      const mark = textColorMark.isInSet(state.storedMarks ?? $from.marks());
-      if (mark) color = (mark.attrs['color'] as string) ?? null;
-    } else {
-      state.doc.nodesBetween(from, to, (node) => {
-        const mark = node.marks.find((m) => m.type === textColorMark);
+    if (textColorMark) {
+      if (empty) {
+        const mark = textColorMark.isInSet(state.storedMarks ?? $from.marks());
         if (mark) color = (mark.attrs['color'] as string) ?? null;
-      });
+      } else {
+        state.doc.nodesBetween(from, to, (node) => {
+          const mark = node.marks.find((m) => m.type === textColorMark);
+          if (mark) color = (mark.attrs['color'] as string) ?? null;
+        });
+      }
     }
     this.currentColor.set(color);
 

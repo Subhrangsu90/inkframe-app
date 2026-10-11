@@ -1,37 +1,44 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  // Landing Page
   {
     path: '',
     loadComponent: () =>
       import('./pages/landing/landing').then((m) => m.Landing),
     pathMatch: 'full',
   },
+  // All docs list page
   {
     path: 'docs',
     loadComponent: () =>
       import('./pages/docs/docs').then((m) => m.Docs),
   },
+  // A single doc/editor page
   {
     path: 'doc/:id',
     loadComponent: () =>
       import('./pages/editor/editor').then((m) => m.EditorView),
   },
+  // Redirect editor/ to docs
   {
     path: 'editor',
     redirectTo: 'docs',
     pathMatch: 'full',
   },
+  // Document reader page (view mode, no edit)
   {
     path: 's/:hash',
     loadComponent: () =>
       import('./pages/reader/reader').then((m) => m.Reader),
   },
+  // Settings page
   {
     path: 'settings',
     loadComponent: () =>
       import('./pages/settings/settings').then((m) => m.Settings),
   },
+  // 404 - Not Found
   {
     path: '**',
     loadComponent: () =>

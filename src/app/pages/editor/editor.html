@@ -1,1 +1,84 @@
-<h1>Editor</h1>
+<div class="editor-page-container">
+  <!-- Top Navigation & Plugin Switcher Header -->
+  <header class="editor-header">
+    <div class="header-left">
+      <a routerLink="/" class="brand-link">
+        <span class="brand-badge">I</span>
+        <span class="brand-title">Inkframe</span>
+      </a>
+      <span class="badge-tag">Modular Plugin Architecture</span>
+    </div>
+
+    <!-- Interactive Plugin Preset Selector -->
+    <div class="preset-selector" role="group" aria-label="Editor Plugin Presets">
+      <button
+        type="button"
+        class="preset-btn"
+        [class.active]="activePreset() === 'starter-kit'"
+        (click)="setPreset('starter-kit')">
+        <span class="preset-icon">🌟</span>
+        <span>All Tools (StarterKit)</span>
+      </button>
+
+      <button
+        type="button"
+        class="preset-btn"
+        [class.active]="activePreset() === 'minimal'"
+        (click)="setPreset('minimal')">
+        <span class="preset-icon">✍️</span>
+        <span>Pick One-by-One (Minimal 5)</span>
+      </button>
+
+      <button
+        type="button"
+        class="preset-btn"
+        [class.active]="activePreset() === 'custom'"
+        (click)="setPreset('custom')">
+        <span class="preset-icon">🧩</span>
+        <span>Custom Plugin Demo</span>
+      </button>
+
+      <button
+        type="button"
+        class="preset-btn"
+        [class.active]="activePreset() === 'zen'"
+        (click)="setPreset('zen')">
+        <span class="preset-icon">🪄</span>
+        <span>Zen Mode (No Toolbar)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Extension Telemetry Banner -->
+  <div class="extension-info-banner">
+    <div class="info-content">
+      <span class="info-label">Active Plugins ({{ extensions().length }}):</span>
+      <div class="plugin-tags">
+        @for (ext of extensions(); track ext.name) {
+          <span class="plugin-pill" [class.custom-pill]="ext.name === 'custom_star_tool'">
+            {{ ext.name }}
+          </span>
+        }
+      </div>
+    </div>
+    <div class="info-hint">
+      @if (activePreset() === 'minimal') {
+        <span>✨ Only the 5 selected tools are loaded into the toolbar, schema, & shortcuts!</span>
+      } @else if (activePreset() === 'custom') {
+        <span>✨ Notice the <strong>"★ Custom Plugin"</strong> button in the toolbar and <code>/custom</code> in slash menu!</span>
+      } @else if (activePreset() === 'zen') {
+        <span>✨ Top toolbar hidden! Format via floating selection bubble or type <code>/</code> for blocks.</span>
+      } @else {
+        <span>✨ Full TipTap-style suite loaded via StarterKit.</span>
+      }
+    </div>
+  </div>
+
+  <!-- Interactive Modular Editor Instance -->
+  <main class="editor-main">
+    <ink-editor
+      [extensions]="extensions()"
+      [showToolbar]="showToolbar()"
+    />
+  </main>
+</div>

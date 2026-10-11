@@ -20,3 +20,6 @@ export * from './node-views/callout.node-view';
 export * from './node-views/code-block.node-view';
 export * from './node-views/image.node-view';
 export * from './node-views/task-item.node-view';
+export * from './extension-types';
+export * from './extension-manager';
+export * from './default-extensions';

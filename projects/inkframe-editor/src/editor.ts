@@ -19,6 +19,8 @@ import {
   htmlToDoc,
   docToMarkdown,
   markdownToDoc,
+  EditorExtension,
+  DEFAULT_EXTENSIONS,
 } from '@inkframe-ui/editor/core';
 import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
@@ -42,7 +44,9 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="ink-editor-wrapper">
-      <ink-toolbar />
+      @if (showToolbar()) {
+        <ink-toolbar />
+      }
       <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
         <div class="ink-doc-page">
           <div #host class="ink-host"></div>
@@ -180,6 +184,8 @@ export class Editor {
   readonly initialDoc = input<StoredDoc | null>(null);
   readonly editable = input(true);
   readonly debounceMs = input(300);
+  readonly extensions = input<EditorExtension[]>(DEFAULT_EXTENSIONS);
+  readonly showToolbar = input(true);
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 
@@ -189,6 +195,7 @@ export class Editor {
       this.svc.mount(this.host().nativeElement, {
         doc: this.initialDoc(),
         editable: this.editable(),
+        extensions: this.extensions(),
         onChange: () => this.scheduleEmit(),
       });
       if (this.viewport()?.nativeElement) {
@@ -197,6 +204,7 @@ export class Editor {
     });
 
     effect(() => this.svc.setEditable(this.editable()));
+    effect(() => this.svc.setExtensions(this.extensions()));
 
     effect(() => {
       const count = this.svc.openHistoryRequested();

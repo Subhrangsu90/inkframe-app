@@ -309,6 +309,24 @@ const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
   )
   .addToEnd('callout', callout);
 
+export {
+  callout,
+  link,
+  underline,
+  strikethrough,
+  subscript,
+  superscript,
+  textColor,
+  small,
+  code,
+  task_list,
+  task_item,
+  image,
+  code_block,
+  base,
+  nodes,
+};
+
 export const schema = new Schema({
   nodes,
   marks: base.spec.marks
@@ -321,3 +339,4 @@ export const schema = new Schema({
     .addToEnd('textColor', textColor)
     .addToEnd('small', small),
 });
+

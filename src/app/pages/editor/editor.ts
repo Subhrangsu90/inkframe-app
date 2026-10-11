@@ -159,19 +159,24 @@ export class EditorView implements OnInit {
     }
   });
 
+  /** Incremented per navigation so a slow load cannot override a newer one. */
+  private loadToken = 0;
+
   async ngOnInit(): Promise<void> {
     this.route.paramMap.subscribe(async (params) => {
       const idParam = params.get('id');
       const docId = idParam || this.docManager.getActiveDocId() || 'doc_default';
-      this.currentDocId.set(docId);
       this.layout.setActiveDocId(docId);
       await this.loadDocument(docId);
     });
   }
 
   async loadDocument(id: string): Promise<void> {
+    const token = ++this.loadToken;
     try {
+      let docId = id;
       let doc = await this.docManager.getDoc(id);
+      if (token !== this.loadToken) return;
       if (!doc) {
         // If not found, fall back to welcome doc or create one
         if (id === 'doc_default') {
@@ -180,22 +185,27 @@ export class EditorView implements OnInit {
         } else {
           const created = await this.docManager.createDoc('Untitled Document');
           doc = created.doc;
-          this.currentDocId.set(created.meta.id);
-          this.layout.setActiveDocId(created.meta.id);
+          docId = created.meta.id;
         }
+        if (token !== this.loadToken) return;
       }
 
+      // Load into the editor *before* switching ids: loadDoc() first emits any
+      // pending edits of the previous document, which must be saved under the
+      // previous id. If the document cannot be parsed this throws and the ids
+      // stay untouched, so edits are never saved into the wrong document.
+      this.editorRef()?.loadDoc(doc);
+
+      this.currentDocId.set(docId);
+      this.layout.setActiveDocId(docId);
       this.currentStoredDoc.set(doc);
-      const title = extractDocTitle(doc);
-      this.docTitle.set(title);
+      this.docTitle.set(extractDocTitle(doc));
       this.wordCount.set(extractDocWordCount(doc));
-
-      const editor = this.editorRef();
-      if (editor && doc) {
-        editor.loadDoc(doc);
-      }
     } catch (e) {
+      if (token !== this.loadToken) return;
       console.warn('Failed to load document:', e);
+      this.toast.error('This document could not be opened');
+      await this.router.navigate(['/docs']);
     }
   }
 

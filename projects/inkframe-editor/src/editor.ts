@@ -234,6 +234,11 @@ export class Editor {
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
   private timer?: ReturnType<typeof setTimeout>;
 
+  // Registered before the outputs below are created: destroy hooks run in
+  // registration order, so pending edits are emitted while `changed` still
+  // has listeners (an output cannot emit once its own destroy hook has run).
+  private readonly flushOnDestroy = inject(DestroyRef).onDestroy(() => this.flush());
+
   /** Read once at mount. Use loadDoc() to replace the document later. */
   readonly initialDoc = input<StoredDoc | null>(null);
   readonly editable = input(true);
@@ -286,7 +291,12 @@ export class Editor {
   }
 
   // ── Public API ─────────────────────────────────────────────────
+  /**
+   * Replaces the document. Pending changes to the previous document are
+   * emitted first, so they are not lost or reported as the new document's.
+   */
   loadDoc(doc: StoredDoc) {
+    this.flush();
     this.svc.setDoc(doc);
   }
   focus() {
@@ -310,24 +320,29 @@ export class Editor {
   }
   loadMarkdown(md: string): void {
     const doc = markdownToDoc(md);
-    this.svc.setDoc({ schemaVersion: SCHEMA_VERSION, doc: doc.toJSON() });
+    this.loadDoc({ schemaVersion: SCHEMA_VERSION, doc: doc.toJSON() });
   }
   loadHtml(html: string): void {
     const doc = htmlToDoc(html);
-    this.svc.setDoc({ schemaVersion: SCHEMA_VERSION, doc: doc.toJSON() });
+    this.loadDoc({ schemaVersion: SCHEMA_VERSION, doc: doc.toJSON() });
   }
-  /** Emit pending changes immediately (call before navigating away). */
+  /**
+   * Emits pending (debounced) changes immediately. Does nothing when there
+   * are none. Call before switching the document the editor belongs to.
+   */
   flush() {
+    if (this.timer === undefined) return;
     clearTimeout(this.timer);
+    this.timer = undefined;
     this.changed.emit(this.svc.getJSON());
   }
 
   private scheduleEmit() {
     clearTimeout(this.timer);
-    this.timer = setTimeout(
-      () => this.zone.run(() => this.changed.emit(this.svc.getJSON())),
-      this.debounceMs(),
-    );
+    this.timer = setTimeout(() => {
+      this.timer = undefined;
+      this.zone.run(() => this.changed.emit(this.svc.getJSON()));
+    }, this.debounceMs());
   }
 }
 

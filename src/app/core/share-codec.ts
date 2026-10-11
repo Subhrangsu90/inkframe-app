@@ -184,6 +184,11 @@ export async function decompressSharedDoc(
 
 /**
  * Builds a complete shareable URL for any document.
+ *
+ * The payload goes in the URL fragment (`/s#<payload>`), not the path: the
+ * fragment is never sent to the server, so large documents (e.g. with inlined
+ * images) don't hit server request-size limits (HTTP 431), and the document
+ * content never appears in server logs.
  */
 export async function buildShareableUrl(
   doc: StoredDoc,
@@ -191,7 +196,7 @@ export async function buildShareableUrl(
 ): Promise<string> {
   const hash = await compressDocForSharing(doc, title);
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}/s/${hash}`;
+    return `${window.location.origin}/s#${hash}`;
   }
-  return `/s/${hash}`;
+  return `/s#${hash}`;
 }

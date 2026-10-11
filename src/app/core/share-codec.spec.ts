@@ -4,6 +4,7 @@ import {
   compressDocForSharing,
   decompressSharedDoc,
   bytesToBase64Url,
+  buildShareableUrl,
   base64UrlToBytes,
 } from './share-codec';
 import { StoredDoc } from './document-manager';
@@ -87,5 +88,23 @@ describe('share-codec', () => {
     const content = decoded!.doc.doc['content'] as any[];
     expect(content[1]['type']).toBe('image');
     expect(content[1]['attrs']['src']).toContain('https://images.unsplash.com');
+  });
+});
+
+describe('buildShareableUrl', () => {
+  it('puts the payload in the URL fragment so it is never sent to the server', async () => {
+    const doc: StoredDoc = {
+      schemaVersion: 1,
+      doc: {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x'.repeat(50000) }] }],
+      },
+    };
+    const url = new URL(await buildShareableUrl(doc, 'Big'));
+    expect(url.pathname).toBe('/s');
+    expect(url.search).toBe('');
+    const decoded = await decompressSharedDoc(url.hash.slice(1));
+    expect(decoded?.title).toBe('Big');
+    expect(decoded?.doc.doc).toEqual(doc.doc);
   });
 });

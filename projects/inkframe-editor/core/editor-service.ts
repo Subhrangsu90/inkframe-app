@@ -8,9 +8,8 @@ import {
 } from '@angular/core';
 import { Command, EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { MarkType } from 'prosemirror-model';
+import { MarkType, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
-import { liftListItem, wrapInList } from 'prosemirror-schema-list';
 import {
   redo,
   redoDepth,
@@ -18,9 +17,9 @@ import {
   undoDepth,
 } from 'prosemirror-history';
 
-import { CalloutKind, schema } from './schema';
+import { CalloutKind } from './schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
-import { buildPlugins, clearFormattingCommand, toggleListCommand } from './plugins';
+import { clearFormattingCommand, toggleListCommand } from './plugins';
 import {
   EditorHooks,
   FloatingMenuState,
@@ -41,14 +40,10 @@ import {
   setCellAttr,
   toggleHeaderRow,
 } from 'prosemirror-tables';
-import { SLASH_ITEMS, SlashItem } from './slash-items';
-import { CalloutNodeView } from './node-views/callout.node-view';
+import { SlashItem } from './slash-items';
 import { EditorExtension } from './extension-types';
 import { ExtensionManager } from './extension-manager';
 import { DEFAULT_EXTENSIONS } from './default-extensions';
-import { ImageNodeView } from './node-views/image.node-view';
-import { TaskItemNodeView } from './node-views/task-item.node-view';
-import { CodeBlockNodeView } from './node-views/code-block.node-view';
 import { imageStorage } from './image-storage';
 
 export interface BlockInfo {
@@ -96,8 +91,42 @@ export class EditorService implements EditorHooks {
     return this.appRef;
   }
 
+  /**
+   * The schema the editor is running on. Commands must use these node and
+   * mark types: ProseMirror compares types by identity, so types from any
+   * other Schema instance (even one built from the same specs) are ignored
+   * or silently dropped.
+   */
+  get schema(): Schema {
+    return this.view?.state.schema ?? this.extensionManager().schema;
+  }
+
+  /**
+   * Swaps the active extensions. When the editor is already mounted, the view
+   * is reconfigured with the new schema, plugins and node views. If the
+   * current document cannot be represented by the new extensions (e.g. it
+   * contains a table and the table extension was removed), the previous
+   * extensions are kept so no content is lost.
+   */
   setExtensions(extensions: EditorExtension[]): void {
+    const previous = this.extensions();
+    if (previous === extensions) return;
     this.extensions.set(extensions);
+
+    const v = this.view;
+    if (!v) return;
+    try {
+      const state = this.createState(this.getJSON());
+      state.doc.check();
+      v.setProps({ state, nodeViews: this.extensionManager().buildNodeViews() });
+      this.syncSignals(state);
+    } catch (e) {
+      console.error(
+        '[inkframe] The current document uses content that the new extensions do not support; keeping the previous extensions.',
+        e,
+      );
+      this.extensions.set(previous);
+    }
   }
 
   hasExtension(name: string): boolean {
@@ -198,50 +227,19 @@ export class EditorService implements EditorHooks {
     // Created outside Angular's zone by virtue of being called from afterNextRender
     // and only touching signals from callbacks (see section 2.1, rule 2).
     this.view = new EditorView(el, {
-      state: this.createState(opts.doc),
+      // A document passed to setDoc() before mounting wins over a missing initial doc.
+      state: this.createState(opts.doc ?? this.currentDocSnapshot),
       editable: () => this.editableFlag,
       attributes: {
         role: 'textbox',
         'aria-multiline': 'true',
         'aria-label': 'Document editor',
       },
-      nodeViews: {
-        callout: (node, view, getPos) =>
-          new CalloutNodeView(node, view, getPos, this.env, this.appRef),
-        image: (node, view, getPos) =>
-          new ImageNodeView(node, view, getPos, (data) =>
-            this.openImagePreview(data),
-          ),
-        task_item: (node, view, getPos) =>
-          new TaskItemNodeView(node, view, getPos),
-        code_block: (node, view, getPos) =>
-          new CodeBlockNodeView(node, view, getPos),
-        ...this.extensionManager().buildNodeViews(),
-      },
-      handlePaste: (view, event) => {
-        const files = event.clipboardData?.files;
-        if (files && files.length > 0) {
-          const file = files[0];
-          if (file.type.startsWith('image/')) {
-            event.preventDefault();
-            this.insertImage(file);
-            return true;
-          }
-        }
-        return false;
-      },
-      handleDrop: (view, event) => {
-        const files = event.dataTransfer?.files;
-        if (files && files.length > 0) {
-          const file = files[0];
-          if (file.type.startsWith('image/')) {
-            event.preventDefault();
-            this.insertImage(file);
-            return true;
-          }
-        }
-        return false;
-      },
+      nodeViews: this.extensionManager().buildNodeViews(),
+      handlePaste: (_view, event) =>
+        this.handleImageFiles(event, event.clipboardData?.files),
+      handleDrop: (_view, event) =>
+        this.handleImageFiles(event, event.dataTransfer?.files),
       dispatchTransaction(this: EditorView, tr) {
         const next = this.state.apply(tr);
         this.updateState(next);
@@ -250,15 +248,9 @@ export class EditorService implements EditorHooks {
     });
     this.view.dom.classList.toggle('ProseMirror-preview', !this.editableFlag);
     this.syncSignals(this.view.state);
-    if (typeof window !== 'undefined') {
-      (window as any).__ink_active_view__ = this.view;
-    }
   }
 
   destroy(): void {
-    if (typeof window !== 'undefined' && (window as any).__ink_active_view__ === this.view) {
-      (window as any).__ink_active_view__ = undefined;
-    }
     this.view?.destroy();
     this.view = undefined;
   }
@@ -283,12 +275,19 @@ export class EditorService implements EditorHooks {
     };
   }
 
-  /** Replace the whole document (loads fresh state, resets undo history). */
+  /**
+   * Replace the whole document (loads fresh state, resets undo history).
+   * Throws if the document cannot be parsed with the active schema; the
+   * current document is left untouched in that case.
+   */
   setDoc(stored: StoredDoc): void {
-    this.currentDocSnapshot = stored;
     const v = this.view;
-    if (!v) return;
+    if (!v) {
+      this.currentDocSnapshot = stored;
+      return;
+    }
     const state = this.createState(stored, v.state.plugins);
+    this.currentDocSnapshot = stored;
     v.updateState(state);
     this.syncSignals(state);
   }
@@ -316,6 +315,16 @@ export class EditorService implements EditorHooks {
     const activePlugins = plugins ?? mgr.buildPlugins();
     const doc = stored ? currentSchema.nodeFromJSON(migrate(stored)) : undefined;
     return EditorState.create({ schema: currentSchema, doc, plugins: activePlugins });
+  }
+
+  private handleImageFiles(event: Event, files?: FileList | null): boolean {
+    const file = files?.[0];
+    if (!file || !file.type.startsWith('image/') || !this.schema.nodes['image']) {
+      return false;
+    }
+    event.preventDefault();
+    this.insertImage(file);
+    return true;
   }
 
   private afterUpdate(state: EditorState, docChanged: boolean): void {
@@ -434,16 +443,30 @@ export class EditorService implements EditorHooks {
   }
 
   // ── Commands (called by toolbar and menus) ───────────────────────
+  private markType(name: string): MarkType | undefined {
+    return this.schema.marks[name];
+  }
+
+  private nodeType(name: string): NodeType | undefined {
+    return this.schema.nodes[name];
+  }
+
+  /** Toggles a formatting mark; marks cannot be combined with inline code. */
+  private toggleFormatMark(name: string): void {
+    const type = this.markType(name);
+    if (!type || this.isCode()) return;
+    this.run(toggleMark(type));
+  }
+
   toggleBold() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['strong']));
+    this.toggleFormatMark('strong');
   }
   toggleItalic() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['em']));
+    this.toggleFormatMark('em');
   }
   toggleCode() {
-    const codeType = schema.marks['code'];
+    const codeType = this.markType('code');
+    if (!codeType) return;
     this.run((state, dispatch) => {
       const { from, to, empty, $from } = state.selection;
       const hasCode = empty
@@ -474,28 +497,23 @@ export class EditorService implements EditorHooks {
     });
   }
   toggleUnderline() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['underline']));
+    this.toggleFormatMark('underline');
   }
   toggleStrike() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['strikethrough']));
+    this.toggleFormatMark('strikethrough');
   }
   toggleSubscript() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['subscript']));
+    this.toggleFormatMark('subscript');
   }
   toggleSuperscript() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['superscript']));
+    this.toggleFormatMark('superscript');
   }
   toggleSmall() {
-    if (this.isCode()) return;
-    this.run(toggleMark(schema.marks['small']));
+    this.toggleFormatMark('small');
   }
   setTextColor(color: string) {
-    if (this.isCode()) return;
-    const markType = schema.marks['textColor'];
+    const markType = this.markType('textColor');
+    if (!markType || this.isCode()) return;
     this.run((state, dispatch) => {
       const { from, to, empty } = state.selection;
       if (empty) {
@@ -511,7 +529,8 @@ export class EditorService implements EditorHooks {
     });
   }
   removeTextColor() {
-    const markType = schema.marks['textColor'];
+    const markType = this.markType('textColor');
+    if (!markType) return;
     this.run((state, dispatch) => {
       const { from, to, empty } = state.selection;
       if (empty) {
@@ -533,20 +552,25 @@ export class EditorService implements EditorHooks {
   }
 
   paragraph() {
-    this.run(setBlockType(schema.nodes['paragraph']));
+    const paragraph = this.nodeType('paragraph');
+    if (paragraph) this.run(setBlockType(paragraph));
   }
 
   /** Toggles: pressing H2 while already in an H2 turns it back into a paragraph. */
   heading(level: 1 | 2 | 3 | 4 | 5 | 6) {
+    const heading = this.nodeType('heading');
+    const paragraph = this.nodeType('paragraph');
+    if (!heading || !paragraph) return;
     const b = this.block();
     this.run(
       b.type === 'heading' && b.level === level
-        ? setBlockType(schema.nodes['paragraph'])
-        : setBlockType(schema.nodes['heading'], { level }),
+        ? setBlockType(paragraph)
+        : setBlockType(heading, { level }),
     );
   }
 
   toggleList(kind: 'bullet_list' | 'ordered_list' | 'task_list') {
+    if (!this.nodeType(kind)) return;
     this.run(toggleListCommand(kind));
   }
 
@@ -555,10 +579,12 @@ export class EditorService implements EditorHooks {
   }
 
   blockquote() {
-    this.run(wrapIn(schema.nodes['blockquote']));
+    const blockquote = this.nodeType('blockquote');
+    if (blockquote) this.run(wrapIn(blockquote));
   }
   codeBlock() {
-    this.run(setBlockType(schema.nodes['code_block']));
+    const codeBlock = this.nodeType('code_block');
+    if (codeBlock) this.run(setBlockType(codeBlock));
   }
 
   setCodeBlockLanguage(pos: number, lang: string): void {
@@ -593,7 +619,8 @@ export class EditorService implements EditorHooks {
     });
   }
   insertCallout(kind: CalloutKind = 'info') {
-    this.run(wrapIn(schema.nodes['callout'], { type: kind }));
+    const callout = this.nodeType('callout');
+    if (callout) this.run(wrapIn(callout, { type: kind }));
   }
 
   insertText(text: string): void {
@@ -604,18 +631,17 @@ export class EditorService implements EditorHooks {
   }
 
   insertDivider() {
+    const rule = this.nodeType('horizontal_rule');
+    if (!rule) return;
     this.run((state, dispatch) => {
-      dispatch?.(
-        state.tr
-          .replaceSelectionWith(schema.nodes['horizontal_rule'].create())
-          .scrollIntoView(),
-      );
+      dispatch?.(state.tr.replaceSelectionWith(rule.create()).scrollIntoView());
       return true;
     });
   }
 
   insertTable(rows = 3, cols = 3) {
-    const { table, table_row, table_cell, table_header } = schema.nodes;
+    const { table, table_row, table_cell, table_header } = this.schema.nodes;
+    if (!table || !table_row || !table_cell || !table_header) return;
     this.run((state, dispatch) => {
       const body = Array.from({ length: rows }, (_, r) =>
         table_row.create(
@@ -640,8 +666,7 @@ export class EditorService implements EditorHooks {
     alt?: string,
     title?: string,
   ): Promise<void> {
-    const { image } = schema.nodes;
-    if (!image) return;
+    if (!this.nodeType('image')) return;
 
     let src: string;
     let defaultAlt = alt || '';
@@ -654,6 +679,9 @@ export class EditorService implements EditorHooks {
       src = saved.uri;
     }
 
+    // Resolve the type after the await: extensions may have been swapped meanwhile.
+    const image = this.nodeType('image');
+    if (!image) return;
     this.run((state, dispatch) => {
       dispatch?.(
         state.tr
@@ -707,9 +735,9 @@ export class EditorService implements EditorHooks {
   /** Returns current link href if the selection has a link mark. */
   getLinkHref(): string | null {
     const v = this.view;
-    if (!v) return null;
+    const linkMark = this.markType('link');
+    if (!v || !linkMark) return null;
     const { from, to, empty, $from } = v.state.selection;
-    const linkMark = schema.marks['link'];
     if (empty) {
       const mark = linkMark.isInSet(v.state.storedMarks ?? $from.marks());
       return mark ? (mark.attrs['href'] as string) : null;
@@ -723,7 +751,8 @@ export class EditorService implements EditorHooks {
   }
 
   removeLink(): void {
-    const linkMark = schema.marks['link'];
+    const linkMark = this.markType('link');
+    if (!linkMark) return;
     this.run((state, dispatch) => {
       const { from, to } = state.selection;
       dispatch?.(state.tr.removeMark(from, to, linkMark));
@@ -734,8 +763,8 @@ export class EditorService implements EditorHooks {
   /** Returns false (and does nothing) if the URL protocol is not allowed. */
   setLink(href: string): boolean {
     const safe = sanitizeHref(href);
-    if (!safe) return false;
-    const linkMark = schema.marks['link'];
+    const linkMark = this.markType('link');
+    if (!safe || !linkMark) return false;
     this.run((state, dispatch) => {
       const { from, to, empty } = state.selection;
       if (empty) {
@@ -762,4 +791,3 @@ export class EditorService implements EditorHooks {
 
 // Modern intent-based alias
 export { EditorService as EditorStore };
-

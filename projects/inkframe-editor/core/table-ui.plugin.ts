@@ -1,9 +1,15 @@
 import { Plugin, PluginKey, Selection } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import { Node as PMNode } from 'prosemirror-model';
-import { addColumnAfter, addColumnBefore, deleteColumn, addRowAfter } from 'prosemirror-tables';
+import { addColumnAfter, addRowAfter } from 'prosemirror-tables';
 
 export const tableUIKey = new PluginKey('table-ui');
+
+/**
+ * Dispatched (bubbling) on the editor DOM when a column options button is
+ * clicked. `detail` holds the viewport coordinates to open the menu at.
+ */
+export const OPEN_COLUMN_MENU_EVENT = 'ink-open-column-menu';
 
 export function tableUIPlugin(): Plugin {
   return new Plugin({
@@ -25,172 +31,147 @@ export function tableUIPlugin(): Plugin {
   });
 }
 
+type GetPos = () => number | undefined;
+
+/**
+ * Moves the cursor into the cell the widget sits in. Widgets receive their
+ * own view and position at render time, so this works with several editors
+ * on one page and stays correct as the document changes.
+ */
+function focusCell(view: EditorView, getPos: GetPos): boolean {
+  const pos = getPos();
+  if (!view.editable || pos == null) return false;
+  view.focus();
+  view.dispatch(view.state.tr.setSelection(Selection.near(view.state.doc.resolve(pos))));
+  return true;
+}
+
+function controlButton(
+  className: string,
+  title: string,
+  label: string,
+  onClick: (btn: HTMLButtonElement) => void,
+): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = className;
+  btn.title = title;
+  btn.textContent = label;
+  btn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick(btn);
+  });
+  return btn;
+}
+
+function rowHandle(view: EditorView, getPos: GetPos): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'ink-table-row-handle';
+
+  const dot = document.createElement('span');
+  dot.className = 'ink-table-row-dot';
+  dot.textContent = '•';
+  el.appendChild(dot);
+
+  el.appendChild(
+    controlButton('ink-table-add-row-btn', 'Insert row below', '+', () => {
+      if (focusCell(view, getPos)) addRowAfter(view.state, view.dispatch);
+    }),
+  );
+  return el;
+}
+
+function cornerDot(): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'ink-table-col-corner-dot';
+  el.textContent = '•';
+  return el;
+}
+
+function columnHandle(view: EditorView, getPos: GetPos): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'ink-table-col-header-handle';
+
+  const dot = document.createElement('span');
+  dot.className = 'ink-table-col-dot';
+  dot.textContent = '•';
+  el.appendChild(dot);
+
+  el.appendChild(
+    controlButton('ink-table-add-col-btn', 'Insert column right', '+', () => {
+      if (focusCell(view, getPos)) addColumnAfter(view.state, view.dispatch);
+    }),
+  );
+
+  el.appendChild(
+    controlButton('ink-table-col-opt-btn', 'Column options', '▾', (btn) => {
+      if (!focusCell(view, getPos)) return;
+      const rect = btn.getBoundingClientRect();
+      view.dom.dispatchEvent(
+        new CustomEvent(OPEN_COLUMN_MENU_EVENT, {
+          bubbles: true,
+          detail: { clientX: rect.left, clientY: rect.bottom + 4 },
+        }),
+      );
+    }),
+  );
+  return el;
+}
+
+function cellPlaceholder(): HTMLElement {
+  const el = document.createElement('span');
+  el.className = 'ink-table-cell-placeholder';
+  const pill = document.createElement('span');
+  pill.className = 'ink-slash-pill';
+  pill.textContent = '/';
+  el.append(pill, ' to insert');
+  return el;
+}
+
+const widgetSpec = { side: -1, ignoreSelection: true };
+
 function buildTableDecorations(doc: PMNode): DecorationSet {
   const decorations: Decoration[] = [];
 
   doc.descendants((node, pos) => {
-    if (node.type.name === 'table') {
-      let isFirstRow = true;
+    if (node.type.name !== 'table') return true;
 
-      node.forEach((row, rowOffset) => {
-        const rowPos = pos + 1 + rowOffset;
+    node.forEach((row, rowOffset, rowIndex) => {
+      const rowPos = pos + 1 + rowOffset;
 
-        row.forEach((cell, cellOffset) => {
-          const cellPos = rowPos + 1 + cellOffset;
+      row.forEach((cell, cellOffset, cellIndex) => {
+        const cellPos = rowPos + 1 + cellOffset;
+        const inCell = cellPos + 1;
 
-          // Left interactive handle for each row (attached to first cell)
-          if (cellOffset === 0) {
-            const rowHandleWidget = document.createElement('div');
-            rowHandleWidget.className = 'ink-table-row-handle';
+        // Left interactive handle for each row (attached to first cell)
+        if (cellIndex === 0) {
+          decorations.push(Decoration.widget(inCell, rowHandle, widgetSpec));
+        }
 
-            const rowDot = document.createElement('span');
-            rowDot.className = 'ink-table-row-dot';
-            rowDot.textContent = '•';
-            rowHandleWidget.appendChild(rowDot);
-
-            const addRowBtn = document.createElement('button');
-            addRowBtn.type = 'button';
-            addRowBtn.className = 'ink-table-add-row-btn';
-            addRowBtn.title = 'Insert row below';
-            addRowBtn.innerHTML = '+';
-            addRowBtn.addEventListener('mousedown', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            });
-            addRowBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view && view.editable) {
-                view.focus();
-                const tr = view.state.tr.setSelection(
-                  Selection.near(view.state.doc.resolve(cellPos + 1)),
-                );
-                view.dispatch(tr);
-                addRowAfter(view.state, view.dispatch);
-              }
-            });
-            rowHandleWidget.appendChild(addRowBtn);
-
-            decorations.push(
-              Decoration.widget(cellPos + 1, rowHandleWidget, {
-                side: -1,
-                ignoreSelection: true,
-              }),
-            );
+        // Column header controls: separator dot, [+] adder and [▾] options
+        if (rowIndex === 0) {
+          if (cellIndex === 0) {
+            decorations.push(Decoration.widget(inCell, cornerDot, widgetSpec));
           }
+          decorations.push(Decoration.widget(inCell, columnHandle, widgetSpec));
+        }
 
-          // Column Header Controls: Top separator dot, [+] adder, and [∨] column options
-          if (isFirstRow) {
-            if (cellOffset === 0) {
-              const leftDot = document.createElement('div');
-              leftDot.className = 'ink-table-col-corner-dot';
-              leftDot.innerHTML = '•';
-              decorations.push(
-                Decoration.widget(cellPos + 1, leftDot, {
-                  side: -1,
-                  ignoreSelection: true,
-                }),
-              );
-            }
-
-            const colHandle = document.createElement('div');
-            colHandle.className = 'ink-table-col-header-handle';
-
-            // Top divider dot
-            const dot = document.createElement('span');
-            dot.className = 'ink-table-col-dot';
-            dot.textContent = '•';
-            colHandle.appendChild(dot);
-
-            // Add Column [+] Button (matching Screenshot7.png)
-            const addColBtn = document.createElement('button');
-            addColBtn.type = 'button';
-            addColBtn.className = 'ink-table-add-col-btn';
-            addColBtn.title = 'Insert column right';
-            addColBtn.innerHTML = '+';
-            addColBtn.addEventListener('mousedown', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            });
-            addColBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view && view.editable) {
-                view.focus();
-                const tr = view.state.tr.setSelection(
-                  Selection.near(view.state.doc.resolve(cellPos + 1)),
-                );
-                view.dispatch(tr);
-                addColumnAfter(view.state, view.dispatch);
-              }
-            });
-            colHandle.appendChild(addColBtn);
-
-            // Column Options [∨] Button (matching Screenshot7.png)
-            const colOptBtn = document.createElement('button');
-            colOptBtn.type = 'button';
-            colOptBtn.className = 'ink-table-col-opt-btn';
-            colOptBtn.title = 'Column options';
-            colOptBtn.innerHTML = '▾';
-            colOptBtn.addEventListener('mousedown', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            });
-            colOptBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const view = (window as any).__ink_active_view__ as EditorView | undefined;
-              if (view && view.editable) {
-                view.focus();
-                const tr = view.state.tr.setSelection(
-                  Selection.near(view.state.doc.resolve(cellPos + 1)),
-                );
-                view.dispatch(tr);
-                const rect = colOptBtn.getBoundingClientRect();
-                const evt = new CustomEvent('ink-open-column-menu', {
-                  detail: { clientX: rect.left, clientY: rect.bottom + 4 },
-                });
-                window.dispatchEvent(evt);
-              }
-            });
-            colHandle.appendChild(colOptBtn);
-
-            decorations.push(
-              Decoration.widget(cellPos + 1, colHandle, {
-                side: -1,
-                ignoreSelection: true,
-              }),
-            );
+        // Empty cell placeholder ("/ to insert")
+        if (cell.childCount === 1) {
+          const firstChild = cell.child(0);
+          if (firstChild.type.name === 'paragraph' && firstChild.content.size === 0) {
+            decorations.push(Decoration.widget(cellPos + 2, cellPlaceholder, widgetSpec));
           }
-        });
-
-        isFirstRow = false;
-
-        // Empty Cell Placeholder ("/ to insert") matching Screenshot7.png
-        row.forEach((cell, cellOffset) => {
-          const cellPos = rowPos + 1 + cellOffset;
-          if (cell.childCount === 1) {
-            const firstChild = cell.child(0);
-            if (firstChild.type.name === 'paragraph' && firstChild.content.size === 0) {
-              const placeholder = document.createElement('span');
-              placeholder.className = 'ink-table-cell-placeholder';
-              placeholder.innerHTML = '<span class="ink-slash-pill">/</span> to insert';
-              decorations.push(
-                Decoration.widget(cellPos + 2, placeholder, {
-                  side: -1,
-                  ignoreSelection: true,
-                }),
-              );
-            }
-          }
-        });
+        }
       });
+    });
 
-      return false; // don't descend further
-    }
-    return true;
+    return false; // don't descend further
   });
 
   return DecorationSet.create(doc, decorations);

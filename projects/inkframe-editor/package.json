@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "dompurify": "^3.4.16",
+    "markdown-it": "^14.1.0",
     "prismjs": "^1.30.0",
     "prosemirror-commands": "^1.7.2",
     "prosemirror-dropcursor": "^1.8.4",

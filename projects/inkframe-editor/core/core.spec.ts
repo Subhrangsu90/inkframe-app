@@ -195,7 +195,7 @@ describe('Inkframe Core', () => {
       ]);
       const md = docToMarkdown(doc);
       expect(md).toContain('~~struck~~');
-      expect(md).toContain('~sub~');
+      expect(md).toContain('<sub>sub</sub>');
     });
 
     it('clearFormattingCommand clears all marks from selection', () => {
@@ -777,25 +777,24 @@ describe('Inkframe Core', () => {
       const allDecos = decos.find(0, doc.nodeSize);
       expect(allDecos.length).toBeGreaterThan(0);
 
+      // Widgets are render functions that receive the view at render time.
+      const view = { editable: true } as any;
+      const classOf = (d: any) => {
+        const toDOM = d.type?.toDOM;
+        const el = typeof toDOM === 'function' ? toDOM(view, () => d.from) : toDOM;
+        return (el && el.className) || '';
+      };
+
       // Check for row handles (first cell of row1 and row2)
-      const hasRowHandle = allDecos.some((d: any) => {
-        const el = d.type?.toDOM || d.type?.widget;
-        return ((el && el.className) || '').includes('ink-table-row-handle');
-      });
+      const hasRowHandle = allDecos.some((d: any) => classOf(d).includes('ink-table-row-handle'));
       expect(hasRowHandle).toBe(true);
 
       // Check for column header handles (in first row)
-      const hasColHandle = allDecos.some((d: any) => {
-        const el = d.type?.toDOM || d.type?.widget;
-        return ((el && el.className) || '').includes('ink-table-col-header-handle');
-      });
+      const hasColHandle = allDecos.some((d: any) => classOf(d).includes('ink-table-col-header-handle'));
       expect(hasColHandle).toBe(true);
 
       // Check for empty cell placeholder in emptyCell
-      const hasPlaceholder = allDecos.some((d: any) => {
-        const el = d.type?.toDOM || d.type?.widget;
-        return ((el && el.className) || '').includes('ink-table-cell-placeholder');
-      });
+      const hasPlaceholder = allDecos.some((d: any) => classOf(d).includes('ink-table-cell-placeholder'));
       expect(hasPlaceholder).toBe(true);
     });
   });

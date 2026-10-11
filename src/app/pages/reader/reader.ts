@@ -14,6 +14,8 @@ import { DocumentManager, type StoredDoc, extractDocTitle } from '../../core/doc
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import {
   docToHtml,
+  migrate,
+  sanitizeHtml,
   schema,
   ThemeService,
   imageStorage,
@@ -22,6 +24,7 @@ import { ImageLightbox, type ImagePreviewPayload } from '@inkframe-ui/editor/ext
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ToastService } from '../../shared/ui';
 import { decompressSharedDoc, buildShareableUrl } from '../../core/share-codec';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'ink-reader',
@@ -48,9 +51,15 @@ export class Reader implements OnInit {
   readonly renderedHtml = signal<SafeHtml>('');
   readonly previewImage = signal<ImagePreviewPayload | null>(null);
 
+  /** Incremented per load so a slower, older load cannot overwrite a newer one. */
+  private loadToken = 0;
+
   async ngOnInit(): Promise<void> {
-    this.route.paramMap.subscribe(async (params) => {
-      const hash = params.get('hash') || 'doc_default';
+    // Share links carry the payload in the fragment (/s#<payload>); older links
+    // and local document ids use the path (/s/<hash>).
+    combineLatest([this.route.paramMap, this.route.fragment]).subscribe(async ([params, fragment]) => {
+      const hash = params.get('hash') || fragment || 'doc_default';
+      const token = ++this.loadToken;
       this.docId.set(hash);
 
       let active: StoredDoc | null = null;
@@ -93,16 +102,21 @@ export class Reader implements OnInit {
         isShared = false;
       }
 
+      if (token !== this.loadToken) return;
       this.activeDoc.set(active);
       this.docTitle.set(title);
       this.isSharedPayload.set(isShared);
 
       if (active?.doc) {
         try {
-          const pmNode = schema.nodeFromJSON(active.doc);
+          const pmNode = schema.nodeFromJSON(migrate(active));
           const raw = docToHtml(pmNode);
           const resolved = await imageStorage.resolveHtmlImages(raw);
-          this.renderedHtml.set(this.sanitizer.bypassSecurityTrustHtml(resolved));
+          if (token !== this.loadToken) return;
+          // Shared documents come from the URL, i.e. from anyone. Angular's own
+          // sanitizer would strip the editor's inline styles, so sanitize with
+          // DOMPurify before marking the HTML as trusted.
+          this.renderedHtml.set(this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(resolved)));
         } catch (e) {
           console.warn('Failed to parse doc in reader:', e);
           this.renderedHtml.set('<p>Unable to render shared document.</p>');

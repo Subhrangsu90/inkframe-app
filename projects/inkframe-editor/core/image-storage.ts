@@ -463,6 +463,29 @@ class ImageStorage {
   }
 
   /**
+   * Removes a persisted document from IndexedDB and from the localStorage fallback.
+   */
+  async deleteDocument(key: string): Promise<void> {
+    if (!this.isBrowser()) return;
+    try {
+      const db = await this.getDB();
+      if (db) {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(DOC_STORE_NAME, 'readwrite');
+          const req = tx.objectStore(DOC_STORE_NAME).delete(key);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to delete document from IndexedDB:', e);
+    }
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+    } catch {}
+  }
+
+  /**
    * Retrieves a persisted document from IndexedDB asynchronously with localStorage fallback.
    */
   async getDocument<T = any>(key: string): Promise<T | null> {

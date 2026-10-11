@@ -22,6 +22,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 's',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 's/:hash',
     renderMode: RenderMode.Client,
   },

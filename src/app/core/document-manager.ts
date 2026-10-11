@@ -16,6 +16,8 @@ const INDEX_KEY = 'inkframe_docs_index';
 const ACTIVE_ID_KEY = 'inkframe_active_doc_id';
 const LEGACY_SAVED_KEY = 'inkframe_saved_doc';
 
+const docKey = (id: string) => `inkframe_doc_${id}`;
+
 export function extractDocTitle(stored: StoredDoc): string {
   try {
     const content = (stored?.doc as any)?.content;
@@ -76,6 +78,7 @@ export class DocumentManager {
     try {
       const stored = await imageStorage.getDocument<DocMeta[]>(INDEX_KEY);
       if (Array.isArray(stored) && stored.length > 0) {
+        this.dropLegacyCopy();
         return stored;
       }
       // Check legacy single-document storage
@@ -90,8 +93,9 @@ export class DocumentManager {
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
-        await imageStorage.saveDocument('inkframe_doc_doc_default', legacy);
+        await imageStorage.saveDocument(docKey('doc_default'), legacy);
         await this.saveIndex([meta]);
+        this.dropLegacyCopy();
         this.setActiveDocId('doc_default');
         return [meta];
       }
@@ -99,6 +103,19 @@ export class DocumentManager {
       console.warn('Failed to read docs index:', e);
     }
     return [];
+  }
+
+  private legacyDropped = false;
+
+  /**
+   * Older versions mirrored every save into one legacy key. Once documents
+   * live in the index that copy is stale (it holds whichever document was
+   * saved last) and could resurrect deleted content, so remove it once.
+   */
+  private dropLegacyCopy(): void {
+    if (this.legacyDropped) return;
+    this.legacyDropped = true;
+    void imageStorage.deleteDocument(LEGACY_SAVED_KEY);
   }
 
   async saveIndex(index: DocMeta[]): Promise<void> {
@@ -129,7 +146,7 @@ export class DocumentManager {
   async getDoc(id: string): Promise<StoredDoc | null> {
     if (typeof window === 'undefined') return null;
     try {
-      const doc = await imageStorage.getDocument<StoredDoc>(`inkframe_doc_${id}`);
+      const doc = await imageStorage.getDocument<StoredDoc>(docKey(id));
       if (doc && doc.doc) return doc;
       if (id === 'doc_default') {
         const legacy = await imageStorage.getDocument<StoredDoc>(LEGACY_SAVED_KEY);
@@ -147,9 +164,7 @@ export class DocumentManager {
     const now = Date.now();
 
     // Persist doc content
-    await imageStorage.saveDocument(`inkframe_doc_${id}`, doc);
-    // Keep legacy single-doc key synchronized for backward compatibility with existing tests
-    await imageStorage.saveDocument(LEGACY_SAVED_KEY, doc);
+    await imageStorage.saveDocument(docKey(id), doc);
 
     const index = await this.getIndex();
     const existingIdx = index.findIndex((d) => d.id === id);
@@ -214,14 +229,13 @@ export class DocumentManager {
     let index = await this.getIndex();
     index = index.filter((d) => d.id !== id);
 
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(`inkframe_doc_${id}`);
-      }
-    } catch {}
+    // Documents live in IndexedDB (localStorage is only a fallback), so remove both.
+    await imageStorage.deleteDocument(docKey(id));
 
     if (index.length === 0) {
       const created = await this.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
+      // createDoc re-reads the stored index, which still lists the deleted doc.
+      await this.saveIndex([created.meta]);
       return created.meta.id;
     }
 

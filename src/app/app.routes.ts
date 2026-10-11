@@ -26,7 +26,14 @@ export const routes: Routes = [
     redirectTo: 'docs',
     pathMatch: 'full',
   },
-  // Document reader page (view mode, no edit)
+  // Document reader page (view mode, no edit). Share links carry the
+  // document in the fragment (/s#<payload>); /s/:hash serves older links
+  // and local document ids.
+  {
+    path: 's',
+    loadComponent: () =>
+      import('./pages/reader/reader').then((m) => m.Reader),
+  },
   {
     path: 's/:hash',
     loadComponent: () =>

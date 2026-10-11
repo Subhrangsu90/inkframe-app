@@ -23,7 +23,7 @@ import { EditorHooks } from './editor-hooks';
 const hardBreak: Command = (state, dispatch) => {
   dispatch?.(
     state.tr
-      .replaceSelectionWith(schema.nodes['hard_break'].create())
+      .replaceSelectionWith(state.schema.nodes['hard_break'].create())
       .scrollIntoView(),
   );
   return true;
@@ -58,9 +58,12 @@ export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_l
       }
     }
 
+    const targetList = state.schema.nodes[kind];
+    if (!targetList) return false;
+
     // 1. If not currently inside any list: wrap in the requested list
     if (listDepth === -1) {
-      return wrapInList(state.schema.nodes[kind])(state, dispatch);
+      return wrapInList(targetList)(state, dispatch);
     }
 
     const currentListNode = $from.node(listDepth);
@@ -69,10 +72,14 @@ export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_l
     // 2. If already in this exact list type: toggle off (lift out of list)
     if (currentKind === kind) {
       const itemType = kind === 'task_list' ? task_item : list_item;
-      return liftListItem(itemType)(state, dispatch);
+      return itemType ? liftListItem(itemType)(state, dispatch) : false;
     }
 
     // 3. Auto-switch seamlessly between list types!
+    // Converting to/from a task list needs both item types in the schema.
+    if ((kind === 'task_list' || currentKind === 'task_list') && (!task_item || !list_item)) {
+      return false;
+    }
     if (!dispatch) return true;
 
     const listPos = $from.before(listDepth);

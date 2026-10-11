@@ -2,7 +2,7 @@ import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
 import { addListNodes } from 'prosemirror-schema-list';
 import { tableNodes } from 'prosemirror-tables';
-import { sanitizeHref } from './link-utils';
+import { sanitizeCssColor, sanitizeCssLength, sanitizeHref } from './link-utils';
 
 export type CalloutKind = 'info' | 'warning' | 'success' | 'danger';
 export const CALLOUT_KINDS: CalloutKind[] = ['info', 'warning', 'success', 'danger'];
@@ -98,10 +98,16 @@ const textColor: MarkSpec = {
   parseDOM: [
     {
       style: 'color',
-      getAttrs: (value) => (typeof value === 'string' ? { color: value } : false),
+      getAttrs: (value) => {
+        const color = sanitizeCssColor(value);
+        return color ? { color } : false;
+      },
     },
   ],
-  toDOM: (mark) => ['span', { style: `color: ${mark.attrs['color']}` }, 0],
+  toDOM: (mark) => {
+    const color = sanitizeCssColor(mark.attrs['color']);
+    return ['span', color ? { style: `color: ${color}` } : {}, 0];
+  },
 };
 
 const small: MarkSpec = {
@@ -200,23 +206,24 @@ const image: NodeSpec = {
           src: el.getAttribute('src'),
           title: el.getAttribute('title'),
           alt: el.getAttribute('alt'),
-          width: el.getAttribute('width') || el.style.width || null,
+          width: sanitizeCssLength(el.getAttribute('width') || el.style.width),
         };
       },
     },
   ],
-  toDOM: (node) => [
-    'img',
-    {
-      src: node.attrs['src'],
-      alt: node.attrs['alt'],
-      title: node.attrs['title'],
-      class: 'ink-image',
-      ...(node.attrs['width']
-        ? { width: node.attrs['width'], style: `width: ${node.attrs['width']}` }
-        : {}),
-    },
-  ],
+  toDOM: (node) => {
+    const width = sanitizeCssLength(node.attrs['width']);
+    return [
+      'img',
+      {
+        src: node.attrs['src'],
+        alt: node.attrs['alt'],
+        title: node.attrs['title'],
+        class: 'ink-image',
+        ...(width ? { width, style: `width: ${width}` } : {}),
+      },
+    ];
+  },
 };
 
 const code_block: NodeSpec = {
@@ -258,6 +265,52 @@ const code_block: NodeSpec = {
   ],
 };
 
+/** Table, row and cell specs, with alignment / background / height cell attributes. */
+export const tableNodeSpecs = tableNodes({
+  tableGroup: 'block',
+  cellContent: 'block+',
+  cellAttributes: {
+    alignment: {
+      default: null,
+      getFromDOM(dom) {
+        const value = (dom as HTMLElement).style.textAlign;
+        return value === 'left' || value === 'center' || value === 'right' ? value : null;
+      },
+      setDOMAttr(value, attrs) {
+        if (value === 'left' || value === 'center' || value === 'right') {
+          attrs['style'] = (attrs['style'] || '') + `text-align: ${value};`;
+        }
+      },
+    },
+    background: {
+      default: null,
+      getFromDOM(dom) {
+        return sanitizeCssColor((dom as HTMLElement).style.backgroundColor);
+      },
+      setDOMAttr(value, attrs) {
+        const color = sanitizeCssColor(value);
+        if (color) {
+          attrs['style'] = (attrs['style'] || '') + `background-color: ${color};`;
+        }
+      },
+    },
+    height: {
+      default: null,
+      getFromDOM(dom) {
+        const el = dom as HTMLElement;
+        return sanitizeCssLength(el.style.height || el.getAttribute('data-height'));
+      },
+      setDOMAttr(value, attrs) {
+        const height = sanitizeCssLength(value);
+        if (height) {
+          attrs['style'] = (attrs['style'] || '') + `height: ${height};`;
+          attrs['data-height'] = height;
+        }
+      },
+    },
+  },
+});
+
 const baseNodesWithTasks = base.spec.nodes
   .update('image', image)
   .update('code_block', code_block)
@@ -265,48 +318,7 @@ const baseNodesWithTasks = base.spec.nodes
   .addToEnd('task_item', task_item);
 
 const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
-  .append(
-    tableNodes({
-      tableGroup: 'block',
-      cellContent: 'block+',
-      cellAttributes: {
-        alignment: {
-          default: null,
-          getFromDOM(dom) {
-            return (dom as HTMLElement).style.textAlign || null;
-          },
-          setDOMAttr(value, attrs) {
-            if (value) {
-              attrs['style'] = (attrs['style'] || '') + `text-align: ${value};`;
-            }
-          },
-        },
-        background: {
-          default: null,
-          getFromDOM(dom) {
-            return (dom as HTMLElement).style.backgroundColor || null;
-          },
-          setDOMAttr(value, attrs) {
-            if (value) {
-              attrs['style'] = (attrs['style'] || '') + `background-color: ${value};`;
-            }
-          },
-        },
-        height: {
-          default: null,
-          getFromDOM(dom) {
-            return (dom as HTMLElement).style.height || (dom as HTMLElement).getAttribute('data-height') || null;
-          },
-          setDOMAttr(value, attrs) {
-            if (value) {
-              attrs['style'] = (attrs['style'] || '') + `height: ${value};`;
-              attrs['data-height'] = String(value);
-            }
-          },
-        },
-      },
-    }),
-  )
+  .append(tableNodeSpecs)
   .addToEnd('callout', callout);
 
 export {

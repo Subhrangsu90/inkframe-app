@@ -13,6 +13,7 @@
   ],
   "allowedNonPeerDependencies": [
     "dompurify",
+    "markdown-it",
     "prismjs",
     "prosemirror-.*",
     "rxjs",

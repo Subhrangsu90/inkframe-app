@@ -165,6 +165,7 @@ describe('Application Route Definitions', () => {
     expect(paths).toContain('');
     expect(paths).toContain('docs');
     expect(paths).toContain('doc/:id');
+    expect(paths).toContain('s');
     expect(paths).toContain('s/:hash');
     expect(paths).toContain('settings');
     expect(paths).toContain('**');

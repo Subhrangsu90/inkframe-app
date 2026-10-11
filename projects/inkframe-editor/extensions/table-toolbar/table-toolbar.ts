@@ -13,7 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, TEXT_COLORS } from '@inkframe-ui/editor/core';
+import { EditorService, OPEN_COLUMN_MENU_EVENT, TEXT_COLORS } from '@inkframe-ui/editor/core';
 
 export interface CellBgColor {
   name: string;
@@ -438,6 +438,9 @@ export class TableToolbar {
   constructor() {
     if (typeof window !== 'undefined') {
       const handler = (evt: Event) => {
+        // Ignore events from other editors on the same page.
+        const editorDom = this.svc.view?.dom;
+        if (!editorDom || !editorDom.contains(evt.target as Node)) return;
         const customEvt = evt as CustomEvent<{ clientX: number; clientY: number }>;
         if (customEvt.detail) {
           this.colMenuPos.set({ x: customEvt.detail.clientX, y: customEvt.detail.clientY });
@@ -448,10 +451,10 @@ export class TableToolbar {
         }
       };
 
-      window.addEventListener('ink-open-column-menu', handler);
+      window.addEventListener(OPEN_COLUMN_MENU_EVENT, handler);
 
       inject(DestroyRef).onDestroy(() => {
-        window.removeEventListener('ink-open-column-menu', handler);
+        window.removeEventListener(OPEN_COLUMN_MENU_EVENT, handler);
       });
     }
   }

@@ -33,8 +33,9 @@ export class App {
 
   private updateStandalone(rawUrl: string): void {
     const url = this.normalizeUrl(rawUrl);
-    // Standalone routes: Landing page ('/' or '') and Reader page ('/s/...')
-    const standalone = url === '' || url === '/' || url.startsWith('/s/') || url.startsWith('/s');
+    // Standalone routes: Landing page ('/' or '') and Reader page ('/s', '/s#...', '/s/...').
+    // Not a bare startsWith('/s'): that also matches '/settings'.
+    const standalone = url === '' || url === '/' || url === '/s' || url.startsWith('/s/');
     this.isStandalone.set(standalone);
   }
 

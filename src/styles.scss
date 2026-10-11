@@ -2,11 +2,11 @@
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
 @use '@angular/material' as mat;
-// @use 'tailwindcss';
+@use 'tailwindcss';
 
 /* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
-@import '../projects/inkframe-editor/src/styles/index.scss';
-@import './tokens.scss';
+@use '../projects/inkframe-editor/src/styles/index.scss' as editor-styles;
+@use './tokens.scss';
 
 /* ── Tailwind v4 Theme Configuration (Mapping Inkframe Design Tokens) ── */
 @theme {
@@ -61,26 +61,20 @@
 html {
   height: 100%;
   scroll-behavior: smooth;
-  @include mat.theme(
-    (
-      color: (
-        primary: mat.$azure-palette,
+  @include mat.theme((color: (primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
       typography: Roboto,
       density: 0,
-    )
-  );
+    ));
 }
 
 /* ── Host Application Base Styles & Resets ── */
 body {
   background-color: var(--ink-bg);
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    var(--ink-canvas-dot) 1px,
-    transparent 0
-  );
+  background-image: radial-gradient(circle at 1px 1px,
+      var(--ink-canvas-dot) 1px,
+      transparent 0);
   background-size: 32px 32px;
   background-attachment: fixed;
   color: var(--ink-text-primary);
@@ -98,11 +92,9 @@ body {
 /* ── Reusable Premium Backdrop Utilities ── */
 .ink-canvas-texture {
   background-color: var(--ink-bg);
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    var(--ink-canvas-dot) 1px,
-    transparent 0
-  );
+  background-image: radial-gradient(circle at 1px 1px,
+      var(--ink-canvas-dot) 1px,
+      transparent 0);
   background-size: 28px 28px;
 }
 
@@ -138,6 +130,7 @@ select {
 .is-preview,
 .ProseMirror-preview,
 .ProseMirror[contenteditable="false"] {
+
   .ink-table-row-handle,
   .ink-table-col-corner-dot,
   .ink-table-col-header-handle,
@@ -167,4 +160,3 @@ select {
     pointer-events: auto !important;
   }
 }
-

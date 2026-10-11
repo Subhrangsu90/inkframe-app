@@ -2,15 +2,9 @@ import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-bas
 import { history, undo, redo } from 'prosemirror-history';
 import { setBlockType, toggleMark } from 'prosemirror-commands';
 import {
-  splitListItem,
-  sinkListItem,
-  liftListItem,
-} from 'prosemirror-schema-list';
-import {
   columnResizing,
   tableEditing,
   goToNextCell,
-  tableNodes,
 } from 'prosemirror-tables';
 import { textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules';
 import { EditorExtension, createExtension } from './extension-types';
@@ -28,6 +22,7 @@ import {
   task_item,
   image,
   code_block,
+  tableNodeSpecs,
 } from './schema';
 import { markRule, taskItemRule } from './input-rules';
 import { clearFormattingCommand, toggleListCommand } from './plugins';
@@ -488,43 +483,7 @@ export const TaskListExtension = createExtension({
 
 export const TableExtension = createExtension({
   name: 'table',
-  nodes: tableNodes({
-    tableGroup: 'block',
-    cellContent: 'block+',
-    cellAttributes: {
-      alignment: {
-        default: null,
-        getFromDOM: (dom) => (dom as HTMLElement).style.textAlign || null,
-        setDOMAttr: (value, attrs) => {
-          if (value) {
-            attrs['style'] = (attrs['style'] || '') + `text-align: ${value};`;
-          }
-        },
-      },
-      background: {
-        default: null,
-        getFromDOM: (dom) => (dom as HTMLElement).style.backgroundColor || null,
-        setDOMAttr: (value, attrs) => {
-          if (value) {
-            attrs['style'] = (attrs['style'] || '') + `background-color: ${value};`;
-          }
-        },
-      },
-      height: {
-        default: null,
-        getFromDOM: (dom) =>
-          (dom as HTMLElement).style.height ||
-          (dom as HTMLElement).getAttribute('data-height') ||
-          null,
-        setDOMAttr: (value, attrs) => {
-          if (value) {
-            attrs['style'] = (attrs['style'] || '') + `height: ${value};`;
-            attrs['data-height'] = String(value);
-          }
-        },
-      },
-    },
-  }),
+  nodes: tableNodeSpecs,
   plugins: () => [
     columnResizing({ handleWidth: 6, cellMinWidth: 45, lastColumnResizable: true }),
     tableEditing(),

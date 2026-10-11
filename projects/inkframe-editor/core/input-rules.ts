@@ -25,7 +25,9 @@ export function markRule(re: RegExp, type: MarkType): InputRule {
 export function taskItemRule(): InputRule {
   return new InputRule(/^\s*\[([ xX]?)\]\s$/, (state, match, start, end) => {
     const isChecked = match[1].toLowerCase() === 'x';
-    const { task_list, task_item } = schema.nodes;
+    // Use the state's schema: types from another Schema instance never match.
+    const { task_list, task_item } = state.schema.nodes;
+    if (!task_list || !task_item) return null;
     const tr = state.tr.delete(start, end);
     const $pos = tr.doc.resolve(tr.mapping.map(start));
     const range = $pos.blockRange();

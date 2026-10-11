@@ -6,17 +6,18 @@ import {
   PLATFORM_ID,
   afterNextRender,
   OnDestroy,
+  HostListener,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { InkIcon } from '../../shared/ui';
+import { InkIcon, Card, Button } from '../../shared/ui';
 
 @Component({
   selector: 'ink-landing',
   templateUrl: './landing.html',
   styleUrl: './landing.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, InkIcon],
+  imports: [RouterLink, InkIcon, Card, Button],
 })
 export class Landing implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
@@ -134,6 +135,9 @@ export class Landing implements OnDestroy {
           window.requestAnimationFrame(() => {
             const scrollY = window.scrollY;
             this.headerScrolled.set(scrollY > 40);
+            if (scrollY > 40 && this.mobileMenuOpen()) {
+              this.mobileMenuOpen.set(false);
+            }
 
             // 3D tilt calculation: from 16deg to 0deg, scale 0.94 to 1.0
             const progress = Math.min(Math.max(scrollY / 420, 0), 1);
@@ -161,6 +165,13 @@ export class Landing implements OnDestroy {
     }
   }
 
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.mobileMenuOpen()) {
+      this.closeMobileMenu();
+    }
+  }
+
   toggleTheme(): void {
     const newDark = !this.isDark();
     this.isDark.set(newDark);
@@ -170,6 +181,10 @@ export class Landing implements OnDestroy {
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen.set(!this.mobileMenuOpen());
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
   }
 
   private applyTheme(dark: boolean): void {

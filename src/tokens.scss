@@ -11,6 +11,16 @@
   --ink-border-strong: #d6d3cc;    /* Hover / active boundary */
   --ink-border-focus: rgba(124, 58, 237, 0.4);
 
+  /* Canvas Atmosphere & Ambient Lighting (Premium Backdrop System) */
+  --ink-canvas-bg: var(--ink-bg);
+  --ink-canvas-dot: rgba(27, 27, 31, 0.05);
+  --ink-canvas-grid: rgba(27, 27, 31, 0.035);
+  --ink-canvas-glow-primary: rgba(124, 58, 237, 0.065);
+  --ink-canvas-glow-secondary: rgba(99, 102, 241, 0.04);
+  --ink-canvas-glow-warm: rgba(245, 158, 11, 0.025);
+  --ink-canvas-highlight: rgba(255, 255, 255, 0.7);
+  --ink-beam-line: linear-gradient(90deg, transparent 0%, rgba(124, 58, 237, 0.25) 50%, transparent 100%);
+
   /* Typography */
   --ink-text: #1b1b1f;             /* Primary text */
   --ink-text-muted: #6b6b73;       /* Captions, counts, placeholders */
@@ -21,6 +31,7 @@
   --ink-accent-hover: #6d28d9;
   --ink-accent-soft: #f3eeff;      /* Active button background */
   --ink-accent-text: #6d28d9;
+  --ink-accent-contrast: #ffffff;  /* Contrast text on accent action */
 
   /* Status Colors */
   --ink-danger: #dc2626;
@@ -81,6 +92,16 @@ body.theme-dark,
   --ink-border-strong: #34343a;
   --ink-border-focus: rgba(139, 92, 246, 0.45);
 
+  /* Canvas Atmosphere & Ambient Lighting (Premium Backdrop System) */
+  --ink-canvas-bg: var(--ink-bg);
+  --ink-canvas-dot: rgba(255, 255, 255, 0.06);
+  --ink-canvas-grid: rgba(255, 255, 255, 0.035);
+  --ink-canvas-glow-primary: rgba(139, 92, 246, 0.16);
+  --ink-canvas-glow-secondary: rgba(99, 102, 241, 0.10);
+  --ink-canvas-glow-warm: rgba(245, 158, 11, 0.035);
+  --ink-canvas-highlight: rgba(255, 255, 255, 0.08);
+  --ink-beam-line: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.35) 50%, transparent 100%);
+
   /* Typography */
   --ink-text: #ededef;
   --ink-text-muted: #9a9aa3;
@@ -91,6 +112,7 @@ body.theme-dark,
   --ink-accent-hover: #7c3aed;
   --ink-accent-soft: #241b3d;
   --ink-accent-text: #c4b5fd;
+  --ink-accent-contrast: #ffffff;
 
   /* Status Colors */
   --ink-danger: #ef4444;

@@ -4,34 +4,69 @@
   display: block;
 }
 
-/* ── Ambient Background Orbs ── */
+/* ── Ambient Background Lighting & Architecture ── */
 @keyframes orb-drift-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, 50px) scale(1.05); }
-  66% { transform: translate(-20px, 30px) scale(0.97); }
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(40px, 50px); }
+  66% { transform: translate(-20px, 30px); }
 }
 @keyframes orb-drift-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-35px, -25px) scale(1.08); }
-  66% { transform: translate(25px, -15px) scale(0.95); }
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-35px, -25px); }
+  66% { transform: translate(25px, -15px); }
 }
 @keyframes orb-drift-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, -40px) scale(1.04); }
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(30px, -40px); }
 }
 
 .ambient-orb-1 { animation: orb-drift-1 22s ease-in-out infinite; }
 .ambient-orb-2 { animation: orb-drift-2 28s ease-in-out infinite; }
 .ambient-orb-3 { animation: orb-drift-3 18s ease-in-out infinite; }
 
-/* ── Dot Grid Pattern ── */
-.dot-grid {
+/* ── Top Central Ambient Horizon (Architectural Depth) ── */
+.canvas-top-horizon {
+  position: absolute;
+  top: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1300px, 100vw);
+  height: 640px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--ink-canvas-glow-primary) 0%,
+    var(--ink-canvas-glow-secondary) 50%,
+    transparent 78%
+  );
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+/* ── Canvas Token Light Pools ── */
+.canvas-orb-primary {
+  background: var(--ink-canvas-glow-primary);
+}
+
+.canvas-orb-secondary {
+  background: var(--ink-canvas-glow-secondary);
+}
+
+.canvas-orb-warm {
+  background: var(--ink-canvas-glow-warm);
+}
+
+/* ── Vignetted Precision Dot Grid ── */
+.canvas-dot-grid {
+  position: absolute;
+  inset: 0;
   background-image: radial-gradient(
-    circle,
-    var(--ink-border) 1px,
-    transparent 1px
+    circle at 1px 1px,
+    var(--ink-canvas-dot) 1px,
+    transparent 0
   );
   background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
 }
 
 /* ── Hero Angled Grid Background with Vignette Mask ── */
@@ -91,6 +126,7 @@
 
 /* ── Frosted Glass Card ── */
 .glass-card {
+  // background: color-mix(in srgb, var(--ink-surface) 84%, transparent);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
 }
@@ -197,29 +233,24 @@
   }
 }
 
-/* ── Specular rim highlight on buttons ── */
-.btn-specular {
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-/* ── Pricing featured card glow ── */
-.featured-glow {
-  box-shadow:
-    0 0 0 1px var(--ink-accent),
-    0 8px 40px -8px rgba(124, 58, 237, 0.18),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-}
+/* ── Design Token Compliant Styles ── */
 
 /* ── Large Watermark Text ── */
 .watermark-text {
-  font-size: clamp(4rem, 12vw, 10rem);
+  display: block;
+  font-size: clamp(2.5rem, 11vw, 9.5rem);
   font-weight: 900;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
   line-height: 1;
-  color: var(--ink-border);
-  opacity: 0.35;
+  text-align: center;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ink-text) 24%, transparent) 0%,
+    color-mix(in srgb, var(--ink-text) 8%, transparent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   user-select: none;
   pointer-events: none;
 }
@@ -253,101 +284,9 @@
   animation: slide-down 0.2s ease-out;
 }
 
-/* ── Unified Landing Page Card System ── */
-.landing-card,
-.bento-card-glass {
-  position: relative;
-  background: color-mix(in srgb, var(--ink-surface) 84%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink-border) 72%, transparent);
-  border-radius: 24px;
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    0 8px 24px -8px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  transition:
-    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.3s ease,
-    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.3s ease;
-  will-change: transform, box-shadow;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: color-mix(in srgb, var(--ink-accent) 42%, transparent);
-    box-shadow:
-      0 20px 44px -12px rgba(124, 58, 237, 0.14),
-      0 0 0 1px color-mix(in srgb, var(--ink-accent) 28%, transparent),
-      0 8px 20px -4px rgba(0, 0, 0, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.65);
-  }
-}
-
-[data-theme='dark'] .landing-card,
-[data-theme='dark'] .bento-card-glass {
-  background: color-mix(in srgb, var(--ink-surface) 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ink-border) 80%, transparent);
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.35),
-    0 12px 30px -10px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--ink-accent) 45%, transparent);
-    box-shadow:
-      0 24px 54px -12px rgba(0, 0, 0, 0.65),
-      0 0 0 1px color-mix(in srgb, var(--ink-accent) 35%, transparent),
-      0 10px 30px -4px color-mix(in srgb, var(--ink-accent) 22%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-}
-
-/* Featured variation (e.g. Writer Pro pricing card) */
-.landing-card-featured,
-.featured-glow {
-  border-color: color-mix(in srgb, var(--ink-accent) 55%, transparent) !important;
-  box-shadow:
-    0 12px 36px -8px rgba(124, 58, 237, 0.18),
-    0 0 0 1px color-mix(in srgb, var(--ink-accent) 45%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-
-  &:hover {
-    transform: translateY(-4px);
-    border-color: var(--ink-accent) !important;
-    box-shadow:
-      0 24px 50px -10px rgba(124, 58, 237, 0.28),
-      0 0 0 1px var(--ink-accent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-  }
-}
-
-[data-theme='dark'] .landing-card-featured,
-[data-theme='dark'] .featured-glow {
-  border-color: color-mix(in srgb, var(--ink-accent) 60%, transparent) !important;
-  box-shadow:
-    0 16px 44px -8px rgba(124, 58, 237, 0.3),
-    0 0 0 1px color-mix(in srgb, var(--ink-accent) 50%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-
-  &:hover {
-    border-color: var(--ink-accent) !important;
-    box-shadow:
-      0 28px 60px -10px rgba(0, 0, 0, 0.7),
-      0 0 0 1px var(--ink-accent),
-      0 12px 36px -4px color-mix(in srgb, var(--ink-accent) 35%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
-  }
-}
-
 /* Connecting beam lines */
 .pipeline-track {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--ink-accent) 40%, transparent) 50%,
-    transparent 100%
-  );
+  background: var(--ink-border);
 }
 
 /* Dotted globe sphere horizon */

@@ -3,78 +3,82 @@
 <!-- Using Inkframe Design Tokens via Tailwind CSS v4      -->
 <!-- ═══════════════════════════════════════════════════════ -->
 
-<!-- ── Ambient Background Lighting ── -->
+<!-- ── Ambient Background Architecture & Lighting ── -->
 <div aria-hidden="true" class="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-  <!-- Top-left violet glow -->
-  <div class="ambient-orb-1 absolute -top-40 left-1/4 w-[680px] h-[680px] rounded-full
-    bg-gradient-to-tr from-violet-200/25 via-purple-100/20 to-indigo-50/20 blur-3xl opacity-70">
+  <!-- Top Central Ambient Horizon (Architectural Depth) -->
+  <div class="canvas-top-horizon"></div>
+
+  <!-- Ambient Floating Luminous Light Pools -->
+  <div class="ambient-orb-1 canvas-orb-primary absolute -top-32 left-1/4 w-[680px] h-[680px] rounded-full blur-[100px]">
   </div>
-  <!-- Right-side warm glow -->
-  <div class="ambient-orb-2 absolute top-[600px] -right-32 w-[640px] h-[640px] rounded-full
-    bg-gradient-to-bl from-rose-100/15 via-amber-50/15 to-violet-100/20 blur-3xl opacity-55">
+  <div
+    class="ambient-orb-2 canvas-orb-secondary absolute top-[680px] -right-32 w-[620px] h-[620px] rounded-full blur-[110px]">
   </div>
-  <!-- Mid-left indigo -->
-  <div class="ambient-orb-3 absolute top-[1600px] -left-24 w-[560px] h-[560px] rounded-full
-    bg-gradient-to-tr from-indigo-100/20 via-violet-100/25 to-pink-50/15 blur-3xl opacity-60">
+  <div
+    class="ambient-orb-3 canvas-orb-primary absolute top-[1600px] -left-28 w-[580px] h-[580px] rounded-full blur-[100px]">
   </div>
-  <!-- Bottom-right violet -->
-  <div class="ambient-orb-1 absolute bottom-32 right-1/4 w-[600px] h-[600px] rounded-full
-    bg-gradient-to-r from-purple-100/15 via-violet-200/20 to-indigo-50/10 blur-3xl opacity-50">
+  <div class="ambient-orb-1 canvas-orb-warm absolute bottom-32 right-1/4 w-[600px] h-[600px] rounded-full blur-[120px]">
   </div>
-  <!-- Subtle dot grid -->
-  <div class="dot-grid absolute inset-0 opacity-[0.35]"></div>
+
+  <!-- Vignetted Precision Dot Matrix Grid -->
+  <div class="canvas-dot-grid absolute inset-0"></div>
+
+  <!-- Micro-Texture Film Grain Noise Overlay -->
+  <div class="ink-noise-overlay"></div>
 </div>
 
 <!-- ═══════════════════════════════════ -->
 <!-- SECTION 1: Floating Pill Navigation -->
 <!-- ═══════════════════════════════════ -->
 <header
-  class="fixed top-0 inset-x-0 z-50 w-full flex flex-col items-center pointer-events-none transition-all duration-500 ease-out">
-  <div class="pointer-events-auto rounded-full transition-all duration-500 ease-out flex items-center justify-between"
+  class="fixed top-0 inset-x-0 z-50 w-full flex flex-col items-center pointer-events-none transition-all duration-300 ease-out px-4 sm:px-6"
+  [class]="headerScrolled() ? 'pt-3 sm:pt-4' : 'pt-2 sm:pt-3'">
+  <div
+    class="pointer-events-auto relative z-50 rounded-full transition-all duration-300 ease-out flex items-center justify-between gap-3 sm:gap-6"
     [class]="headerScrolled()
-      ? 'w-[92%] sm:w-[84%] md:w-[74%] lg:w-[60%] max-w-[840px] px-5 py-2.5 translate-y-4 sm:translate-y-5 border border-ink-border/60 nav-floating-shadow glass-card'
-      : 'w-full max-w-6xl px-6 sm:px-8 py-3.5 sm:py-4 translate-y-0 bg-transparent border border-transparent shadow-none'">
+      ? 'w-full max-w-4xl px-4 sm:px-6 py-2.5 border border-ink-border/70 nav-floating-shadow glass-card'
+      : 'w-full max-w-6xl px-4 sm:px-6 py-3 bg-transparent border border-transparent shadow-none'">
 
     <!-- Brand -->
-    <a routerLink="/" class="flex items-center space-x-2.5 group">
-      <span class="w-7 h-7 rounded-ink-sm bg-gradient-to-br from-ink-accent to-purple-800
+    <a routerLink="/" class="flex items-center gap-2.5 shrink-0 group">
+      <span class="w-7 h-7 rounded-ink-sm bg-ink-accent
         flex items-center justify-center text-white text-xs font-bold
-        shadow-sm shadow-purple-500/25 group-hover:scale-105 transition-transform">
+        shadow-sm shrink-0">
         I
       </span>
-      <span class="font-bold text-[17px] tracking-tight text-ink-text group-hover:opacity-90 transition-opacity">
+      <span
+        class="font-bold text-[17px] tracking-tight text-ink-text group-hover:opacity-90 transition-opacity whitespace-nowrap">
         Inkframe
       </span>
     </a>
 
-    <!-- Desktop Nav Links -->
-    <nav class="hidden md:flex items-center space-x-8 text-[13.5px] text-ink-text-muted font-medium">
+    <!-- Desktop Nav Links (visible on desktop >= 1024px) -->
+    <nav class="hidden lg:flex items-center gap-6 xl:gap-8 text-[13.5px] text-ink-text-muted font-medium shrink-0">
       <a href="#features"
-        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors">
+        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
         Features
       </a>
       <a href="#editor-preview"
-        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors">
+        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
         Preview
       </a>
       <a href="#shortcuts"
-        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors">
+        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
         Shortcuts
       </a>
       <a href="#pricing"
-        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors">
+        class="hover:text-ink-text hover:underline underline-offset-8 decoration-ink-accent/40 transition-colors whitespace-nowrap">
         Pricing
       </a>
     </nav>
 
     <!-- Right actions -->
-    <div class="flex items-center space-x-1.5 sm:space-x-2">
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
       <!-- GitHub Link -->
-      <a href="https://github.com" target="_blank" rel="noopener noreferrer"
-        class="w-9 h-9 rounded-ink-md flex items-center justify-center
+      <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-ink-md flex items-center justify-center
         text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2
-        border border-transparent hover:border-ink-border transition-all duration-200"
+        border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         aria-label="View on GitHub">
         <ink-icon name="github" [size]="18" />
       </a>
@@ -82,63 +86,62 @@
       <!-- Theme Toggle -->
       <button (click)="toggleTheme()" type="button" class="w-9 h-9 rounded-ink-md flex items-center justify-center
         text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2
-        border border-transparent hover:border-ink-border transition-all duration-200"
+        border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
         <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="18" />
       </button>
 
-      <!-- Mobile menu toggle -->
-      <button (click)="toggleMobileMenu()" type="button" class="md:hidden w-9 h-9 rounded-ink-md flex items-center justify-center
+      <!-- CTA Button (desktop & tablet, hidden on phone) -->
+      <div class="hidden sm:inline-flex shrink-0">
+        <a ink-btn variant="primary" pill size="sm" routerLink="/docs">
+          Open Editor
+        </a>
+      </div>
+
+      <!-- Mobile menu toggle (visible below lg) -->
+      <button (click)="toggleMobileMenu()" type="button" class="lg:hidden w-9 h-9 rounded-ink-md flex items-center justify-center
         text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2
-        border border-transparent hover:border-ink-border transition-all" aria-label="Toggle navigation menu">
+        border border-transparent hover:border-ink-border transition-all shrink-0" aria-label="Toggle navigation menu">
         <ink-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" [size]="18" />
       </button>
-
-      <!-- CTA Button (desktop) -->
-      <a routerLink="/docs" class="hidden md:inline-flex items-center justify-center px-4 py-1.5
-        text-[13px] font-medium tracking-tight text-white
-        bg-gradient-to-r from-ink-accent to-purple-700
-        hover:from-purple-600 hover:to-ink-accent
-        rounded-ink-pill btn-specular
-        hover:shadow-[0_0_24px_-2px_rgba(124,58,237,0.38)]
-        transition-all duration-200 active:scale-[0.97] hover:-translate-y-0.5">
-        Open Editor
-      </a>
     </div>
   </div>
 
   <!-- Mobile Nav Dropdown -->
   @if (mobileMenuOpen()) {
-  <div class="pointer-events-auto w-[92%] max-w-[840px] mt-2 px-5 py-4 rounded-ink-lg glass-card
-      border border-ink-border/60 mobile-menu-enter space-y-1 shadow-ink-lg"
-    style="background: color-mix(in srgb, var(--ink-surface) 92%, transparent);">
-    <a href="#features" (click)="toggleMobileMenu()"
+  <!-- Backdrop to close mobile menu on click outside -->
+  <div class="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px] lg:hidden pointer-events-auto"
+    (click)="closeMobileMenu()" aria-hidden="true"></div>
+
+  <div class="pointer-events-auto relative z-50 w-full max-w-4xl mt-2 px-5 py-4 rounded-2xl
+      border border-ink-border/80 mobile-menu-enter space-y-1 shadow-ink-lg bg-ink-surface/95 glass-card lg:hidden">
+    <a href="#features" (click)="closeMobileMenu()"
       class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       Features
     </a>
-    <a href="#editor-preview" (click)="toggleMobileMenu()"
+    <a href="#editor-preview" (click)="closeMobileMenu()"
       class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       Preview
     </a>
-    <a href="#shortcuts" (click)="toggleMobileMenu()"
+    <a href="#shortcuts" (click)="closeMobileMenu()"
       class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       Shortcuts
     </a>
-    <a href="#pricing" (click)="toggleMobileMenu()"
+    <a href="#pricing" (click)="closeMobileMenu()"
       class="block px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       Pricing
     </a>
-    <a href="https://github.com" target="_blank" rel="noopener noreferrer" (click)="toggleMobileMenu()"
+    <a href="https://github.com" target="_blank" rel="noopener noreferrer" (click)="closeMobileMenu()"
       class="flex items-center justify-between px-3 py-2 text-sm text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 rounded-ink-sm transition-colors">
       <span class="flex items-center gap-2">
         <ink-icon name="github" [size]="16" />
         <span>GitHub</span>
       </span>
-      <span class="text-[10px] text-ink-accent font-mono px-1.5 py-0.5 rounded-ink-sm bg-ink-accent-soft border border-ink-accent/20">v1.4</span>
+      <span
+        class="text-[10px] text-ink-accent font-mono px-1.5 py-0.5 rounded-ink-sm bg-ink-accent-soft border border-ink-border">v1.4</span>
     </a>
-    <div class="pt-2 border-t border-ink-border/60">
-      <a routerLink="/docs" class="block w-full text-center px-4 py-2.5 text-sm font-medium text-white
-          bg-gradient-to-r from-ink-accent to-purple-700 rounded-ink-md btn-specular transition-all">
+    <div class="pt-2 border-t border-ink-border">
+      <a ink-btn variant="primary" fullWidth routerLink="/docs" (click)="closeMobileMenu()">
         Open Editor
       </a>
     </div>
@@ -155,10 +158,10 @@
   <!-- ═══════════════════════════ -->
   <section class="pt-28 pb-16 sm:pt-32 md:pt-36 md:pb-24 px-4 sm:px-6 relative overflow-hidden" id="hero">
     <!-- Angled Grid Background Mesh with Vignette Mask -->
-    <div aria-hidden="true" class="hero-angled-grid-wrap">
+    <!-- <div aria-hidden="true" class="hero-angled-grid-wrap">
       <div class="hero-grid-mesh"></div>
       <div class="hero-grid-dots"></div>
-    </div>
+    </div> -->
 
     <!-- Central Luminous Ambient Glow behind Headline & Editor -->
     <div aria-hidden="true" class="hero-luminous-glow"></div>
@@ -186,8 +189,7 @@
         text-ink-text-heading max-w-3xl">
         Write beautifully.
         <br class="hidden sm:block" />
-        <span class="bg-gradient-to-r from-ink-accent via-purple-500 to-violet-600
-          bg-clip-text text-transparent">
+        <span class="text-ink-accent">
           Stay completely offline.
         </span>
       </h1>
@@ -203,23 +205,11 @@
       <!-- Dual CTAs -->
       <div class="animate-fade-in-up delay-300
         mt-9 flex flex-col sm:flex-row items-center gap-3.5">
-        <a routerLink="/docs" class="inline-flex items-center justify-center px-7 py-3
-          text-[15px] font-semibold tracking-tight text-white
-          bg-gradient-to-r from-ink-accent to-purple-700
-          hover:from-purple-600 hover:to-ink-accent
-          rounded-ink-pill btn-specular
-          hover:shadow-[0_0_28px_-2px_rgba(124,58,237,0.35)]
-          transition-all duration-250 active:scale-[0.97] hover:-translate-y-0.5
-          min-w-[180px]">
+        <a ink-btn variant="primary" size="lg" pill routerLink="/docs" class="min-w-[180px]">
           Start Writing
           <ink-icon name="arrow-right" [size]="16" svgClass="ml-2" />
         </a>
-        <a href="#shortcuts" class="inline-flex items-center justify-center px-6 py-2.5
-          text-[14px] font-medium text-ink-text
-          bg-ink-surface/80 border border-ink-border hover:border-ink-border-strong
-          rounded-ink-pill shadow-ink-sm hover:shadow-ink-md
-          transition-all duration-200 hover:-translate-y-0.5 backdrop-blur-sm
-          min-w-[180px]">
+        <a ink-btn variant="outline" size="lg" pill href="#shortcuts" class="min-w-[180px]">
           View Shortcuts
         </a>
       </div>
@@ -293,7 +283,7 @@
               </div>
 
               <!-- Document Content -->
-              <div class="px-8 sm:px-16 py-8 sm:py-12 min-h-[280px] ink-scrollbar">
+              <div class="px-8 sm:px-16 py-8 sm:py-12 min-h-[280px] text-start ink-scrollbar ">
                 <h1 class="text-2xl sm:text-3xl font-bold text-ink-text tracking-tight mb-4">Welcome to Inkframe</h1>
                 <p class="text-ink-text leading-relaxed mb-4">
                   A <strong>private</strong>, distraction-free writing environment powered by ProseMirror.
@@ -336,6 +326,8 @@
     </div>
   </section>
 
+  <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
+
   <!-- ═══════════════════════════════ -->
   <!-- SECTION 4: Bento Feature Grid   -->
   <!-- ═══════════════════════════════ -->
@@ -362,10 +354,8 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
         <!-- CARD 1: Instant Multi-Format Export (lg:col-span-7) -->
-        <div class="landing-card lg:col-span-7 p-7 sm:p-9 flex flex-col justify-between overflow-hidden relative group min-h-[380px]">
-          <!-- Ambient card glow -->
-          <div class="absolute -top-24 -left-24 w-64 h-64 bg-ink-accent/10 rounded-full blur-3xl pointer-events-none"></div>
-
+        <ink-card variant="surface" hoverable padding="lg" radius="lg"
+          class="lg:col-span-7 flex flex-col justify-between">
           <!-- Top Visual: Document to Multi-Format Export Flow -->
           <div class="relative py-8 sm:py-10 flex items-center justify-center overflow-hidden">
             <!-- Pipeline connector track -->
@@ -373,137 +363,156 @@
 
             <div class="relative z-10 flex items-center justify-between w-full max-w-lg gap-3 sm:gap-5 px-1">
               <!-- Left Mini Card: Live Document Source -->
-              <div class="flex-1 bg-ink-surface/90 border border-ink-border/70 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:-translate-y-1 group-hover:border-ink-accent/30">
-                <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-ink-border/50">
+              <ink-card variant="surface" padding="sm" radius="md" class="flex-1 shadow-sm">
+                <div class="flex items-center gap-2 mb-2.5 pb-2 border-b border-ink-border">
                   <ink-icon name="file-text" [size]="14" svgClass="text-ink-accent shrink-0" />
                   <span class="text-[11px] font-mono text-ink-text truncate">Draft-Post.ink</span>
                 </div>
                 <div class="space-y-1.5 text-[11px] leading-relaxed font-sans">
-                  <div class="h-2 w-4/5 rounded bg-ink-text/15"></div>
-                  <div class="h-2 w-full rounded bg-ink-text/10"></div>
-                  <div class="h-2 w-3/5 rounded bg-ink-text/10"></div>
+                  <div class="h-2 w-4/5 rounded bg-ink-surface-2"></div>
+                  <div class="h-2 w-full rounded bg-ink-surface-2"></div>
+                  <div class="h-2 w-3/5 rounded bg-ink-surface-2"></div>
                 </div>
-                <div class="mt-3 pt-2 border-t border-ink-border/50 flex items-center justify-between text-[10px] font-mono text-ink-text-muted">
+                <div
+                  class="mt-3 pt-2 border-t border-ink-border flex items-center justify-between text-[10px] font-mono text-ink-text-muted">
                   <span>1,420 words</span>
-                  <span class="text-emerald-500 font-semibold">● Ready</span>
+                  <span class="text-ink-success font-semibold">● Ready</span>
                 </div>
-              </div>
+              </ink-card>
 
               <!-- Center Mini Card: 1-Click Export Engine -->
-              <div class="w-18 h-18 sm:w-22 sm:h-22 shrink-0 rounded-2xl bg-ink-surface/90 border border-ink-accent/40 shadow-lg flex flex-col items-center justify-center gap-1 backdrop-blur-md transition-all duration-300 group-hover:scale-105 group-hover:border-ink-accent">
-                <div class="w-8 h-8 rounded-full bg-ink-accent/15 flex items-center justify-center">
-                  <ink-icon name="download" [size]="18" svgClass="text-ink-accent" />
+              <ink-card variant="surface" padding="sm" radius="md"
+                class="w-20 h-20 shrink-0 shadow-sm flex items-center justify-center">
+                <div class="flex flex-col items-center justify-center gap-1">
+                  <div class="w-8 h-8 rounded-full bg-ink-accent-soft flex items-center justify-center">
+                    <ink-icon name="download" [size]="18" svgClass="text-ink-accent" />
+                  </div>
+                  <span class="text-[9px] font-mono uppercase tracking-wider text-ink-accent font-bold">Export</span>
                 </div>
-                <span class="text-[9px] font-mono uppercase tracking-wider text-ink-accent font-bold">Export</span>
-              </div>
+              </ink-card>
 
               <!-- Right Mini Card: Output Formats -->
-              <div class="flex-1 bg-ink-surface/90 border border-ink-border/70 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:-translate-y-1 group-hover:border-ink-accent/30">
+              <ink-card variant="surface" padding="sm" radius="md" class="flex-1 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-[10px] font-mono uppercase tracking-wider text-ink-accent font-bold">FORMATS</span>
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span class="w-2 h-2 rounded-full bg-ink-success"></span>
                 </div>
                 <div class="space-y-1.5 text-[11px] font-mono">
                   <div class="flex items-center justify-between">
                     <span class="text-ink-text">Markdown</span>
-                    <span class="text-emerald-500 text-[10px] font-semibold">.md</span>
+                    <span class="text-ink-success text-[10px] font-semibold">.md</span>
                   </div>
                   <div class="flex items-center justify-between">
                     <span class="text-ink-text">Clean HTML</span>
-                    <span class="text-cyan-500 text-[10px] font-semibold">.html</span>
+                    <span class="text-ink-accent text-[10px] font-semibold">.html</span>
                   </div>
                   <div class="flex items-center justify-between">
                     <span class="text-ink-text">Print Ready</span>
-                    <span class="text-purple-500 text-[10px] font-semibold">.pdf</span>
+                    <span class="text-ink-text-muted text-[10px] font-semibold">.pdf</span>
                   </div>
                 </div>
-              </div>
+              </ink-card>
             </div>
           </div>
 
-          <!-- Bottom Text -->
-          <div class="mt-4 pt-6 border-t border-ink-border/40">
+          <!-- Bottom Text in card-footer -->
+          <div card-footer class="mt-4 pt-6">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
               Instant multi-format export
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Export your writing directly to Markdown, clean HTML, or print-ready PDF in a single keystroke. Zero formatting lost, pure client-side conversion without servers.
+              Export your writing directly to Markdown, clean HTML, or print-ready PDF in a single keystroke. Zero
+              formatting lost, pure client-side conversion without servers.
             </p>
           </div>
-        </div>
+        </ink-card>
 
         <!-- CARD 2: Intuitive Writing Workflow (lg:col-span-5) -->
-        <div class="landing-card lg:col-span-5 p-7 sm:p-9 flex flex-col justify-between overflow-hidden relative group min-h-[380px]">
-          <!-- Top Text -->
-          <div class="mb-5">
+        <ink-card variant="surface" hoverable padding="lg" radius="lg"
+          class="lg:col-span-5 flex flex-col justify-between min-h-[380px]">
+          <!-- Top Text in card-header -->
+          <div card-header class="mb-5">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
               Intuitive writing workflow
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Stay in flow state with contextual formatting bubble menus, fluid markdown shortcuts, and live reading statistics.
+              Stay in flow state with contextual formatting bubble menus, fluid markdown shortcuts, and live reading
+              statistics.
             </p>
           </div>
 
           <!-- Bottom Visual: Floating Bubble Formatting Toolbar & Live Document Stats -->
-          <div class="relative bg-ink-surface/90 border border-ink-border/70 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md overflow-hidden transition-all duration-300 group-hover:border-ink-accent/30">
+          <ink-card variant="subtle" padding="sm" radius="md" class="w-full">
             <!-- Floating Bubble Toolbar -->
             <div class="flex items-center justify-center mb-3">
-              <div class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-ink-surface-2 border border-ink-border/70 shadow-md backdrop-blur-md">
+              <div
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-ink-surface-2 border border-ink-border shadow-sm">
                 <span class="w-6 h-6 rounded flex items-center justify-center bg-ink-accent text-white">
                   <ink-icon name="bold" [size]="12" />
                 </span>
-                <span class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
+                <span
+                  class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
                   <ink-icon name="italic" [size]="12" />
                 </span>
-                <span class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
+                <span
+                  class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
                   <ink-icon name="underline" [size]="12" />
                 </span>
-                <span class="w-px h-3.5 bg-ink-border/70 mx-0.5"></span>
-                <span class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
+                <span class="w-px h-3.5 bg-ink-border mx-0.5"></span>
+                <span
+                  class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
                   <ink-icon name="code" [size]="12" />
                 </span>
-                <span class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
+                <span
+                  class="w-6 h-6 rounded flex items-center justify-center text-ink-text-muted hover:text-ink-text transition-colors">
                   <ink-icon name="link" [size]="12" />
                 </span>
               </div>
             </div>
 
             <!-- Prose Text with Selection Highlight -->
-            <div class="p-3.5 rounded-xl bg-ink-surface-2/60 border border-ink-border/50 text-xs sm:text-[13px] leading-relaxed text-ink-text mb-3 font-sans">
+            <div
+              class="p-3.5 rounded-ink-md bg-ink-surface border border-ink-border text-xs sm:text-[13px] leading-relaxed text-ink-text mb-3 font-sans">
               <span>A private writing space where </span>
-              <span class="bg-ink-accent/20 text-ink-accent font-medium px-1 py-0.5 rounded border-b-2 border-ink-accent">every word stays on your device</span>
+              <span
+                class="bg-ink-accent-soft text-ink-accent-text font-medium px-1 py-0.5 rounded border-b-2 border-ink-accent">every
+                word stays on your device</span>
               <span> without network requests.</span>
             </div>
 
             <!-- Live Session Metrics Footer -->
-            <div class="flex items-center justify-between text-[11px] font-mono text-ink-text-muted pt-2.5 border-t border-ink-border/50">
+            <div
+              class="flex items-center justify-between text-[11px] font-mono text-ink-text-muted pt-2.5 border-t border-ink-border">
               <div class="flex items-center gap-1.5">
                 <ink-icon name="file-text" [size]="13" svgClass="text-ink-accent" />
                 <span class="font-semibold text-ink-text">1,420 words</span>
               </div>
               <span>5 min read</span>
-              <span class="text-emerald-500 flex items-center gap-1 font-semibold">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-ink-success flex items-center gap-1 font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-ink-success"></span>
                 Autosaved
               </span>
             </div>
-          </div>
-        </div>
+          </ink-card>
+        </ink-card>
 
         <!-- CARD 3: Zero Cloud & Local-First (lg:col-span-5) -->
-        <div class="landing-card lg:col-span-5 p-7 sm:p-9 flex flex-col justify-between overflow-hidden relative group min-h-[420px]">
-          <!-- Top Text -->
-          <div class="relative z-10 mb-4">
+        <ink-card variant="surface" hoverable padding="lg" radius="lg"
+          class="lg:col-span-5 flex flex-col justify-between min-h-[420px] overflow-hidden">
+          <!-- Top Text in card-header -->
+          <div card-header class="relative z-10 mb-4">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
               Zero cloud, true local-first
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Zero servers, zero tracking, zero latency. Every document lives encrypted on your device, accessible completely offline anywhere on earth.
+              Zero servers, zero tracking, zero latency. Every document lives encrypted on your device, accessible
+              completely offline anywhere on earth.
             </p>
           </div>
 
           <!-- Bottom Visual: Dotted Globe Horizon -->
-          <div class="relative w-full h-64 flex items-end justify-center overflow-hidden -mx-7 sm:-mx-9 -mb-7 sm:-mb-9 pt-4">
+          <div
+            class="relative w-full h-64 flex items-end justify-center overflow-hidden -mx-7 sm:-mx-9 -mb-7 sm:-mb-9 pt-4">
             <!-- Globe Atmosphere Glow -->
             <div class="globe-horizon-glow absolute bottom-0 inset-x-0 h-44 pointer-events-none"></div>
 
@@ -519,8 +528,10 @@
 
               <!-- Horizon Curve Outer Glow -->
               <ellipse cx="250" cy="270" rx="230" ry="170" fill="url(#globeGradInk)" />
-              <ellipse cx="250" cy="270" rx="230" ry="170" fill="none" stroke="rgba(191, 219, 254, 0.6)" stroke-width="2" />
-              <ellipse cx="250" cy="270" rx="200" ry="145" fill="none" stroke="rgba(147, 197, 253, 0.3)" stroke-dasharray="3,6" stroke-width="1" />
+              <ellipse cx="250" cy="270" rx="230" ry="170" fill="none" stroke="rgba(191, 219, 254, 0.6)"
+                stroke-width="2" />
+              <ellipse cx="250" cy="270" rx="200" ry="145" fill="none" stroke="rgba(147, 197, 253, 0.3)"
+                stroke-dasharray="3,6" stroke-width="1" />
 
               <!-- Longitudinal wireframe lines -->
               <path d="M 250 100 Q 250 185 250 270" stroke="rgba(147, 197, 253, 0.3)" stroke-width="1.2" />
@@ -578,27 +589,33 @@
               <circle cx="222" cy="154" r="2" fill="#ffffff" />
             </svg>
           </div>
-        </div>
+        </ink-card>
 
         <!-- CARD 4: Dynamic Slash Commands (lg:col-span-7) -->
-        <div class="landing-card lg:col-span-7 p-7 sm:p-9 flex flex-col justify-between overflow-hidden relative group min-h-[420px]">
-          <!-- Top Text -->
-          <div class="mb-5">
+        <ink-card variant="surface" hoverable padding="lg" radius="lg"
+          class="lg:col-span-7 flex flex-col justify-between min-h-[420px]">
+          <!-- Top Text in card-header -->
+          <div card-header class="mb-5">
             <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-ink-text-heading mb-2">
               Fluid slash command canvas
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
-              Never touch your mouse. Type <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-ink-surface-2 border border-ink-border text-ink-accent">/</span> anywhere to summon rich block formatting, PrismJS syntax code blocks, and callouts.
+              Never touch your mouse. Type <span
+                class="font-mono text-xs px-1.5 py-0.5 rounded bg-ink-surface-2 border border-ink-border text-ink-accent">/</span>
+              anywhere to summon rich block formatting, PrismJS syntax code blocks, and callouts.
             </p>
           </div>
 
           <!-- Bottom Visual: Interactive Slash Command Menu Preview -->
-          <div class="relative bg-ink-surface/90 border border-ink-border/70 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:border-ink-accent/30">
-            <div class="flex items-center gap-2 mb-3 pb-2.5 border-b border-ink-border/50">
-              <span class="w-6 h-6 rounded-md bg-ink-accent/15 flex items-center justify-center font-mono font-bold text-xs text-ink-accent">/</span>
+          <ink-card variant="subtle" padding="sm" radius="md">
+            <div class="flex items-center gap-2 mb-3 pb-2.5 border-b border-ink-border">
+              <span
+                class="w-6 h-6 rounded-md bg-ink-accent-soft flex items-center justify-center font-mono font-bold text-xs text-ink-accent">/</span>
               <span class="text-xs font-mono text-ink-text-muted">Insert block command...</span>
               <div class="flex-1"></div>
-              <span class="text-[10px] font-mono text-ink-text-muted px-1.5 py-0.5 rounded bg-ink-surface-2 border border-ink-border/40">ESC to close</span>
+              <span
+                class="text-[10px] font-mono text-ink-text-muted px-1.5 py-0.5 rounded bg-ink-surface-2 border border-ink-border">ESC
+                to close</span>
             </div>
 
             <!-- Command items list -->
@@ -613,7 +630,8 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
+              <div
+                class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
                 <div class="w-7 h-7 rounded bg-ink-surface-2 flex items-center justify-center">
                   <ink-icon name="code" [size]="15" svgClass="text-ink-text-muted" />
                 </div>
@@ -623,7 +641,8 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
+              <div
+                class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
                 <div class="w-7 h-7 rounded bg-ink-surface-2 flex items-center justify-center">
                   <ink-icon name="command" [size]="15" svgClass="text-ink-text-muted" />
                 </div>
@@ -633,7 +652,8 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
+              <div
+                class="flex items-center gap-3 p-2.5 rounded-ink-sm hover:bg-ink-surface-2 border border-transparent transition-colors">
                 <div class="w-7 h-7 rounded bg-ink-surface-2 flex items-center justify-center">
                   <ink-icon name="download" [size]="15" svgClass="text-ink-text-muted" />
                 </div>
@@ -643,12 +663,14 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </ink-card>
+        </ink-card>
 
       </div>
     </div>
   </section>
+
+  <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
 
   <!-- ═══════════════════════════════ -->
   <!-- SECTION 5: Keyboard Shortcuts   -->
@@ -666,26 +688,24 @@
           </div>
           <h2 class="text-3xl sm:text-4xl font-bold tracking-[-0.03em] text-ink-text-heading mb-4">
             Your hands never leave
-            <span class="bg-gradient-to-r from-ink-accent to-purple-500
-              bg-clip-text text-transparent"> the keyboard.</span>
+            <span class="text-ink-accent"> the keyboard.</span>
           </h2>
           <p class="text-ink-text-muted text-base leading-relaxed mb-6">
             Every formatting action, every navigation command, every export—accessible
             through intuitive keyboard shortcuts. Write at the speed of thought.
           </p>
-          <a routerLink="/docs"
-            class="inline-flex items-center text-sm font-medium text-ink-accent hover:text-ink-accent-hover transition-colors group">
+          <a ink-btn variant="ghost" routerLink="/docs" class="text-ink-accent hover:text-ink-accent-hover p-0 h-auto">
             Try it now
-            <ink-icon name="arrow-right" [size]="14" svgClass="ml-1.5 group-hover:translate-x-1 transition-transform" />
+            <ink-icon name="arrow-right" [size]="14" suffix />
           </a>
         </div>
 
-        <!-- Right: Shortcut Table -->
-        <div class="landing-card p-6 sm:p-8">
+        <!-- Right: Shortcut Table rendered programmatically via TemplateRef & context -->
+        <ng-template #shortcutList let-items="items">
           <div class="space-y-2.5">
-            @for (shortcut of shortcuts; track shortcut.action) {
+            @for (shortcut of items; track shortcut.action) {
             <div class="flex items-center justify-between py-2.5 px-3.5 rounded-ink-sm
-                hover:bg-ink-surface-2/80 transition-colors group">
+                hover:bg-ink-surface-2 transition-colors group">
               <span class="text-sm text-ink-text-muted group-hover:text-ink-text transition-colors">
                 {{ shortcut.action }}
               </span>
@@ -697,10 +717,16 @@
             </div>
             }
           </div>
-        </div>
+        </ng-template>
+
+        <ink-card variant="surface" padding="md" radius="lg" [bodyTemplate]="shortcutList"
+          [context]="{ items: shortcuts }">
+        </ink-card>
       </div>
     </div>
   </section>
+
+  <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
 
   <!-- ═══════════════════════════════ -->
   <!-- SECTION 6: Pricing              -->
@@ -727,22 +753,22 @@
       <!-- Pricing Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @for (plan of pricingPlans; track plan.name) {
-        <div class="landing-card flex flex-col p-7 sm:p-9"
-          [class.landing-card-featured]="plan.featured">
+        <ink-card [variant]="plan.featured ? 'featured' : 'surface'" hoverable padding="lg" radius="lg"
+          class="flex flex-col relative h-full">
 
           <!-- Featured badge -->
           @if (plan.featured) {
           <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
             <span class="px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider
-                  text-white bg-gradient-to-r from-ink-accent to-purple-600
-                  rounded-ink-pill shadow-md border border-white/20">
+                  text-white bg-ink-accent
+                  rounded-ink-pill shadow-sm border border-ink-border">
               Most Popular
             </span>
           </div>
           }
 
-          <!-- Plan header -->
-          <div class="mb-6">
+          <!-- Plan header in card-header -->
+          <div card-header class="mb-2">
             <h3 class="text-xl font-bold text-ink-text-heading mb-1.5">{{ plan.name }}</h3>
             <p class="text-sm text-ink-text-muted mb-4 leading-relaxed">{{ plan.description }}</p>
             <div class="flex items-baseline gap-1">
@@ -753,11 +779,11 @@
             </div>
           </div>
 
-          <!-- Features list -->
-          <ul class="space-y-3.5 mb-8 flex-1 pt-4 border-t border-ink-border/50">
+          <!-- Features list in card body -->
+          <ul class="space-y-3.5 mb-8 flex-1 pt-4 border-t border-ink-border">
             @for (feature of plan.features; track feature) {
             <li class="flex items-start gap-2.5 text-sm text-ink-text">
-              <span class="w-5 h-5 rounded-full bg-ink-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+              <span class="w-5 h-5 rounded-full bg-ink-accent-soft flex items-center justify-center shrink-0 mt-0.5">
                 <ink-icon name="check" [size]="13" svgClass="text-ink-accent" />
               </span>
               <span class="leading-snug">{{ feature }}</span>
@@ -765,29 +791,19 @@
             }
           </ul>
 
-          <!-- CTA -->
-          @if (plan.featured) {
-          <a routerLink="/docs" class="block w-full text-center py-3 text-sm font-semibold rounded-ink-pill
-                text-white bg-gradient-to-r from-ink-accent to-purple-700 btn-specular
-                hover:from-purple-600 hover:to-ink-accent
-                hover:shadow-[0_0_24px_-2px_rgba(124,58,237,0.35)]
-                transition-all duration-200 active:scale-[0.98]">
-            {{ plan.cta }}
-          </a>
-          } @else {
-          <a routerLink="/docs" class="block w-full text-center py-3 text-sm font-semibold rounded-ink-pill
-                text-ink-text bg-ink-surface-2 border border-ink-border/80
-                hover:border-ink-accent/40 hover:bg-ink-accent-soft hover:text-ink-accent
-                shadow-ink-sm hover:shadow-ink-md
-                transition-all duration-200 active:scale-[0.98]">
-            {{ plan.cta }}
-          </a>
-          }
-        </div>
+          <!-- CTA in card-footer -->
+          <div card-footer class="mt-auto pt-0 border-t-0">
+            <a ink-btn [variant]="plan.featured ? 'primary' : 'secondary'" pill fullWidth routerLink="/docs">
+              {{ plan.cta }}
+            </a>
+          </div>
+        </ink-card>
         }
       </div>
     </div>
   </section>
+
+  <div class="ink-beam-divider max-w-5xl mx-auto my-4 opacity-75"></div>
 
   <!-- ═══════════════════════════════════ -->
   <!-- SECTION 7: Testimonials & Trust     -->
@@ -808,25 +824,25 @@
       <!-- Testimonials Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @for (testimonial of testimonials; track testimonial.name) {
-        <div class="landing-card p-7 sm:p-8 flex flex-col justify-between">
+        <ink-card variant="surface" hoverable padding="lg" radius="lg" class="flex flex-col justify-between h-full">
 
-          <div>
-            <!-- Stars -->
-            <div class="flex gap-1 mb-4">
+          <!-- Stars in card-header -->
+          <div card-header>
+            <div class="flex gap-1 mb-2">
               @for (star of [1,2,3,4,5]; track star) {
               <ink-icon name="star" [size]="16" svgClass="text-amber-400" />
               }
             </div>
-
-            <!-- Quote -->
-            <p class="text-sm text-ink-text leading-relaxed mb-6 italic">
-              "{{ testimonial.quote }}"
-            </p>
           </div>
 
-          <!-- Author -->
-          <div class="flex items-center gap-3 pt-4 border-t border-ink-border/50">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-ink-accent to-purple-600
+          <!-- Quote in body -->
+          <p class="text-sm text-ink-text leading-relaxed mb-6 italic">
+            "{{ testimonial.quote }}"
+          </p>
+
+          <!-- Author in card-footer -->
+          <div card-footer class="flex items-center gap-3 pt-3">
+            <div class="w-10 h-10 rounded-full bg-ink-accent
                 flex items-center justify-center text-white text-xs font-bold shadow-sm">
               {{ testimonial.avatar }}
             </div>
@@ -835,42 +851,46 @@
               <div class="text-xs text-ink-text-muted">{{ testimonial.role }}</div>
             </div>
           </div>
-        </div>
+        </ink-card>
         }
       </div>
 
       <!-- Trust Bar -->
       <div class="mt-14 text-center">
-        <div class="landing-card inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-8 py-5">
-          <!-- Stacked Avatars -->
-          <div class="flex -space-x-2">
-            @for (t of testimonials; track t.name) {
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-ink-accent to-purple-600
-                flex items-center justify-center text-white text-[10px] font-bold
-                border-2 border-ink-surface ring-0">
-              {{ t.avatar }}
-            </div>
-            }
-            <div class="w-8 h-8 rounded-full bg-ink-surface-2 flex items-center justify-center
-              text-[10px] font-bold text-ink-text-muted border-2 border-ink-surface">
-              +2k
-            </div>
-          </div>
-          <div class="text-center sm:text-left">
-            <!-- Stars -->
-            <div class="flex justify-center sm:justify-start gap-0.5 mb-0.5">
-              @for (star of [1,2,3,4,5]; track star) {
-              <ink-icon name="star" [size]="14" svgClass="text-amber-400" />
+        <ink-card variant="surface" padding="md" radius="lg" class="inline-block">
+          <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-4 py-1">
+            <!-- Stacked Avatars -->
+            <div class="flex -space-x-2">
+              @for (t of testimonials; track t.name) {
+              <div class="w-8 h-8 rounded-full bg-ink-accent
+                  flex items-center justify-center text-white text-[10px] font-bold
+                  border-2 border-ink-surface ring-0">
+                {{ t.avatar }}
+              </div>
               }
+              <div class="w-8 h-8 rounded-full bg-ink-surface-2 flex items-center justify-center
+                text-[10px] font-bold text-ink-text-muted border-2 border-ink-surface">
+                +2k
+              </div>
             </div>
-            <p class="text-sm text-ink-text-muted">
-              Trusted by <span class="font-semibold text-ink-text">2,000+</span> writers worldwide
-            </p>
+            <div class="text-center sm:text-left">
+              <!-- Stars -->
+              <div class="flex justify-center sm:justify-start gap-0.5 mb-0.5">
+                @for (star of [1,2,3,4,5]; track star) {
+                <ink-icon name="star" [size]="14" svgClass="text-amber-400" />
+                }
+              </div>
+              <p class="text-sm text-ink-text-muted">
+                Trusted by <span class="font-semibold text-ink-text">2,000+</span> writers worldwide
+              </p>
+            </div>
           </div>
-        </div>
+        </ink-card>
       </div>
     </div>
   </section>
+
+  <div class="ink-beam-divider max-w-4xl mx-auto my-4 opacity-75"></div>
 
   <!-- ═════════════════════════════════ -->
   <!-- SECTION 8: Final CTA              -->
@@ -879,22 +899,15 @@
     <div class="max-w-3xl mx-auto text-center">
       <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-[-0.035em] text-ink-text-heading mb-5">
         Ready to write
-        <span class="bg-gradient-to-r from-ink-accent via-purple-500 to-violet-600
-          bg-clip-text text-transparent"> without limits?</span>
+        <span class="text-ink-accent"> without limits?</span>
       </h2>
       <p class="text-ink-text-muted text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-9">
         No sign-up required. No cloud dependency. Just open the editor and start
         writing—your first document is one click away.
       </p>
-      <a routerLink="/docs" class="inline-flex items-center justify-center px-8 py-3.5
-        text-[16px] font-semibold tracking-tight text-white
-        bg-gradient-to-r from-ink-accent to-purple-700
-        hover:from-purple-600 hover:to-ink-accent
-        rounded-ink-pill btn-specular
-        hover:shadow-[0_0_32px_-2px_rgba(124,58,237,0.35)]
-        transition-all duration-250 active:scale-[0.97] hover:-translate-y-1">
+      <a ink-btn variant="primary" size="lg" pill routerLink="/docs" class="px-8 py-3.5 text-base">
         Start Writing Now
-        <ink-icon name="arrow-right" [size]="18" svgClass="ml-2" />
+        <ink-icon name="arrow-right" [size]="18" suffix />
       </a>
     </div>
   </section>
@@ -909,7 +922,7 @@
       <!-- Brand Column -->
       <div class="col-span-2 md:col-span-1">
         <div class="flex items-center space-x-2.5 mb-4">
-          <span class="w-7 h-7 rounded-ink-sm bg-gradient-to-br from-ink-accent to-purple-800
+          <span class="w-7 h-7 rounded-ink-sm bg-ink-accent
             flex items-center justify-center text-white text-xs font-bold shadow-sm">
             I
           </span>
@@ -970,7 +983,8 @@
     </div>
 
     <!-- Bottom bar -->
-    <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-ink-border/40 gap-4">
+    <div
+      class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-ink-border/40 gap-4 mb-8 sm:mb-12">
       <p class="text-xs text-ink-text-muted">
         © 2025 Inkframe. Open source under MIT License.
       </p>
@@ -978,10 +992,10 @@
         Built with ♥ using Angular, ProseMirror & PrismJS.
       </p>
     </div>
-  </div>
 
-  <!-- Giant Watermark -->
-  <div aria-hidden="true" class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-[35%]">
-    <span class="watermark-text">INKFRAME</span>
+    <!-- Giant Brand Display (Fully Visible) -->
+    <div aria-hidden="true" class="w-full pt-2 pb-2 flex justify-center items-center overflow-hidden">
+      <span class="watermark-text">INKFRAME</span>
+    </div>
   </div>
 </footer>

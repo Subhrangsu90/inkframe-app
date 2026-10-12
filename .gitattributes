@@ -1,0 +1,4 @@
+# Check out text files with LF on every OS, as Prettier writes them; with
+# core.autocrlf=true, Windows checkouts would otherwise get CRLF and fail
+# `npm run format:check`.
+* text=auto eol=lf

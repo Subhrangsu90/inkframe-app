@@ -347,7 +347,10 @@ const code_block: NodeSpec = {
   ],
 };
 
-/** Table, row and cell specs, with alignment / background / height cell attributes. */
+/**
+ * Table, row and cell specs, with alignment and background cell attributes.
+ * Rows have no fixed height: they fit their text.
+ */
 export const tableNodeSpecs = tableNodes({
   tableGroup: 'block',
   cellContent: 'block+',
@@ -373,20 +376,6 @@ export const tableNodeSpecs = tableNodes({
         const color = sanitizeCssColor(value);
         if (color) {
           attrs['style'] = (attrs['style'] || '') + `background-color: ${color};`;
-        }
-      },
-    },
-    height: {
-      default: null,
-      getFromDOM(dom) {
-        const el = dom as HTMLElement;
-        return sanitizeCssLength(el.style.height || el.getAttribute('data-height'));
-      },
-      setDOMAttr(value, attrs) {
-        const height = sanitizeCssLength(value);
-        if (height) {
-          attrs['style'] = (attrs['style'] || '') + `height: ${height};`;
-          attrs['data-height'] = height;
         }
       },
     },

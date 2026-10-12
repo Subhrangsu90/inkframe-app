@@ -202,10 +202,9 @@ import {
       margin: 0 auto;
       background: var(--ink-bg-page, #18191c);
       border: 1px solid var(--ink-border-subtle, #282a30);
-      border-radius: 6px;
+      /* A sheet of paper: square corners, and it ends where the text ends. */
+      border-radius: 0;
       box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
-      /* At least as tall as the visible canvas, whatever the screen size. */
-      min-height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -214,10 +213,6 @@ import {
         box-shadow 0.15s ease,
         background-color 0.15s ease,
         border-color 0.15s ease;
-
-      @media (min-width: 768px) {
-        border-radius: 8px;
-      }
 
       &:focus-within {
         box-shadow:

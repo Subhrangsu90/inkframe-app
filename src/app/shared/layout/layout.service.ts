@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, TemplateRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { DocumentManager, DocMeta } from '../../core/document-manager';
-import { ToastService } from '../ui';
+import { ConfirmDialogService, ToastService } from '../ui';
 
 const STORAGE_COLLAPSED_KEY = 'inkframe_sidebar_collapsed';
 
@@ -12,6 +12,7 @@ export class LayoutService {
   private readonly docManager = inject(DocumentManager);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly sidebarCollapsed = signal<boolean>(false);
   readonly mobileOpen = signal<boolean>(false);
@@ -114,11 +115,25 @@ export class LayoutService {
     }
   }
 
+  /** Deletes a document after the user confirms; there is no undo or trash. */
   async deleteDoc(id: string, event?: Event): Promise<void> {
     if (event) {
+      // Before any await: the click must not also open the document card.
       event.stopPropagation();
       event.preventDefault();
     }
+    const title = this.documents()
+      .find((d) => d.id === id)
+      ?.title?.trim();
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete this document?',
+      message: `${title ? `"${title}"` : 'This document'} will be permanently deleted from this browser. This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      icon: 'delete_outline',
+    });
+    if (!confirmed) return;
     try {
       const nextId = await this.docManager.deleteDoc(id);
       await this.refreshDocs();

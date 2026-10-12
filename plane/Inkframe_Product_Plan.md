@@ -246,10 +246,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ### 4.1 Baseline (2026-10-12)
 
-- **Tests:** 183 tests pass through the Angular CLI test runner (`npm test`; 147 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
+- **Tests:** 185 tests pass through the Angular CLI test runner (`npm test`; 149 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
 - **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the Prettier format check, ESLint (angular-eslint, including the template accessibility rules), the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
 - **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 542 kB raw, 127 kB transferred.
-- **Schema:** version 2 (M1 added the `highlight` mark and the `align` attribute). Version 1 documents migrate unchanged.
+- **Schema:** version 3. M1 added the `highlight` mark and the `align` attribute (version 2); version 3 dropped fixed table row heights so rows fit their text. Older documents migrate on load.
 - **Recently fixed:**
   - **Keyboard:** Tab and Shift+Tab indent list items again (the table extension's Tab binding had replaced them). Extensions that bind the same key now run in order until one handles it.
   - **Floating menu:** Bold, italic, underline, strikethrough, code and link no longer appear twice.
@@ -539,7 +539,7 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | IndexedDB `inkframe_storage` → `images` | Image blobs with metadata | `img_<timestamp>_<random>`, referenced as `ink-idb:<id>` |
 | localStorage | Theme, sidebar state, active document id; fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
 
-**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 2 to 3; M1 already took version 2) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 3 to 4; versions 2 and 3 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
 
 **Share payload format:** `c_` + base64url(deflate-raw(JSON)) when `CompressionStream` is available, otherwise `u_` + base64url(JSON). The JSON is `{ t: title, v: schemaVersion, d: doc }`; images are inlined as compressed JPEG data URLs.
 
@@ -602,7 +602,7 @@ Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surf
 | Text `--ink-text` / muted | `#1b1b1f` / `#6b6b73` | `#ededef` / `#9a9aa3` |
 | Accent `--ink-accent` / soft | `#7c3aed` / `#f3eeff` | `#8b5cf6` / `#241b3d` |
 
-**Typography:** Inter for the UI and document body (17px, 1.7 line height), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px accent at 25% opacity, never removed.
+**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px accent at 25% opacity, never removed.
 
 ### 7.2 Editor layout
 

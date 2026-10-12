@@ -249,7 +249,7 @@ describe('Text alignment', () => {
   });
 });
 
-describe('Schema version 2', () => {
+describe('Schema migrations', () => {
   it('migrates version 1 documents unchanged and loads them in the new schema', () => {
     const v1: StoredDoc = {
       schemaVersion: 1,
@@ -264,12 +264,58 @@ describe('Schema version 2', () => {
         ],
       },
     };
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
     const migrated = migrate(v1);
     expect(migrated).toEqual(v1.doc);
     const node = schema.nodeFromJSON(migrated);
     node.check();
     expect(node.child(0).attrs).toEqual({ level: 1, align: null });
     expect(node.child(1).attrs).toEqual({ align: null });
+  });
+
+  it('drops fixed row heights from version 2 table cells', () => {
+    const cell = (type: string, text: string) => ({
+      type,
+      attrs: {
+        colspan: 1,
+        rowspan: 1,
+        colwidth: null,
+        alignment: 'center',
+        background: null,
+        height: '48px',
+      },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+    });
+    const v2: StoredDoc = {
+      schemaVersion: 2,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'table',
+            content: [
+              { type: 'table_row', content: [cell('table_header', 'Name')] },
+              { type: 'table_row', content: [cell('table_cell', 'Ada')] },
+            ],
+          },
+        ],
+      },
+    };
+    const migrated = migrate(v2) as any;
+    const migratedCells = migrated.content[0].content.map((row: any) => row.content[0]);
+    expect(migratedCells.map((c: any) => 'height' in c.attrs)).toEqual([false, false]);
+    expect(migratedCells[0].attrs.alignment).toBe('center');
+    expect((v2.doc as any).content[0].content[0].content[0].attrs.height).toBe('48px'); // input untouched
+
+    const node = schema.nodeFromJSON(migrated);
+    node.check();
+    expect(docToHtml(node)).not.toContain('height');
+  });
+
+  it('ignores row heights in pasted or imported HTML', () => {
+    const d = htmlToDoc('<table><tr><td style="height: 120px"><p>tall</p></td></tr></table>');
+    const cell = d.child(0).child(0).child(0);
+    expect(cell.attrs).not.toHaveProperty('height');
+    expect(docToHtml(d)).not.toContain('120px');
   });
 });

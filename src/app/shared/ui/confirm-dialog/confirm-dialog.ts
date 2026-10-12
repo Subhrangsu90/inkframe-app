@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, Injectable, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  ElementRef,
+  Injectable,
+  afterRenderEffect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -24,6 +34,9 @@ export class ConfirmDialogService {
   public readonly state = this._state.asReadonly();
 
   public confirm(options: ConfirmDialogOptions): Promise<boolean> {
+    // A new question replaces an open one, which then counts as cancelled
+    // (otherwise its caller would wait forever).
+    this.close(false);
     return new Promise<boolean>((resolve) => {
       this._state.set({
         options,
@@ -46,16 +59,21 @@ export class ConfirmDialogService {
 
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'cancelIfOpen()',
+  },
   template: `
     @if (dialogService.state(); as current) {
       <div class="ink-dialog-backdrop" role="presentation" (click)="dialogService.close(false)">
         <div
+          #card
           class="ink-dialog-card"
           role="alertdialog"
           aria-modal="true"
-          [attr.aria-label]="current.options.title"
+          aria-labelledby="ink-dialog-title"
+          aria-describedby="ink-dialog-message"
           (click)="$event.stopPropagation()"
-          (keydown.escape)="dialogService.close(false)"
+          (keydown)="keepFocusInside($event)"
         >
           <div class="ink-dialog-header">
             <div class="ink-dialog-icon-badge" [class.destructive]="current.options.isDestructive">
@@ -64,8 +82,10 @@ export class ConfirmDialogService {
               }}</mat-icon>
             </div>
             <div class="ink-dialog-header-text">
-              <h3 class="ink-dialog-title">{{ current.options.title }}</h3>
-              <p class="ink-dialog-message">{{ current.options.message }}</p>
+              <h3 id="ink-dialog-title" class="ink-dialog-title">{{ current.options.title }}</h3>
+              <p id="ink-dialog-message" class="ink-dialog-message">
+                {{ current.options.message }}
+              </p>
             </div>
           </div>
 
@@ -242,4 +262,49 @@ export class ConfirmDialogService {
 })
 export class ConfirmDialogComponent {
   protected readonly dialogService = inject(ConfirmDialogService);
+  private readonly document = inject(DOCUMENT);
+  private readonly card = viewChild<ElementRef<HTMLElement>>('card');
+  /** The element that had focus when the dialog opened; it gets focus back. */
+  private opener: HTMLElement | null = null;
+
+  constructor() {
+    afterRenderEffect(() => {
+      const state = this.dialogService.state();
+      const card = this.card()?.nativeElement;
+      if (state && card) {
+        if (card.contains(this.document.activeElement)) return;
+        this.opener ??= this.document.activeElement as HTMLElement | null;
+        // For a destructive question the safe answer has focus, so Enter cancels.
+        const button = state.options.isDestructive
+          ? '.ink-dialog-btn-cancel'
+          : '.ink-dialog-btn-confirm';
+        card.querySelector<HTMLElement>(button)?.focus();
+      } else if (!state && this.opener) {
+        const opener = this.opener;
+        this.opener = null;
+        if (opener.isConnected) opener.focus();
+      }
+    });
+  }
+
+  protected cancelIfOpen(): void {
+    if (this.dialogService.state()) this.dialogService.close(false);
+  }
+
+  /** Tab and Shift+Tab cycle through the dialog's buttons instead of leaving it. */
+  protected keepFocusInside(event: KeyboardEvent): void {
+    const card = this.card()?.nativeElement;
+    if (event.key !== 'Tab' || !card) return;
+    const buttons = Array.from(card.querySelectorAll<HTMLElement>('button'));
+    const first = buttons[0];
+    const last = buttons[buttons.length - 1];
+    const active = this.document.activeElement;
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 }

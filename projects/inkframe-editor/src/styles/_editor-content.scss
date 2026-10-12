@@ -1,15 +1,19 @@
 /* ── ProseMirror & Inkframe Editor Core Content Styles ── */
+/*
+ * Document content is drawn like print: square corners on tables, images,
+ * code, callouts and highlights, and no forced height (the page ends where
+ * the text ends).
+ *
+ * `.ProseMirror` is the document's font root: text sizes inside it are in em,
+ * so --ink-editor-font-size scales the whole document (editor, preview and
+ * reader alike). Spacing stays in rem.
+ */
 .ProseMirror {
   outline: none;
-  min-height: calc(100dvh - 220px);
   box-sizing: border-box;
-  font-size: 1rem;
+  font-size: var(--ink-editor-font-size, 14px);
   line-height: 1.65;
   color: var(--ink-text-primary);
-
-  @media (min-width: 768px) {
-    min-height: 800px;
-  }
 
   > *:first-child {
     margin-top: 0;
@@ -33,31 +37,31 @@
   }
 
   h1 {
-    font-size: 1.65rem;
+    font-size: 1.65em;
     @media (min-width: 768px) {
-      font-size: 2rem;
+      font-size: 2em;
     }
   }
   h2 {
-    font-size: 1.35rem;
+    font-size: 1.35em;
     @media (min-width: 768px) {
-      font-size: 1.5rem;
+      font-size: 1.5em;
     }
   }
   h3 {
-    font-size: 1.15rem;
+    font-size: 1.15em;
     @media (min-width: 768px) {
-      font-size: 1.25rem;
+      font-size: 1.25em;
     }
   }
   h4 {
-    font-size: 1.05rem;
+    font-size: 1.05em;
   }
   h5 {
-    font-size: 1rem;
+    font-size: 1em;
   }
   h6 {
-    font-size: 0.9rem;
+    font-size: 0.9em;
     color: var(--ink-text-secondary);
   }
 
@@ -119,7 +123,8 @@
       line-height: 1.6;
 
       .ink-task-checkbox {
-        margin-top: 0.32rem;
+        /* Centred on the first line (17px box, 1.6 line height). */
+        margin-top: calc((var(--ink-editor-font-size, 14px) * 1.6 - 17px) / 2);
         width: 17px;
         height: 17px;
         accent-color: var(--mat-sys-primary, #005ac1);
@@ -167,10 +172,10 @@
     background: var(--ink-bg-code, #0a0a0b);
     color: var(--ink-text-primary, #f9fafb);
     padding: 1rem 1.25rem;
-    border-radius: 8px;
+    border-radius: 0;
     border: 1px solid var(--ink-border-default);
     font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
-    font-size: 0.88rem;
+    font-size: 0.88em;
     line-height: 1.6;
     overflow-x: auto;
     margin: 1rem 0;
@@ -179,6 +184,7 @@
       background: none;
       padding: 0;
       color: inherit;
+      font-size: inherit; /* the block sets the size; not inline code's 0.86em on top */
     }
   }
 
@@ -186,7 +192,7 @@
     background: var(--ink-badge-bg, rgba(255, 255, 255, 0.08));
     color: var(--ink-accent-light, #a78bfa);
     padding: 0.15rem 0.4rem;
-    border-radius: 4px;
+    border-radius: 0;
     font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
     font-size: 0.86em;
     border: 1px solid var(--ink-border-subtle);
@@ -214,7 +220,7 @@
   // browsers draw <mark> text black).
   mark {
     color: #1b1b1f;
-    border-radius: 3px;
+    border-radius: 0;
     padding: 0.05em 0.1em;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
@@ -278,7 +284,7 @@
     table-layout: auto !important;
     position: relative !important;
     overflow: visible !important;
-    border-radius: 6px !important;
+    border-radius: 0 !important;
     border: 1px solid var(--ink-border, rgba(255, 255, 255, 0.08)) !important;
     background: var(--ink-table-bg, #151516) !important;
     box-shadow: none !important;
@@ -311,24 +317,6 @@
     tr:last-child td,
     tr:last-child th {
       border-bottom: none !important;
-    }
-
-    tr:first-child th:first-child,
-    tr:first-child td:first-child {
-      border-top-left-radius: 5px;
-    }
-
-    tr:first-child th:last-child,
-    tr:first-child td:last-child {
-      border-top-right-radius: 5px;
-    }
-
-    tr:last-child td:first-child {
-      border-bottom-left-radius: 5px;
-    }
-
-    tr:last-child td:last-child {
-      border-bottom-right-radius: 5px;
     }
 
     th {
@@ -368,7 +356,7 @@
   padding: 0.75rem 0.85rem;
   margin: 1rem 0;
   border-left: 3px solid var(--ink-accent-primary, #8b5cf6);
-  border-radius: 6px;
+  border-radius: 0;
   background: rgba(139, 92, 246, 0.06);
   color: var(--ink-text-primary);
   box-shadow: none;
@@ -398,7 +386,7 @@
   .callout-icon {
     background: none;
     border: none;
-    font-size: 1.25rem;
+    font-size: 1.25em;
     cursor: pointer;
     padding: 0;
     line-height: 1;
@@ -507,7 +495,7 @@
 img.ink-image {
   max-width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: 0;
   display: block;
   margin: 1.25rem 0;
   border: 1px solid var(--ink-border-default);
@@ -548,14 +536,14 @@ img.ink-image {
     display: inline-block;
     max-width: 100%;
     width: 100%;
-    border-radius: 6px;
+    border-radius: 0;
     overflow: visible;
 
     .ink-image {
       display: block;
       width: 100%;
       height: auto;
-      border-radius: 6px;
+      border-radius: 0;
       border: 1px solid var(--ink-border-default);
       box-shadow: none;
       cursor: zoom-in;
@@ -742,7 +730,7 @@ img.ink-image {
   }
 
   .ink-image-caption {
-    font-size: 0.8125rem;
+    font-size: 0.875em;
     line-height: 1.45;
     color: var(--ink-text-secondary, #666);
     margin-top: 0.5rem;
@@ -854,7 +842,7 @@ img.ink-image {
   margin: 1.25rem 0;
   background: var(--ink-bg-code);
   border: 1px solid var(--ink-border-default);
-  border-radius: 10px;
+  border-radius: 0;
   overflow: visible;
   transition:
     border-color 0.15s ease,
@@ -873,7 +861,6 @@ img.ink-image {
     align-items: stretch;
     min-height: 48px;
     overflow: hidden;
-    border-radius: 9px;
   }
 
   .ink-code-gutter {
@@ -885,23 +872,18 @@ img.ink-image {
     text-align: right;
     background: var(--ink-bg-code-gutter);
     border-right: 1px solid var(--ink-border-default);
-    border-top-left-radius: 9px;
-    border-bottom-left-radius: 9px;
 
     @media (max-width: 600px) {
       padding: 10px 6px;
       min-width: 26px;
     }
 
+    /* Same size and line height as the code, so each number stays on its line. */
     .ink-code-line-number {
-      font-size: 0.82rem;
+      font-size: 0.88em;
       line-height: 1.65;
       color: var(--ink-text-muted);
       font-family: inherit;
-
-      @media (max-width: 600px) {
-        font-size: 0.74rem;
-      }
     }
   }
 
@@ -913,14 +895,13 @@ img.ink-image {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     line-height: 1.65;
-    font-size: 0.88rem;
+    font-size: 0.88em;
     color: var(--ink-text-primary);
     tab-size: 2;
     font-family: inherit;
 
     @media (max-width: 600px) {
       padding: 10px 10px 40px;
-      font-size: 0.8rem;
     }
 
     .ink-code-content {
@@ -929,6 +910,7 @@ img.ink-image {
       outline: none !important;
       padding: 0 !important;
       color: inherit;
+      font-size: inherit;
       font-family: inherit;
       white-space: inherit;
       word-break: inherit;

@@ -2,8 +2,9 @@
  * Version history:
  * - 1: initial schema.
  * - 2: `highlight` mark; `align` attribute on paragraphs and headings.
+ * - 3: table cells lose the `height` attribute; rows fit their text.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** The envelope that is saved to your database. */
 export interface StoredDoc {
@@ -32,7 +33,19 @@ const migrations: Record<number, Migration> = {
   // bump makes older app versions refuse version 2 documents with a clear
   // "newer schema" error instead of failing on an unknown mark.
   1: (doc) => doc,
+  2: dropCellHeights,
 };
+
+/** Removes the fixed row height from table cells (version 2 to 3). */
+function dropCellHeights(node: DocJSON): DocJSON {
+  const copy: DocJSON = { ...node };
+  if ((node.type === 'table_cell' || node.type === 'table_header') && node.attrs) {
+    const { height: _height, ...attrs } = node.attrs;
+    copy.attrs = attrs;
+  }
+  if (Array.isArray(node.content)) copy.content = node.content.map(dropCellHeights);
+  return copy;
+}
 
 export function migrate(stored: StoredDoc): unknown {
   let version = stored.schemaVersion ?? 1;

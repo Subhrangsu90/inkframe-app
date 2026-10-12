@@ -1,19 +1,14 @@
-import { Command, Plugin, Selection } from 'prosemirror-state';
+import { Command, EditorState, Plugin, Selection } from 'prosemirror-state';
 import { history, undo, redo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
-import { baseKeymap, setBlockType, toggleMark } from 'prosemirror-commands';
-import {
-  splitListItem,
-  sinkListItem,
-  liftListItem,
-  wrapInList,
-} from 'prosemirror-schema-list';
-import { Node as PMNode } from 'prosemirror-model';
+import { baseKeymap, setBlockType, splitBlockAs, toggleMark } from 'prosemirror-commands';
+import { splitListItem, sinkListItem, liftListItem, wrapInList } from 'prosemirror-schema-list';
+import { Attrs, Node as PMNode, NodeType } from 'prosemirror-model';
 import { undoInputRule } from 'prosemirror-inputrules';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { gapCursor } from 'prosemirror-gapcursor';
 import { columnResizing, tableEditing, goToNextCell } from 'prosemirror-tables';
-import { schema } from './schema';
+import { DEFAULT_HIGHLIGHT_COLOR, TextAlign, sanitizeTextAlign, schema } from './schema';
 import { buildInputRules } from './input-rules';
 import { menusPlugin } from './menus.plugin';
 import { highlightPlugin } from './highlight.plugin';
@@ -22,9 +17,7 @@ import { EditorHooks } from './editor-hooks';
 
 const hardBreak: Command = (state, dispatch) => {
   dispatch?.(
-    state.tr
-      .replaceSelectionWith(state.schema.nodes['hard_break'].create())
-      .scrollIntoView(),
+    state.tr.replaceSelectionWith(state.schema.nodes['hard_break'].create()).scrollIntoView(),
   );
   return true;
 };
@@ -43,10 +36,152 @@ export const clearFormattingCommand: Command = (state, dispatch) => {
   return true;
 };
 
+const supportsAlign = (type: NodeType) => !!type.spec.attrs?.['align'];
+
+/** Calls `f` for every textblock the selection touches (each cell of a cell selection). */
+function forEachSelectedTextblock(
+  state: EditorState,
+  f: (node: PMNode, pos: number) => void,
+): void {
+  for (const { $from, $to } of state.selection.ranges) {
+    state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
+      if (!node.isTextblock) return true;
+      f(node, pos);
+      return false;
+    });
+  }
+}
+
+/**
+ * Aligns the paragraphs and headings in the selection. `left` (or null)
+ * resets to the default. Not applicable when the selection only covers
+ * blocks that cannot be aligned, such as code blocks.
+ */
+export function setTextAlignCommand(align: TextAlign | null): Command {
+  const value = sanitizeTextAlign(align);
+  return (state, dispatch) => {
+    const targets: number[] = [];
+    forEachSelectedTextblock(state, (node, pos) => {
+      if (supportsAlign(node.type)) targets.push(pos);
+    });
+    if (!targets.length) return false;
+    if (dispatch) {
+      const tr = state.tr;
+      for (const pos of targets) {
+        if (tr.doc.nodeAt(pos)!.attrs['align'] !== value) tr.setNodeAttribute(pos, 'align', value);
+      }
+      dispatch(tr);
+    }
+    return true;
+  };
+}
+
+/** The alignment of the textblock at the selection head, or null when it cannot be aligned. */
+export function textAlignAt(state: EditorState): TextAlign | null {
+  const parent = state.selection.$head.parent;
+  if (!supportsAlign(parent.type)) return null;
+  return sanitizeTextAlign(parent.attrs['align']) ?? 'left';
+}
+
+/**
+ * `setBlockType` that keeps each block's alignment, so turning a centered
+ * paragraph into a heading (or back) keeps it centered.
+ */
+export function setBlockTypeKeepingAlign(nodeType: NodeType, attrs: Attrs | null = null): Command {
+  const command = setBlockType(nodeType, attrs);
+  if (!supportsAlign(nodeType)) return command;
+  return (state, dispatch, view) =>
+    command(
+      state,
+      dispatch &&
+        ((tr) => {
+          forEachSelectedTextblock(state, (node, pos) => {
+            const align = node.attrs['align'];
+            const mapped = tr.mapping.map(pos);
+            const now = tr.doc.nodeAt(mapped);
+            if (align && now?.type === nodeType && now.attrs['align'] !== align) {
+              tr.setNodeAttribute(mapped, 'align', align);
+            }
+          });
+          dispatch(tr);
+        }),
+      view,
+    );
+}
+
+/**
+ * Enter at the end of an aligned paragraph or heading: the new paragraph
+ * keeps the alignment, as in word processors. Returns false otherwise so the
+ * default Enter behavior runs (splitting in the middle already keeps attributes).
+ */
+export const splitAlignedBlockCommand: Command = (state, dispatch) => {
+  const { $from, empty } = state.selection;
+  const parent = $from.parent;
+  const align = sanitizeTextAlign(parent.attrs['align']);
+  const paragraph = state.schema.nodes['paragraph'];
+  if (
+    !empty ||
+    !align ||
+    !paragraph ||
+    !supportsAlign(paragraph) ||
+    parent.content.size === 0 ||
+    $from.parentOffset !== parent.content.size
+  ) {
+    return false;
+  }
+  return splitBlockAs((_node, atEnd) => (atEnd ? { type: paragraph, attrs: { align } } : null))(
+    state,
+    dispatch,
+  );
+};
+
+function hasMarkInSelection(state: EditorState, name: string): boolean {
+  const type = state.schema.marks[name];
+  if (!type) return false;
+  const { from, to, empty, $from } = state.selection;
+  return empty
+    ? !!type.isInSet(state.storedMarks ?? $from.marks())
+    : state.doc.rangeHasMark(from, to, type);
+}
+
+/** Highlights the selection in `color`, replacing any other highlight color. */
+export function setHighlightCommand(color: string = DEFAULT_HIGHLIGHT_COLOR): Command {
+  return (state, dispatch) => {
+    const type = state.schema.marks['highlight'];
+    if (!type) return false;
+    if (dispatch) {
+      const { from, to, empty } = state.selection;
+      const mark = type.create({ color });
+      dispatch(
+        empty
+          ? state.tr.removeStoredMark(type).addStoredMark(mark)
+          : state.tr.removeMark(from, to, type).addMark(from, to, mark),
+      );
+    }
+    return true;
+  };
+}
+
+export const removeHighlightCommand: Command = (state, dispatch) => {
+  const type = state.schema.marks['highlight'];
+  if (!type) return false;
+  if (dispatch) {
+    const { from, to, empty } = state.selection;
+    dispatch(empty ? state.tr.removeStoredMark(type) : state.tr.removeMark(from, to, type));
+  }
+  return true;
+};
+
+/** Removes the highlight when the selection has one, otherwise applies the default color. */
+export const toggleHighlightCommand: Command = (state, dispatch, view) =>
+  hasMarkInSelection(state, 'highlight')
+    ? removeHighlightCommand(state, dispatch, view)
+    : setHighlightCommand()(state, dispatch, view);
+
 export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_list'): Command {
   return (state, dispatch) => {
     const { $from } = state.selection;
-    const { bullet_list, ordered_list, task_list, list_item, task_item } = state.schema.nodes;
+    const { task_list, list_item, task_item } = state.schema.nodes;
 
     // Find innermost list ancestor
     let listDepth = -1;
@@ -125,17 +260,9 @@ export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_l
 }
 
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
-  const {
-    strong,
-    em,
-    code,
-    underline,
-    strikethrough,
-    subscript,
-    superscript,
-    small,
-  } = schema.marks;
-  const { list_item, task_item, bullet_list, ordered_list, task_list, paragraph, heading } = schema.nodes;
+  const { strong, em, code, underline, strikethrough, subscript, superscript, small } =
+    schema.marks;
+  const { list_item, task_item, paragraph, heading } = schema.nodes;
 
   return [
     buildInputRules(),
@@ -178,11 +305,9 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
         splitListItem(list_item)(state, dispatch) ||
         liftListItem(list_item)(state, dispatch),
       Tab: (state, dispatch) =>
-        sinkListItem(task_item)(state, dispatch) ||
-        sinkListItem(list_item)(state, dispatch),
+        sinkListItem(task_item)(state, dispatch) || sinkListItem(list_item)(state, dispatch),
       'Shift-Tab': (state, dispatch) =>
-        liftListItem(task_item)(state, dispatch) ||
-        liftListItem(list_item)(state, dispatch),
+        liftListItem(task_item)(state, dispatch) || liftListItem(list_item)(state, dispatch),
     }),
     keymap(baseKeymap),
     dropCursor(),

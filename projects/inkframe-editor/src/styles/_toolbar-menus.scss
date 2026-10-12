@@ -9,7 +9,9 @@
   max-width: none !important;
   overflow: hidden !important;
   overflow-x: hidden !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .mat-mdc-menu-content {
@@ -30,7 +32,9 @@
   background: transparent !important;
   border: none !important;
   box-sizing: border-box !important;
-  transition: background-color 0.12s ease, color 0.12s ease !important;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease !important;
 
   .mat-mdc-menu-item-text {
     display: flex !important;
@@ -70,7 +74,8 @@
     user-select: none;
     transition: color 0.12s ease;
 
-    sub, sup {
+    sub,
+    sup {
       font-size: 10px;
       line-height: 1;
     }
@@ -111,7 +116,9 @@
     white-space: nowrap;
     line-height: 1.2;
     flex-shrink: 0;
-    transition: background-color 0.12s ease, color 0.12s ease;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease;
   }
 
   /* Active / Selected state (matches both light and dark modes) */
@@ -144,13 +151,46 @@
   }
 
   /* Heading Font Hierarchies & Colors */
-  .heading-h1, .h1-text { font-size: 16px !important; font-weight: 700 !important; color: var(--ink-text-heading) !important; }
-  .heading-h2, .h2-text { font-size: 15px !important; font-weight: 700 !important; color: var(--ink-text-heading) !important; }
-  .heading-h3, .h3-text { font-size: 14px !important; font-weight: 600 !important; color: var(--ink-text-heading) !important; }
-  .heading-h4, .h4-text { font-size: 13.5px !important; font-weight: 600 !important; color: var(--ink-text-primary) !important; }
-  .heading-h5, .h5-text { font-size: 13px !important; font-weight: 500 !important; color: var(--ink-text-primary) !important; }
-  .heading-h6, .h6-text { font-size: 12px !important; font-weight: 500 !important; color: var(--ink-text-secondary) !important; }
-  .small-text { font-size: 12px !important; color: var(--ink-text-secondary) !important; }
+  .heading-h1,
+  .h1-text {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--ink-text-heading) !important;
+  }
+  .heading-h2,
+  .h2-text {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: var(--ink-text-heading) !important;
+  }
+  .heading-h3,
+  .h3-text {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--ink-text-heading) !important;
+  }
+  .heading-h4,
+  .h4-text {
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: var(--ink-text-primary) !important;
+  }
+  .heading-h5,
+  .h5-text {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--ink-text-primary) !important;
+  }
+  .heading-h6,
+  .h6-text {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--ink-text-secondary) !important;
+  }
+  .small-text {
+    font-size: 12px !important;
+    color: var(--ink-text-secondary) !important;
+  }
 
   &.ink-menu-danger {
     color: var(--ink-danger-text) !important;
@@ -180,7 +220,9 @@ mat-divider.mat-divider,
   width: 272px;
   max-width: 100%;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   .ink-color-title {
     font-size: 0.88rem;
@@ -195,6 +237,15 @@ mat-divider.mat-divider,
     gap: 6px;
     margin-bottom: 12px;
     justify-content: center;
+
+    &.ink-highlight-grid {
+      grid-template-columns: repeat(4, 30px);
+    }
+  }
+
+  // Highlight swatches are pastels: outline them so they show on white menus.
+  .ink-highlight-grid .ink-color-swatch {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
 
   .ink-color-swatch {
@@ -208,7 +259,9 @@ mat-divider.mat-divider,
     justify-content: center;
     padding: 0;
     position: relative;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.12s ease;
 
     &:hover {
       transform: scale(1.12);
@@ -243,7 +296,9 @@ mat-divider.mat-divider,
     font-weight: 500;
     color: var(--ink-text-primary);
     cursor: pointer;
-    transition: background-color 0.12s ease, color 0.12s ease;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease;
 
     &:hover {
       background: var(--ink-bg-hover);
@@ -258,7 +313,9 @@ mat-divider.mat-divider,
   width: 290px;
   max-width: 100%;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   .ink-image-title {
     font-size: 0.88rem;
@@ -289,7 +346,7 @@ mat-divider.mat-divider,
         font-weight: 600;
 
         &::after {
-          content: "";
+          content: '';
           position: absolute;
           bottom: -1px;
           left: 0;
@@ -435,7 +492,9 @@ mat-divider.mat-divider,
   width: 244px;
   max-width: 100%;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   .ink-emoji-title {
     font-size: 0.84rem;
@@ -463,7 +522,9 @@ mat-divider.mat-divider,
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: transform 0.1s ease, background 0.1s ease;
+    transition:
+      transform 0.1s ease,
+      background 0.1s ease;
 
     &:hover {
       background: var(--ink-bg-hover);
@@ -503,7 +564,10 @@ mat-divider.mat-divider,
     background: var(--ink-bg-subtle, rgba(255, 255, 255, 0.03));
     cursor: pointer;
     box-sizing: border-box;
-    transition: background-color 0.1s ease, border-color 0.1s ease, transform 0.08s ease;
+    transition:
+      background-color 0.1s ease,
+      border-color 0.1s ease,
+      transform 0.08s ease;
 
     &:hover {
       transform: scale(1.08);
@@ -523,8 +587,19 @@ mat-divider.mat-divider,
     gap: 10px;
     width: 212px;
     margin-top: 12px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
     user-select: none;
     cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--ink-border-focus);
+      outline-offset: 2px;
+    }
   }
 
   .ink-table-pill {
@@ -583,7 +658,9 @@ mat-divider.mat-divider,
   width: 290px;
   max-width: 100%;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 
   .ink-link-title {
     font-size: 0.88rem;

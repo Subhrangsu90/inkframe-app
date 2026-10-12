@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   inject,
   signal,
   viewChild,
@@ -13,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, OPEN_COLUMN_MENU_EVENT, TEXT_COLORS } from '@inkframe-ui/editor/core';
+import { EditorService, KeepMenuOpen, OPEN_COLUMN_MENU_EVENT } from '@inkframe-ui/editor/core';
 
 export interface CellBgColor {
   name: string;
@@ -47,6 +46,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -197,7 +197,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
     <!-- More / Background Color MatMenu -->
     <mat-menu #moreMenu="matMenu" class="ink-table-mat-menu">
-      <div class="ink-table-color-section" (click)="$event.stopPropagation()">
+      <div class="ink-table-color-section" inkKeepMenuOpen>
         <div class="ink-table-color-title">Cell background</div>
         <div class="ink-table-color-grid">
           @for (c of bgColors; track c.name) {
@@ -283,7 +283,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       &::-webkit-scrollbar {
         display: none;
       }
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
     }
 
     .ink-tbl-btn {
@@ -391,7 +393,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       align-items: center;
       justify-content: center;
       padding: 0;
-      transition: transform 0.1s ease, border-color 0.1s ease;
+      transition:
+        transform 0.1s ease,
+        border-color 0.1s ease;
 
       &:hover {
         transform: scale(1.15);
@@ -430,7 +434,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 export class TableToolbar {
   protected readonly svc = inject(EditorService);
   protected readonly bgColors = CELL_BG_COLORS;
-  protected readonly alignIcon = signal<'format_align_left' | 'format_align_center' | 'format_align_right'>('format_align_left');
+  protected readonly alignIcon = signal<
+    'format_align_left' | 'format_align_center' | 'format_align_right'
+  >('format_align_left');
   protected readonly colMenuPos = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
   private readonly colMenuTrigger = viewChild<MatMenuTrigger>('colMenuTrigger');
@@ -473,4 +479,3 @@ export class TableToolbar {
 
 // Backward compatibility alias
 export { TableToolbar as TableToolbarComponent };
-

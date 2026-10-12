@@ -22,7 +22,7 @@ import { LayoutService } from '../../shared/layout/layout.service';
 export class NotFound {
   private readonly layout = inject(LayoutService);
 
-  readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
+  readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
 
   constructor() {
     effect(() => {

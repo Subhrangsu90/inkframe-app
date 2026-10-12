@@ -9,14 +9,23 @@ import { EditorService } from '@inkframe-ui/editor/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (svc.slashMenu(); as m) {
-      <ul class="ink-slash" role="listbox" aria-label="Insert block"
-          [style.left.px]="m.left" [style.top.px]="m.top"
-          (mousedown)="$event.preventDefault()">
+      <ul
+        class="ink-slash"
+        role="listbox"
+        aria-label="Insert block"
+        [style.left.px]="m.left"
+        [style.top.px]="m.top"
+        (mousedown)="$event.preventDefault()"
+      >
         @for (item of svc.slashItems(); track item.id; let i = $index) {
-          <li role="option"
-              [attr.aria-selected]="i === svc.slashActive()"
-              [class.active]="i === svc.slashActive()"
-              (click)="svc.runSlashItem(item)">
+          <!-- Keyboard users pick with the arrow keys and Enter while typing (EditorService.onSlashKeyDown), so focus stays in the document. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <li
+            role="option"
+            [attr.aria-selected]="i === svc.slashActive()"
+            [class.active]="i === svc.slashActive()"
+            (click)="svc.runSlashItem(item)"
+          >
             <div class="slash-icon-badge">
               <mat-icon class="slash-icon">{{ item.icon }}</mat-icon>
             </div>
@@ -41,7 +50,9 @@ import { EditorService } from '@inkframe-ui/editor/core';
       background: var(--ink-bg-menu, #1c1d22);
       border: 1px solid var(--ink-border-default, #2e3036);
       border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.35),
+        0 2px 6px rgba(0, 0, 0, 0.15);
       max-height: min(21rem, calc(100vh - 120px));
       min-width: min(260px, calc(100vw - 24px));
       max-width: min(320px, calc(100vw - 24px));
@@ -49,7 +60,9 @@ import { EditorService } from '@inkframe-ui/editor/core';
       overflow-x: hidden;
       scrollbar-width: thin;
       scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       &::-webkit-scrollbar {
         width: 5px;
@@ -69,7 +82,9 @@ import { EditorService } from '@inkframe-ui/editor/core';
       cursor: pointer;
       border-radius: 8px;
       color: var(--ink-text-primary, #f1f5f9);
-      transition: background-color 0.12s ease, color 0.12s ease;
+      transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
       text-align: left;
       width: 100%;
       box-sizing: border-box;
@@ -158,4 +173,3 @@ export class SlashMenu {
 
 // Backward compatibility alias
 export { SlashMenu as SlashMenuComponent };
-

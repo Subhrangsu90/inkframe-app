@@ -17,7 +17,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
   imports: [CommonModule, NgTemplateOutlet, NgComponentOutlet, InkIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'ink-button-root ink-focus-ring',
+    class: 'ink-button-root ink-focus-ring',
     '[class.btn-primary]': "variant() === 'primary'",
     '[class.btn-secondary]': "variant() === 'secondary'",
     '[class.btn-outline]': "variant() === 'outline'",
@@ -233,7 +233,9 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     }
 
     @keyframes ink-btn-spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
   `,
 })

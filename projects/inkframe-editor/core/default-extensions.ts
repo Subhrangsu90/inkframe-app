@@ -1,14 +1,13 @@
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
 import { history, undo, redo } from 'prosemirror-history';
-import { setBlockType, toggleMark } from 'prosemirror-commands';
-import {
-  columnResizing,
-  tableEditing,
-  goToNextCell,
-} from 'prosemirror-tables';
+import { toggleMark } from 'prosemirror-commands';
+import { columnResizing, tableEditing, goToNextCell } from 'prosemirror-tables';
 import { textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules';
 import { EditorExtension, createExtension } from './extension-types';
 import {
+  paragraph,
+  heading,
+  highlight,
   callout,
   link,
   underline,
@@ -25,7 +24,22 @@ import {
   tableNodeSpecs,
 } from './schema';
 import { markRule, taskItemRule } from './input-rules';
-import { clearFormattingCommand, toggleListCommand } from './plugins';
+import {
+  clearFormattingCommand,
+  setBlockTypeKeepingAlign,
+  setTextAlignCommand,
+  splitAlignedBlockCommand,
+  toggleHighlightCommand,
+  toggleListCommand,
+} from './plugins';
+import {
+  searchPlugin,
+  findNextCommand,
+  findPreviousCommand,
+  getSearchState,
+} from './search.plugin';
+import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder.plugin';
+import { pasteCleanupPlugin } from './paste-cleanup';
 import { tableUIPlugin } from './table-ui.plugin';
 import { highlightPlugin } from './highlight.plugin';
 import { CalloutNodeView } from './node-views/callout.node-view';
@@ -42,9 +56,9 @@ export const DocExtension = createExtension({
 
 export const ParagraphExtension = createExtension({
   name: 'paragraph',
-  nodes: { paragraph: basicNodes.paragraph },
+  nodes: { paragraph },
   keymaps: (ctx) => ({
-    'Mod-Alt-0': setBlockType(ctx.schema.nodes['paragraph']),
+    'Mod-Alt-0': setBlockTypeKeepingAlign(ctx.schema.nodes['paragraph']),
   }),
   slashItems: [
     {
@@ -69,9 +83,7 @@ export const HardBreakExtension = createExtension({
   keymaps: (ctx) => ({
     'Shift-Enter': (state, dispatch) => {
       dispatch?.(
-        state.tr
-          .replaceSelectionWith(ctx.schema.nodes['hard_break'].create())
-          .scrollIntoView(),
+        state.tr.replaceSelectionWith(ctx.schema.nodes['hard_break'].create()).scrollIntoView(),
       );
       return true;
     },
@@ -320,23 +332,46 @@ export const SmallExtension = createExtension({
   }),
 });
 
+/** Background color behind text, picked from `HIGHLIGHT_COLORS`. */
+export const HighlightExtension = createExtension({
+  name: 'highlight',
+  marks: { highlight },
+  keymaps: () => ({
+    'Mod-Alt-h': toggleHighlightCommand,
+  }),
+});
+
+// ── Alignment ─────────────────────────────────────────────────────
+
+/** Left, center, right and justified paragraphs and headings. */
+export const TextAlignExtension = createExtension({
+  name: 'text_align',
+  keymaps: () => ({
+    'Shift-Mod-l': setTextAlignCommand('left'),
+    'Shift-Mod-e': setTextAlignCommand('center'),
+    'Shift-Mod-r': setTextAlignCommand('right'),
+    'Shift-Mod-j': setTextAlignCommand('justify'),
+    Enter: splitAlignedBlockCommand,
+  }),
+});
+
 // ── Structure Blocks (Headings, Quote, Code Block) ────────────────
 
 export const HeadingExtension = createExtension({
   name: 'heading',
-  nodes: { heading: basicNodes.heading },
+  nodes: { heading },
   inputRules: (ctx) => [
     textblockTypeInputRule(/^(#{1,6})\s$/, ctx.schema.nodes['heading'], (m) => ({
       level: m[1].length,
     })),
   ],
   keymaps: (ctx) => ({
-    'Mod-Alt-1': setBlockType(ctx.schema.nodes['heading'], { level: 1 }),
-    'Mod-Alt-2': setBlockType(ctx.schema.nodes['heading'], { level: 2 }),
-    'Mod-Alt-3': setBlockType(ctx.schema.nodes['heading'], { level: 3 }),
-    'Mod-Alt-4': setBlockType(ctx.schema.nodes['heading'], { level: 4 }),
-    'Mod-Alt-5': setBlockType(ctx.schema.nodes['heading'], { level: 5 }),
-    'Mod-Alt-6': setBlockType(ctx.schema.nodes['heading'], { level: 6 }),
+    'Mod-Alt-1': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 1 }),
+    'Mod-Alt-2': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 2 }),
+    'Mod-Alt-3': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 3 }),
+    'Mod-Alt-4': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 4 }),
+    'Mod-Alt-5': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 5 }),
+    'Mod-Alt-6': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 6 }),
   }),
   slashItems: [
     {
@@ -512,13 +547,7 @@ export const CalloutExtension = createExtension({
   nodes: { callout },
   nodeViews: (ctx) => ({
     callout: (node, view, getPos) =>
-      new CalloutNodeView(
-        node,
-        view,
-        getPos,
-        ctx.service.envInjector,
-        ctx.service.appReference,
-      ),
+      new CalloutNodeView(node, view, getPos, ctx.service.envInjector, ctx.service.appReference),
   }),
   slashItems: [
     {
@@ -590,9 +619,7 @@ export const ImageExtension = createExtension({
   nodes: { image },
   nodeViews: (ctx) => ({
     image: (node, view, getPos) =>
-      new ImageNodeView(node, view, getPos, (data) =>
-        ctx.service.openImagePreview(data),
-      ),
+      new ImageNodeView(node, view, getPos, (data) => ctx.service.openImagePreview(data)),
   }),
   slashItems: [
     {
@@ -652,6 +679,60 @@ export const ClearFormattingExtension = createExtension({
   ],
 });
 
+// ── Find and Replace ──────────────────────────────────────────────
+
+const whileSearching =
+  (command: typeof findNextCommand): typeof findNextCommand =>
+  (state, dispatch, view) =>
+    !!getSearchState(state)?.query && command(state, dispatch, view);
+
+export const SearchExtension = createExtension({
+  name: 'search',
+  plugins: () => [searchPlugin()],
+  keymaps: (ctx) => ({
+    'Mod-f': () => {
+      ctx.service.openSearch();
+      return true; // instead of the browser's find bar, which cannot see into the editor's state
+    },
+    // Mod-h on Windows and Linux, Shift-Mod-h on macOS (where Cmd+H hides the app).
+    'Mod-h': () => {
+      ctx.service.openSearch({ replace: true });
+      return true;
+    },
+    'Shift-Mod-h': () => {
+      ctx.service.openSearch({ replace: true });
+      return true;
+    },
+    'Mod-g': whileSearching(findNextCommand),
+    'Shift-Mod-g': whileSearching(findPreviousCommand),
+    Escape: () => {
+      if (!ctx.service.searchOpen()) return false;
+      ctx.service.closeSearch();
+      return true;
+    },
+  }),
+});
+
+// ── Placeholder ───────────────────────────────────────────────────
+
+/** Shows `text` while the document is empty. */
+export function createPlaceholderExtension(text: string = DEFAULT_PLACEHOLDER): EditorExtension {
+  return createExtension({
+    name: 'placeholder',
+    plugins: () => [placeholderPlugin(text)],
+  });
+}
+
+export const PlaceholderExtension = createPlaceholderExtension();
+
+// ── Paste Cleanup ─────────────────────────────────────────────────
+
+/** Cleans up HTML pasted from Word, Google Docs and web pages (see `cleanPastedHtml`). */
+export const PasteCleanupExtension = createExtension({
+  name: 'paste_cleanup',
+  plugins: () => [pasteCleanupPlugin()],
+});
+
 // ── Default / StarterKit Extension Pack ───────────────────────────
 
 export const DEFAULT_EXTENSIONS: EditorExtension[] = [
@@ -674,11 +755,13 @@ export const DEFAULT_EXTENSIONS: EditorExtension[] = [
   SuperscriptExtension,
   TextColorExtension,
   SmallExtension,
+  HighlightExtension,
 
   // Hierarchy & blocks
   HeadingExtension,
   BlockquoteExtension,
   CodeBlockExtension,
+  TextAlignExtension,
 
   // Lists
   BulletListExtension,
@@ -692,6 +775,11 @@ export const DEFAULT_EXTENSIONS: EditorExtension[] = [
   ImageExtension,
   DividerExtension,
   ClearFormattingExtension,
+
+  // Editing aids
+  SearchExtension,
+  PlaceholderExtension,
+  PasteCleanupExtension,
 ];
 
 export const StarterKit = DEFAULT_EXTENSIONS;

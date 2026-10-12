@@ -33,10 +33,50 @@ export const TEXT_COLORS: ColorSwatch[] = [
   { name: 'Deep Purple', value: '#581c87' },
 ];
 
+/**
+ * Highlight (background) colors. All light pastels: highlighted text is drawn
+ * in a dark color in both themes, so it stays readable on each of them.
+ */
+export const HIGHLIGHT_COLORS: ColorSwatch[] = [
+  { name: 'Yellow', value: '#fef08a', isLight: true },
+  { name: 'Green', value: '#bbf7d0', isLight: true },
+  { name: 'Blue', value: '#bfdbfe', isLight: true },
+  { name: 'Purple', value: '#e9d5ff', isLight: true },
+  { name: 'Pink', value: '#fbcfe8', isLight: true },
+  { name: 'Red', value: '#fecaca', isLight: true },
+  { name: 'Orange', value: '#fed7aa', isLight: true },
+  { name: 'Grey', value: '#e5e7eb', isLight: true },
+];
+
 export const COMMON_EMOJIS = [
-  '😀', '😃', '😄', '😁', '😅', '😂',
-  '😊', '😍', '🥰', '😘', '😋', '🤔',
-  '😎', '🥳', '👍', '👎', '👏', '🙌',
-  '🎉', '🔥', '✨', '💡', '📌', '🚀',
-  '❤️', '💯', '✅', '⚠️', '📝', '⭐',
+  '😀',
+  '😃',
+  '😄',
+  '😁',
+  '😅',
+  '😂',
+  '😊',
+  '😍',
+  '🥰',
+  '😘',
+  '😋',
+  '🤔',
+  '😎',
+  '🥳',
+  '👍',
+  '👎',
+  '👏',
+  '🙌',
+  '🎉',
+  '🔥',
+  '✨',
+  '💡',
+  '📌',
+  '🚀',
+  '❤️',
+  '💯',
+  '✅',
+  '⚠️',
+  '📝',
+  '⭐',
 ];

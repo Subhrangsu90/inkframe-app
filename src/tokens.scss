@@ -1,14 +1,14 @@
 /* ── Inkframe Design System Tokens (Phase 1) ── */
 :root {
   /* Canvas & Surfaces */
-  --ink-bg: #f7f6f3;               /* Warm off-white canvas */
-  --ink-surface: #ffffff;          /* Clean white cards and sheets */
-  --ink-surface-2: #f1f0ec;        /* Input backgrounds, hover states */
-  --ink-surface-subtle: #eae8e3;   /* Secondary backgrounds */
+  --ink-bg: #f7f6f3; /* Warm off-white canvas */
+  --ink-surface: #ffffff; /* Clean white cards and sheets */
+  --ink-surface-2: #f1f0ec; /* Input backgrounds, hover states */
+  --ink-surface-subtle: #eae8e3; /* Secondary backgrounds */
 
   /* Hairline Borders */
-  --ink-border: #e8e6e1;           /* 1px subtle boundary */
-  --ink-border-strong: #d6d3cc;    /* Hover / active boundary */
+  --ink-border: #e8e6e1; /* 1px subtle boundary */
+  --ink-border-strong: #d6d3cc; /* Hover / active boundary */
   --ink-border-focus: rgba(124, 58, 237, 0.4);
 
   /* Canvas Atmosphere & Ambient Lighting (Premium Backdrop System) */
@@ -19,19 +19,24 @@
   --ink-canvas-glow-secondary: rgba(99, 102, 241, 0.04);
   --ink-canvas-glow-warm: rgba(245, 158, 11, 0.025);
   --ink-canvas-highlight: rgba(255, 255, 255, 0.7);
-  --ink-beam-line: linear-gradient(90deg, transparent 0%, rgba(124, 58, 237, 0.25) 50%, transparent 100%);
+  --ink-beam-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(124, 58, 237, 0.25) 50%,
+    transparent 100%
+  );
 
   /* Typography */
-  --ink-text: #1b1b1f;             /* Primary text */
-  --ink-text-muted: #6b6b73;       /* Captions, counts, placeholders */
+  --ink-text: #1b1b1f; /* Primary text */
+  --ink-text-muted: #6b6b73; /* Captions, counts, placeholders */
   --ink-text-heading: #111113;
 
   /* Accent & Actions (Curated Violet) */
-  --ink-accent: #7c3aed;           /* Primary brand action */
+  --ink-accent: #7c3aed; /* Primary brand action */
   --ink-accent-hover: #6d28d9;
-  --ink-accent-soft: #f3eeff;      /* Active button background */
+  --ink-accent-soft: #f3eeff; /* Active button background */
   --ink-accent-text: #6d28d9;
-  --ink-accent-contrast: #ffffff;  /* Contrast text on accent action */
+  --ink-accent-contrast: #ffffff; /* Contrast text on accent action */
 
   /* Status Colors */
   --ink-danger: #dc2626;
@@ -44,7 +49,7 @@
   /* Micro-Elevation Shadows */
   --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --ink-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --ink-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.10);
+  --ink-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
   --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.05);
   --ink-shadow-glass: 0 8px 32px 0 rgba(124, 58, 237, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 
@@ -75,16 +80,16 @@
   --ink-border-default: var(--ink-border);
 }
 
-:root[data-theme="dark"],
+:root[data-theme='dark'],
 html.dark,
 :root.dark,
-body[data-theme="dark"],
+body[data-theme='dark'],
 body.theme-dark,
 .theme-dark {
   /* Canvas & Surfaces */
-  --ink-bg: #0e0e10;               /* Deep obsidian canvas */
-  --ink-surface: #17171a;          /* Surface sheet */
-  --ink-surface-2: #1f1f23;        /* Inputs, hover */
+  --ink-bg: #0e0e10; /* Deep obsidian canvas */
+  --ink-surface: #17171a; /* Surface sheet */
+  --ink-surface-2: #1f1f23; /* Inputs, hover */
   --ink-surface-subtle: #26262c;
 
   /* Hairline Borders */
@@ -97,10 +102,15 @@ body.theme-dark,
   --ink-canvas-dot: rgba(255, 255, 255, 0.06);
   --ink-canvas-grid: rgba(255, 255, 255, 0.035);
   --ink-canvas-glow-primary: rgba(139, 92, 246, 0.16);
-  --ink-canvas-glow-secondary: rgba(99, 102, 241, 0.10);
+  --ink-canvas-glow-secondary: rgba(99, 102, 241, 0.1);
   --ink-canvas-glow-warm: rgba(245, 158, 11, 0.035);
   --ink-canvas-highlight: rgba(255, 255, 255, 0.08);
-  --ink-beam-line: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.35) 50%, transparent 100%);
+  --ink-beam-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.35) 50%,
+    transparent 100%
+  );
 
   /* Typography */
   --ink-text: #ededef;

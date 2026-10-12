@@ -12,14 +12,18 @@
   <div class="settings-container">
     <header class="page-intro">
       <h1 class="intro-title">Settings</h1>
-      <p class="intro-desc">Preferences and data for this browser. Nothing here leaves your device.</p>
+      <p class="intro-desc">
+        Preferences and data for this browser. Nothing here leaves your device.
+      </p>
     </header>
 
     <!-- APPEARANCE -->
     <section class="settings-section" aria-labelledby="appearance-heading">
       <div class="section-label">
         <h2 id="appearance-heading" class="section-title">Appearance</h2>
-        <p class="section-desc">Choose how Inkframe looks. Applies to the editor, previews and shared links you open.</p>
+        <p class="section-desc">
+          Choose how Inkframe looks. Applies to the editor, previews and shared links you open.
+        </p>
       </div>
 
       <div class="theme-options" role="group" aria-label="Theme">
@@ -63,7 +67,9 @@
     <section class="settings-section" aria-labelledby="storage-heading">
       <div class="section-label">
         <h2 id="storage-heading" class="section-title">Storage</h2>
-        <p class="section-desc">Documents and images are saved in this browser's storage (IndexedDB).</p>
+        <p class="section-desc">
+          Documents and images are saved in this browser's storage (IndexedDB).
+        </p>
       </div>
 
       <div class="stat-grid">
@@ -99,8 +105,8 @@
           <div class="setting-info">
             <span class="setting-label">Delete all data</span>
             <span class="setting-desc">
-              Permanently deletes every document and image in this browser. Your theme is kept. Export anything you
-              need first.
+              Permanently deletes every document and image in this browser. Your theme is kept.
+              Export anything you need first.
             </span>
           </div>
           <button type="button" class="danger-btn" (click)="clearStorage()">Delete all data</button>
@@ -118,16 +124,26 @@
         <div class="setting-row">
           <div class="setting-info">
             <span class="setting-label">Private by design</span>
-            <span class="setting-desc">No account and no server. Share links carry the document inside the link itself.</span>
+            <span class="setting-desc"
+              >No account and no server. Share links carry the document inside the link
+              itself.</span
+            >
           </div>
           <span class="status-chip"><span class="chip-dot"></span>Local only</span>
         </div>
         <div class="setting-row">
           <div class="setting-info">
             <span class="setting-label">Source code</span>
-            <span class="setting-desc">Built with Angular and ProseMirror. The code is on GitHub.</span>
+            <span class="setting-desc"
+              >Built with Angular and ProseMirror. The code is on GitHub.</span
+            >
           </div>
-          <a class="link-btn" href="https://github.com/Subhrangsu90/inkframe-app" target="_blank" rel="noopener">
+          <a
+            class="link-btn"
+            href="https://github.com/Subhrangsu90/inkframe-app"
+            target="_blank"
+            rel="noopener"
+          >
             GitHub <ink-icon name="external-link" [size]="12" />
           </a>
         </div>
@@ -136,7 +152,12 @@
             <span class="setting-label">Report a problem</span>
             <span class="setting-desc">Found a bug or have an idea? Open an issue.</span>
           </div>
-          <a class="link-btn" href="https://github.com/Subhrangsu90/inkframe-app/issues" target="_blank" rel="noopener">
+          <a
+            class="link-btn"
+            href="https://github.com/Subhrangsu90/inkframe-app/issues"
+            target="_blank"
+            rel="noopener"
+          >
             Issues <ink-icon name="external-link" [size]="12" />
           </a>
         </div>

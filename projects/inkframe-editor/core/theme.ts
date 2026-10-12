@@ -29,7 +29,8 @@ export function revealThemeChange(
   update: () => void,
 ): void {
   const win = doc.defaultView;
-  const point = origin && win && typeof doc.startViewTransition === 'function' ? originPoint(origin) : null;
+  const point =
+    origin && win && typeof doc.startViewTransition === 'function' ? originPoint(origin) : null;
   if (!point || win!.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
     update();
     return;
@@ -43,10 +44,17 @@ export function revealThemeChange(
   transition.ready
     .then(() => {
       const { x, y } = point;
-      const radius = Math.hypot(Math.max(x, win!.innerWidth - x), Math.max(y, win!.innerHeight - y));
+      const radius = Math.hypot(
+        Math.max(x, win!.innerWidth - x),
+        Math.max(y, win!.innerHeight - y),
+      );
       root.animate(
         { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-        { duration: REVEAL_DURATION_MS, easing: REVEAL_EASING, pseudoElement: '::view-transition-new(root)' },
+        {
+          duration: REVEAL_DURATION_MS,
+          easing: REVEAL_EASING,
+          pseudoElement: '::view-transition-new(root)',
+        },
       );
     })
     .catch(() => {
@@ -66,7 +74,8 @@ function originPoint(origin: ThemeTransitionOrigin): { x: number; y: number } | 
   if (origin instanceof Event) {
     // Prefer the control's center over the pointer: keyboard clicks report (0, 0).
     const { currentTarget, target } = origin;
-    el = currentTarget instanceof Element ? currentTarget : target instanceof Element ? target : null;
+    el =
+      currentTarget instanceof Element ? currentTarget : target instanceof Element ? target : null;
   } else if (origin instanceof Element) {
     el = origin;
   } else {

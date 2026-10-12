@@ -7,9 +7,63 @@ import { sanitizeCssColor, sanitizeCssLength, sanitizeHref } from './link-utils'
 export type CalloutKind = 'info' | 'warning' | 'success' | 'danger';
 export const CALLOUT_KINDS: CalloutKind[] = ['info', 'warning', 'success', 'danger'];
 
+/** Paragraph and heading alignment. `left` is stored as `null` (the default). */
+export type TextAlign = 'left' | 'center' | 'right' | 'justify';
+export const TEXT_ALIGNMENTS: TextAlign[] = ['left', 'center', 'right', 'justify'];
+
+/** Returns the alignment if it is one the schema stores (center, right, justify), otherwise null. */
+export function sanitizeTextAlign(raw: unknown): Exclude<TextAlign, 'left'> | null {
+  return raw === 'center' || raw === 'right' || raw === 'justify' ? raw : null;
+}
+
+function readTextAlign(dom: HTMLElement): Exclude<TextAlign, 'left'> | null {
+  // The raw attribute too: not every CSS engine accepts `-webkit-center`.
+  const raw = /text-align\s*:\s*([-\w]+)/i.exec(dom.getAttribute('style') ?? '')?.[1];
+  const value = (dom.style.textAlign || raw || dom.getAttribute('align') || '')
+    .trim()
+    .toLowerCase();
+  return sanitizeTextAlign(value === '-webkit-center' ? 'center' : value);
+}
+
+// The value is checked against the allow-list: shared documents can carry any attribute value.
+const textAlignAttrs = (raw: unknown) => {
+  const align = sanitizeTextAlign(raw);
+  return align ? { style: `text-align: ${align}` } : {};
+};
+
+/** The highlight color used when none is chosen (also for `<mark>` and `==text==` without a color). */
+export const DEFAULT_HIGHLIGHT_COLOR = '#fef08a';
+
+const NO_HIGHLIGHT = /^(transparent|none|inherit|initial|unset|revert|currentcolor|window)$/i;
+// rgba(0, 0, 0, 0), hsla(0 0% 0% / 0%), ...: fully transparent.
+const ZERO_ALPHA = /^(?:rgb|hsl)a?\((?:[^,]+,){3}\s*0*(?:\.0+)?%?\s*\)$|\/\s*0*(?:\.0+)?%?\s*\)$/i;
+
+/** A CSS color usable as a highlight, or null for unsafe values and keywords that mean "no background". */
+export function sanitizeHighlightColor(raw: unknown): string | null {
+  const color = sanitizeCssColor(raw);
+  return color && !NO_HIGHLIGHT.test(color) && !ZERO_ALPHA.test(color) ? color : null;
+}
+
 // addListNodes() needs an OrderedMap (it calls .append()), not a plain object,
 // so build a base schema first and use its spec.
 const base = new Schema({ nodes: basicNodes, marks: basicMarks });
+
+const paragraph: NodeSpec = {
+  ...basicNodes.paragraph,
+  attrs: { align: { default: null } },
+  parseDOM: [{ tag: 'p', getAttrs: (dom) => ({ align: readTextAlign(dom as HTMLElement) }) }],
+  toDOM: (node) => ['p', textAlignAttrs(node.attrs['align']), 0],
+};
+
+const heading: NodeSpec = {
+  ...basicNodes.heading,
+  attrs: { level: { default: 1, validate: 'number' }, align: { default: null } },
+  parseDOM: [1, 2, 3, 4, 5, 6].map((level) => ({
+    tag: `h${level}`,
+    getAttrs: (dom: HTMLElement) => ({ level, align: readTextAlign(dom) }),
+  })),
+  toDOM: (node) => [`h${node.attrs['level']}`, textAlignAttrs(node.attrs['align']), 0],
+};
 
 const callout: NodeSpec = {
   group: 'block',
@@ -81,15 +135,16 @@ const strikethrough: MarkSpec = {
   toDOM: () => ['s', 0],
 };
 
+// Google Docs writes sub- and superscript as `vertical-align` styles.
 const subscript: MarkSpec = {
   excludes: 'superscript',
-  parseDOM: [{ tag: 'sub' }],
+  parseDOM: [{ tag: 'sub' }, { style: 'vertical-align=sub' }],
   toDOM: () => ['sub', 0],
 };
 
 const superscript: MarkSpec = {
   excludes: 'subscript',
-  parseDOM: [{ tag: 'sup' }],
+  parseDOM: [{ tag: 'sup' }, { style: 'vertical-align=super' }],
   toDOM: () => ['sup', 0],
 };
 
@@ -113,6 +168,36 @@ const textColor: MarkSpec = {
 const small: MarkSpec = {
   parseDOM: [{ tag: 'small' }],
   toDOM: () => ['small', 0],
+};
+
+const highlight: MarkSpec = {
+  attrs: { color: { default: DEFAULT_HIGHLIGHT_COLOR } },
+  parseDOM: [
+    {
+      tag: 'mark',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement;
+        const color =
+          sanitizeHighlightColor(el.getAttribute('data-color')) ??
+          sanitizeHighlightColor(el.style.backgroundColor);
+        return color ? { color } : {};
+      },
+    },
+    {
+      // A tag rule rather than a `background-color` style rule, which would
+      // also turn table cell backgrounds into highlights on the cell's text.
+      tag: 'span',
+      consuming: false,
+      getAttrs: (dom) => {
+        const color = sanitizeHighlightColor((dom as HTMLElement).style.backgroundColor);
+        return color ? { color } : false;
+      },
+    },
+  ],
+  toDOM: (mark) => {
+    const color = sanitizeHighlightColor(mark.attrs['color']) ?? DEFAULT_HIGHLIGHT_COLOR;
+    return ['mark', { 'data-color': color, style: `background-color: ${color}` }, 0];
+  },
 };
 
 const code: MarkSpec = {
@@ -245,11 +330,8 @@ const code_block: NodeSpec = {
         const codeEl = el.querySelector('code');
         const langClass = el.className || codeEl?.className || '';
         const match = /language-([a-z0-9_-]+)/i.exec(langClass);
-        const language = match
-          ? match[1].toLowerCase()
-          : el.dataset['language'] || 'typescript';
-        const wrap =
-          el.dataset['wrap'] === 'true' || el.style.whiteSpace === 'pre-wrap';
+        const language = match ? match[1].toLowerCase() : el.dataset['language'] || 'typescript';
+        const wrap = el.dataset['wrap'] === 'true' || el.style.whiteSpace === 'pre-wrap';
         return { language, wrap };
       },
     },
@@ -265,7 +347,10 @@ const code_block: NodeSpec = {
   ],
 };
 
-/** Table, row and cell specs, with alignment / background / height cell attributes. */
+/**
+ * Table, row and cell specs, with alignment and background cell attributes.
+ * Rows have no fixed height: they fit their text.
+ */
 export const tableNodeSpecs = tableNodes({
   tableGroup: 'block',
   cellContent: 'block+',
@@ -294,24 +379,12 @@ export const tableNodeSpecs = tableNodes({
         }
       },
     },
-    height: {
-      default: null,
-      getFromDOM(dom) {
-        const el = dom as HTMLElement;
-        return sanitizeCssLength(el.style.height || el.getAttribute('data-height'));
-      },
-      setDOMAttr(value, attrs) {
-        const height = sanitizeCssLength(value);
-        if (height) {
-          attrs['style'] = (attrs['style'] || '') + `height: ${height};`;
-          attrs['data-height'] = height;
-        }
-      },
-    },
   },
 });
 
 const baseNodesWithTasks = base.spec.nodes
+  .update('paragraph', paragraph)
+  .update('heading', heading)
   .update('image', image)
   .update('code_block', code_block)
   .addToEnd('task_list', task_list)
@@ -322,6 +395,8 @@ const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
   .addToEnd('callout', callout);
 
 export {
+  paragraph,
+  heading,
   callout,
   link,
   underline,
@@ -330,6 +405,7 @@ export {
   superscript,
   textColor,
   small,
+  highlight,
   code,
   task_list,
   task_item,
@@ -349,6 +425,6 @@ export const schema = new Schema({
     .addToEnd('subscript', subscript)
     .addToEnd('superscript', superscript)
     .addToEnd('textColor', textColor)
-    .addToEnd('small', small),
+    .addToEnd('small', small)
+    .addToEnd('highlight', highlight),
 });
-

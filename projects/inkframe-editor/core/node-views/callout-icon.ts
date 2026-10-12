@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CALLOUT_KINDS, CalloutKind } from '../schema';
 
 const ICONS: Record<CalloutKind, string> = {
@@ -24,7 +18,8 @@ const ICONS: Record<CalloutKind, string> = {
       class="callout-icon"
       [attr.aria-label]="'Change callout type (current: ' + kind() + ')'"
       (mousedown)="$event.preventDefault()"
-      (click)="next()">
+      (click)="next()"
+    >
       <span class="material-symbols-outlined">{{ icon() }}</span>
     </button>
   `,
@@ -39,7 +34,9 @@ const ICONS: Record<CalloutKind, string> = {
       align-items: center;
       justify-content: center;
       opacity: 0.7;
-      transition: opacity 0.15s, background 0.15s;
+      transition:
+        opacity 0.15s,
+        background 0.15s;
       font-size: 20px;
     }
     .callout-icon:hover {
@@ -61,4 +58,3 @@ export class CalloutIcon {
 
 // Backward compatibility alias
 export { CalloutIcon as CalloutIconComponent };
-

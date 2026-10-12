@@ -6,23 +6,48 @@
 
 /* ── Ambient Background Lighting & Architecture ── */
 @keyframes orb-drift-1 {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(40px, 50px); }
-  66% { transform: translate(-20px, 30px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(40px, 50px);
+  }
+  66% {
+    transform: translate(-20px, 30px);
+  }
 }
 @keyframes orb-drift-2 {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(-35px, -25px); }
-  66% { transform: translate(25px, -15px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(-35px, -25px);
+  }
+  66% {
+    transform: translate(25px, -15px);
+  }
 }
 @keyframes orb-drift-3 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(30px, -40px); }
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(30px, -40px);
+  }
 }
 
-.ambient-orb-1 { animation: orb-drift-1 22s ease-in-out infinite; }
-.ambient-orb-2 { animation: orb-drift-2 28s ease-in-out infinite; }
-.ambient-orb-3 { animation: orb-drift-3 18s ease-in-out infinite; }
+.ambient-orb-1 {
+  animation: orb-drift-1 22s ease-in-out infinite;
+}
+.ambient-orb-2 {
+  animation: orb-drift-2 28s ease-in-out infinite;
+}
+.ambient-orb-3 {
+  animation: orb-drift-3 18s ease-in-out infinite;
+}
 
 /* ── Top Central Ambient Horizon (Architectural Depth) ── */
 .canvas-top-horizon {
@@ -59,11 +84,7 @@
 .canvas-dot-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    var(--ink-canvas-dot) 1px,
-    transparent 0
-  );
+  background-image: radial-gradient(circle at 1px 1px, var(--ink-canvas-dot) 1px, transparent 0);
   background-size: 28px 28px;
   mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
   -webkit-mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
@@ -88,19 +109,23 @@
   inset: 0;
   background-size: 52px 52px;
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--ink-border) 42%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--ink-border) 42%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ink-border) 42%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ink-border) 42%, transparent) 1px,
+      transparent 1px
+    );
 }
 
 .hero-grid-dots {
   position: absolute;
   inset: 0;
   background-size: 104px 104px;
-  background-image: radial-gradient(
-    circle 2px,
-    var(--ink-accent) 100%,
-    transparent 100%
-  );
+  background-image: radial-gradient(circle 2px, var(--ink-accent) 100%, transparent 100%);
   opacity: 0.35;
 }
 
@@ -184,7 +209,8 @@
 
 /* ── Pulse ping for status dots ── */
 @keyframes ink-ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
@@ -211,10 +237,18 @@
 }
 
 /* Staggered delays */
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
+.delay-100 {
+  animation-delay: 100ms;
+}
+.delay-200 {
+  animation-delay: 200ms;
+}
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-400 {
+  animation-delay: 400ms;
+}
 
 /* ── Editor Preview Custom Scrollbar ── */
 .ink-scrollbar {
@@ -270,7 +304,9 @@
   border-radius: var(--ink-radius-sm);
   background: var(--ink-surface-2);
   border: 1px solid var(--ink-border);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.06);
   color: var(--ink-text);
   transition: all 0.15s ease;
 }
@@ -282,7 +318,9 @@
   border-radius: var(--ink-radius-lg);
 
   ::ng-deep .ink-card-root {
-    transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease !important;
   }
 
   &::before {
@@ -315,9 +353,15 @@
 
 /* ── Interactive Shortcut Row Flash ── */
 @keyframes shortcut-flash {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .shortcut-active-row {
@@ -336,8 +380,13 @@
 
 /* ── Blinking Cursor in Editor Preview ── */
 @keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .editor-cursor {
@@ -352,8 +401,14 @@
 
 /* ── Mobile menu animation ── */
 @keyframes slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mobile-menu-enter {
@@ -375,4 +430,3 @@
   );
   filter: blur(32px);
 }
-

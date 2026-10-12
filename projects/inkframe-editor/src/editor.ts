@@ -29,18 +29,14 @@ import {
   SlashMenu,
   ImageLightbox,
   TableToolbar,
+  FindReplace,
+  StatusBar,
 } from '@inkframe-ui/editor/extensions';
 
 @Component({
   selector: 'ink-editor',
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    Toolbar,
-    FloatingMenu,
-    SlashMenu,
-    ImageLightbox,
-    TableToolbar,
-  ],
+  imports: [Toolbar, FloatingMenu, SlashMenu, ImageLightbox, TableToolbar, FindReplace, StatusBar],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -48,11 +44,21 @@ import {
       @if (showToolbar() && editable()) {
         <ink-toolbar />
       }
-      <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
-        <div class="ink-doc-page">
-          <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
+      <div class="ink-editor-body">
+        <!-- A click on the empty page around the text focuses the document; keyboard users reach it with Tab. -->
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+        <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
+          <div class="ink-doc-page">
+            <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
+          </div>
         </div>
+        @if (editable()) {
+          <ink-find-replace />
+        }
       </div>
+      @if (showStatusBar()) {
+        <ink-status-bar />
+      }
       @if (editable()) {
         <ink-floating-menu />
         <ink-table-toolbar />
@@ -84,7 +90,9 @@ import {
       display: flex;
       flex-direction: column;
       position: relative;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       @media (min-width: 768px) {
         border-radius: 12px;
@@ -142,6 +150,14 @@ import {
         }
       }
     }
+    /* Positions the find panel over the top of the scrolling page. */
+    .ink-editor-body {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
     .ink-editor-viewport {
       flex: 1 1 0;
       min-height: 0;
@@ -186,22 +202,22 @@ import {
       margin: 0 auto;
       background: var(--ink-bg-page, #18191c);
       border: 1px solid var(--ink-border-subtle, #282a30);
-      border-radius: 6px;
+      /* A sheet of paper: square corners, and it ends where the text ends. */
+      border-radius: 0;
       box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
-      /* At least as tall as the visible canvas, whatever the screen size. */
-      min-height: 100%;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       box-sizing: border-box;
-      transition: box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-
-      @media (min-width: 768px) {
-        border-radius: 8px;
-      }
+      transition:
+        box-shadow 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       &:focus-within {
-        box-shadow: 0 6px 30px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
+        box-shadow:
+          0 6px 30px -2px rgba(0, 0, 0, 0.35),
+          0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
       }
     }
     .ink-host {
@@ -246,6 +262,8 @@ export class Editor {
   readonly debounceMs = input(300);
   readonly extensions = input<EditorExtension[]>(DEFAULT_EXTENSIONS);
   readonly showToolbar = input(true);
+  /** Words, characters and reading time below the document. */
+  readonly showStatusBar = input(true);
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 
@@ -368,4 +386,3 @@ export class Editor {
 
 // Backward compatibility alias
 export { Editor as EditorComponent };
-

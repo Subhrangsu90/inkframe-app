@@ -1,9 +1,11 @@
 import {
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   signal,
   TemplateRef,
@@ -11,7 +13,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Editor } from '@inkframe-ui/editor';
 import {
@@ -22,17 +24,15 @@ import {
   ItalicExtension,
   BulletListExtension,
   TableExtension,
-  CalloutExtension,
   CodeBlockExtension,
   EditorExtension,
   createExtension,
   StoredDoc,
-  SCHEMA_VERSION,
   docToMarkdown,
   schema,
 } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../../shared/layout/layout.service';
-import { DocumentManager, extractDocTitle, extractDocWordCount } from '../../core/document-manager';
+import { DocumentManager, extractDocTitle } from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import { InkIcon } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
@@ -71,15 +71,13 @@ export type EditorViewTab = 'rich' | 'preview';
 @Component({
   selector: 'ink-editor-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    Editor,
-    InkIcon,
-  ],
+  imports: [CommonModule, FormsModule, Editor, InkIcon],
   templateUrl: './editor.html',
   styleUrl: './editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'showShareMenu.set(false)',
+  },
 })
 export class EditorView implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -91,11 +89,22 @@ export class EditorView implements OnInit {
   readonly editorRef = viewChild<Editor>('editorComp');
 
   // Header template refs for dynamic app-shell header
-  readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
-  readonly headerCenterTpl = viewChild<TemplateRef<any>>('headerCenter');
-  readonly headerRightTpl = viewChild<TemplateRef<any>>('headerRight');
+  readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
+  readonly headerCenterTpl = viewChild<TemplateRef<unknown>>('headerCenter');
+  readonly headerRightTpl = viewChild<TemplateRef<unknown>>('headerRight');
+  private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
 
   constructor() {
+    // Focus the title field when renaming starts. (The `autofocus` attribute
+    // only works for the first element a page focuses, so not for later renames.)
+    afterRenderEffect(() => {
+      const input = this.titleInput()?.nativeElement;
+      if (input && this.isEditingTitle()) {
+        input.focus();
+        input.select();
+      }
+    });
+
     effect(() => {
       const left = this.headerLeftTpl();
       const center = this.headerCenterTpl();
@@ -120,7 +129,6 @@ export class EditorView implements OnInit {
   readonly docTitle = signal<string>('Welcome to Inkframe');
   readonly currentStoredDoc = signal<StoredDoc | null>(null);
   readonly saveStatus = signal<'saved' | 'saving'>('saved');
-  readonly wordCount = signal<number>(0);
 
   // Plugin preset system
   readonly activePreset = signal<PluginPreset>('starter-kit');
@@ -200,7 +208,6 @@ export class EditorView implements OnInit {
       this.layout.setActiveDocId(docId);
       this.currentStoredDoc.set(doc);
       this.docTitle.set(extractDocTitle(doc));
-      this.wordCount.set(extractDocWordCount(doc));
     } catch (e) {
       if (token !== this.loadToken) return;
       console.warn('Failed to load document:', e);
@@ -228,7 +235,6 @@ export class EditorView implements OnInit {
     if (title && title !== 'Untitled Document') {
       this.docTitle.set(title);
     }
-    this.wordCount.set(extractDocWordCount(doc));
 
     const id = this.currentDocId();
     await this.docManager.saveDoc(id, doc, this.docTitle());
@@ -270,11 +276,17 @@ export class EditorView implements OnInit {
         try {
           const pmNode = schema.nodeFromJSON(stored.doc);
           md = docToMarkdown(pmNode);
-        } catch {}
+        } catch {
+          // Unreadable document: fall back to the title below.
+        }
       }
     }
     const finalMd = md || '# ' + this.docTitle();
-    const filename = `${this.docTitle().replace(/[^\w\s-]/g, '').trim() || 'document'}.md`;
+    const filename = `${
+      this.docTitle()
+        .replace(/[^\w\s-]/g, '')
+        .trim() || 'document'
+    }.md`;
 
     const blob = new Blob([finalMd], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -295,7 +307,9 @@ export class EditorView implements OnInit {
         try {
           const pmNode = schema.nodeFromJSON(stored.doc);
           md = docToMarkdown(pmNode);
-        } catch {}
+        } catch {
+          // Unreadable document: fall back to the title below.
+        }
       }
     }
     const finalMd = md || '# ' + this.docTitle();

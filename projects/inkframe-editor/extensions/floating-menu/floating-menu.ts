@@ -1,11 +1,26 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/core';
+import {
+  EditorService,
+  KeepMenuOpen,
+  HIGHLIGHT_COLORS,
+  TEXT_ALIGN_OPTIONS,
+  TEXT_COLORS,
+  focusLinkInput,
+  textAlignIcon,
+} from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-floating-menu',
@@ -17,108 +32,161 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (svc.floatingMenu(); as m) {
-      <div class="ink-floating" role="toolbar" aria-label="Selection formatting"
-           [class.placement-bottom]="m.placement === 'bottom'"
-           [style.left.px]="m.left" [style.top.px]="m.top"
-           (mousedown)="$event.preventDefault()">
+      <div
+        class="ink-floating"
+        role="toolbar"
+        aria-label="Selection formatting"
+        [class.placement-bottom]="m.placement === 'bottom'"
+        [style.left.px]="m.left"
+        [style.top.px]="m.top"
+        (mousedown)="$event.preventDefault()"
+      >
         <!-- Typography marks (disabled if code is active) -->
         @if (svc.hasExtension('bold')) {
-          <button mat-icon-button
-                  aria-label="Bold"
-                  matTooltip="Bold (Ctrl+B)"
-                  [attr.aria-pressed]="svc.isBold()"
-                  [class.active]="svc.isBold()"
-                  [disabled]="svc.isCode()"
-                  (click)="svc.toggleBold()">
+          <button
+            mat-icon-button
+            aria-label="Bold"
+            matTooltip="Bold (Ctrl+B)"
+            [attr.aria-pressed]="svc.isBold()"
+            [class.active]="svc.isBold()"
+            [disabled]="svc.isCode()"
+            (click)="svc.toggleBold()"
+          >
             <mat-icon>format_bold</mat-icon>
           </button>
         }
         @if (svc.hasExtension('italic')) {
-          <button mat-icon-button
-                  aria-label="Italic"
-                  matTooltip="Italic (Ctrl+I)"
-                  [attr.aria-pressed]="svc.isItalic()"
-                  [class.active]="svc.isItalic()"
-                  [disabled]="svc.isCode()"
-                  (click)="svc.toggleItalic()">
+          <button
+            mat-icon-button
+            aria-label="Italic"
+            matTooltip="Italic (Ctrl+I)"
+            [attr.aria-pressed]="svc.isItalic()"
+            [class.active]="svc.isItalic()"
+            [disabled]="svc.isCode()"
+            (click)="svc.toggleItalic()"
+          >
             <mat-icon>format_italic</mat-icon>
           </button>
         }
         @if (svc.hasExtension('underline')) {
-          <button mat-icon-button
-                  aria-label="Underline"
-                  matTooltip="Underline (Ctrl+U)"
-                  [attr.aria-pressed]="svc.isUnderline()"
-                  [class.active]="svc.isUnderline()"
-                  [disabled]="svc.isCode()"
-                  (click)="svc.toggleUnderline()">
+          <button
+            mat-icon-button
+            aria-label="Underline"
+            matTooltip="Underline (Ctrl+U)"
+            [attr.aria-pressed]="svc.isUnderline()"
+            [class.active]="svc.isUnderline()"
+            [disabled]="svc.isCode()"
+            (click)="svc.toggleUnderline()"
+          >
             <mat-icon>format_underlined</mat-icon>
           </button>
         }
         @if (svc.hasExtension('strike')) {
-          <button mat-icon-button
-                  aria-label="Strikethrough"
-                  matTooltip="Strikethrough (Ctrl+Shift+S)"
-                  [attr.aria-pressed]="svc.isStrike()"
-                  [class.active]="svc.isStrike()"
-                  [disabled]="svc.isCode()"
-                  (click)="svc.toggleStrike()">
+          <button
+            mat-icon-button
+            aria-label="Strikethrough"
+            matTooltip="Strikethrough (Ctrl+Shift+S)"
+            [attr.aria-pressed]="svc.isStrike()"
+            [class.active]="svc.isStrike()"
+            [disabled]="svc.isCode()"
+            (click)="svc.toggleStrike()"
+          >
             <mat-icon>strikethrough_s</mat-icon>
           </button>
         }
 
         <!-- Code toggle (individual formatting) -->
         @if (svc.hasExtension('code')) {
-          <button mat-icon-button
-                  aria-label="Inline code"
-                  matTooltip="Code (Ctrl+E)"
-                  [attr.aria-pressed]="svc.isCode()"
-                  [class.active]="svc.isCode()"
-                  (click)="svc.toggleCode()">
+          <button
+            mat-icon-button
+            aria-label="Inline code"
+            matTooltip="Code (Ctrl+E)"
+            [attr.aria-pressed]="svc.isCode()"
+            [class.active]="svc.isCode()"
+            (click)="svc.toggleCode()"
+          >
             <mat-icon>code</mat-icon>
           </button>
         }
 
         <!-- Text Color -->
         @if (svc.hasExtension('textColor')) {
-          <button mat-icon-button
-                  #colorTrigger="matMenuTrigger"
-                  aria-label="Text color"
-                  matTooltip="Text color"
-                  [disabled]="svc.isCode()"
-                  [class.active]="colorTrigger.menuOpen || !!svc.currentColor()"
-                  [matMenuTriggerFor]="floatingColorMenu">
-            <mat-icon [style.color]="svc.isCode() ? 'inherit' : (svc.currentColor() || 'inherit')">format_color_text</mat-icon>
+          <button
+            mat-icon-button
+            #colorTrigger="matMenuTrigger"
+            aria-label="Text color"
+            matTooltip="Text color"
+            [disabled]="svc.isCode()"
+            [class.active]="colorTrigger.menuOpen || !!svc.currentColor()"
+            [matMenuTriggerFor]="floatingColorMenu"
+          >
+            <mat-icon [style.color]="svc.isCode() ? 'inherit' : svc.currentColor() || 'inherit'"
+              >format_color_text</mat-icon
+            >
+          </button>
+        }
+
+        <!-- Highlight -->
+        @if (svc.hasExtension('highlight')) {
+          <button
+            mat-icon-button
+            #highlightTrigger="matMenuTrigger"
+            aria-label="Highlight color"
+            matTooltip="Highlight (Ctrl+Alt+H)"
+            [disabled]="svc.isCode()"
+            [class.active]="highlightTrigger.menuOpen || !!svc.currentHighlight()"
+            [matMenuTriggerFor]="floatingHighlightMenu"
+          >
+            <mat-icon>format_ink_highlighter</mat-icon>
+          </button>
+        }
+
+        <!-- Alignment -->
+        @if (svc.hasExtension('text_align') && svc.textAlign()) {
+          <button
+            mat-icon-button
+            #alignTrigger="matMenuTrigger"
+            aria-label="Text alignment"
+            matTooltip="Alignment"
+            [class.active]="alignTrigger.menuOpen || svc.textAlign() !== 'left'"
+            [matMenuTriggerFor]="floatingAlignMenu"
+          >
+            <mat-icon>{{ alignIcon(svc.textAlign()) }}</mat-icon>
           </button>
         }
 
         <!-- Link -->
         @if (svc.hasExtension('link')) {
-          <button mat-icon-button
-                  #linkTrigger="matMenuTrigger"
-                  aria-label="Link"
-                  matTooltip="Link (Ctrl+K)"
-                  [attr.aria-pressed]="svc.isLink()"
-                  [class.active]="linkTrigger.menuOpen || svc.isLink()"
-                  [matMenuTriggerFor]="floatingLinkMenu"
-                  (menuOpened)="onLinkMenuOpened()">
+          <button
+            mat-icon-button
+            #linkTrigger="matMenuTrigger"
+            aria-label="Link"
+            matTooltip="Link (Ctrl+K)"
+            [attr.aria-pressed]="svc.isLink()"
+            [class.active]="linkTrigger.menuOpen || svc.isLink()"
+            [matMenuTriggerFor]="floatingLinkMenu"
+            (menuOpened)="onLinkMenuOpened()"
+          >
             <mat-icon>link</mat-icon>
           </button>
         }
 
         <!-- Custom floating items -->
         @for (item of svc.customFloatingItems(); track item.id) {
-          <button mat-icon-button
-                  [attr.aria-label]="item.label || item.id"
-                  [matTooltip]="item.tooltip || item.label || item.id"
-                  [attr.aria-pressed]="item.isActive?.(svc)"
-                  [class.active]="item.isActive?.(svc)"
-                  [disabled]="item.isDisabled?.(svc)"
-                  (click)="item.run(svc)">
+          <button
+            mat-icon-button
+            [attr.aria-label]="item.label || item.id"
+            [matTooltip]="item.tooltip || item.label || item.id"
+            [attr.aria-pressed]="item.isActive?.(svc)"
+            [class.active]="item.isActive?.(svc)"
+            [disabled]="item.isDisabled?.(svc)"
+            (click)="item.run(svc)"
+          >
             @if (item.glyph) {
               <span>{{ item.glyph }}</span>
             } @else if (item.icon) {
@@ -129,10 +197,12 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
 
         <!-- Clear formatting -->
         @if (svc.hasExtension('clear_formatting')) {
-          <button mat-icon-button
-                  aria-label="Clear formatting"
-                  matTooltip="Clear formatting (Ctrl+\\)"
-                  (click)="svc.clearFormatting()">
+          <button
+            mat-icon-button
+            aria-label="Clear formatting"
+            matTooltip="Clear formatting (Ctrl+\\)"
+            (click)="svc.clearFormatting()"
+          >
             <mat-icon>format_clear</mat-icon>
           </button>
         }
@@ -141,66 +211,127 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
 
     <!-- Color Menu (declared outside @if so it survives focus changes) -->
     <mat-menu #floatingColorMenu="matMenu">
-      <div class="ink-color-popover" (click)="$event.stopPropagation()">
+      <div class="ink-color-popover" inkKeepMenuOpen>
         <div class="ink-color-title">Text color</div>
         <div class="ink-color-grid">
           @for (c of textColors; track c.value) {
-            <button type="button"
-                    class="ink-color-swatch"
-                    [class.light]="c.isLight"
-                    [class.active]="svc.currentColor() === c.value"
-                    [style.background-color]="c.value"
-                    [attr.title]="c.name"
-                    (mousedown)="$event.preventDefault()"
-                    (click)="svc.setTextColor(c.value)">
+            <button
+              type="button"
+              class="ink-color-swatch"
+              [class.light]="c.isLight"
+              [class.active]="svc.currentColor() === c.value"
+              [style.background-color]="c.value"
+              [attr.title]="c.name"
+              (mousedown)="$event.preventDefault()"
+              (click)="svc.setTextColor(c.value)"
+            >
               @if (svc.currentColor() === c.value) {
                 <mat-icon class="swatch-check">check</mat-icon>
               }
             </button>
           }
         </div>
-        <button type="button"
-                class="ink-remove-color-btn"
-                (mousedown)="$event.preventDefault()"
-                (click)="svc.removeTextColor()">
+        <button
+          type="button"
+          class="ink-remove-color-btn"
+          (mousedown)="$event.preventDefault()"
+          (click)="svc.removeTextColor()"
+        >
           Remove color
         </button>
       </div>
     </mat-menu>
 
+    <!-- Highlight Menu -->
+    <mat-menu #floatingHighlightMenu="matMenu">
+      <div class="ink-color-popover" inkKeepMenuOpen>
+        <div class="ink-color-title">Highlight</div>
+        <div class="ink-color-grid ink-highlight-grid">
+          @for (c of highlightColors; track c.value) {
+            <button
+              type="button"
+              class="ink-color-swatch light"
+              [class.active]="svc.currentHighlight() === c.value"
+              [style.background-color]="c.value"
+              [attr.title]="c.name"
+              [attr.aria-label]="c.name + ' highlight'"
+              (mousedown)="$event.preventDefault()"
+              (click)="svc.setHighlight(c.value)"
+            >
+              @if (svc.currentHighlight() === c.value) {
+                <mat-icon class="swatch-check">check</mat-icon>
+              }
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          class="ink-remove-color-btn"
+          (mousedown)="$event.preventDefault()"
+          (click)="svc.removeHighlight()"
+        >
+          Remove highlight
+        </button>
+      </div>
+    </mat-menu>
+
+    <!-- Alignment Menu -->
+    <mat-menu #floatingAlignMenu="matMenu" class="ink-toolbar-mat-menu">
+      @for (option of alignOptions; track option.value) {
+        <button
+          mat-menu-item
+          [class.selected]="svc.textAlign() === option.value"
+          (mousedown)="$event.preventDefault()"
+          (click)="svc.setTextAlign(option.value)"
+        >
+          <mat-icon>{{ option.icon }}</mat-icon>
+          <span class="menu-item-text">{{ option.label }}</span>
+          <span class="menu-shortcut">{{ option.shortcut }}</span>
+        </button>
+      }
+    </mat-menu>
+
     <!-- Link Popover Menu -->
     <mat-menu #floatingLinkMenu="matMenu">
-      <div class="ink-link-popover" (click)="$event.stopPropagation()">
+      <div class="ink-link-popover" inkKeepMenuOpen>
         <div class="ink-link-title">Link</div>
         <div class="ink-link-input-wrapper">
-          <input type="url"
-                 class="ink-link-url-input"
-                 [(ngModel)]="linkUrl"
-                 placeholder="Paste link (https://...)"
-                 (keydown.enter)="applyLink()">
+          <input
+            type="url"
+            class="ink-link-url-input"
+            [(ngModel)]="linkUrl"
+            placeholder="Paste link (https://...)"
+            (keydown.enter)="applyLink()"
+          />
           @if (svc.isLink() && linkUrl) {
-            <a [href]="linkUrl"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="ink-link-open-btn"
-               matTooltip="Open in new tab">
+            <a
+              [href]="linkUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="ink-link-open-btn"
+              matTooltip="Open in new tab"
+            >
               <mat-icon>open_in_new</mat-icon>
             </a>
           }
         </div>
         <div class="ink-link-actions">
-          <button type="button"
-                  class="ink-link-submit-btn"
-                  [disabled]="!linkUrl.trim()"
-                  (mousedown)="$event.preventDefault()"
-                  (click)="applyLink()">
+          <button
+            type="button"
+            class="ink-link-submit-btn"
+            [disabled]="!linkUrl.trim()"
+            (mousedown)="$event.preventDefault()"
+            (click)="applyLink()"
+          >
             {{ svc.isLink() ? 'Update' : 'Apply' }}
           </button>
           @if (svc.isLink()) {
-            <button type="button"
-                    class="ink-link-remove-btn"
-                    (mousedown)="$event.preventDefault()"
-                    (click)="removeLink()">
+            <button
+              type="button"
+              class="ink-link-remove-btn"
+              (mousedown)="$event.preventDefault()"
+              (click)="removeLink()"
+            >
               Unlink
             </button>
           }
@@ -229,7 +360,9 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
       &::-webkit-scrollbar {
         display: none;
       }
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
     }
     .ink-floating.placement-bottom {
       transform: translate(-50%, 0);
@@ -273,7 +406,12 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
 export class FloatingMenu {
   protected readonly svc = inject(EditorService);
   protected readonly textColors = TEXT_COLORS;
+  protected readonly highlightColors = HIGHLIGHT_COLORS;
+  protected readonly alignOptions = TEXT_ALIGN_OPTIONS;
+  protected readonly alignIcon = textAlignIcon;
   protected readonly colorTrigger = viewChild<MatMenuTrigger>('colorTrigger');
+  protected readonly highlightTrigger = viewChild<MatMenuTrigger>('highlightTrigger');
+  protected readonly alignTrigger = viewChild<MatMenuTrigger>('alignTrigger');
   protected readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
   protected linkUrl = '';
   private handledLinkRequests = this.svc.linkEditorRequests();
@@ -282,6 +420,8 @@ export class FloatingMenu {
     effect(() => {
       if (!this.svc.floatingMenu()) {
         this.colorTrigger()?.closeMenu();
+        this.highlightTrigger()?.closeMenu();
+        this.alignTrigger()?.closeMenu();
         this.linkTrigger()?.closeMenu();
       }
     });
@@ -316,4 +456,3 @@ export class FloatingMenu {
 
 // Backward compatibility alias
 export { FloatingMenu as FloatingMenuComponent };
-

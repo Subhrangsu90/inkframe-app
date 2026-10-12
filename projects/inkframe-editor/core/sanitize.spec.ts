@@ -29,10 +29,9 @@ describe('style attribute sanitization', () => {
   });
 
   it('drops injected CSS from text colors, image widths and table cells in HTML output', () => {
-    const cell = schema.nodes['table_cell'].create(
-      { background: injection, height: '10px; color: red' },
-      [schema.nodes['paragraph'].create(null, [schema.text('c')])],
-    );
+    const cell = schema.nodes['table_cell'].create({ background: injection }, [
+      schema.nodes['paragraph'].create(null, [schema.text('c')]),
+    ]);
     const doc = schema.node('doc', null, [
       schema.node('paragraph', null, [
         schema.text('colored', [schema.marks['textColor'].create({ color: injection })]),

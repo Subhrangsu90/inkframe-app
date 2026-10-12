@@ -139,10 +139,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Bold, italic, underline, strikethrough, inline code | ✅ | P0 | Shortcuts and input rules. |
 | Subscript, superscript, small text | ✅ | P0 | |
 | Text color (21-swatch palette) | ✅ | P0 | Values are sanitized before reaching `style`. |
-| **Highlight (background color)** | ⬜ | P0 | Standard in WYSIWYG editors; reuse the palette. |
+| Highlight (background color) | ✅ | P0 | 8 pastel colors (text on them stays dark in both themes); `Mod-Alt-H`. Markdown export as `<mark>`; `==text==` imports. |
 | Links with safe-protocol allow-list | ✅ | P0 | **Bind `Mod-k`**: the tooltip advertises Ctrl+K but nothing handles it. |
 | Clear formatting | ✅ | P0 | |
-| **Paragraph alignment** (left, center, right, justify) | ⬜ | P0 | Today only table cells can be aligned. |
+| Paragraph alignment (left, center, right, justify) | ✅ | P0 | Paragraphs and headings; `Mod-Shift-L/E/R/J`. Kept when a block changes type or Enter starts a new line. Markdown export wraps aligned blocks in `<div align>`. |
 | Indent / outdent for paragraphs | ⬜ | P1 | Lists already support Tab and Shift+Tab. |
 | Font family per document (sans, serif, mono) | ⬜ | P1 | A document-level setting, not per character. |
 | Line spacing, font size per selection | ⬜ | P2 | Only if users ask; it complicates Markdown export. |
@@ -170,10 +170,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Slash command menu, floating selection menu | ✅ | P0 | |
 | Grouped toolbar with dropdowns | ✅ | P0 | |
 | Undo / redo | ✅ | P0 | |
-| Empty-document placeholder ("Type / for commands…") | 🟡 | P0 | Table cells have one; the document body does not. |
-| **Find and replace** (`Mod-f`, `Mod-h`) | ⬜ | P0 | Table stakes for a document editor. |
-| **Paste cleanup** from Word and Google Docs | 🟡 | P0 | Schema parsing drops unknown markup; verify real-world pastes and add `transformPastedHTML`. |
-| Status bar: words, characters, reading time | 🟡 | P0 | Word count is in the header; move to a 28px status bar. |
+| Empty-document placeholder ("Type / for commands…") | ✅ | P0 | `PlaceholderExtension`; also exposed as `aria-placeholder`. |
+| Find and replace (`Mod-F`, `Mod-H`) | ✅ | P0 | Panel at the top right of the editor; match case, all matches highlighted, replace one or all (one undo step); headings, lists, tables and code. |
+| **Paste cleanup** from Word and Google Docs | 🟡 | P0 | `transformPastedHTML`: Word lists, titles and Office markup; Google Docs wrapper and checklists; default colors dropped; DOMPurify. Tested against reconstructed clipboard HTML; still to verify with real captures (see M1). |
+| Status bar: words, characters, reading time | ✅ | P0 | 28px bar below the page; shows the selection's word count too. Header pill removed. |
 | Document outline (table of contents panel) | ⬜ | P1 | Built from headings. |
 | Focus mode / typewriter scrolling | ⬜ | P1 | Fits the distraction-free story. |
 | Spell check | ✅ | P0 | Native browser spell check; keep it enabled. |
@@ -244,12 +244,16 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ## 4. Current state and launch blockers
 
-### 4.1 Baseline (2026-10-11)
+### 4.1 Baseline (2026-10-12)
 
-- **Tests:** 116 tests pass through the Angular CLI test runner (`npm test`): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
-- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
+- **Tests:** 185 tests pass through the Angular CLI test runner (`npm test`; 149 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the Prettier format check, ESLint (angular-eslint, including the template accessibility rules), the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
 - **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 542 kB raw, 127 kB transferred.
+- **Schema:** version 3. M1 added the `highlight` mark and the `align` attribute (version 2); version 3 dropped fixed table row heights so rows fit their text. Older documents migrate on load.
 - **Recently fixed:**
+  - **Keyboard:** Tab and Shift+Tab indent list items again (the table extension's Tab binding had replaced them). Extensions that bind the same key now run in order until one handles it.
+  - **Floating menu:** Bold, italic, underline, strikethrough, code and link no longer appear twice.
+  - **Paste:** text copied from Word or Excel is pasted as text; before, the picture of the selection that Office also puts on the clipboard was inserted instead.
   - **Editor and Markdown:** toolbar commands now use the live schema; Markdown import is lossless for the formats export writes.
   - **Data safety:** no lost edits when switching documents; deletes remove stored content.
   - **Isolation:** table controls are scoped per editor.
@@ -259,7 +263,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 | # | Blocker | Where | Fix |
 | --- | --- | --- | --- |
-| B1 | ~~Fonts and icons load from Google~~ | `src/index.html` | ✅ Done in M0. Inter and JetBrains Mono are self-hosted (Fontsource); Material Symbols is a 6.4 kB subset of the 65 icons in use (`npm run icons:build`). |
+| B1 | ~~Fonts and icons load from Google~~ | `src/index.html` | ✅ Done in M0. Inter and JetBrains Mono are self-hosted (Fontsource); Material Symbols is a 6.7 kB subset of the 69 icons in use (`npm run icons:build`). |
 | B2 | ~~Landing page promises features that don't exist~~ | `src/app/pages/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
 | B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/pages/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
 | B4 | History button does nothing | `toolbar.ts` → `historyRequested` | Build version history (M2) or hide the button until then. |
@@ -273,8 +277,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 - **Dead preset code:** the editor page defines extension presets and a demo plugin with no UI. Either expose presets in a developer playground or remove them.
 - **Legacy APIs:** `buildPlugins()`, `SLASH_ITEMS` and the static `schema` export predate the extension system. Deprecate them in the library's public API and point users to `ExtensionManager` and `DEFAULT_EXTENSIONS`.
 - ~~**Component tests can't run.**~~ Resolved in M0: tests run through `ng test` (AOT, type-checked). The first component test found that `<ink-editor>` cannot emit edits while being destroyed; edits are now flushed by a `canDeactivate` guard and on `visibilitychange` / `pagehide`.
-- **No linter:** add `angular-eslint` and a `lint` step to CI.
-- **Formatting isn't enforced:** most files fail `prettier --check`. Format the codebase in one dedicated commit, then add `format:check` to CI.
+- ~~**No linter.**~~ Resolved: angular-eslint (`npm run lint`) runs in CI. Specs may use `any`; template accessibility exceptions are commented where they are made.
+- ~~**Formatting isn't enforced.**~~ Resolved: the codebase was formatted in one commit (listed in `.git-blame-ignore-revs`) and `format:check` runs in CI. `.gitattributes` keeps checkouts on LF so the check passes on Windows too.
+- **Failed saves are silent:** when IndexedDB and the localStorage fallback both refuse a document (quota, blocked storage), `imageStorage.saveDocument` drops the error and the editor still shows "Saved". Surface it with the storage-full banner (M2).
+- **Reader images are mouse-only:** a click opens the lightbox, but images cannot be focused. Fix in the M4 accessibility pass.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
 - **Long share links:** images are inlined, so share links can reach hundreds of kilobytes. Some chat apps truncate long URLs; document the limit and warn in the share dialog.
 
@@ -294,7 +300,7 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 
 ### M0: Stabilize and make the claims true
 
-**Status (2026-10-12):** done except the format check, which needs the one-time formatting commit described in [4.3](#43-technical-debt-fix-during-m0m2), and linting (no linter is configured yet).
+**Status (2026-10-12):** done. One manual step remains: make the CI workflow required for merging to `master` in the GitHub branch settings.
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
@@ -302,16 +308,18 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 | ✅ Fix "Clear all data" (B3) and bind `Mod-k` (B5) | S | Tests cover both. |
 | ✅ Landing page copy rewrite (B2) | S | Every claim maps to a ✅ row in [section 3](#3-what-full-wysiwyg-means-scope-and-status). |
 | ✅ Angular test runner for component tests | M | Editor component tests (flush on switch, before destroy and on page hide) run in CI. |
-| 🟡 CI pipeline: lint, format check, tests, both builds | S | Tests, builds, icon check and third-party check run. Lint and format check still to add. Make the workflow required for merging to `master` in the GitHub branch settings. |
+| ✅ CI pipeline: lint, format check, tests, both builds | S | All run, with the icon check and third-party check. Make the workflow required for merging to `master` in the GitHub branch settings. |
 
 ### M1: WYSIWYG completeness (all P0 editing features)
 
+**Status (2026-10-12):** built and unit-tested. Still open: replacing the reconstructed paste fixtures (`core/paste-cleanup.fixtures.ts`) with HTML captured from real Word and Google Docs clipboards, and a manual pass in a browser.
+
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Highlight mark and paragraph alignment | M | Toolbar, floating menu, shortcuts, HTML and Markdown export (inline HTML fallback). |
-| Find and replace | M | Case-sensitive toggle, highlights all matches, replace one or all, works in tables and code. |
-| Paste cleanup from Word and Google Docs | M | Fixture tests with real clipboard HTML from both sources. |
-| Document placeholder and status bar | S | Words, characters and reading time in a 28px bar; header pill removed. |
+| ✅ Highlight mark and paragraph alignment | M | Toolbar, floating menu, shortcuts, HTML and Markdown export (inline HTML fallback). |
+| ✅ Find and replace | M | Case-sensitive toggle, highlights all matches, replace one or all, works in tables and code. |
+| 🟡 Paste cleanup from Word and Google Docs | M | Fixture tests with real clipboard HTML from both sources. Cleanup and fixture tests exist; the fixtures are reconstructions of each format, not captures. |
+| ✅ Document placeholder and status bar | S | Words, characters and reading time in a 28px bar; header pill removed. |
 
 ### M2: Data safety and export
 
@@ -531,7 +539,7 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | IndexedDB `inkframe_storage` → `images` | Image blobs with metadata | `img_<timestamp>_<random>`, referenced as `ink-idb:<id>` |
 | localStorage | Theme, sidebar state, active document id; fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
 
-**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes from 1 to 2 with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 3 to 4; versions 2 and 3 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
 
 **Share payload format:** `c_` + base64url(deflate-raw(JSON)) when `CompressionStream` is available, otherwise `u_` + base64url(JSON). The JSON is `{ t: title, v: schemaVersion, d: doc }`; images are inlined as compressed JPEG data URLs.
 
@@ -594,7 +602,7 @@ Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surf
 | Text `--ink-text` / muted | `#1b1b1f` / `#6b6b73` | `#ededef` / `#9a9aa3` |
 | Accent `--ink-accent` / soft | `#7c3aed` / `#f3eeff` | `#8b5cf6` / `#241b3d` |
 
-**Typography:** Inter for the UI and document body (17px, 1.7 line height), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px accent at 25% opacity, never removed.
+**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px accent at 25% opacity, never removed.
 
 ### 7.2 Editor layout
 
@@ -783,17 +791,22 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Quote / code block | | `> ` / ```` ```lang ```` |
 | Hard break | `Shift-Enter` | |
 | Undo / redo | `Mod-Z` / `Mod-Y` or `Mod-Shift-Z` | |
+| Highlight | `Mod-Alt-H` | `==text==` (import only) |
+| Align left / center / right / justify | `Mod-Shift-L` / `E` / `R` / `J` | |
+| Indent / outdent list item | `Tab` / `Shift-Tab` | |
 | Next / previous table cell | `Tab` / `Shift-Tab` | |
-| Link (to add, B5) | `Mod-K` | |
-| Find / replace (to add, M1) | `Mod-F` / `Mod-H` | |
+| Link | `Mod-K` | |
+| Find / replace | `Mod-F` / `Mod-H` (macOS: `Mod-Shift-H`) | |
+| Next / previous match | `Enter` / `Shift-Enter` in the find field, or `Mod-G` / `Mod-Shift-G` | |
 
 ### 12.2 Built-in extensions (`DEFAULT_EXTENSIONS`)
 
 | Group | Extensions |
 | --- | --- |
 | Essentials | `doc`, `paragraph`, `text`, `hard_break`, `history` |
-| Inline formatting | `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `textColor`, `small`, `clear_formatting` |
-| Blocks | `heading`, `blockquote`, `code_block`, `divider` |
+| Inline formatting | `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `textColor`, `small`, `highlight`, `clear_formatting` |
+| Blocks | `heading`, `blockquote`, `code_block`, `text_align`, `divider` |
 | Lists | `bullet_list`, `ordered_list`, `task_list` |
 | Rich inserts | `table`, `callout`, `link`, `image` |
+| Editing aids | `search` (find and replace), `placeholder` (`createPlaceholderExtension(text)` for other text), `paste_cleanup` |
 | Block mode (M7, planned) | `block_handles`, `toggle`, `page_link`, `columns` (preset `BLOCK_MODE_EXTENSIONS`) |

@@ -6,7 +6,16 @@ import {
   defaultMarkdownSerializer,
 } from 'prosemirror-markdown';
 import MarkdownIt from 'markdown-it';
-import { CalloutKind, schema } from '../schema';
+import type StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
+import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+import type Token from 'markdown-it/lib/token.mjs';
+import {
+  CalloutKind,
+  DEFAULT_HIGHLIGHT_COLOR,
+  sanitizeHighlightColor,
+  sanitizeTextAlign,
+  schema,
+} from '../schema';
 import { sanitizeCssColor } from '../link-utils';
 
 const ALIGN_MARKER: Record<string, string> = {
@@ -15,10 +24,32 @@ const ALIGN_MARKER: Record<string, string> = {
   right: '---:',
 };
 
+type NodeSerializer = (typeof defaultMarkdownSerializer.nodes)[string];
+
+/**
+ * Markdown has no alignment, so aligned paragraphs and headings are wrapped
+ * in `<div align="…">` with blank lines around the content. GitHub and most
+ * renderers that allow HTML show them aligned, the Markdown inside is still
+ * parsed, and markdownToDoc() reads the wrapper back.
+ */
+function keepingAlignment(serialize: NodeSerializer): NodeSerializer {
+  return (state, node, parent, index) => {
+    const align = sanitizeTextAlign(node.attrs['align']);
+    if (!align) return serialize(state, node, parent, index);
+    state.write(`<div align="${align}">`);
+    state.closeBlock(node);
+    serialize(state, node, parent, index);
+    state.write('</div>');
+    state.closeBlock(node);
+  };
+}
+
 // Extend serializer with callouts, task lists, and tables
 export const inkMarkdownSerializer = new MarkdownSerializer(
   {
     ...defaultMarkdownSerializer.nodes,
+    paragraph: keepingAlignment(defaultMarkdownSerializer.nodes['paragraph']),
+    heading: keepingAlignment(defaultMarkdownSerializer.nodes['heading']),
     callout(state, node) {
       const type = (node.attrs['type'] || 'info').toUpperCase();
       state.write(`> [!${type}]\n`);
@@ -116,6 +147,16 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
       mixable: true,
       expelEnclosingWhitespace: true,
     },
+    // `==text==` is not standard Markdown; <mark> renders wherever HTML is allowed.
+    highlight: {
+      open(_state, mark) {
+        const color = sanitizeHighlightColor(mark.attrs['color']) ?? DEFAULT_HIGHLIGHT_COLOR;
+        return `<mark style="background-color: ${color}">`;
+      },
+      close: '</mark>',
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
   },
 );
 
@@ -132,14 +173,19 @@ const INLINE_TAGS: Record<string, string> = {
   sub: 'ink_sub',
   sup: 'ink_sup',
   span: 'ink_color',
+  mark: 'ink_highlight',
 };
 
-tokenizer.inline.ruler.before('emphasis', 'ink_inline_tags', (state: any, silent: boolean) => {
-  if (state.src.charCodeAt(state.pos) !== 0x3c /* < */) return false;
-  const rest: string = state.src.slice(state.pos, state.posMax);
-  const open = state.inkOpenTags ?? (state.inkOpenTags = {} as Record<string, number>);
+/** How many of each tag are open in an inline run, so stray closing tags stay text. */
+const openTags = new WeakMap<StateInline, Record<string, number>>();
 
-  const close = /^<\/(u|small|sub|sup|span)>/.exec(rest);
+tokenizer.inline.ruler.before('emphasis', 'ink_inline_tags', (state, silent) => {
+  if (state.src.charCodeAt(state.pos) !== 0x3c /* < */) return false;
+  const rest = state.src.slice(state.pos, state.posMax);
+  let open = openTags.get(state);
+  if (!open) openTags.set(state, (open = {}));
+
+  const close = /^<\/(u|small|sub|sup|span|mark)>/.exec(rest);
   if (close) {
     const tag = close[1];
     if (!open[tag]) return false; // stray closing tag: keep as text
@@ -155,16 +201,21 @@ tokenizer.inline.ruler.before('emphasis', 'ink_inline_tags', (state: any, silent
   let color: string | null = null;
   const simple = /^<(u|small|sub|sup)>/.exec(rest);
   const span = /^<span style="color:\s*([^";]+);?\s*">/.exec(rest);
+  const mark = /^<mark(?: style="background-color:\s*([^";]+);?\s*")?>/.exec(rest);
   if (simple) {
     tag = simple[1];
   } else if (span) {
     tag = 'span';
     color = sanitizeCssColor(span[1]);
     if (!color) return false;
+  } else if (mark) {
+    tag = 'mark';
+    color = mark[1] === undefined ? null : sanitizeHighlightColor(mark[1]);
+    if (mark[1] !== undefined && !color) return false;
   } else {
     return false;
   }
-  const length = (simple ?? span)![0].length;
+  const length = (simple ?? span ?? mark)![0].length;
   // Only treat it as a mark when the matching closing tag follows.
   if (!rest.slice(length).includes(`</${tag}>`)) return false;
   if (!silent) {
@@ -178,7 +229,7 @@ tokenizer.inline.ruler.before('emphasis', 'ink_inline_tags', (state: any, silent
 
 /** Pandoc-style ~sub~ and ^sup^ (no whitespace inside; `~~` stays strikethrough). */
 function scriptRule(marker: number, name: string) {
-  return (state: any, silent: boolean) => {
+  return (state: StateInline, silent: boolean) => {
     const start = state.pos;
     const max = state.posMax;
     if (silent || state.src.charCodeAt(start) !== marker) return false;
@@ -201,7 +252,29 @@ function scriptRule(marker: number, name: string) {
 tokenizer.inline.ruler.after('emphasis', 'ink_sub', scriptRule(0x7e /* ~ */, 'ink_sub'));
 tokenizer.inline.ruler.after('emphasis', 'ink_sup', scriptRule(0x5e /* ^ */, 'ink_sup'));
 
-tokenizer.core.ruler.push('task_list', (state: any) => {
+/** `==highlight==` (Obsidian, Typora and others): no whitespace just inside the markers. */
+tokenizer.inline.ruler.before('emphasis', 'ink_highlight', (state, silent) => {
+  const start = state.pos;
+  const max = state.posMax;
+  if (silent || state.src.charCodeAt(start) !== 0x3d || state.src.charCodeAt(start + 1) !== 0x3d) {
+    return false;
+  }
+  const end = state.src.indexOf('==', start + 2);
+  if (end < 0 || end + 2 > max) return false;
+  const content = state.src.slice(start + 2, end);
+  if (!content || /^[\s=]|\s$/.test(content)) return false;
+
+  state.posMax = end;
+  state.pos = start + 2;
+  state.push('ink_highlight_open', 'mark', 1);
+  state.md.inline.tokenize(state);
+  state.push('ink_highlight_close', 'mark', -1);
+  state.pos = end + 2;
+  state.posMax = max;
+  return true;
+});
+
+tokenizer.core.ruler.push('task_list', (state) => {
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i].type === 'bullet_list_open') {
@@ -210,7 +283,11 @@ tokenizer.core.ruler.push('task_list', (state: any) => {
       for (let j = i + 1; j < tokens.length && depth > 0; j++) {
         if (tokens[j].type === 'bullet_list_open') depth++;
         if (tokens[j].type === 'bullet_list_close') depth--;
-        if (depth === 1 && tokens[j].type === 'inline' && /^\[([ xX]?)\]\s*/.test(tokens[j].content)) {
+        if (
+          depth === 1 &&
+          tokens[j].type === 'inline' &&
+          /^\[([ xX]?)\]\s*/.test(tokens[j].content)
+        ) {
           isTask = true;
           break;
         }
@@ -241,9 +318,8 @@ tokenizer.core.ruler.push('task_list', (state: any) => {
                   }
                 }
                 tokens[j].content = tokens[j].content.slice(m[0].length);
-                if (tokens[j].children && tokens[j].children[0]) {
-                  tokens[j].children[0].content = tokens[j].children[0].content.slice(m[0].length);
-                }
+                const firstChild = tokens[j].children?.[0];
+                if (firstChild) firstChild.content = firstChild.content.slice(m[0].length);
               }
             }
           }
@@ -258,8 +334,8 @@ tokenizer.core.ruler.push('task_list', (state: any) => {
  * GFM tables → table / table_row / table_header / table_cell tokens. Cells in
  * the schema hold blocks, so each cell's inline content gets a paragraph.
  */
-tokenizer.core.ruler.push('ink_tables', (state: any) => {
-  const out: any[] = [];
+tokenizer.core.ruler.push('ink_tables', (state: StateCore) => {
+  const out: Token[] = [];
   for (const tok of state.tokens) {
     switch (tok.type) {
       case 'thead_open':
@@ -305,7 +381,7 @@ const CALLOUT_ALIASES: Record<string, CalloutKind> = {
 };
 
 /** `> [!WARNING]` blockquotes (our export format and GitHub alerts) → callouts. */
-tokenizer.core.ruler.push('ink_callouts', (state: any) => {
+tokenizer.core.ruler.push('ink_callouts', (state) => {
   const tokens = state.tokens;
   for (let i = 0; i < tokens.length; i++) {
     const open = tokens[i];
@@ -322,7 +398,7 @@ tokenizer.core.ruler.push('ink_callouts', (state: any) => {
     if (!m || !kind) continue;
 
     const close = tokens.findIndex(
-      (t: any, j: number) => j > i && t.type === 'blockquote_close' && t.level === open.level,
+      (t, j) => j > i && t.type === 'blockquote_close' && t.level === open.level,
     );
     if (close < 0) continue;
     open.type = 'callout_open';
@@ -331,7 +407,7 @@ tokenizer.core.ruler.push('ink_callouts', (state: any) => {
 
     // Strip the marker (and the line break after it) from the first paragraph.
     inline.content = inline.content.slice(m[0].length);
-    const children: any[] = inline.children ?? [];
+    const children = inline.children ?? [];
     let toStrip = `[!${m[1]}]`.length;
     while (toStrip > 0 && children[0]?.type === 'text') {
       const text: string = children[0].content;
@@ -343,7 +419,8 @@ tokenizer.core.ruler.push('ink_callouts', (state: any) => {
         toStrip = 0;
       }
     }
-    if (children[0]?.type === 'text') children[0].content = children[0].content.replace(/^[ \t]+/, '');
+    if (children[0]?.type === 'text')
+      children[0].content = children[0].content.replace(/^[ \t]+/, '');
     if (children[0]?.type === 'text' && !children[0].content) children.shift();
     if (children[0]?.type === 'softbreak' || children[0]?.type === 'hardbreak') children.shift();
     if (!inline.content.trim() && children.length === 0) {
@@ -352,55 +429,106 @@ tokenizer.core.ruler.push('ink_callouts', (state: any) => {
   }
 });
 
-export const inkMarkdownParser = new MarkdownParser(
-  schema,
-  tokenizer,
-  {
-    ...defaultMarkdownParser.tokens,
-    s: { mark: 'strikethrough' },
-    ink_underline: { mark: 'underline' },
-    ink_small: { mark: 'small' },
-    ink_sub: { mark: 'subscript' },
-    ink_sup: { mark: 'superscript' },
-    ink_color: {
-      mark: 'textColor',
-      getAttrs: (tok: any) => ({ color: tok.attrGet('color') }),
-    },
-    table: { block: 'table' },
-    table_row: { block: 'table_row' },
-    table_header: {
-      block: 'table_header',
-      getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
-    },
-    table_cell: {
-      block: 'table_cell',
-      getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
-    },
-    callout: {
-      block: 'callout',
-      getAttrs: (tok: any) => ({ type: tok.attrGet('kind') }),
-    },
-    task_list: { block: 'task_list' },
-    task_item: {
-      block: 'task_item',
-      getAttrs: (tok: any) => ({
-        checked: tok.attrGet('checked') === 'true',
-      }),
-    },
-    fence: {
-      block: 'code_block',
-      getAttrs: (tok: any) => ({
-        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
-      }),
-    },
-    code_block: {
-      block: 'code_block',
-      getAttrs: (tok: any) => ({
-        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
-      }),
+const ALIGN_OPEN = /^<div align="(left|center|right|justify)">$/;
+const ALIGN_CLOSE = /^<\/div>$/;
+
+/**
+ * Reads the `<div align="…">` wrappers written by the serializer. With raw
+ * HTML disabled each wrapper line arrives as a paragraph of its own; the
+ * paragraphs and headings between a matching pair (in the same parent block)
+ * get the alignment, and the wrapper paragraphs are dropped.
+ */
+tokenizer.core.ruler.push('ink_alignment', (state) => {
+  const tokens = state.tokens;
+  const wrapperAt = (i: number, re: RegExp) =>
+    tokens[i]?.type === 'paragraph_open' &&
+    tokens[i + 1]?.type === 'inline' &&
+    tokens[i + 2]?.type === 'paragraph_close' &&
+    re.exec(tokens[i + 1].content.trim());
+
+  for (let i = 0; i < tokens.length; i++) {
+    const open = wrapperAt(i, ALIGN_OPEN);
+    if (!open) continue;
+    const level = tokens[i].level;
+    let close = -1;
+    for (let j = i + 3; j < tokens.length && tokens[j].level >= level; j++) {
+      if (tokens[j].level === level && wrapperAt(j, ALIGN_CLOSE)) {
+        close = j;
+        break;
+      }
+    }
+    if (close < 0) continue; // a lone line of text that happens to look like the wrapper
+    for (let j = i + 3; j < close; j++) {
+      const t = tokens[j];
+      if (t.level === level && (t.type === 'paragraph_open' || t.type === 'heading_open')) {
+        t.attrSet('align', open[1]);
+      }
+    }
+    tokens.splice(close, 3);
+    tokens.splice(i, 3);
+    i--;
+  }
+});
+
+const alignAttr = (tok: Token) => sanitizeTextAlign(tok.attrGet('align'));
+
+export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
+  ...defaultMarkdownParser.tokens,
+  paragraph: { block: 'paragraph', getAttrs: (tok) => ({ align: alignAttr(tok) }) },
+  heading: {
+    block: 'heading',
+    getAttrs: (tok) => ({ level: +tok.tag.slice(1), align: alignAttr(tok) }),
+  },
+  ink_highlight: {
+    mark: 'highlight',
+    getAttrs: (tok) => {
+      const color = tok.attrGet('color');
+      return color ? { color } : {};
     },
   },
-);
+  s: { mark: 'strikethrough' },
+  ink_underline: { mark: 'underline' },
+  ink_small: { mark: 'small' },
+  ink_sub: { mark: 'subscript' },
+  ink_sup: { mark: 'superscript' },
+  ink_color: {
+    mark: 'textColor',
+    getAttrs: (tok) => ({ color: tok.attrGet('color') }),
+  },
+  table: { block: 'table' },
+  table_row: { block: 'table_row' },
+  table_header: {
+    block: 'table_header',
+    getAttrs: (tok) => ({ alignment: tok.attrGet('alignment') }),
+  },
+  table_cell: {
+    block: 'table_cell',
+    getAttrs: (tok) => ({ alignment: tok.attrGet('alignment') }),
+  },
+  callout: {
+    block: 'callout',
+    getAttrs: (tok) => ({ type: tok.attrGet('kind') }),
+  },
+  task_list: { block: 'task_list' },
+  task_item: {
+    block: 'task_item',
+    getAttrs: (tok) => ({
+      checked: tok.attrGet('checked') === 'true',
+    }),
+  },
+  fence: {
+    block: 'code_block',
+    getAttrs: (tok) => ({
+      language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
+    }),
+  },
+  code_block: {
+    block: 'code_block',
+    getAttrs: (tok) => ({
+      language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
+    }),
+  },
+});
 
 export function docToMarkdown(doc: PMNode): string {
   return inkMarkdownSerializer.serialize(doc);

@@ -7,12 +7,7 @@ import { AppShellComponent } from './shared/layout/app-shell/app-shell';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [
-    RouterOutlet,
-    ToastContainerComponent,
-    ConfirmDialogComponent,
-    AppShellComponent,
-  ],
+  imports: [RouterOutlet, ToastContainerComponent, ConfirmDialogComponent, AppShellComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.scss',

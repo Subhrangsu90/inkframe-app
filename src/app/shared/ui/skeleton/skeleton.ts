@@ -62,7 +62,9 @@ export type SkeletonVariant = 'text' | 'rect' | 'circle' | 'card' | 'bar' | 'edi
             <div
               class="ink-skeleton-shimmer ink-skeleton-line"
               [style.height]="height() || '14px'"
-              [style.width]="countArray().length > 1 && i === countArray().length - 1 ? '65%' : '100%'"
+              [style.width]="
+                countArray().length > 1 && i === countArray().length - 1 ? '65%' : '100%'
+              "
             ></div>
           }
         </div>

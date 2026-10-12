@@ -21,10 +21,7 @@ import { LayoutService } from '../../shared/layout/layout.service';
 @Component({
   selector: 'ink-settings',
   standalone: true,
-  imports: [
-    CommonModule,
-    InkIcon,
-  ],
+  imports: [CommonModule, InkIcon],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,7 +34,7 @@ export class Settings implements OnInit {
   readonly layout = inject(LayoutService);
 
   // Dynamic header templates
-  readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
+  readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
 
   constructor() {
     effect(() => {
@@ -79,7 +76,9 @@ export class Settings implements OnInit {
             ? (usage / (1024 * 1024)).toFixed(1) + ' MB'
             : (usage / 1024).toFixed(1) + ' KB',
         );
-      } catch {}
+      } catch {
+        // The browser declined to estimate usage: keep showing it as unknown.
+      }
     }
   }
 

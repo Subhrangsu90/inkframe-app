@@ -9,12 +9,7 @@ import { formatRelativeTime } from '../../../core/document-manager';
 @Component({
   selector: 'ink-app-shell',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    RouterLinkActive,
-    InkIcon,
-  ],
+  imports: [CommonModule, RouterLink, RouterLinkActive, InkIcon],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

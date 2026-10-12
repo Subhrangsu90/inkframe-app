@@ -36,9 +36,10 @@
   flex-direction: column;
   background-color: var(--ink-surface);
   border-right: 1px solid var(--ink-border);
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.2s ease;
+  transition:
+    width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
   z-index: 50;
   overflow: hidden;
   position: relative;
@@ -179,7 +180,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Sidebar Navigation Items */
@@ -468,7 +471,9 @@
   z-index: 30;
   flex-shrink: 0;
   gap: 12px;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .header-left-col {

@@ -46,7 +46,9 @@
   letter-spacing: -0.01em;
   cursor: pointer;
   max-width: min(240px, 38vw);
-  transition: background-color var(--ink-transition-fast), border-color var(--ink-transition-fast);
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast);
 
   &:hover,
   &:focus-visible {
@@ -105,7 +107,9 @@
     border-radius: 50%;
     background-color: var(--ink-success);
     box-shadow: 0 0 0 3px var(--ink-success-soft);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   &.saving .status-dot {
@@ -116,8 +120,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 /* ═══════════════════════════════════════════════ */
@@ -152,7 +163,9 @@
   background: transparent;
   color: var(--ink-text-muted);
   cursor: pointer;
-  transition: color var(--ink-transition-fast), background-color var(--ink-transition-fast),
+  transition:
+    color var(--ink-transition-fast),
+    background-color var(--ink-transition-fast),
     box-shadow var(--ink-transition-fast);
   white-space: nowrap;
 
@@ -169,7 +182,9 @@
     background: var(--ink-surface);
     color: var(--ink-text-heading);
     font-weight: 600;
-    box-shadow: var(--ink-shadow-sm), 0 0 0 1px var(--ink-border);
+    box-shadow:
+      var(--ink-shadow-sm),
+      0 0 0 1px var(--ink-border);
   }
 
   span {
@@ -182,25 +197,12 @@
 }
 
 /* ═══════════════════════════════════════════════ */
-/* HEADER RIGHT: Word Count, Share & Export        */
+/* HEADER RIGHT: Share & Export                    */
 /* ═══════════════════════════════════════════════ */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.word-count {
-  display: none;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-text-muted);
-  white-space: nowrap;
-  padding-right: 4px;
-
-  @media (min-width: 900px) {
-    display: inline;
-  }
 }
 
 .share-dropdown-wrap {
@@ -219,8 +221,11 @@
   border-radius: var(--ink-radius-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color var(--ink-transition-fast), border-color var(--ink-transition-fast),
-    color var(--ink-transition-fast), box-shadow var(--ink-transition-fast);
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast),
+    color var(--ink-transition-fast),
+    box-shadow var(--ink-transition-fast);
 
   &:focus-visible {
     outline: 2px solid var(--ink-border-focus);
@@ -244,7 +249,9 @@
   background: var(--ink-accent);
   border: 1px solid transparent;
   color: var(--ink-accent-contrast, #fff);
-  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 1px 2px rgba(124, 58, 237, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 
   &:hover {
     background: var(--ink-accent-hover);
@@ -276,8 +283,14 @@
 }
 
 @keyframes popoverIn {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .share-popover-header {
@@ -431,7 +444,7 @@
   .editor-workspace-body.is-preview,
   .is-preview,
   .ProseMirror-preview,
-  .ProseMirror[contenteditable="false"] {
+  .ProseMirror[contenteditable='false'] {
     .ink-table-row-handle,
     .ink-table-col-corner-dot,
     .ink-table-col-header-handle,

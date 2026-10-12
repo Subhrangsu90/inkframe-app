@@ -15,10 +15,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /**
@@ -41,10 +38,7 @@ export function base64UrlToBytes(str: string): Uint8Array {
  * Compresses a document into a compact, zero-backend, URL-safe hash string.
  * Uses native Web Streams deflate-raw compression when available.
  */
-export async function compressDocForSharing(
-  storedDoc: StoredDoc,
-  title?: string,
-): Promise<string> {
+export async function compressDocForSharing(storedDoc: StoredDoc, title?: string): Promise<string> {
   const inlinedDoc = await imageStorage.inlineDocImages(storedDoc, true);
   const docTitle = title || extractDocTitle(inlinedDoc) || 'Shared Document';
   const payload = JSON.stringify({
@@ -90,9 +84,7 @@ export async function compressDocForSharing(
 /**
  * Decompresses and deserializes a shared document payload from a URL hash.
  */
-export async function decompressSharedDoc(
-  hash: string,
-): Promise<DecodedSharedDoc | null> {
+export async function decompressSharedDoc(hash: string): Promise<DecodedSharedDoc | null> {
   if (!hash || hash === 'doc_default') {
     return null;
   }
@@ -166,7 +158,10 @@ export async function decompressSharedDoc(
     // Fallback: Check if raw markdown text
     if (trimmed) {
       const pmNode = markdownToDoc(trimmed);
-      const firstLine = trimmed.split('\n')[0].replace(/^#+\s*/, '').trim();
+      const firstLine = trimmed
+        .split('\n')[0]
+        .replace(/^#+\s*/, '')
+        .trim();
       return {
         title: firstLine || 'Shared Document',
         doc: {
@@ -190,10 +185,7 @@ export async function decompressSharedDoc(
  * images) don't hit server request-size limits (HTTP 431), and the document
  * content never appears in server logs.
  */
-export async function buildShareableUrl(
-  doc: StoredDoc,
-  title?: string,
-): Promise<string> {
+export async function buildShareableUrl(doc: StoredDoc, title?: string): Promise<string> {
   const hash = await compressDocForSharing(doc, title);
   if (typeof window !== 'undefined' && window.location?.origin) {
     return `${window.location.origin}/s#${hash}`;

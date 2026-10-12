@@ -1,9 +1,4 @@
-import {
-  ApplicationRef,
-  ComponentRef,
-  EnvironmentInjector,
-  createComponent,
-} from '@angular/core';
+import { ApplicationRef, ComponentRef, EnvironmentInjector, createComponent } from '@angular/core';
 import { Node as PMNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
 import { CalloutIcon } from './callout-icon';
@@ -59,9 +54,7 @@ export class CalloutNodeView implements NodeView {
     return this.iconHost.contains(event.target as Node); // clicks on the icon are Angular's
   }
 
-  ignoreMutation(
-    mutation: MutationRecord | { type: 'selection'; target: Node },
-  ): boolean {
+  ignoreMutation(mutation: MutationRecord | { type: 'selection'; target: Node }): boolean {
     return !this.contentDOM.contains(mutation.target); // only the content area is ProseMirror's
   }
 

@@ -25,6 +25,12 @@ export interface ImagePreviewPayload {
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!--
+      Clicks here are mouse shortcuts: Escape closes the lightbox (document
+      listener below) and the header buttons zoom. The other (click) handlers
+      only keep clicks on the header, image and caption from closing it.
+    -->
+    <!-- eslint-disable @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="ink-lightbox-backdrop" (click)="onBackdropClick($event)">
       <!-- Top Toolbar -->
       <div class="ink-lightbox-header" (click)="$event.stopPropagation()">
@@ -39,57 +45,69 @@ export interface ImagePreviewPayload {
 
         <div class="ink-lightbox-actions">
           <!-- Zoom Out -->
-          <button mat-icon-button
-                  type="button"
-                  class="ink-lightbox-btn"
-                  matTooltip="Zoom out (-)"
-                  [disabled]="zoom() <= 0.5"
-                  (click)="zoomOut()">
+          <button
+            mat-icon-button
+            type="button"
+            class="ink-lightbox-btn"
+            matTooltip="Zoom out (-)"
+            [disabled]="zoom() <= 0.5"
+            (click)="zoomOut()"
+          >
             <mat-icon>zoom_out</mat-icon>
           </button>
 
           <!-- Zoom Reset Badge -->
-          <button type="button"
-                  class="ink-lightbox-zoom-badge"
-                  matTooltip="Reset zoom"
-                  (click)="resetZoom()">
+          <button
+            type="button"
+            class="ink-lightbox-zoom-badge"
+            matTooltip="Reset zoom"
+            (click)="resetZoom()"
+          >
             {{ Math.round(zoom() * 100) }}%
           </button>
 
           <!-- Zoom In -->
-          <button mat-icon-button
-                  type="button"
-                  class="ink-lightbox-btn"
-                  matTooltip="Zoom in (+)"
-                  [disabled]="zoom() >= 3"
-                  (click)="zoomIn()">
+          <button
+            mat-icon-button
+            type="button"
+            class="ink-lightbox-btn"
+            matTooltip="Zoom in (+)"
+            [disabled]="zoom() >= 3"
+            (click)="zoomIn()"
+          >
             <mat-icon>zoom_in</mat-icon>
           </button>
 
           <!-- Download -->
-          <button mat-icon-button
-                  type="button"
-                  class="ink-lightbox-btn"
-                  matTooltip="Download image"
-                  (click)="downloadImage()">
+          <button
+            mat-icon-button
+            type="button"
+            class="ink-lightbox-btn"
+            matTooltip="Download image"
+            (click)="downloadImage()"
+          >
             <mat-icon>download</mat-icon>
           </button>
 
           <!-- Open in new tab -->
-          <button mat-icon-button
-                  type="button"
-                  class="ink-lightbox-btn"
-                  matTooltip="Open original in new tab"
-                  (click)="openInNewTab()">
+          <button
+            mat-icon-button
+            type="button"
+            class="ink-lightbox-btn"
+            matTooltip="Open original in new tab"
+            (click)="openInNewTab()"
+          >
             <mat-icon>open_in_new</mat-icon>
           </button>
 
           <!-- Close -->
-          <button mat-icon-button
-                  type="button"
-                  class="ink-lightbox-btn close-btn"
-                  matTooltip="Close (Esc)"
-                  (click)="closed.emit()">
+          <button
+            mat-icon-button
+            type="button"
+            class="ink-lightbox-btn close-btn"
+            matTooltip="Close (Esc)"
+            (click)="closed.emit()"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -97,16 +115,20 @@ export interface ImagePreviewPayload {
 
       <!-- Main Image Stage -->
       <div class="ink-lightbox-stage" (click)="onBackdropClick($event)">
-        <div class="ink-lightbox-img-wrapper"
-             [style.transform]="'scale(' + zoom() + ')'"
-             (click)="$event.stopPropagation()">
-          <img #imgRef
-               [src]="src()"
-               [alt]="alt() || 'Preview image'"
-               class="ink-lightbox-img"
-               referrerpolicy="no-referrer"
-               (load)="onImageLoaded($event)"
-               (click)="toggleZoom()" />
+        <div
+          class="ink-lightbox-img-wrapper"
+          [style.transform]="'scale(' + zoom() + ')'"
+          (click)="$event.stopPropagation()"
+        >
+          <img
+            #imgRef
+            [src]="src()"
+            [alt]="alt() || 'Preview image'"
+            class="ink-lightbox-img"
+            referrerpolicy="no-referrer"
+            (load)="onImageLoaded($event)"
+            (click)="toggleZoom()"
+          />
         </div>
       </div>
 
@@ -147,7 +169,9 @@ export interface ImagePreviewPayload {
       background: var(--ink-bg-header, var(--ink-bg-card, #18191c));
       border-bottom: 1px solid var(--ink-border-default, #2e3036);
       z-index: 10;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       @media (max-width: 640px) {
         padding: 8px 10px;
@@ -208,7 +232,9 @@ export interface ImagePreviewPayload {
         align-items: center;
         justify-content: center;
         border-radius: 8px;
-        transition: background-color 0.12s ease, color 0.12s ease;
+        transition:
+          background-color 0.12s ease,
+          color 0.12s ease;
 
         &:hover:not([disabled]) {
           color: var(--ink-text-primary, #ffffff);
@@ -289,17 +315,29 @@ export interface ImagePreviewPayload {
       font-size: 0.85rem;
       background: var(--ink-bg-header, var(--ink-bg-card, #18191c));
       border-top: 1px solid var(--ink-border-default, #2e3036);
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
     }
 
     @keyframes inkFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
 
     @keyframes inkScaleIn {
-      from { transform: scale(0.96); opacity: 0.8; }
-      to { transform: scale(1); opacity: 1; }
+      from {
+        transform: scale(0.96);
+        opacity: 0.8;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
   `,
 })
@@ -365,4 +403,3 @@ export class ImageLightbox {
 
 // Backward compatibility alias
 export { ImageLightbox as ImageLightboxComponent };
-

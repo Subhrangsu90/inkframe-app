@@ -15,7 +15,6 @@
         (keydown.enter)="onTitleChange(titleInput.value); titleInput.blur()"
         (keydown.escape)="isEditingTitle.set(false)"
         class="header-title-input"
-        autofocus
       />
     } @else {
       <button
@@ -75,13 +74,11 @@
 </ng-template>
 
 <!-- ═════════════════════════════════════════════ -->
-<!-- HEADER RIGHT: Word Count, Presets & Export    -->
+<!-- HEADER RIGHT: Share & Export                  -->
+<!-- (word count lives in the editor's status bar) -->
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerRight>
   <div class="header-actions">
-    <!-- Word Count Badge -->
-    <span class="word-count">{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
-
     <!-- Share Reader Page Link Popover / Button -->
     <div class="share-dropdown-wrap">
       <button
@@ -95,7 +92,8 @@
       </button>
 
       @if (showShareMenu()) {
-        <!-- Backdrop to close -->
+        <!-- Backdrop: a click outside closes the popover (Escape does too, see the component's host). -->
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
         <div class="share-popover-backdrop" (click)="showShareMenu.set(false)"></div>
 
         <div class="share-popover">
@@ -104,13 +102,19 @@
               <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
               <span>Share Reader Link</span>
             </div>
-            <button type="button" class="close-share-btn" (click)="showShareMenu.set(false)" title="Close">
+            <button
+              type="button"
+              class="close-share-btn"
+              (click)="showShareMenu.set(false)"
+              title="Close"
+            >
               <ink-icon name="close" [size]="11" />
             </button>
           </div>
 
           <p class="share-popover-desc">
-            Anyone with this link can view this document anywhere with zero backend or account required.
+            Anyone with this link can view this document anywhere with zero backend or account
+            required.
           </p>
 
           <div class="share-link-box">
@@ -135,7 +139,7 @@
 
           <div class="share-popover-footer">
             <a
-              [href]="shareUrl() || ('/s/' + currentDocId())"
+              [href]="shareUrl() || '/s/' + currentDocId()"
               target="_blank"
               (click)="showShareMenu.set(false)"
               class="preview-reader-link"

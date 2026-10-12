@@ -2,6 +2,7 @@
  * IndexedDB storage for images in Inkframe.
  * SSR-safe: handles server environments without errors.
  */
+import type { DocJSON } from './migrations';
 
 export interface StoredImageMetadata {
   id: string;
@@ -86,7 +87,10 @@ class ImageStorage {
    * Saves an image file or blob to IndexedDB and returns a stable custom URI
    * with format: ink-idb:<id> and a temporary preview object URL.
    */
-  async saveImage(file: File | Blob, name?: string): Promise<{ id: string; uri: string; url: string }> {
+  async saveImage(
+    file: File | Blob,
+    name?: string,
+  ): Promise<{ id: string; uri: string; url: string }> {
     const id = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const fileName = name || (file instanceof File ? file.name : 'image.png');
     const uri = `ink-idb:${id}`;
@@ -101,9 +105,13 @@ class ImageStorage {
     this.urlCache.set(id, objectUrl);
 
     // Pre-cache data URL asynchronously for instant sharing and exports
-    this.blobToDataUrl(file).then((dUrl) => {
-      if (dUrl) this.dataUrlCache.set(id, dUrl);
-    }).catch(() => {});
+    this.blobToDataUrl(file)
+      .then((dUrl) => {
+        if (dUrl) this.dataUrlCache.set(id, dUrl);
+      })
+      .catch(() => {
+        // Only a cache: resolveToDataUrl() converts the blob when it is needed.
+      });
 
     const record: ImageRecord = {
       id,
@@ -177,7 +185,12 @@ class ImageStorage {
   /**
    * Resizes and compresses an image Blob to fit cleanly inside URL share links.
    */
-  async optimizeImageBlob(blob: Blob, maxWidth = 960, maxHeight = 960, quality = 0.72): Promise<string> {
+  async optimizeImageBlob(
+    blob: Blob,
+    maxWidth = 960,
+    maxHeight = 960,
+    quality = 0.72,
+  ): Promise<string> {
     if (
       typeof document === 'undefined' ||
       typeof Image === 'undefined' ||
@@ -191,7 +204,11 @@ class ImageStorage {
       const img = new Image();
 
       timer = setTimeout(() => {
-        try { URL.revokeObjectURL(url); } catch {}
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          // Already revoked.
+        }
         this.blobToDataUrl(blob).then(resolve);
       }, 1500);
 
@@ -316,7 +333,7 @@ class ImageStorage {
     }
 
     const srcRegex = /<img\s+[^>]*?src=["']([^"']+)["'][^>]*>/gi;
-    const matches: Array<{ fullTag: string; rawSrc: string }> = [];
+    const matches: { fullTag: string; rawSrc: string }[] = [];
     let match: RegExpExecArray | null;
 
     while ((match = srcRegex.exec(html)) !== null) {
@@ -347,18 +364,22 @@ class ImageStorage {
   /**
    * Inlines all ink-idb image nodes in a document as Base64 data URLs for portable sharing and persistence.
    */
-  async inlineDocImages<T = any>(storedDoc: T, forShare = false): Promise<T> {
+  async inlineDocImages<T = unknown>(storedDoc: T, forShare = false): Promise<T> {
     if (!storedDoc || typeof storedDoc !== 'object') return storedDoc;
-    const clone = JSON.parse(JSON.stringify(storedDoc));
+    const clone: T = JSON.parse(JSON.stringify(storedDoc));
 
-    const traverse = async (node: any): Promise<void> => {
+    const traverse = async (node: DocJSON | undefined): Promise<void> => {
       if (!node) return;
-      if (node.type === 'image' && node.attrs && typeof node.attrs.src === 'string') {
-        const src = node.attrs.src;
-        if (src.startsWith('ink-idb:') || src.startsWith('blob:') || (forShare && src.startsWith('data:'))) {
+      const src = node.attrs?.['src'];
+      if (node.type === 'image' && typeof src === 'string') {
+        if (
+          src.startsWith('ink-idb:') ||
+          src.startsWith('blob:') ||
+          (forShare && src.startsWith('data:'))
+        ) {
           const dataUrl = await this.resolveToDataUrl(src, forShare);
           if (dataUrl && dataUrl.startsWith('data:')) {
-            node.attrs.src = dataUrl;
+            node.attrs!['src'] = dataUrl;
           }
         }
       }
@@ -369,7 +390,8 @@ class ImageStorage {
       }
     };
 
-    const docRoot = (clone as any).doc || clone;
+    // A StoredDoc envelope or a bare document.
+    const docRoot = ((clone as { doc?: DocJSON }).doc ?? clone) as DocJSON;
     await traverse(docRoot);
     return clone;
   }
@@ -449,7 +471,7 @@ class ImageStorage {
    * Persists a document to IndexedDB asynchronously without blocking the UI thread.
    * Includes fallback to localStorage if IndexedDB is inaccessible.
    */
-  async saveDocument<T = any>(key: string, doc: T): Promise<void> {
+  async saveDocument<T = unknown>(key: string, doc: T): Promise<void> {
     if (!this.isBrowser()) return;
     try {
       const db = await this.getDB();
@@ -467,7 +489,11 @@ class ImageStorage {
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem(key, JSON.stringify(doc));
         }
-      } catch {}
+      } catch {
+        // Neither IndexedDB nor localStorage accepted the document (quota exceeded
+        // or storage blocked). The caller is not told yet: see the storage-full
+        // banner planned for M2.
+      }
     }
   }
 
@@ -515,13 +541,15 @@ class ImageStorage {
     }
     try {
       if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-    } catch {}
+    } catch {
+      // Storage unavailable: there is no fallback copy to remove.
+    }
   }
 
   /**
    * Retrieves a persisted document from IndexedDB asynchronously with localStorage fallback.
    */
-  async getDocument<T = any>(key: string): Promise<T | null> {
+  async getDocument<T = unknown>(key: string): Promise<T | null> {
     if (!this.isBrowser()) return null;
     try {
       const db = await this.getDB();
@@ -534,7 +562,9 @@ class ImageStorage {
         req.onerror = () => resolve(null);
       });
       if (result) return result;
-    } catch {}
+    } catch {
+      // IndexedDB unavailable: try the localStorage copy below.
+    }
 
     // Fallback to localStorage (for existing saved docs or fallback)
     try {
@@ -542,7 +572,9 @@ class ImageStorage {
         const item = localStorage.getItem(key);
         if (item) return JSON.parse(item) as T;
       }
-    } catch {}
+    } catch {
+      // No readable fallback copy.
+    }
     return null;
   }
 }

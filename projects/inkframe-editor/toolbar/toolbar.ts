@@ -19,6 +19,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   EditorService,
+  KeepMenuOpen,
   ThemeService,
   TEXT_COLORS,
   HIGHLIGHT_COLORS,
@@ -40,6 +41,7 @@ import {
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -68,7 +70,7 @@ import {
         (scroll)="onToolbarScroll()"
         (pointerdown)="onPointerDown($event)"
         (pointermove)="onPointerMove($event)"
-        (pointerup)="onPointerUp($event)"
+        (pointerup)="onPointerUp()"
         (pointercancel)="onPointerCancel()"
       >
         <!-- 1. History Group (Undo / Redo) -->
@@ -289,7 +291,7 @@ import {
                 <mat-icon [style.color]="svc.currentColor()">format_color_text</mat-icon>
               </button>
               <mat-menu #colorMenu="matMenu">
-                <div class="ink-color-popover" (click)="$event.stopPropagation()">
+                <div class="ink-color-popover" inkKeepMenuOpen>
                   <div class="ink-color-title">Text color</div>
                   <div class="ink-color-grid">
                     @for (c of textColors; track c.value) {
@@ -337,7 +339,7 @@ import {
                 ></span>
               </button>
               <mat-menu #highlightMenu="matMenu">
-                <div class="ink-color-popover" (click)="$event.stopPropagation()">
+                <div class="ink-color-popover" inkKeepMenuOpen>
                   <div class="ink-color-title">Highlight</div>
                   <div class="ink-color-grid ink-highlight-grid">
                     @for (c of highlightColors; track c.value) {
@@ -570,7 +572,7 @@ import {
                 <mat-icon>link</mat-icon>
               </button>
               <mat-menu #linkMenu="matMenu">
-                <div class="ink-link-popover" (click)="$event.stopPropagation()">
+                <div class="ink-link-popover" inkKeepMenuOpen>
                   <div class="ink-link-title">Link</div>
                   <div class="ink-link-input-wrapper">
                     <input
@@ -628,7 +630,7 @@ import {
                 <mat-icon>image</mat-icon>
               </button>
               <mat-menu #imageMenu="matMenu" (menuOpened)="onImageMenuOpened()">
-                <div class="ink-image-popover" (click)="$event.stopPropagation()">
+                <div class="ink-image-popover" inkKeepMenuOpen>
                   <div class="ink-image-tabs">
                     <button
                       type="button"
@@ -726,7 +728,7 @@ import {
                 <mat-icon>grid_on</mat-icon>
               </button>
               <mat-menu #insertTableMenu="matMenu">
-                <div class="ink-table-grid-popover" (click)="$event.stopPropagation()">
+                <div class="ink-table-grid-popover" inkKeepMenuOpen>
                   <div class="ink-table-grid" role="grid" aria-label="Table dimension selector">
                     @for (r of gridRows; track r) {
                       <div class="ink-table-grid-row" role="row">
@@ -745,12 +747,20 @@ import {
                     }
                   </div>
 
-                  <div
+                  <button
+                    type="button"
                     class="ink-table-pills"
                     (click)="insertTableGrid(tableHoverRows(), tableHoverCols(), tableTrigger)"
+                    [attr.aria-label]="
+                      'Insert table, ' +
+                      tableHoverCols() +
+                      ' columns by ' +
+                      tableHoverRows() +
+                      ' rows'
+                    "
                     title="Click to insert table"
                   >
-                    <div class="ink-table-pill">
+                    <span class="ink-table-pill">
                       <svg
                         class="pill-icon"
                         width="16"
@@ -767,9 +777,9 @@ import {
                         <line x1="10" y1="2" x2="10" y2="14" />
                       </svg>
                       <span class="pill-val">{{ tableHoverCols() }}</span>
-                    </div>
+                    </span>
                     <span class="ink-table-times">×</span>
-                    <div class="ink-table-pill">
+                    <span class="ink-table-pill">
                       <svg
                         class="pill-icon"
                         width="16"
@@ -786,8 +796,8 @@ import {
                         <line x1="2" y1="10" x2="14" y2="10" />
                       </svg>
                       <span class="pill-val">{{ tableHoverRows() }}</span>
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 </div>
               </mat-menu>
             }
@@ -834,7 +844,7 @@ import {
               <mat-icon>sentiment_satisfied</mat-icon>
             </button>
             <mat-menu #emojiMenu="matMenu">
-              <div class="ink-emoji-popover" (click)="$event.stopPropagation()">
+              <div class="ink-emoji-popover" inkKeepMenuOpen>
                 <div class="ink-emoji-title">Emojis</div>
                 <div class="ink-emoji-grid">
                   @for (em of emojis; track em) {
@@ -1374,7 +1384,7 @@ export class Toolbar implements OnDestroy {
     }
   }
 
-  protected onPointerUp(event: PointerEvent): void {
+  protected onPointerUp(): void {
     if (this.isPointerDown) {
       if (this.hasDragged) {
         this.lastDragTimestamp = Date.now();

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { revealThemeChange } from './theme';
 
-type Deferred = { promise: Promise<void>; resolve: () => void };
+interface Deferred {
+  promise: Promise<void>;
+  resolve: () => void;
+}
 const deferred = (): Deferred => {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => (resolve = r));

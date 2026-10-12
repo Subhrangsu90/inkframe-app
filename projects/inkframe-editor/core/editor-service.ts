@@ -279,7 +279,8 @@ export class EditorService implements EditorHooks {
     }
     this.onChange = opts.onChange;
     this.editableFlag = opts.editable ?? true;
-    const self = this;
+    const afterUpdate = (state: EditorState, docChanged: boolean) =>
+      this.afterUpdate(state, docChanged);
 
     // Created outside Angular's zone by virtue of being called from afterNextRender
     // and only touching signals from callbacks (see section 2.1, rule 2).
@@ -302,10 +303,12 @@ export class EditorService implements EditorHooks {
         return this.handleImageFiles(event, data?.files);
       },
       handleDrop: (_view, event) => this.handleImageFiles(event, event.dataTransfer?.files),
+      // A plain function: ProseMirror calls it with the view as `this`, also
+      // during construction, before `this.view` is assigned.
       dispatchTransaction(this: EditorView, tr) {
         const next = this.state.apply(tr);
         this.updateState(next);
-        self.afterUpdate(next, tr.docChanged);
+        afterUpdate(next, tr.docChanged);
       },
     });
     this.view.dom.classList.toggle('ProseMirror-preview', !this.editableFlag);
@@ -463,7 +466,7 @@ export class EditorService implements EditorHooks {
     for (let d = $from.depth; d > 0; d--) {
       const name = $from.node(d).type.name;
       if (name === 'bullet_list' || name === 'ordered_list' || name === 'task_list') {
-        list = name as any;
+        list = name;
         break;
       }
     }

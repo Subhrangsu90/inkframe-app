@@ -58,6 +58,8 @@
   <!-- ═════════════════════════════════════════════ -->
   <main class="reader-viewport ink-scrollbar">
     <div class="reader-canvas">
+      <!-- Clicking an image opens the lightbox. Mouse only for now: images are not focusable (accessibility gap, see the plan). -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <article class="reader-a4-sheet" (click)="onSheetClick($event)">
         <div class="ink-host ProseMirror ProseMirror-preview" [innerHTML]="renderedHtml()"></div>
       </article>

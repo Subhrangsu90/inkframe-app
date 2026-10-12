@@ -11,8 +11,7 @@ export const DOMPURIFY_CONFIG = {
   // URI-safe (rel, target, width, colspan, ...). Besides the allowed schemes it
   // must therefore accept values that have no scheme at all, as DOMPurify's
   // default does. `data:` stays limited to <img> via ADD_DATA_URI_TAGS.
-  ALLOWED_URI_REGEXP:
-    /^(?:(?:https?|mailto|tel|blob|ink-idb):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|blob|ink-idb):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
 
 /**

@@ -122,7 +122,7 @@ export class ImageNodeView implements NodeView {
     this.toolbarEl.appendChild(deleteBtn);
 
     // Resize handles: SE (bottom-right), E (right), SW (bottom-left), W (left)
-    const handlePositions: Array<'se' | 'e' | 'sw' | 'w'> = ['se', 'e', 'sw', 'w'];
+    const handlePositions: ('se' | 'e' | 'sw' | 'w')[] = ['se', 'e', 'sw', 'w'];
     handlePositions.forEach((pos) => {
       const handle = document.createElement('div');
       handle.className = `ink-image-resize-handle handle-${pos}`;

@@ -25,10 +25,7 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {
-              "includePaths": [
-                "projects/inkframe-editor/src",
-                "dist/inkframe-editor"
-              ]
+              "includePaths": ["projects/inkframe-editor/src", "dist/inkframe-editor"]
             },
             "assets": [
               {
@@ -101,6 +98,12 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
         }
       }
     },
@@ -126,10 +129,17 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "projects/inkframe-editor/tsconfig.spec.json",
-            "include": [
-              "**/*.spec.ts",
-              "../**/*.spec.ts"
-            ]
+            "include": ["**/*.spec.ts", "../**/*.spec.ts"]
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/inkframe-editor/**/*.ts",
+              "projects/inkframe-editor/**/*.html"
+            ],
+            "eslintConfig": "projects/inkframe-editor/eslint.config.js"
           }
         }
       }

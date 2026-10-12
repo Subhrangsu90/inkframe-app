@@ -155,7 +155,7 @@ export class Reader implements OnInit {
         await navigator.clipboard.writeText(url);
         this.toast.success('Shareable link copied to clipboard!');
       }
-    } catch (e) {
+    } catch {
       this.toast.error('Failed to copy shareable link');
     }
   }

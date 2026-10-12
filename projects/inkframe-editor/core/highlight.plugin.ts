@@ -158,7 +158,7 @@ function buildDecorations(doc: PMNode): DecorationSet {
       const tokens = Prism.tokenize(text, grammar);
       let offset = 0;
 
-      function walk(tokenList: Array<string | Prism.Token>, parentType?: string) {
+      function walk(tokenList: (string | Prism.Token)[], parentType?: string) {
         for (const token of tokenList) {
           if (typeof token === 'string') {
             if (parentType) {

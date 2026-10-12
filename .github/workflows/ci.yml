@@ -31,6 +31,9 @@ jobs:
       - name: Formatting (Prettier)
         run: npm run format:check
 
+      - name: Lint (ESLint)
+        run: npm run lint
+
       - name: Icon font subset is up to date
         run: npm run icons:check
 

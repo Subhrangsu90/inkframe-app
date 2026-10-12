@@ -16,6 +16,7 @@ export * from './placeholder.plugin';
 export * from './paste-cleanup';
 export * from './doc-stats';
 export * from './theme';
+export * from './keep-menu-open.directive';
 export * from './slash-items';
 export * from './editor-service';
 export * from './io/html';

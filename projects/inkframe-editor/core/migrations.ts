@@ -11,7 +11,20 @@ export interface StoredDoc {
   doc: unknown; // ProseMirror JSON
 }
 
-type Migration = (doc: any) => any;
+/**
+ * A node in ProseMirror's JSON form (`Node.toJSON()`), for code that walks
+ * stored documents without a schema. Nothing is validated: documents can come
+ * from share links, so read attributes as `unknown`.
+ */
+export interface DocJSON {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: DocJSON[];
+  marks?: { type: string; attrs?: Record<string, unknown> }[];
+  text?: string;
+}
+
+type Migration = (doc: DocJSON) => DocJSON;
 
 /** migrations[n] upgrades a document from version n to n + 1. */
 const migrations: Record<number, Migration> = {
@@ -23,7 +36,7 @@ const migrations: Record<number, Migration> = {
 
 export function migrate(stored: StoredDoc): unknown {
   let version = stored.schemaVersion ?? 1;
-  let doc = stored.doc;
+  let doc = stored.doc as DocJSON;
   if (version > SCHEMA_VERSION) {
     throw new Error(
       `Document is from a newer schema (v${version}); app supports v${SCHEMA_VERSION}`,

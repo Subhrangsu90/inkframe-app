@@ -587,8 +587,19 @@ mat-divider.mat-divider,
     gap: 10px;
     width: 212px;
     margin-top: 12px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
     user-select: none;
     cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--ink-border-focus);
+      outline-offset: 2px;
+    }
   }
 
   .ink-table-pill {

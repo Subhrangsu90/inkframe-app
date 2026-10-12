@@ -18,6 +18,8 @@ import { EditorService } from '@inkframe-ui/editor/core';
         (mousedown)="$event.preventDefault()"
       >
         @for (item of svc.slashItems(); track item.id; let i = $index) {
+          <!-- Keyboard users pick with the arrow keys and Enter while typing (EditorService.onSlashKeyDown), so focus stays in the document. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <li
             role="option"
             [attr.aria-selected]="i === svc.slashActive()"

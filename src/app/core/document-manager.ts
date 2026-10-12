@@ -1,5 +1,11 @@
 import { Injectable } from '@angular/core';
-import { SCHEMA_VERSION, StoredDoc, countWords, imageStorage } from '@inkframe-ui/editor/core';
+import {
+  DocJSON,
+  SCHEMA_VERSION,
+  StoredDoc,
+  countWords,
+  imageStorage,
+} from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
 
 export type { StoredDoc };
@@ -20,45 +26,47 @@ const LEGACY_SAVED_KEY = 'inkframe_saved_doc';
 
 const docKey = (id: string) => `inkframe_doc_${id}`;
 
+/** A node's children; documents from share links may be malformed, so check. */
+const childrenOf = (node: DocJSON | undefined): DocJSON[] =>
+  node && Array.isArray(node.content) ? node.content : [];
+
+const inlineText = (node: DocJSON) =>
+  childrenOf(node)
+    .map((c) => c.text || '')
+    .join('')
+    .trim();
+
 export function extractDocTitle(stored: StoredDoc): string {
   try {
-    const content = (stored?.doc as any)?.content;
-    if (Array.isArray(content)) {
-      for (const node of content) {
-        if (node.type === 'heading' && Array.isArray(node.content)) {
-          const text = node.content
-            .map((c: any) => c.text || '')
-            .join('')
-            .trim();
-          if (text) return text;
-        }
+    const blocks = childrenOf(stored?.doc as DocJSON | undefined);
+    for (const node of blocks) {
+      if (node.type === 'heading') {
+        const text = inlineText(node);
+        if (text) return text;
       }
-      for (const node of content) {
-        if (node.type === 'paragraph' && Array.isArray(node.content)) {
-          const text = node.content
-            .map((c: any) => c.text || '')
-            .join('')
-            .trim();
-          if (text) {
-            return text.length > 40 ? text.slice(0, 40) + '...' : text;
-          }
+    }
+    for (const node of blocks) {
+      if (node.type === 'paragraph') {
+        const text = inlineText(node);
+        if (text) {
+          return text.length > 40 ? text.slice(0, 40) + '...' : text;
         }
       }
     }
-  } catch {}
+  } catch {
+    // Malformed document: use the default title.
+  }
   return 'Untitled Document';
 }
 
-function plainText(node: any): string {
+function plainText(node: DocJSON | undefined): string {
   if (!node) return '';
   if (typeof node.text === 'string') return node.text;
   if (node.type === 'hard_break') return ' ';
-  if (!Array.isArray(node.content)) return '';
+  const children = childrenOf(node);
   // Text runs inside one paragraph join directly; separate blocks get a space.
-  const inline = node.content.every(
-    (c: any) => typeof c.text === 'string' || c.type === 'hard_break',
-  );
-  return node.content.map(plainText).join(inline ? '' : ' ');
+  const inline = children.every((c) => typeof c.text === 'string' || c.type === 'hard_break');
+  return children.map(plainText).join(inline ? '' : ' ');
 }
 
 /**
@@ -67,7 +75,7 @@ function plainText(node: any): string {
  */
 export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180): string {
   try {
-    const blocks: any[] = (stored?.doc as any)?.content ?? [];
+    const blocks = childrenOf(stored?.doc as DocJSON | undefined);
     const first = blocks[0];
     const body =
       first?.type === 'heading' && plainText(first).trim() === title.trim()
@@ -84,7 +92,7 @@ export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180
 /** Counted like the editor's status bar, so library cards and the editor agree. */
 export function extractDocWordCount(stored: StoredDoc): number {
   try {
-    return countWords(plainText(stored?.doc));
+    return countWords(plainText(stored?.doc as DocJSON | undefined));
   } catch {
     return 0;
   }
@@ -172,7 +180,9 @@ export class DocumentManager {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(ACTIVE_ID_KEY, id);
-    } catch {}
+    } catch {
+      // Storage unavailable: the active document is not remembered.
+    }
   }
 
   async getDoc(id: string): Promise<StoredDoc | null> {
@@ -314,7 +324,9 @@ export class DocumentManager {
           }
         }
       }
-    } catch {}
+    } catch {
+      // Storage unavailable: there are no fallback copies to remove.
+    }
     this.legacyDropped = false;
   }
 

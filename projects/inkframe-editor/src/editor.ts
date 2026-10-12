@@ -45,6 +45,8 @@ import {
         <ink-toolbar />
       }
       <div class="ink-editor-body">
+        <!-- A click on the empty page around the text focuses the document; keyboard users reach it with Tab. -->
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
         <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
           <div class="ink-doc-page">
             <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>

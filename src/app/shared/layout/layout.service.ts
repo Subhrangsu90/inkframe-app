@@ -20,14 +20,14 @@ export class LayoutService {
   readonly isCreating = signal<boolean>(false);
 
   // Dynamic header templates for current active page
-  readonly headerLeftTemplate = signal<TemplateRef<any> | null>(null);
-  readonly headerCenterTemplate = signal<TemplateRef<any> | null>(null);
-  readonly headerRightTemplate = signal<TemplateRef<any> | null>(null);
+  readonly headerLeftTemplate = signal<TemplateRef<unknown> | null>(null);
+  readonly headerCenterTemplate = signal<TemplateRef<unknown> | null>(null);
+  readonly headerRightTemplate = signal<TemplateRef<unknown> | null>(null);
 
   setHeaderTemplates(templates: {
-    left?: TemplateRef<any> | null;
-    center?: TemplateRef<any> | null;
-    right?: TemplateRef<any> | null;
+    left?: TemplateRef<unknown> | null;
+    center?: TemplateRef<unknown> | null;
+    right?: TemplateRef<unknown> | null;
   }): void {
     this.headerLeftTemplate.set(templates.left ?? null);
     this.headerCenterTemplate.set(templates.center ?? null);
@@ -47,7 +47,9 @@ export class LayoutService {
         if (saved !== null) {
           this.sidebarCollapsed.set(saved === 'true');
         }
-      } catch {}
+      } catch {
+        // Storage unavailable: keep the default sidebar state.
+      }
     }
     this.refreshDocs();
   }
@@ -58,7 +60,9 @@ export class LayoutService {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_COLLAPSED_KEY, String(next));
-      } catch {}
+      } catch {
+        // Storage unavailable (private mode or blocked): the choice lasts for this visit.
+      }
     }
   }
 
@@ -67,7 +71,9 @@ export class LayoutService {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_COLLAPSED_KEY, String(collapsed));
-      } catch {}
+      } catch {
+        // Storage unavailable (private mode or blocked): the choice lasts for this visit.
+      }
     }
   }
 

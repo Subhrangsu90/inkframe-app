@@ -15,7 +15,6 @@
         (keydown.enter)="onTitleChange(titleInput.value); titleInput.blur()"
         (keydown.escape)="isEditingTitle.set(false)"
         class="header-title-input"
-        autofocus
       />
     } @else {
       <button
@@ -93,7 +92,8 @@
       </button>
 
       @if (showShareMenu()) {
-        <!-- Backdrop to close -->
+        <!-- Backdrop: a click outside closes the popover (Escape does too, see the component's host). -->
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
         <div class="share-popover-backdrop" (click)="showShareMenu.set(false)"></div>
 
         <div class="share-popover">

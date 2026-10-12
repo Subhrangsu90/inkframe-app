@@ -118,13 +118,10 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
               // Clamp left so it doesn't overflow horizontally off viewport
               const rawLeft = rect.left + rect.width / 2;
-              let left = rawLeft;
-              if (vpRect) {
-                const margin = Math.min(140, Math.max(60, (vpRect.width - 24) / 2));
-                left = Math.max(vpRect.left + margin, Math.min(rawLeft, vpRect.right - margin));
-              } else {
-                left = Math.max(70, Math.min(rawLeft, screenW - 70));
-              }
+              const margin = vpRect ? Math.min(140, Math.max(60, (vpRect.width - 24) / 2)) : 70;
+              const left = vpRect
+                ? Math.max(vpRect.left + margin, Math.min(rawLeft, vpRect.right - margin))
+                : Math.max(margin, Math.min(rawLeft, screenW - margin));
 
               lastFloatingCoords = { left, top, placement };
               hooks.onFloatingMenu(lastFloatingCoords);
@@ -156,7 +153,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
         if (inTable && (view.hasFocus() || isInteractingWithTable)) {
           const { $from } = selection;
-          let tableEl: HTMLElement | null = null;
+          let tableEl: HTMLElement | null;
           try {
             const domAt = view.domAtPos($from.pos);
             const domNode = domAt.node as HTMLElement;

@@ -25,6 +25,12 @@ export interface ImagePreviewPayload {
   imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!--
+      Clicks here are mouse shortcuts: Escape closes the lightbox (document
+      listener below) and the header buttons zoom. The other (click) handlers
+      only keep clicks on the header, image and caption from closing it.
+    -->
+    <!-- eslint-disable @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <div class="ink-lightbox-backdrop" (click)="onBackdropClick($event)">
       <!-- Top Toolbar -->
       <div class="ink-lightbox-header" (click)="$event.stopPropagation()">

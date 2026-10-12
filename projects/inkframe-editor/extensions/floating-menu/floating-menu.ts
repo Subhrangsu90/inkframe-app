@@ -14,6 +14,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   EditorService,
+  KeepMenuOpen,
   HIGHLIGHT_COLORS,
   TEXT_ALIGN_OPTIONS,
   TEXT_COLORS,
@@ -31,6 +32,7 @@ import {
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -209,7 +211,7 @@ import {
 
     <!-- Color Menu (declared outside @if so it survives focus changes) -->
     <mat-menu #floatingColorMenu="matMenu">
-      <div class="ink-color-popover" (click)="$event.stopPropagation()">
+      <div class="ink-color-popover" inkKeepMenuOpen>
         <div class="ink-color-title">Text color</div>
         <div class="ink-color-grid">
           @for (c of textColors; track c.value) {
@@ -242,7 +244,7 @@ import {
 
     <!-- Highlight Menu -->
     <mat-menu #floatingHighlightMenu="matMenu">
-      <div class="ink-color-popover" (click)="$event.stopPropagation()">
+      <div class="ink-color-popover" inkKeepMenuOpen>
         <div class="ink-color-title">Highlight</div>
         <div class="ink-color-grid ink-highlight-grid">
           @for (c of highlightColors; track c.value) {
@@ -291,7 +293,7 @@ import {
 
     <!-- Link Popover Menu -->
     <mat-menu #floatingLinkMenu="matMenu">
-      <div class="ink-link-popover" (click)="$event.stopPropagation()">
+      <div class="ink-link-popover" inkKeepMenuOpen>
         <div class="ink-link-title">Link</div>
         <div class="ink-link-input-wrapper">
           <input

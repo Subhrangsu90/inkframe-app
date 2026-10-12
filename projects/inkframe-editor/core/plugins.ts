@@ -181,7 +181,7 @@ export const toggleHighlightCommand: Command = (state, dispatch, view) =>
 export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_list'): Command {
   return (state, dispatch) => {
     const { $from } = state.selection;
-    const { bullet_list, ordered_list, task_list, list_item, task_item } = state.schema.nodes;
+    const { task_list, list_item, task_item } = state.schema.nodes;
 
     // Find innermost list ancestor
     let listDepth = -1;
@@ -262,8 +262,7 @@ export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_l
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
   const { strong, em, code, underline, strikethrough, subscript, superscript, small } =
     schema.marks;
-  const { list_item, task_item, bullet_list, ordered_list, task_list, paragraph, heading } =
-    schema.nodes;
+  const { list_item, task_item, paragraph, heading } = schema.nodes;
 
   return [
     buildInputRules(),

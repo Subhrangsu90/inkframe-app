@@ -25,7 +25,8 @@
     "format:check": "prettier --check \"projects/**/*.{ts,scss,html,json}\" \"src/**/*.{ts,scss,html,json}\"",
     "serve:ssr:inkframe-app": "node dist/inkframe-app/server/server.mjs",
     "icons:build": "node scripts/build-icon-font.mjs",
-    "icons:check": "node scripts/build-icon-font.mjs --check"
+    "icons:check": "node scripts/build-icon-font.mjs --check",
+    "lint": "ng lint"
   },
   "private": true,
   "packageManager": "npm@11.6.4",
@@ -69,14 +70,18 @@
     "@angular/build": "^22.1.6",
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.0",
+    "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "@types/prismjs": "^1.26.6",
+    "angular-eslint": "22.6.0",
+    "eslint": "^10.12.0",
     "jsdom": "^28.0.0",
     "ng-packagr": "^22.2.0",
     "prettier": "^3.8.1",
     "prosemirror-test-builder": "^1.1.1",
     "typescript": "~6.0.2",
+    "typescript-eslint": "8.71.0",
     "vitest": "^4.0.8"
   }
 }

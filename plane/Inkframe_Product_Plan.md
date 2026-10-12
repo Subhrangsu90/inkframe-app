@@ -246,8 +246,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ### 4.1 Baseline (2026-10-12)
 
-- **Tests:** 182 tests pass through the Angular CLI test runner (`npm test`; 146 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
-- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
+- **Tests:** 183 tests pass through the Angular CLI test runner (`npm test`; 147 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the Prettier format check, ESLint (angular-eslint, including the template accessibility rules), the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
 - **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 542 kB raw, 127 kB transferred.
 - **Schema:** version 2 (M1 added the `highlight` mark and the `align` attribute). Version 1 documents migrate unchanged.
 - **Recently fixed:**
@@ -277,8 +277,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 - **Dead preset code:** the editor page defines extension presets and a demo plugin with no UI. Either expose presets in a developer playground or remove them.
 - **Legacy APIs:** `buildPlugins()`, `SLASH_ITEMS` and the static `schema` export predate the extension system. Deprecate them in the library's public API and point users to `ExtensionManager` and `DEFAULT_EXTENSIONS`.
 - ~~**Component tests can't run.**~~ Resolved in M0: tests run through `ng test` (AOT, type-checked). The first component test found that `<ink-editor>` cannot emit edits while being destroyed; edits are now flushed by a `canDeactivate` guard and on `visibilitychange` / `pagehide`.
-- **No linter:** add `angular-eslint` and a `lint` step to CI.
-- **Formatting isn't enforced:** most files fail `prettier --check`. Format the codebase in one dedicated commit, then add `format:check` to CI.
+- ~~**No linter.**~~ Resolved: angular-eslint (`npm run lint`) runs in CI. Specs may use `any`; template accessibility exceptions are commented where they are made.
+- ~~**Formatting isn't enforced.**~~ Resolved: the codebase was formatted in one commit (listed in `.git-blame-ignore-revs`) and `format:check` runs in CI. `.gitattributes` keeps checkouts on LF so the check passes on Windows too.
+- **Failed saves are silent:** when IndexedDB and the localStorage fallback both refuse a document (quota, blocked storage), `imageStorage.saveDocument` drops the error and the editor still shows "Saved". Surface it with the storage-full banner (M2).
+- **Reader images are mouse-only:** a click opens the lightbox, but images cannot be focused. Fix in the M4 accessibility pass.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
 - **Long share links:** images are inlined, so share links can reach hundreds of kilobytes. Some chat apps truncate long URLs; document the limit and warn in the share dialog.
 
@@ -298,7 +300,7 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 
 ### M0: Stabilize and make the claims true
 
-**Status (2026-10-12):** done except the format check, which needs the one-time formatting commit described in [4.3](#43-technical-debt-fix-during-m0m2), and linting (no linter is configured yet).
+**Status (2026-10-12):** done. One manual step remains: make the CI workflow required for merging to `master` in the GitHub branch settings.
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
@@ -306,7 +308,7 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 | ✅ Fix "Clear all data" (B3) and bind `Mod-k` (B5) | S | Tests cover both. |
 | ✅ Landing page copy rewrite (B2) | S | Every claim maps to a ✅ row in [section 3](#3-what-full-wysiwyg-means-scope-and-status). |
 | ✅ Angular test runner for component tests | M | Editor component tests (flush on switch, before destroy and on page hide) run in CI. |
-| 🟡 CI pipeline: lint, format check, tests, both builds | S | Tests, builds, icon check and third-party check run. Lint and format check still to add. Make the workflow required for merging to `master` in the GitHub branch settings. |
+| ✅ CI pipeline: lint, format check, tests, both builds | S | All run, with the icon check and third-party check. Make the workflow required for merging to `master` in the GitHub branch settings. |
 
 ### M1: WYSIWYG completeness (all P0 editing features)
 

@@ -130,7 +130,7 @@ function wordListItem(p: HTMLElement): WordListItem | null {
   const marker =
     Array.from(p.querySelectorAll('[style]')).find((el) => MSO_LIST_MARKER.test(styleOf(el))) ??
     null;
-  const markerText = (marker?.textContent ?? '').replace(/[\s ]+/g, '');
+  const markerText = (marker?.textContent ?? '').replace(/\s+/g, ''); // \s includes &nbsp;
   return {
     p,
     marker,

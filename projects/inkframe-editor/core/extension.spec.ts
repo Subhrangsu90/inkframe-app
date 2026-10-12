@@ -7,7 +7,6 @@ import {
   BoldExtension,
   ItalicExtension,
   HeadingExtension,
-  TableExtension,
   HistoryExtension,
   BulletListExtension,
 } from './index';

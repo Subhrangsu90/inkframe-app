@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   inject,
   signal,
   viewChild,
@@ -13,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, OPEN_COLUMN_MENU_EVENT, TEXT_COLORS } from '@inkframe-ui/editor/core';
+import { EditorService, KeepMenuOpen, OPEN_COLUMN_MENU_EVENT } from '@inkframe-ui/editor/core';
 
 export interface CellBgColor {
   name: string;
@@ -47,6 +46,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -197,7 +197,7 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 
     <!-- More / Background Color MatMenu -->
     <mat-menu #moreMenu="matMenu" class="ink-table-mat-menu">
-      <div class="ink-table-color-section" (click)="$event.stopPropagation()">
+      <div class="ink-table-color-section" inkKeepMenuOpen>
         <div class="ink-table-color-title">Cell background</div>
         <div class="ink-table-color-grid">
           @for (c of bgColors; track c.name) {

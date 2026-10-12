@@ -60,9 +60,9 @@ export class Docs implements OnInit {
   private readonly toast = inject(ToastService);
 
   // Dynamic header templates
-  readonly headerLeftTpl = viewChild<TemplateRef<any>>('headerLeft');
-  readonly headerCenterTpl = viewChild<TemplateRef<any>>('headerCenter');
-  readonly headerRightTpl = viewChild<TemplateRef<any>>('headerRight');
+  readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
+  readonly headerCenterTpl = viewChild<TemplateRef<unknown>>('headerCenter');
+  readonly headerRightTpl = viewChild<TemplateRef<unknown>>('headerRight');
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
   constructor() {
@@ -249,7 +249,9 @@ export class Docs implements OnInit {
     this.viewMode.set(mode);
     try {
       localStorage.setItem(VIEW_MODE_KEY, mode);
-    } catch {}
+    } catch {
+      // Storage unavailable (private mode or blocked): the choice lasts for this visit.
+    }
   }
 
   async createNewDoc(): Promise<void> {

@@ -1,9 +1,9 @@
 import { NodeSpec, MarkSpec, Schema } from 'prosemirror-model';
-import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
+import { nodes as basicNodes } from 'prosemirror-schema-basic';
 import { addListNodes, splitListItem, sinkListItem, liftListItem } from 'prosemirror-schema-list';
-import { Plugin } from 'prosemirror-state';
+import { Command, Plugin } from 'prosemirror-state';
 import { keymap } from 'prosemirror-keymap';
-import { baseKeymap } from 'prosemirror-commands';
+import { baseKeymap, chainCommands } from 'prosemirror-commands';
 import { inputRules, undoInputRule, InputRule } from 'prosemirror-inputrules';
 import { dropCursor } from 'prosemirror-dropcursor';
 import { gapCursor } from 'prosemirror-gapcursor';
@@ -19,6 +19,7 @@ import { EditorService } from './editor-service';
 import { EditorHooks } from './editor-hooks';
 import { SlashItem } from './slash-items';
 import { menusPlugin } from './menus.plugin';
+import { paragraph } from './schema';
 
 export class ExtensionManager {
   readonly extensions: readonly EditorExtension[];
@@ -43,7 +44,7 @@ export class ExtensionManager {
     // 1. Gather nodes
     const nodeMap: Record<string, NodeSpec> = {
       doc: basicNodes.doc,
-      paragraph: basicNodes.paragraph,
+      paragraph,
       text: basicNodes.text,
       hard_break: basicNodes.hard_break,
     };
@@ -113,33 +114,37 @@ export class ExtensionManager {
     }
 
     // 3. Extension Keymaps
-    const combinedKeymap: Record<string, any> = {};
+    const combinedKeymap: Record<string, Command> = {};
 
     // List items Enter/Tab behaviors if list item nodes are present
     const list_item = this.schema.nodes['list_item'];
     const task_item = this.schema.nodes['task_item'];
 
     if (list_item || task_item) {
-      combinedKeymap['Enter'] = (state: any, dispatch: any) =>
-        (task_item && splitListItem(task_item, { checked: false })(state, dispatch)) ||
-        (task_item && liftListItem(task_item)(state, dispatch)) ||
-        (list_item && splitListItem(list_item)(state, dispatch)) ||
-        (list_item && liftListItem(list_item)(state, dispatch));
+      combinedKeymap['Enter'] = (state, dispatch) =>
+        !!(task_item && splitListItem(task_item, { checked: false })(state, dispatch)) ||
+        !!(task_item && liftListItem(task_item)(state, dispatch)) ||
+        !!(list_item && splitListItem(list_item)(state, dispatch)) ||
+        !!(list_item && liftListItem(list_item)(state, dispatch));
 
-      combinedKeymap['Tab'] = (state: any, dispatch: any) =>
-        (task_item && sinkListItem(task_item)(state, dispatch)) ||
-        (list_item && sinkListItem(list_item)(state, dispatch));
+      combinedKeymap['Tab'] = (state, dispatch) =>
+        !!(task_item && sinkListItem(task_item)(state, dispatch)) ||
+        !!(list_item && sinkListItem(list_item)(state, dispatch));
 
-      combinedKeymap['Shift-Tab'] = (state: any, dispatch: any) =>
-        (task_item && liftListItem(task_item)(state, dispatch)) ||
-        (list_item && liftListItem(list_item)(state, dispatch));
+      combinedKeymap['Shift-Tab'] = (state, dispatch) =>
+        !!(task_item && liftListItem(task_item)(state, dispatch)) ||
+        !!(list_item && liftListItem(list_item)(state, dispatch));
     }
 
-    // Merge each extension's keymap
+    // Merge each extension's keymap. When several bind the same key, they run
+    // in order until one handles it (e.g. Tab indents a list item, otherwise
+    // moves to the next table cell).
     for (const ext of this.extensions) {
       if (ext.keymaps) {
-        const km = ext.keymaps(ctx);
-        Object.assign(combinedKeymap, km);
+        for (const [key, command] of Object.entries(ext.keymaps(ctx))) {
+          const existing = combinedKeymap[key];
+          combinedKeymap[key] = existing ? chainCommands(existing, command) : command;
+        }
       }
     }
 

@@ -1,7 +1,7 @@
-import { StoredDoc } from '@inkframe-ui/editor/core';
+import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 
 export const WELCOME_DOC: StoredDoc = {
-  schemaVersion: 1,
+  schemaVersion: SCHEMA_VERSION,
   doc: {
     type: 'doc',
     content: [

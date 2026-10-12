@@ -79,6 +79,11 @@
 
   /* Lightbox */
   --ink-lightbox-backdrop: rgba(10, 10, 11, 0.92);
+
+  /* Find and replace */
+  --ink-search-match-bg: rgba(250, 204, 21, 0.28);
+  --ink-search-current-bg: #fb923c;
+  --ink-search-current-ring: #fdba74;
 }
 
 :root[data-theme="light"],
@@ -164,4 +169,9 @@ body.theme-light,
 
   /* Lightbox */
   --ink-lightbox-backdrop: rgba(13, 13, 13, 0.85);
+
+  /* Find and replace */
+  --ink-search-match-bg: rgba(250, 204, 21, 0.4);
+  --ink-search-current-bg: #fb923c;
+  --ink-search-current-ring: #ea580c;
 }

@@ -75,13 +75,11 @@
 </ng-template>
 
 <!-- ═════════════════════════════════════════════ -->
-<!-- HEADER RIGHT: Word Count, Presets & Export    -->
+<!-- HEADER RIGHT: Share & Export                  -->
+<!-- (word count lives in the editor's status bar) -->
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerRight>
   <div class="header-actions">
-    <!-- Word Count Badge -->
-    <span class="word-count">{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
-
     <!-- Share Reader Page Link Popover / Button -->
     <div class="share-dropdown-wrap">
       <button

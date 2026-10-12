@@ -29,6 +29,8 @@ import {
   SlashMenu,
   ImageLightbox,
   TableToolbar,
+  FindReplace,
+  StatusBar,
 } from '@inkframe-ui/editor/extensions';
 
 @Component({
@@ -40,6 +42,8 @@ import {
     SlashMenu,
     ImageLightbox,
     TableToolbar,
+    FindReplace,
+    StatusBar,
   ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,11 +52,19 @@ import {
       @if (showToolbar() && editable()) {
         <ink-toolbar />
       }
-      <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
-        <div class="ink-doc-page">
-          <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
+      <div class="ink-editor-body">
+        <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
+          <div class="ink-doc-page">
+            <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
+          </div>
         </div>
+        @if (editable()) {
+          <ink-find-replace />
+        }
       </div>
+      @if (showStatusBar()) {
+        <ink-status-bar />
+      }
       @if (editable()) {
         <ink-floating-menu />
         <ink-table-toolbar />
@@ -141,6 +153,14 @@ import {
           }
         }
       }
+    }
+    /* Positions the find panel over the top of the scrolling page. */
+    .ink-editor-body {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
     .ink-editor-viewport {
       flex: 1 1 0;
@@ -246,6 +266,8 @@ export class Editor {
   readonly debounceMs = input(300);
   readonly extensions = input<EditorExtension[]>(DEFAULT_EXTENSIONS);
   readonly showToolbar = input(true);
+  /** Words, characters and reading time below the document. */
+  readonly showStatusBar = input(true);
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 

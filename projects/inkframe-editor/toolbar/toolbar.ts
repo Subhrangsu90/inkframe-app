@@ -21,9 +21,12 @@ import {
   EditorService,
   ThemeService,
   TEXT_COLORS,
+  HIGHLIGHT_COLORS,
+  TEXT_ALIGN_OPTIONS,
   COMMON_EMOJIS,
   ColorSwatch,
   focusLinkInput,
+  textAlignIcon,
 } from '@inkframe-ui/editor/core';
 
 @Component({
@@ -262,6 +265,44 @@ import {
             </mat-menu>
           }
 
+          <!-- Highlight Color Popover Trigger -->
+          @if (svc.hasExtension('highlight')) {
+            <button type="button"
+                    class="ink-tb-icon-btn highlight-trigger-btn"
+                    [class.active]="!!svc.currentHighlight()"
+                    aria-label="Highlight color"
+                    matTooltip="Highlight (Ctrl+Alt+H)"
+                    [disabled]="svc.isCode()"
+                    [matMenuTriggerFor]="highlightMenu">
+              <mat-icon>format_ink_highlighter</mat-icon>
+              <span class="highlight-indicator-bar"
+                    [style.background-color]="svc.currentHighlight() || 'transparent'"></span>
+            </button>
+            <mat-menu #highlightMenu="matMenu">
+              <div class="ink-color-popover" (click)="$event.stopPropagation()">
+                <div class="ink-color-title">Highlight</div>
+                <div class="ink-color-grid ink-highlight-grid">
+                  @for (c of highlightColors; track c.value) {
+                    <button type="button"
+                            class="ink-color-swatch light"
+                            [class.active]="svc.currentHighlight() === c.value"
+                            [style.background-color]="c.value"
+                            [attr.title]="c.name"
+                            [attr.aria-label]="c.name + ' highlight'"
+                            (click)="svc.setHighlight(c.value)">
+                      @if (svc.currentHighlight() === c.value) {
+                        <mat-icon class="swatch-check">check</mat-icon>
+                      }
+                    </button>
+                  }
+                </div>
+                <button type="button" class="ink-remove-color-btn" (click)="svc.removeHighlight()">
+                  Remove highlight
+                </button>
+              </div>
+            </mat-menu>
+          }
+
           <!-- More Text Formatting Dropdown -->
           @if (svc.hasExtension('subscript') || svc.hasExtension('superscript') || svc.hasExtension('clear_formatting')) {
             <button type="button"
@@ -303,6 +344,34 @@ import {
               }
             </mat-menu>
           }
+        </div>
+        <div class="tb-divider"></div>
+      }
+
+      <!-- Alignment -->
+      @if (svc.hasExtension('text_align')) {
+        <div class="tb-group" role="group" aria-label="Alignment">
+          <button type="button"
+                  class="ink-tb-icon-btn ink-tb-align-btn"
+                  [class.active]="svc.textAlign() !== 'left' && !!svc.textAlign()"
+                  [disabled]="!svc.textAlign()"
+                  [matMenuTriggerFor]="alignMenu"
+                  aria-label="Text alignment"
+                  matTooltip="Alignment">
+            <mat-icon>{{ alignIcon(svc.textAlign()) }}</mat-icon>
+            <mat-icon class="caret">arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #alignMenu="matMenu" class="ink-toolbar-mat-menu">
+            @for (option of alignOptions; track option.value) {
+              <button mat-menu-item
+                      [class.selected]="svc.textAlign() === option.value"
+                      (click)="svc.setTextAlign(option.value)">
+                <mat-icon>{{ option.icon }}</mat-icon>
+                <span class="menu-item-text">{{ option.label }}</span>
+                <span class="menu-shortcut">{{ option.shortcut }}</span>
+              </button>
+            }
+          </mat-menu>
         </div>
         <div class="tb-divider"></div>
       }
@@ -650,6 +719,17 @@ import {
 
       <!-- 8. Document History & Theme Toggle -->
       <div class="tb-group" role="group" aria-label="Editor settings">
+        @if (svc.hasExtension('search')) {
+          <button type="button"
+                  class="ink-tb-icon-btn"
+                  [class.active]="svc.searchOpen()"
+                  [attr.aria-pressed]="svc.searchOpen()"
+                  aria-label="Find and replace"
+                  matTooltip="Find and replace (Ctrl+F)"
+                  (click)="svc.searchOpen() ? svc.closeSearch() : svc.openSearch()">
+            <mat-icon>search</mat-icon>
+          </button>
+        }
         <button type="button"
                 class="ink-tb-icon-btn"
                 aria-label="Revision history"
@@ -948,6 +1028,33 @@ import {
     }
 
 
+    /* Highlight button: a bar under the icon shows the current color */
+    .highlight-trigger-btn {
+      position: relative;
+
+      .highlight-indicator-bar {
+        position: absolute;
+        bottom: 4px;
+        left: 8px;
+        right: 8px;
+        height: 3px;
+        border-radius: 2px;
+      }
+    }
+
+    /* Alignment dropdown: current alignment icon plus a caret */
+    .ink-tb-align-btn {
+      width: auto;
+      padding: 0 2px 0 6px;
+      gap: 0;
+
+      .caret {
+        width: 16px;
+        font-size: 16px;
+        opacity: 0.7;
+      }
+    }
+
     /* Typography helper classes for menu items */
     .heading-h1 { font-size: 15px; font-weight: 700; }
     .heading-h2 { font-size: 14px; font-weight: 600; }
@@ -962,6 +1069,9 @@ export class Toolbar implements OnDestroy {
   protected readonly svc = inject(EditorService);
   protected readonly themeService = inject(ThemeService);
   protected readonly textColors: ColorSwatch[] = TEXT_COLORS;
+  protected readonly highlightColors: ColorSwatch[] = HIGHLIGHT_COLORS;
+  protected readonly alignOptions = TEXT_ALIGN_OPTIONS;
+  protected readonly alignIcon = textAlignIcon;
   protected readonly emojis: string[] = COMMON_EMOJIS;
 
   protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');

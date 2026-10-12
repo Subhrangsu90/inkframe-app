@@ -5,7 +5,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/core';
+import {
+  EditorService,
+  HIGHLIGHT_COLORS,
+  TEXT_ALIGN_OPTIONS,
+  TEXT_COLORS,
+  focusLinkInput,
+  textAlignIcon,
+} from '@inkframe-ui/editor/core';
 
 @Component({
   selector: 'ink-floating-menu',
@@ -96,6 +103,31 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
           </button>
         }
 
+        <!-- Highlight -->
+        @if (svc.hasExtension('highlight')) {
+          <button mat-icon-button
+                  #highlightTrigger="matMenuTrigger"
+                  aria-label="Highlight color"
+                  matTooltip="Highlight (Ctrl+Alt+H)"
+                  [disabled]="svc.isCode()"
+                  [class.active]="highlightTrigger.menuOpen || !!svc.currentHighlight()"
+                  [matMenuTriggerFor]="floatingHighlightMenu">
+            <mat-icon>format_ink_highlighter</mat-icon>
+          </button>
+        }
+
+        <!-- Alignment -->
+        @if (svc.hasExtension('text_align') && svc.textAlign()) {
+          <button mat-icon-button
+                  #alignTrigger="matMenuTrigger"
+                  aria-label="Text alignment"
+                  matTooltip="Alignment"
+                  [class.active]="alignTrigger.menuOpen || svc.textAlign() !== 'left'"
+                  [matMenuTriggerFor]="floatingAlignMenu">
+            <mat-icon>{{ alignIcon(svc.textAlign()) }}</mat-icon>
+          </button>
+        }
+
         <!-- Link -->
         @if (svc.hasExtension('link')) {
           <button mat-icon-button
@@ -166,6 +198,49 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
           Remove color
         </button>
       </div>
+    </mat-menu>
+
+    <!-- Highlight Menu -->
+    <mat-menu #floatingHighlightMenu="matMenu">
+      <div class="ink-color-popover" (click)="$event.stopPropagation()">
+        <div class="ink-color-title">Highlight</div>
+        <div class="ink-color-grid ink-highlight-grid">
+          @for (c of highlightColors; track c.value) {
+            <button type="button"
+                    class="ink-color-swatch light"
+                    [class.active]="svc.currentHighlight() === c.value"
+                    [style.background-color]="c.value"
+                    [attr.title]="c.name"
+                    [attr.aria-label]="c.name + ' highlight'"
+                    (mousedown)="$event.preventDefault()"
+                    (click)="svc.setHighlight(c.value)">
+              @if (svc.currentHighlight() === c.value) {
+                <mat-icon class="swatch-check">check</mat-icon>
+              }
+            </button>
+          }
+        </div>
+        <button type="button"
+                class="ink-remove-color-btn"
+                (mousedown)="$event.preventDefault()"
+                (click)="svc.removeHighlight()">
+          Remove highlight
+        </button>
+      </div>
+    </mat-menu>
+
+    <!-- Alignment Menu -->
+    <mat-menu #floatingAlignMenu="matMenu" class="ink-toolbar-mat-menu">
+      @for (option of alignOptions; track option.value) {
+        <button mat-menu-item
+                [class.selected]="svc.textAlign() === option.value"
+                (mousedown)="$event.preventDefault()"
+                (click)="svc.setTextAlign(option.value)">
+          <mat-icon>{{ option.icon }}</mat-icon>
+          <span class="menu-item-text">{{ option.label }}</span>
+          <span class="menu-shortcut">{{ option.shortcut }}</span>
+        </button>
+      }
     </mat-menu>
 
     <!-- Link Popover Menu -->
@@ -273,7 +348,12 @@ import { EditorService, TEXT_COLORS, focusLinkInput } from '@inkframe-ui/editor/
 export class FloatingMenu {
   protected readonly svc = inject(EditorService);
   protected readonly textColors = TEXT_COLORS;
+  protected readonly highlightColors = HIGHLIGHT_COLORS;
+  protected readonly alignOptions = TEXT_ALIGN_OPTIONS;
+  protected readonly alignIcon = textAlignIcon;
   protected readonly colorTrigger = viewChild<MatMenuTrigger>('colorTrigger');
+  protected readonly highlightTrigger = viewChild<MatMenuTrigger>('highlightTrigger');
+  protected readonly alignTrigger = viewChild<MatMenuTrigger>('alignTrigger');
   protected readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
   protected linkUrl = '';
   private handledLinkRequests = this.svc.linkEditorRequests();
@@ -282,6 +362,8 @@ export class FloatingMenu {
     effect(() => {
       if (!this.svc.floatingMenu()) {
         this.colorTrigger()?.closeMenu();
+        this.highlightTrigger()?.closeMenu();
+        this.alignTrigger()?.closeMenu();
         this.linkTrigger()?.closeMenu();
       }
     });

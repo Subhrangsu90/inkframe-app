@@ -179,6 +179,49 @@
     margin: 1.75rem 0;
   }
 
+  // Highlight colors are light pastels: the text on them is always dark, so it
+  // stays readable in the dark theme too (and matches exported HTML, where
+  // browsers draw <mark> text black).
+  mark {
+    color: #1b1b1f;
+    border-radius: 3px;
+    padding: 0.05em 0.1em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+
+    a,
+    code {
+      color: inherit;
+    }
+  }
+
+  // Empty document placeholder (placeholderPlugin).
+  p.ink-placeholder::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--ink-text-muted);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &.ProseMirror-preview p.ink-placeholder::before {
+    content: none;
+  }
+
+  // Find and replace matches (searchPlugin).
+  .ink-search-match {
+    background-color: var(--ink-search-match-bg);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px var(--ink-search-match-bg);
+  }
+
+  .ink-search-match-current {
+    background-color: var(--ink-search-current-bg);
+    box-shadow: 0 0 0 1px var(--ink-search-current-ring);
+    color: #1b1b1f;
+  }
+
   .tableWrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;

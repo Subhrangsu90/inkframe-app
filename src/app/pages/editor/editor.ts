@@ -32,7 +32,7 @@ import {
   schema,
 } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../../shared/layout/layout.service';
-import { DocumentManager, extractDocTitle, extractDocWordCount } from '../../core/document-manager';
+import { DocumentManager, extractDocTitle } from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import { InkIcon } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
@@ -120,7 +120,6 @@ export class EditorView implements OnInit {
   readonly docTitle = signal<string>('Welcome to Inkframe');
   readonly currentStoredDoc = signal<StoredDoc | null>(null);
   readonly saveStatus = signal<'saved' | 'saving'>('saved');
-  readonly wordCount = signal<number>(0);
 
   // Plugin preset system
   readonly activePreset = signal<PluginPreset>('starter-kit');
@@ -200,7 +199,6 @@ export class EditorView implements OnInit {
       this.layout.setActiveDocId(docId);
       this.currentStoredDoc.set(doc);
       this.docTitle.set(extractDocTitle(doc));
-      this.wordCount.set(extractDocWordCount(doc));
     } catch (e) {
       if (token !== this.loadToken) return;
       console.warn('Failed to load document:', e);
@@ -228,7 +226,6 @@ export class EditorView implements OnInit {
     if (title && title !== 'Untitled Document') {
       this.docTitle.set(title);
     }
-    this.wordCount.set(extractDocWordCount(doc));
 
     const id = this.currentDocId();
     await this.docManager.saveDoc(id, doc, this.docTitle());

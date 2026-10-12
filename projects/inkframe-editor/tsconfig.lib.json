@@ -14,5 +14,5 @@
     "toolbar/**/*.ts",
     "extensions/**/*.ts"
   ],
-  "exclude": ["**/*.spec.ts"]
+  "exclude": ["**/*.spec.ts", "**/*.fixtures.ts"]
 }

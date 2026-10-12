@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
+import { SCHEMA_VERSION, StoredDoc, countWords, imageStorage } from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
 
 export type { StoredDoc };
@@ -71,18 +71,10 @@ export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180
   }
 }
 
+/** Counted like the editor's status bar, so library cards and the editor agree. */
 export function extractDocWordCount(stored: StoredDoc): number {
   try {
-    function getText(node: any): string {
-      if (!node) return '';
-      if (node.text) return node.text;
-      if (Array.isArray(node.content)) {
-        return node.content.map(getText).join(' ');
-      }
-      return '';
-    }
-    const fullText = getText(stored?.doc);
-    return fullText.trim() ? fullText.trim().split(/\s+/).length : 0;
+    return countWords(plainText(stored?.doc));
   } catch {
     return 0;
   }
@@ -252,7 +244,7 @@ export class DocumentManager {
     const id = 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const docTitle = title || 'Untitled Document';
     const doc: StoredDoc = initialDoc || {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       doc: {
         type: 'doc',
         content: [
@@ -324,7 +316,7 @@ export class DocumentManager {
     const cloned: StoredDoc = original
       ? JSON.parse(JSON.stringify(original))
       : {
-          schemaVersion: 1,
+          schemaVersion: SCHEMA_VERSION,
           doc: {
             type: 'doc',
             content: [

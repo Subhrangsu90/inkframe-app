@@ -1,4 +1,9 @@
-export const SCHEMA_VERSION = 1;
+/**
+ * Version history:
+ * - 1: initial schema.
+ * - 2: `highlight` mark; `align` attribute on paragraphs and headings.
+ */
+export const SCHEMA_VERSION = 2;
 
 /** The envelope that is saved to your database. */
 export interface StoredDoc {
@@ -10,7 +15,10 @@ type Migration = (doc: any) => any;
 
 /** migrations[n] upgrades a document from version n to n + 1. */
 const migrations: Record<number, Migration> = {
-  // 1: (doc) => renameNode(doc, 'old_name', 'new_name'),
+  // Only additions: version 1 documents are valid version 2 documents. The
+  // bump makes older app versions refuse version 2 documents with a clear
+  // "newer schema" error instead of failing on an unknown mark.
+  1: (doc) => doc,
 };
 
 export function migrate(stored: StoredDoc): unknown {

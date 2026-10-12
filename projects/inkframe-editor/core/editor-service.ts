@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { Command, EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { MarkType, NodeType, Schema } from 'prosemirror-model';
+import { MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
 import {
   redo,
@@ -17,9 +17,28 @@ import {
   undoDepth,
 } from 'prosemirror-history';
 
-import { CalloutKind } from './schema';
+import { CalloutKind, TextAlign } from './schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
-import { clearFormattingCommand, toggleListCommand } from './plugins';
+import {
+  clearFormattingCommand,
+  removeHighlightCommand,
+  setBlockTypeKeepingAlign,
+  setHighlightCommand,
+  setTextAlignCommand,
+  textAlignAt,
+  toggleHighlightCommand,
+  toggleListCommand,
+} from './plugins';
+import {
+  findNextCommand,
+  findPreviousCommand,
+  getSearchState,
+  replaceAllCommand,
+  replaceCurrentCommand,
+  setSearchQueryCommand,
+} from './search.plugin';
+import { DocStats, countWords, docStats, docText } from './doc-stats';
+import { htmlHasText } from './paste-cleanup';
 import {
   EditorHooks,
   FloatingMenuState,
@@ -61,6 +80,16 @@ export interface MountOptions {
 
 const sameBlock = (a: BlockInfo, b: BlockInfo) =>
   a.type === b.type && a.level === b.level && a.list === b.list;
+
+/** Floating items the floating menu renders itself, so it must not repeat them. */
+const BUILT_IN_FLOATING_ITEMS = new Set(['bold', 'italic', 'underline', 'strike', 'code', 'link']);
+
+const EMPTY_STATS: DocStats = { words: 0, characters: 0, readingMinutes: 0 };
+
+export interface SelectionRange {
+  from: number;
+  to: number;
+}
 
 export interface ImagePreviewData {
   src: string;
@@ -140,7 +169,9 @@ export class EditorService implements EditorHooks {
   );
 
   readonly customFloatingItems = computed(() =>
-    this.extensionManager().getFloatingItems(),
+    this.extensionManager()
+      .getFloatingItems()
+      .filter((item) => !BUILT_IN_FLOATING_ITEMS.has(item.id)),
   );
 
   // ── UI-facing state ──────────────────────────────────────────────
@@ -154,6 +185,10 @@ export class EditorService implements EditorHooks {
   readonly isSuperscript = signal(false);
   readonly isSmall = signal(false);
   readonly currentColor = signal<string | null>(null);
+  /** Highlight color of the selection, or null when it has none. */
+  readonly currentHighlight = signal<string | null>(null);
+  /** Alignment of the block at the cursor; null where blocks cannot be aligned (code blocks). */
+  readonly textAlign = signal<TextAlign | null>('left');
   readonly block = signal<BlockInfo>(
     { type: 'paragraph', level: null, list: null },
     { equal: sameBlock },
@@ -161,6 +196,36 @@ export class EditorService implements EditorHooks {
   readonly canUndo = signal(false);
   readonly canRedo = signal(false);
   readonly isInTable = signal(false);
+
+  // ── Document statistics ──────────────────────────────────────────
+  /** The current document; replaced (never mutated) on every change. */
+  readonly doc = signal<PMNode | null>(null);
+  readonly selection = signal<SelectionRange>(
+    { from: 0, to: 0 },
+    { equal: (a, b) => a.from === b.from && a.to === b.to },
+  );
+  /** Words, characters and reading time. Computed lazily, when something reads it. */
+  readonly stats = computed(() => {
+    const doc = this.doc();
+    return doc ? docStats(doc) : EMPTY_STATS;
+  });
+  /** Words in the selection, or null when nothing is selected. */
+  readonly selectionWords = computed(() => {
+    const doc = this.doc();
+    const { from, to } = this.selection();
+    return doc && from !== to ? countWords(docText(doc, from, to)) : null;
+  });
+
+  // ── Find and replace ─────────────────────────────────────────────
+  readonly searchOpen = signal(false);
+  readonly searchReplaceVisible = signal(false);
+  /** Incremented to move focus to the find field (the panel reacts to it). */
+  readonly searchFocusRequests = signal(0);
+  readonly searchQuery = signal('');
+  readonly searchCaseSensitive = signal(false);
+  readonly searchMatchCount = signal(0);
+  /** Index of the current match, or -1. */
+  readonly searchCurrent = signal(-1);
 
   readonly imagePreview = signal<ImagePreviewData | null>(null);
   readonly openHistoryRequested = signal<number>(0);
@@ -247,8 +312,14 @@ export class EditorService implements EditorHooks {
         'aria-label': 'Document editor',
       },
       nodeViews: this.extensionManager().buildNodeViews(),
-      handlePaste: (_view, event) =>
-        this.handleImageFiles(event, event.clipboardData?.files),
+      handlePaste: (_view, event) => {
+        const data = event.clipboardData;
+        // Word, Excel and others also put a picture of the copied text on
+        // the clipboard. Paste the text then; take the file only when the
+        // HTML is just an image (e.g. "Copy image" in a browser).
+        if (htmlHasText(data?.getData('text/html') ?? '')) return false;
+        return this.handleImageFiles(event, data?.files);
+      },
       handleDrop: (_view, event) =>
         this.handleImageFiles(event, event.dataTransfer?.files),
       dispatchTransaction(this: EditorView, tr) {
@@ -300,6 +371,7 @@ export class EditorService implements EditorHooks {
     const state = this.createState(stored, v.state.plugins);
     this.currentDocSnapshot = stored;
     v.updateState(state);
+    this.searchOpen.set(false); // matches belonged to the previous document
     this.syncSignals(state);
   }
 
@@ -313,6 +385,11 @@ export class EditorService implements EditorHooks {
         this.floatingMenu.set(null);
         this.slashMenu.set(null);
         this.tableMenu.set(null);
+        if (this.searchOpen()) {
+          this.searchOpen.set(false);
+          const v = this.view;
+          setSearchQueryCommand('', { caseSensitive: this.searchCaseSensitive() })(v.state, v.dispatch);
+        }
       }
     }
   }
@@ -376,6 +453,31 @@ export class EditorService implements EditorHooks {
       }
     }
     this.currentColor.set(color);
+
+    const highlightMark = state.schema.marks['highlight'];
+    let highlight: string | null = null;
+    if (highlightMark) {
+      if (empty) {
+        const mark = highlightMark.isInSet(state.storedMarks ?? $from.marks());
+        if (mark) highlight = (mark.attrs['color'] as string) ?? null;
+      } else {
+        state.doc.nodesBetween(from, to, (node) => {
+          const mark = highlightMark.isInSet(node.marks);
+          if (mark) highlight = (mark.attrs['color'] as string) ?? null;
+        });
+      }
+    }
+    this.currentHighlight.set(highlight);
+    this.textAlign.set(textAlignAt(state));
+
+    this.doc.set(state.doc);
+    this.selection.set({ from, to });
+
+    const search = getSearchState(state);
+    this.searchQuery.set(search?.query ?? '');
+    this.searchCaseSensitive.set(search?.caseSensitive ?? false);
+    this.searchMatchCount.set(search?.matches.length ?? 0);
+    this.searchCurrent.set(search?.current ?? -1);
 
     let list: BlockInfo['list'] = null;
     for (let d = $from.depth; d > 0; d--) {
@@ -552,6 +654,22 @@ export class EditorService implements EditorHooks {
       return true;
     });
   }
+  /** Highlights the selection; inline code cannot be highlighted. */
+  setHighlight(color: string) {
+    if (!this.markType('highlight') || this.isCode()) return;
+    this.run(setHighlightCommand(color));
+  }
+  removeHighlight() {
+    this.run(removeHighlightCommand);
+  }
+  toggleHighlight() {
+    if (!this.markType('highlight') || this.isCode()) return;
+    this.run(toggleHighlightCommand);
+  }
+  /** Aligns the paragraphs and headings in the selection (`left` is the default). */
+  setTextAlign(align: TextAlign) {
+    this.run(setTextAlignCommand(align));
+  }
   clearFormatting() {
     this.run(clearFormattingCommand);
   }
@@ -564,7 +682,7 @@ export class EditorService implements EditorHooks {
 
   paragraph() {
     const paragraph = this.nodeType('paragraph');
-    if (paragraph) this.run(setBlockType(paragraph));
+    if (paragraph) this.run(setBlockTypeKeepingAlign(paragraph));
   }
 
   /** Toggles: pressing H2 while already in an H2 turns it back into a paragraph. */
@@ -575,8 +693,8 @@ export class EditorService implements EditorHooks {
     const b = this.block();
     this.run(
       b.type === 'heading' && b.level === level
-        ? setBlockType(paragraph)
-        : setBlockType(heading, { level }),
+        ? setBlockTypeKeepingAlign(paragraph)
+        : setBlockTypeKeepingAlign(heading, { level }),
     );
   }
 
@@ -790,6 +908,114 @@ export class EditorService implements EditorHooks {
       return true;
     });
     return true;
+  }
+
+  // ── Find and replace ─────────────────────────────────────────────
+  /**
+   * Opens the find panel (with the replace field when `replace` is set) and
+   * moves focus to it. A one-line selection becomes the search text.
+   */
+  openSearch(options: { replace?: boolean } = {}): void {
+    const v = this.view;
+    if (!v || !this.editableFlag || !getSearchState(v.state)) return;
+    const { from, to, empty } = v.state.selection;
+    const selected = empty ? '' : v.state.doc.textBetween(from, to, '\n');
+    if (selected.trim() && !selected.includes('\n') && selected.length <= 200) {
+      this.setSearchQuery(selected);
+    } else if (!this.searchOpen() && this.lastSearchQuery) {
+      // Reopening: search again for the previous text, starting at the cursor.
+      this.setSearchQuery(this.lastSearchQuery);
+    }
+    this.searchOpen.set(true);
+    if (options.replace) this.searchReplaceVisible.set(true);
+    this.searchFocusRequests.update((n) => n + 1);
+  }
+
+  /** Closes the panel, clears the match highlights and returns focus to the document. */
+  closeSearch(): void {
+    if (!this.searchOpen()) return;
+    this.searchOpen.set(false);
+    const v = this.view;
+    if (!v) return;
+    // Clear the highlights; the query is kept for the next openSearch().
+    setSearchQueryCommand('', { caseSensitive: this.searchCaseSensitive() })(v.state, v.dispatch);
+    v.focus();
+  }
+
+  toggleSearchReplace(): void {
+    this.searchReplaceVisible.update((visible) => !visible);
+  }
+
+  private lastSearchQuery = '';
+
+  /** Searches for `query` and selects the first match at or after the cursor. */
+  setSearchQuery(query: string, caseSensitive = this.searchCaseSensitive()): void {
+    this.lastSearchQuery = query;
+    this.dispatchSearch(setSearchQueryCommand(query, { caseSensitive }));
+  }
+
+  findNext(): void {
+    this.dispatchSearch(findNextCommand);
+  }
+
+  findPrevious(): void {
+    this.dispatchSearch(findPreviousCommand);
+  }
+
+  /** Replaces the current match and moves to the next one. */
+  replaceCurrent(replacement: string): void {
+    if (!this.editableFlag) return;
+    this.dispatchSearch(replaceCurrentCommand(replacement));
+  }
+
+  /** Replaces every match in one undoable step. Returns the number replaced. */
+  replaceAll(replacement: string): number {
+    const v = this.view;
+    const count = v ? (getSearchState(v.state)?.matches.length ?? 0) : 0;
+    if (!this.editableFlag || !count) return 0;
+    this.dispatchSearch(replaceAllCommand(replacement));
+    return count;
+  }
+
+  /**
+   * Runs a search command without moving focus into the document (the find
+   * field keeps it), then scrolls the current match into view.
+   */
+  private dispatchSearch(cmd: Command): void {
+    const v = this.view;
+    if (!v) return;
+    cmd(v.state, v.dispatch, v);
+    const search = getSearchState(v.state);
+    const match = search?.matches[search.current];
+    if (match) this.scrollIntoView(match.from);
+  }
+
+  /**
+   * Centres `pos` in the editor's scroll area when it is out of view or under
+   * the find panel. (ProseMirror's own scrollIntoView starts from the DOM
+   * selection, which is in the find field while the panel has focus.)
+   */
+  private scrollIntoView(pos: number): void {
+    const v = this.view;
+    if (!v) return;
+    try {
+      const coords = v.coordsAtPos(pos);
+      const scroller = v.dom.closest<HTMLElement>('.ink-editor-viewport');
+      if (!scroller) {
+        const { node } = v.domAtPos(pos);
+        (node.nodeType === 1 ? (node as Element) : node.parentElement)?.scrollIntoView?.({
+          block: 'center',
+        });
+        return;
+      }
+      const bounds = scroller.getBoundingClientRect();
+      const panelClearance = 96;
+      if (coords.top < bounds.top + panelClearance || coords.bottom > bounds.bottom - 24) {
+        scroller.scrollTop += coords.top - (bounds.top + bounds.height / 2);
+      }
+    } catch {
+      // No layout (e.g. jsdom) or a view being destroyed: nothing to scroll.
+    }
   }
 
   private run(cmd: Command): void {

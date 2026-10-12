@@ -182,25 +182,12 @@
 }
 
 /* ═══════════════════════════════════════════════ */
-/* HEADER RIGHT: Word Count, Share & Export        */
+/* HEADER RIGHT: Share & Export                    */
 /* ═══════════════════════════════════════════════ */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.word-count {
-  display: none;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-text-muted);
-  white-space: nowrap;
-  padding-right: 4px;
-
-  @media (min-width: 900px) {
-    display: inline;
-  }
 }
 
 .share-dropdown-wrap {

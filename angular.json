@@ -24,6 +24,12 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "stylePreprocessorOptions": {
+              "includePaths": [
+                "projects/inkframe-editor/src",
+                "dist/inkframe-editor"
+              ]
+            },
             "assets": [
               {
                 "glob": "**/*",
@@ -32,8 +38,11 @@
             ],
             "styles": [
               "node_modules/prosemirror-view/style/prosemirror.css",
-  "node_modules/prosemirror-gapcursor/style/gapcursor.css",
-  "node_modules/prosemirror-tables/style/tables.css",
+              "node_modules/prosemirror-gapcursor/style/gapcursor.css",
+              "node_modules/prosemirror-tables/style/tables.css",
+              "node_modules/@fontsource-variable/inter/index.css",
+              "node_modules/@fontsource-variable/jetbrains-mono/index.css",
+              "projects/inkframe-editor/src/styles/fonts/icons.css",
               "src/styles.scss"
             ],
             "server": "src/main.server.ts",
@@ -44,9 +53,7 @@
             "ssr": {
               "entry": "src/server.ts"
             },
-            "allowedCommonJsDependencies": [
-              "prismjs"
-            ]
+            "allowedCommonJsDependencies": ["prismjs"]
           },
           "configurations": {
             "production": {
@@ -66,8 +73,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "35kB",
-                  "maximumError": "50kB"
+                  "maximumWarning": "50kB",
+                  "maximumError": "80kB"
                 }
               ],
               "outputHashing": "all"
@@ -94,6 +101,36 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        }
+      }
+    },
+    "inkframe-editor": {
+      "projectType": "library",
+      "root": "projects/inkframe-editor",
+      "sourceRoot": "projects/inkframe-editor/src",
+      "prefix": "ink",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/inkframe-editor/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/inkframe-editor/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/inkframe-editor/tsconfig.spec.json",
+            "include": [
+              "**/*.spec.ts",
+              "../**/*.spec.ts"
+            ]
+          }
         }
       }
     }

@@ -1,0 +1,181 @@
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER LEFT: Document Title & Autosave Badge -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerLeft>
+  <div class="header-doc-meta">
+    <span class="doc-icon-tile"><ink-icon name="file-text" [size]="14" /></span>
+
+    <!-- Editable Doc Title -->
+    @if (isEditingTitle()) {
+      <input
+        #titleInput
+        type="text"
+        [value]="docTitle()"
+        (blur)="onTitleChange(titleInput.value)"
+        (keydown.enter)="onTitleChange(titleInput.value); titleInput.blur()"
+        (keydown.escape)="isEditingTitle.set(false)"
+        class="header-title-input"
+        autofocus
+      />
+    } @else {
+      <button
+        type="button"
+        class="header-title-btn"
+        (click)="isEditingTitle.set(true)"
+        title="Click to rename document"
+      >
+        <span class="title-text">{{ docTitle() }}</span>
+        <ink-icon name="edit" [size]="12" svgClass="edit-icon" />
+      </button>
+    }
+
+    <!-- Live Autosave Status Indicator -->
+    <div class="save-status" [class.saving]="saveStatus() === 'saving'" role="status">
+      <span class="status-dot"></span>
+      <span class="status-label">{{ saveStatus() === 'saving' ? 'Saving…' : 'Saved' }}</span>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER CENTER: Rich Canvas & Preview Tabs     -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerCenter>
+  <div class="header-tabs-group" role="tablist" aria-label="Editor Views">
+    <div class="segmented-pill">
+      <!-- TAB 1: Rich Canvas -->
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeView() === 'rich'"
+        class="tab-btn"
+        [class.active]="activeView() === 'rich'"
+        (click)="setActiveView('rich')"
+        title="Edit the document"
+      >
+        <ink-icon name="edit" [size]="13" />
+        <span>Edit</span>
+      </button>
+
+      <!-- TAB 2: Preview -->
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeView() === 'preview'"
+        class="tab-btn"
+        [class.active]="activeView() === 'preview'"
+        (click)="setActiveView('preview')"
+        title="Preview the document as readers see it"
+      >
+        <ink-icon name="eye" [size]="13" />
+        <span>Preview</span>
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER RIGHT: Word Count, Presets & Export    -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerRight>
+  <div class="header-actions">
+    <!-- Word Count Badge -->
+    <span class="word-count">{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
+
+    <!-- Share Reader Page Link Popover / Button -->
+    <div class="share-dropdown-wrap">
+      <button
+        type="button"
+        class="share-btn"
+        (click)="toggleShareMenu()"
+        title="Share reader page link"
+      >
+        <ink-icon name="share" [size]="13" />
+        <span class="hidden sm:inline">Share</span>
+      </button>
+
+      @if (showShareMenu()) {
+        <!-- Backdrop to close -->
+        <div class="share-popover-backdrop" (click)="showShareMenu.set(false)"></div>
+
+        <div class="share-popover">
+          <div class="share-popover-header">
+            <div class="flex items-center gap-1.5 font-semibold text-xs text-ink-text-heading">
+              <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
+              <span>Share Reader Link</span>
+            </div>
+            <button type="button" class="close-share-btn" (click)="showShareMenu.set(false)" title="Close">
+              <ink-icon name="close" [size]="11" />
+            </button>
+          </div>
+
+          <p class="share-popover-desc">
+            Anyone with this link can view this document anywhere with zero backend or account required.
+          </p>
+
+          <div class="share-link-box">
+            <input
+              type="text"
+              readonly
+              [value]="shareUrl() || 'Generating shareable link...'"
+              class="share-link-input font-mono"
+              #shareInput
+              (click)="shareInput.select()"
+            />
+            <button
+              type="button"
+              class="share-copy-action-btn"
+              (click)="copyReaderLink()"
+              title="Copy link"
+            >
+              <ink-icon name="copy" [size]="12" />
+              <span>Copy</span>
+            </button>
+          </div>
+
+          <div class="share-popover-footer">
+            <a
+              [href]="shareUrl() || ('/s/' + currentDocId())"
+              target="_blank"
+              (click)="showShareMenu.set(false)"
+              class="preview-reader-link"
+              title="Open reader page"
+            >
+              <ink-icon name="external-link" [size]="12" />
+              <span>Open Reader View</span>
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Export Action -->
+    <button
+      type="button"
+      class="export-btn"
+      (click)="exportMarkdown()"
+      title="Export as Markdown (.md)"
+    >
+      <ink-icon name="download" [size]="14" />
+      <span class="hidden sm:inline">Export</span>
+    </button>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- MAIN WORKSPACE VIEW (Rich Canvas / Preview)  -->
+<!-- ═════════════════════════════════════════════ -->
+<div class="editor-workspace-body" [class.is-preview]="activeView() === 'preview'">
+  <div class="view-panel editor-view-panel">
+    <div class="editor-scroll-container">
+      <ink-editor
+        #editorComp
+        [initialDoc]="currentStoredDoc()"
+        [extensions]="extensions()"
+        [editable]="activeView() === 'rich'"
+        [showToolbar]="activeView() === 'rich' && showToolbar()"
+        (changed)="onDocChanged($event)"
+      />
+    </div>
+  </div>
+</div>

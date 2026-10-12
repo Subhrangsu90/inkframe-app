@@ -1,4 +1,4 @@
-import { StoredDoc } from '../editor';
+import { StoredDoc } from '@inkframe-ui/editor/core';
 
 export const WELCOME_DOC: StoredDoc = {
   schemaVersion: 1,
@@ -349,7 +349,7 @@ interface DocumentMeta {
     </main>
   \`
 })
-export class CanvasComponent {
+export class Canvas {
   readonly doc = signal<DocumentMeta>({
     title: 'Inkframe Document Canvas',
     wordCount: 420,

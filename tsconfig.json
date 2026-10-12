@@ -5,6 +5,12 @@
   "compilerOptions": {
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
+    "paths": {
+      "@inkframe-ui/editor": ["./projects/inkframe-editor/src/public-api.ts", "./dist/inkframe-editor"],
+      "@inkframe-ui/editor/core": ["./projects/inkframe-editor/core/index.ts", "./dist/inkframe-editor/core"],
+      "@inkframe-ui/editor/toolbar": ["./projects/inkframe-editor/toolbar/index.ts", "./dist/inkframe-editor/toolbar"],
+      "@inkframe-ui/editor/extensions": ["./projects/inkframe-editor/extensions/index.ts", "./dist/inkframe-editor/extensions"]
+    },
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
@@ -26,6 +32,12 @@
     },
     {
       "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/inkframe-editor/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/inkframe-editor/tsconfig.spec.json"
     }
   ]
 }

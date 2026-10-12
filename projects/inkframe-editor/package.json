@@ -1,0 +1,66 @@
+{
+  "name": "@inkframe-ui/editor",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^22.0.0",
+    "@angular/core": "^22.0.0",
+    "@angular/forms": "^22.0.0",
+    "@angular/material": "^22.0.0",
+    "@angular/cdk": "^22.0.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.16",
+    "markdown-it": "^14.1.0",
+    "prismjs": "^1.30.0",
+    "prosemirror-commands": "^1.7.2",
+    "prosemirror-dropcursor": "^1.8.4",
+    "prosemirror-gapcursor": "^1.4.1",
+    "prosemirror-history": "^1.5.1",
+    "prosemirror-inputrules": "^1.5.1",
+    "prosemirror-keymap": "^1.2.3",
+    "prosemirror-markdown": "^1.13.8",
+    "prosemirror-model": "^1.25.12",
+    "prosemirror-schema-basic": "^1.2.5",
+    "prosemirror-schema-list": "^1.5.1",
+    "prosemirror-state": "^1.4.4",
+    "prosemirror-tables": "^1.8.5",
+    "prosemirror-transform": "^1.12.2",
+    "prosemirror-view": "^1.42.6",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "style": "styles/index.scss",
+  "exports": {
+    "./styles": {
+      "sass": "./styles/index.scss",
+      "style": "./styles/index.scss",
+      "default": "./styles/index.scss"
+    },
+    "./styles/*": {
+      "sass": "./styles/*",
+      "style": "./styles/*",
+      "default": "./styles/*"
+    }
+  },
+  "description": "Modular distraction-free block & Markdown ProseMirror document editor component for Angular",
+  "keywords": [
+    "angular",
+    "editor",
+    "prosemirror",
+    "markdown",
+    "wysiwyg",
+    "rich-text",
+    "block-editor"
+  ],
+  "author": "Inkframe Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Subhrangsu90/inkframe-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Subhrangsu90/inkframe-app/issues"
+  },
+  "homepage": "https://github.com/Subhrangsu90/inkframe-app#readme",
+  "sideEffects": false
+}

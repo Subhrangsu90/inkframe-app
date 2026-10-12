@@ -1,0 +1,192 @@
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER LEFT: Page Title & Count               -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerLeft>
+  <div class="page-heading">
+    <span class="page-icon"><ink-icon name="folder" [size]="14" /></span>
+    <span class="page-title">Documents</span>
+    <span class="count-pill">{{ layout.documents().length }}</span>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER CENTER: Search                         -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerCenter>
+  <label class="docs-search-bar">
+    <ink-icon name="search" [size]="14" class="search-icon" />
+    <input
+      #searchInput
+      type="search"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      (keydown.escape)="searchQuery.set(''); searchInput.blur()"
+      placeholder="Search documents"
+      aria-label="Search documents by title"
+      class="search-input"
+    />
+    @if (searchQuery()) {
+      <button type="button" class="search-clear-btn" (click)="searchQuery.set('')" aria-label="Clear search">
+        <ink-icon name="close" [size]="12" />
+      </button>
+    } @else {
+      <kbd class="search-kbd" aria-hidden="true">/</kbd>
+    }
+  </label>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER RIGHT: View Switch & New Document      -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerRight>
+  <div class="header-actions">
+    <div class="view-switch" role="group" aria-label="Layout">
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="viewMode() === 'grid'"
+        [attr.aria-pressed]="viewMode() === 'grid'"
+        (click)="setViewMode('grid')"
+        title="Grid"
+      >
+        <ink-icon name="grid" [size]="14" />
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        [class.active]="viewMode() === 'list'"
+        [attr.aria-pressed]="viewMode() === 'list'"
+        (click)="setViewMode('list')"
+        title="List"
+      >
+        <ink-icon name="list" [size]="14" />
+      </button>
+    </div>
+
+    <button type="button" class="new-doc-btn" (click)="createNewDoc()">
+      <ink-icon name="plus" [size]="14" [strokeWidth]="2.25" />
+      <span class="hidden sm:inline">New document</span>
+    </button>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- BODY                                          -->
+<!-- ═════════════════════════════════════════════ -->
+<div class="docs-body ink-scrollbar">
+  <div class="docs-container">
+    @if (!searchQuery()) {
+      <section class="docs-section" aria-labelledby="templates-heading">
+        <div class="section-head">
+          <h2 id="templates-heading" class="section-title">Start from a template</h2>
+        </div>
+        <div class="templates-grid">
+          @for (tpl of templates; track tpl.id) {
+            <button type="button" class="template-card" (click)="createFromTemplate(tpl)">
+              <span class="template-icon"><ink-icon [name]="tpl.icon" [size]="16" /></span>
+              <span class="template-text">
+                <span class="template-title">{{ tpl.title }}</span>
+                <span class="template-desc">{{ tpl.desc }}</span>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="docs-section" aria-labelledby="docs-heading">
+      <div class="section-head">
+        <h2 id="docs-heading" class="section-title">{{ searchQuery() ? 'Results' : 'Recent' }}</h2>
+        <span class="section-meta">
+          @if (searchQuery()) {
+            {{ filteredDocs().length }} {{ filteredDocs().length === 1 ? 'match' : 'matches' }}
+          } @else {
+            Last edited first
+          }
+        </span>
+      </div>
+
+      @if (filteredDocs().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">
+            <ink-icon [name]="searchQuery() ? 'search' : 'file-text'" [size]="22" />
+          </span>
+          @if (searchQuery()) {
+            <h3 class="empty-title">No documents match “{{ searchQuery() }}”</h3>
+            <p class="empty-desc">Search looks at document titles. Try a shorter or different word.</p>
+            <button type="button" class="secondary-btn" (click)="searchQuery.set('')">Clear search</button>
+          } @else {
+            <h3 class="empty-title">No documents yet</h3>
+            <p class="empty-desc">Create a blank document or start from one of the templates above.</p>
+            <button type="button" class="new-doc-btn" (click)="createNewDoc()">
+              <ink-icon name="plus" [size]="14" [strokeWidth]="2.25" />
+              <span>New document</span>
+            </button>
+          }
+        </div>
+      } @else if (viewMode() === 'grid') {
+        <div class="docs-grid">
+          @for (doc of filteredDocs(); track doc.id) {
+            <article class="doc-card" [class.is-active]="layout.activeDocId() === doc.id">
+              <div class="doc-card-preview" aria-hidden="true">
+                <p class="doc-card-excerpt" [class.is-empty]="!doc.excerpt">
+                  {{ doc.excerpt || 'Empty document' }}
+                </p>
+              </div>
+              <div class="doc-card-body">
+                <h3 class="doc-card-title">
+                  <a [routerLink]="['/doc', doc.id]" class="stretched-link">{{ doc.title }}</a>
+                </h3>
+                <p class="doc-card-meta">
+                  <span>{{ formatTime(doc.updatedAt) }}</span>
+                  <span class="meta-sep" aria-hidden="true"></span>
+                  <span>{{ doc.wordCount }} {{ doc.wordCount === 1 ? 'word' : 'words' }}</span>
+                </p>
+              </div>
+              <div class="doc-actions">
+                <button type="button" class="icon-btn" (click)="shareDocLink(doc.id, $event)" title="Copy share link" aria-label="Copy share link">
+                  <ink-icon name="share" [size]="13" />
+                </button>
+                <button type="button" class="icon-btn" (click)="duplicateDoc(doc.id, $event)" title="Duplicate" aria-label="Duplicate">
+                  <ink-icon name="copy" [size]="13" />
+                </button>
+                <button type="button" class="icon-btn danger" (click)="deleteDoc(doc.id, $event)" title="Delete" aria-label="Delete">
+                  <ink-icon name="trash" [size]="13" />
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="docs-list">
+          @for (doc of filteredDocs(); track doc.id) {
+            <article class="doc-row" [class.is-active]="layout.activeDocId() === doc.id">
+              <span class="doc-row-icon" aria-hidden="true"><ink-icon name="file-text" [size]="15" /></span>
+              <div class="doc-row-main">
+                <h3 class="doc-row-title">
+                  <a [routerLink]="['/doc', doc.id]" class="stretched-link">{{ doc.title }}</a>
+                </h3>
+                @if (doc.excerpt) {
+                  <p class="doc-row-excerpt">{{ doc.excerpt }}</p>
+                }
+              </div>
+              <span class="doc-row-words">{{ doc.wordCount }} {{ doc.wordCount === 1 ? 'word' : 'words' }}</span>
+              <span class="doc-row-time">{{ formatTime(doc.updatedAt) }}</span>
+              <div class="doc-actions">
+                <button type="button" class="icon-btn" (click)="shareDocLink(doc.id, $event)" title="Copy share link" aria-label="Copy share link">
+                  <ink-icon name="share" [size]="13" />
+                </button>
+                <button type="button" class="icon-btn" (click)="duplicateDoc(doc.id, $event)" title="Duplicate" aria-label="Duplicate">
+                  <ink-icon name="copy" [size]="13" />
+                </button>
+                <button type="button" class="icon-btn danger" (click)="deleteDoc(doc.id, $event)" title="Delete" aria-label="Delete">
+                  <ink-icon name="trash" [size]="13" />
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

@@ -1,9 +1,5 @@
 import DOMPurify from 'dompurify';
-import {
-  DOMParser as PMDOMParser,
-  DOMSerializer,
-  Node as PMNode,
-} from 'prosemirror-model';
+import { DOMParser as PMDOMParser, DOMSerializer, Node as PMNode } from 'prosemirror-model';
 import { schema } from '../schema';
 
 import { highlightCodeInHtml } from '../highlight.plugin';
@@ -29,16 +25,11 @@ export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, { ...DOMPURIFY_CONFIG, ADD_ATTR: ['target'] });
 }
 
-export function docToHtml(
-  doc: PMNode,
-  options?: { highlightCode?: boolean },
-): string {
+export function docToHtml(doc: PMNode, options?: { highlightCode?: boolean }): string {
   if (typeof document === 'undefined') {
     return '';
   }
-  const fragment = DOMSerializer.fromSchema(schema).serializeFragment(
-    doc.content,
-  );
+  const fragment = DOMSerializer.fromSchema(schema).serializeFragment(doc.content);
   const div = document.createElement('div');
   div.appendChild(fragment);
   const rawHtml = div.innerHTML;

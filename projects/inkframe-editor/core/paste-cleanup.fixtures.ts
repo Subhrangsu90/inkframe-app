@@ -130,7 +130,10 @@ export const GOOGLE_DOCS_CLIPBOARD =
     ),
   ) +
   span(' and ') +
-  span('highlighted', GDOCS_SPAN.replace('background-color:transparent', 'background-color:#ffff00')) +
+  span(
+    'highlighted',
+    GDOCS_SPAN.replace('background-color:transparent', 'background-color:#ffff00'),
+  ) +
   span('.') +
   '</p><br>' +
   `<ul style="${GDOCS_UL}">` +
@@ -144,7 +147,10 @@ export const GOOGLE_DOCS_CLIPBOARD =
   '</ul>' +
   `<p dir="ltr" style="${GDOCS_P}">` +
   span('E = mc') +
-  span('2', GDOCS_SPAN.replace('vertical-align:baseline', 'vertical-align:super').replace('11pt', '0.6em')) +
+  span(
+    '2',
+    GDOCS_SPAN.replace('vertical-align:baseline', 'vertical-align:super').replace('11pt', '0.6em'),
+  ) +
   span(' and a ') +
   '<a href="https://example.com/" style="text-decoration:none;">' +
   span(

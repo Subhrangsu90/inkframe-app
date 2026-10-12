@@ -19,7 +19,10 @@ import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
 const { nodes, marks } = schema;
 const text = (t: string, m: ReturnType<typeof marks.highlight.create>[] = []) => schema.text(t, m);
 const p = (content: string | PMNode[] = [], align: string | null = null) =>
-  nodes['paragraph'].create({ align }, typeof content === 'string' ? (content ? [text(content)] : []) : content);
+  nodes['paragraph'].create(
+    { align },
+    typeof content === 'string' ? (content ? [text(content)] : []) : content,
+  );
 const h = (level: number, content: string, align: string | null = null) =>
   nodes['heading'].create({ level, align }, [text(content)]);
 const doc = (...content: PMNode[]) => nodes['doc'].create(null, content);
@@ -37,7 +40,9 @@ function run(state: EditorState, command: (s: EditorState, d?: any) => boolean):
 
 describe('Highlight mark', () => {
   it('serializes to <mark> with the color and parses back losslessly', () => {
-    const d = doc(p([text('plain '), text('marked', [marks['highlight'].create({ color: '#bbf7d0' })])]));
+    const d = doc(
+      p([text('plain '), text('marked', [marks['highlight'].create({ color: '#bbf7d0' })])]),
+    );
     const html = docToHtml(d);
     // DOM implementations may serialize the style as rgb() and add a semicolon.
     expect(html).toMatch(
@@ -47,8 +52,11 @@ describe('Highlight mark', () => {
   });
 
   it('parses a plain <mark> with the default color and a background span as a highlight', () => {
-    const plain = htmlToDoc('<p><mark>a</mark> <span style="background-color: #fecaca">b</span></p>');
-    const markAt = (pos: number) => plain.nodeAt(pos)!.marks.find((m) => m.type.name === 'highlight');
+    const plain = htmlToDoc(
+      '<p><mark>a</mark> <span style="background-color: #fecaca">b</span></p>',
+    );
+    const markAt = (pos: number) =>
+      plain.nodeAt(pos)!.marks.find((m) => m.type.name === 'highlight');
     expect(markAt(1)?.attrs['color']).toBe(DEFAULT_HIGHLIGHT_COLOR);
     expect(markAt(3)?.attrs['color']).toMatch(/#fecaca|rgb\(254, 202, 202\)/);
   });
@@ -68,7 +76,11 @@ describe('Highlight mark', () => {
   });
 
   it('never writes unsafe colors into the style attribute', () => {
-    const d = doc(p([text('x', [marks['highlight'].create({ color: 'red; background:url(https://t.example)' })])]));
+    const d = doc(
+      p([
+        text('x', [marks['highlight'].create({ color: 'red; background:url(https://t.example)' })]),
+      ]),
+    );
     const html = docToHtml(d);
     expect(html).not.toContain('url(');
     expect(html).toContain(`data-color="${DEFAULT_HIGHLIGHT_COLOR}"`);
@@ -95,7 +107,13 @@ describe('Highlight mark', () => {
   });
 
   it('round-trips through Markdown as <mark> and reads ==text==', () => {
-    const d = doc(p([text('a '), text('marked', [marks['highlight'].create({ color: '#e9d5ff' })]), text(' b')]));
+    const d = doc(
+      p([
+        text('a '),
+        text('marked', [marks['highlight'].create({ color: '#e9d5ff' })]),
+        text(' b'),
+      ]),
+    );
     const md = docToMarkdown(d);
     expect(md).toBe('a <mark style="background-color: #e9d5ff">marked</mark> b');
     expect(markdownToDoc(md).eq(d)).toBe(true);
@@ -119,7 +137,9 @@ describe('Text alignment', () => {
     expect(html).toContain('<p>Default</p>');
     expect(htmlToDoc(html).eq(d)).toBe(true);
 
-    const legacy = htmlToDoc('<p align="right">r</p><p style="text-align: left">l</p><p style="text-align:-webkit-center">c</p>');
+    const legacy = htmlToDoc(
+      '<p align="right">r</p><p style="text-align: left">l</p><p style="text-align:-webkit-center">c</p>',
+    );
     expect(legacy.child(0).attrs['align']).toBe('right');
     expect(legacy.child(1).attrs['align']).toBeNull(); // left is the default
     expect(legacy.child(2).attrs['align']).toBe('center');
@@ -128,7 +148,13 @@ describe('Text alignment', () => {
   it('never writes unknown alignment values into the style attribute', () => {
     const d = schema.nodeFromJSON({
       type: 'doc',
-      content: [{ type: 'paragraph', attrs: { align: 'center; background:url(x)' }, content: [{ type: 'text', text: 'x' }] }],
+      content: [
+        {
+          type: 'paragraph',
+          attrs: { align: 'center; background:url(x)' },
+          content: [{ type: 'text', text: 'x' }],
+        },
+      ],
     });
     expect(docToHtml(d)).toBe('<p>x</p>');
   });
@@ -136,7 +162,11 @@ describe('Text alignment', () => {
   it('aligns every paragraph and heading in the selection, and resets with left', () => {
     let state = stateWith(doc(h(2, 'One'), p('Two'), p('Three')), 2, 8);
     state = run(state, setTextAlignCommand('center'));
-    expect([0, 1, 2].map((i) => state.doc.child(i).attrs['align'])).toEqual(['center', 'center', null]);
+    expect([0, 1, 2].map((i) => state.doc.child(i).attrs['align'])).toEqual([
+      'center',
+      'center',
+      null,
+    ]);
     expect(textAlignAt(state)).toBe('center');
 
     state = run(state, setTextAlignCommand('left'));
@@ -151,12 +181,17 @@ describe('Text alignment', () => {
     expect(textAlignAt(codeState)).toBeNull();
 
     const cell = (t: string) => nodes['table_cell'].create(null, [p(t)]);
-    const table = nodes['table'].create(null, [nodes['table_row'].create(null, [cell('a'), cell('b')])]);
+    const table = nodes['table'].create(null, [
+      nodes['table_row'].create(null, [cell('a'), cell('b')]),
+    ]);
     let state = EditorState.create({ schema, doc: doc(table) });
     state = state.apply(state.tr.setSelection(CellSelection.create(state.doc, 2, 7)));
     state = run(state, setTextAlignCommand('right'));
     const row = state.doc.child(0).child(0);
-    expect([row.child(0).child(0).attrs['align'], row.child(1).child(0).attrs['align']]).toEqual(['right', 'right']);
+    expect([row.child(0).child(0).attrs['align'], row.child(1).child(0).attrs['align']]).toEqual([
+      'right',
+      'right',
+    ]);
   });
 
   it('keeps the alignment when a paragraph becomes a heading and back', () => {
@@ -185,9 +220,21 @@ describe('Text alignment', () => {
 
   it('round-trips through Markdown with <div align> wrappers, also inside quotes, lists and callouts', () => {
     const quote = nodes['blockquote'].create(null, [p('Quoted', 'right')]);
-    const list = nodes['bullet_list'].create(null, [nodes['list_item'].create(null, [p('Item', 'center')])]);
-    const callout = nodes['callout'].create({ type: 'warning' }, [p('Careful', 'justify'), p('Plain')]);
-    const d = doc(h(1, 'Title', 'center'), p([text('With '), text('bold', [marks['strong'].create()])], 'right'), quote, list, callout, p('End'));
+    const list = nodes['bullet_list'].create(null, [
+      nodes['list_item'].create(null, [p('Item', 'center')]),
+    ]);
+    const callout = nodes['callout'].create({ type: 'warning' }, [
+      p('Careful', 'justify'),
+      p('Plain'),
+    ]);
+    const d = doc(
+      h(1, 'Title', 'center'),
+      p([text('With '), text('bold', [marks['strong'].create()])], 'right'),
+      quote,
+      list,
+      callout,
+      p('End'),
+    );
 
     const md = docToMarkdown(d);
     expect(md).toContain('<div align="center">\n\n# Title\n\n</div>');
@@ -210,7 +257,10 @@ describe('Schema version 2', () => {
         type: 'doc',
         content: [
           { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Old' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'Body', marks: [{ type: 'strong' }] }] },
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Body', marks: [{ type: 'strong' }] }],
+          },
         ],
       },
     };

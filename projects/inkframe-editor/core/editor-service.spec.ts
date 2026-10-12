@@ -16,7 +16,11 @@ import {
 import { createExtension } from './extension-types';
 import { taskItemRule } from './input-rules';
 import { SCHEMA_VERSION, StoredDoc } from './migrations';
-import { GOOGLE_DOCS_CLIPBOARD, IMAGE_ONLY_CLIPBOARD, WORD_CLIPBOARD } from './paste-cleanup.fixtures';
+import {
+  GOOGLE_DOCS_CLIPBOARD,
+  IMAGE_ONLY_CLIPBOARD,
+  WORD_CLIPBOARD,
+} from './paste-cleanup.fixtures';
 
 function createService(): EditorService {
   const injector = Injector.create({
@@ -152,7 +156,11 @@ describe('EditorService with the extension-built schema', () => {
     expect(svc.linkEditorRequests()).toBe(1);
   });
 
-  function press(view: EditorView, key: string, mods: { ctrl?: boolean; shift?: boolean; alt?: boolean } = {}) {
+  function press(
+    view: EditorView,
+    key: string,
+    mods: { ctrl?: boolean; shift?: boolean; alt?: boolean } = {},
+  ) {
     const event = new KeyboardEvent('keydown', {
       key,
       ctrlKey: !!mods.ctrl,
@@ -332,7 +340,10 @@ describe('EditorService with the extension-built schema', () => {
     const file = new File(['png'], 'image.png', { type: 'image/png' });
     const pasteEvent = (html: string) =>
       ({
-        clipboardData: { getData: (type: string) => (type === 'text/html' ? html : ''), files: [file] },
+        clipboardData: {
+          getData: (type: string) => (type === 'text/html' ? html : ''),
+          files: [file],
+        },
         preventDefault: vi.fn(),
       }) as unknown as ClipboardEvent;
 
@@ -346,7 +357,10 @@ describe('EditorService with the extension-built schema', () => {
   });
 
   it('cleans pasted HTML through the paste cleanup extension', () => {
-    const view = mount({ schemaVersion: SCHEMA_VERSION, doc: { type: 'doc', content: [{ type: 'paragraph' }] } });
+    const view = mount({
+      schemaVersion: SCHEMA_VERSION,
+      doc: { type: 'doc', content: [{ type: 'paragraph' }] },
+    });
     view.pasteHTML(GOOGLE_DOCS_CLIPBOARD, new Event('paste') as ClipboardEvent);
     const types = new Set<string>();
     view.state.doc.descendants((n) => {

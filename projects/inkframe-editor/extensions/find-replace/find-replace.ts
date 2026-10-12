@@ -22,58 +22,75 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (svc.searchOpen()) {
-      <div class="ink-find" role="search" aria-label="Find and replace" (keydown)="onKeydown($event)">
+      <div
+        class="ink-find"
+        role="search"
+        aria-label="Find and replace"
+        (keydown)="onKeydown($event)"
+      >
         <div class="ink-find-row">
-          <button type="button"
-                  class="ink-find-btn"
-                  [attr.aria-expanded]="svc.searchReplaceVisible()"
-                  aria-label="Show replace"
-                  matTooltip="Replace (Ctrl+H)"
-                  (click)="svc.toggleSearchReplace()">
+          <button
+            type="button"
+            class="ink-find-btn"
+            [attr.aria-expanded]="svc.searchReplaceVisible()"
+            aria-label="Show replace"
+            matTooltip="Replace (Ctrl+H)"
+            (click)="svc.toggleSearchReplace()"
+          >
             <mat-icon>{{ svc.searchReplaceVisible() ? 'expand_more' : 'chevron_right' }}</mat-icon>
           </button>
           <div class="ink-find-field">
-            <input #findInput
-                   class="ink-find-input"
-                   type="text"
-                   placeholder="Find"
-                   aria-label="Find"
-                   autocomplete="off"
-                   spellcheck="false"
-                   [value]="svc.searchQuery()"
-                   (input)="onQuery(findInput.value)">
+            <input
+              #findInput
+              class="ink-find-input"
+              type="text"
+              placeholder="Find"
+              aria-label="Find"
+              autocomplete="off"
+              spellcheck="false"
+              [value]="svc.searchQuery()"
+              (input)="onQuery(findInput.value)"
+            />
             <span class="ink-find-count" aria-live="polite">{{ status() }}</span>
           </div>
-          <button type="button"
-                  class="ink-find-btn"
-                  [class.active]="svc.searchCaseSensitive()"
-                  [attr.aria-pressed]="svc.searchCaseSensitive()"
-                  aria-label="Match case"
-                  matTooltip="Match case (Alt+C)"
-                  (click)="toggleCaseSensitive()">
+          <button
+            type="button"
+            class="ink-find-btn"
+            [class.active]="svc.searchCaseSensitive()"
+            [attr.aria-pressed]="svc.searchCaseSensitive()"
+            aria-label="Match case"
+            matTooltip="Match case (Alt+C)"
+            (click)="toggleCaseSensitive()"
+          >
             <mat-icon>match_case</mat-icon>
           </button>
-          <button type="button"
-                  class="ink-find-btn"
-                  [disabled]="!svc.searchMatchCount()"
-                  aria-label="Previous match"
-                  matTooltip="Previous (Shift+Enter)"
-                  (click)="previous()">
+          <button
+            type="button"
+            class="ink-find-btn"
+            [disabled]="!svc.searchMatchCount()"
+            aria-label="Previous match"
+            matTooltip="Previous (Shift+Enter)"
+            (click)="previous()"
+          >
             <mat-icon>keyboard_arrow_up</mat-icon>
           </button>
-          <button type="button"
-                  class="ink-find-btn"
-                  [disabled]="!svc.searchMatchCount()"
-                  aria-label="Next match"
-                  matTooltip="Next (Enter)"
-                  (click)="next()">
+          <button
+            type="button"
+            class="ink-find-btn"
+            [disabled]="!svc.searchMatchCount()"
+            aria-label="Next match"
+            matTooltip="Next (Enter)"
+            (click)="next()"
+          >
             <mat-icon>keyboard_arrow_down</mat-icon>
           </button>
-          <button type="button"
-                  class="ink-find-btn"
-                  aria-label="Close find and replace"
-                  matTooltip="Close (Esc)"
-                  (click)="svc.closeSearch()">
+          <button
+            type="button"
+            class="ink-find-btn"
+            aria-label="Close find and replace"
+            matTooltip="Close (Esc)"
+            (click)="svc.closeSearch()"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </div>
@@ -81,26 +98,32 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
         @if (svc.searchReplaceVisible()) {
           <div class="ink-find-row ink-replace-row">
             <div class="ink-find-field">
-              <input #replaceInput
-                     class="ink-find-input"
-                     type="text"
-                     placeholder="Replace with"
-                     aria-label="Replace with"
-                     autocomplete="off"
-                     spellcheck="false"
-                     [value]="replacement()"
-                     (input)="replacement.set(replaceInput.value)">
+              <input
+                #replaceInput
+                class="ink-find-input"
+                type="text"
+                placeholder="Replace with"
+                aria-label="Replace with"
+                autocomplete="off"
+                spellcheck="false"
+                [value]="replacement()"
+                (input)="replacement.set(replaceInput.value)"
+              />
             </div>
-            <button type="button"
-                    class="ink-find-text-btn"
-                    [disabled]="!svc.searchMatchCount()"
-                    (click)="replace()">
+            <button
+              type="button"
+              class="ink-find-text-btn"
+              [disabled]="!svc.searchMatchCount()"
+              (click)="replace()"
+            >
               Replace
             </button>
-            <button type="button"
-                    class="ink-find-text-btn"
-                    [disabled]="!svc.searchMatchCount()"
-                    (click)="replaceAll()">
+            <button
+              type="button"
+              class="ink-find-text-btn"
+              [disabled]="!svc.searchMatchCount()"
+              (click)="replaceAll()"
+            >
               Replace all
             </button>
           </div>

@@ -18,7 +18,9 @@ describe('Inkframe Core', () => {
   describe('Link Sanitization (Security)', () => {
     it('allows valid https, http, and mailto URLs', () => {
       expect(sanitizeHref('https://example.com')).toBe('https://example.com');
-      expect(sanitizeHref('http://example.com/page?foo=bar')).toBe('http://example.com/page?foo=bar');
+      expect(sanitizeHref('http://example.com/page?foo=bar')).toBe(
+        'http://example.com/page?foo=bar',
+      );
       expect(sanitizeHref('mailto:user@example.com')).toBe('mailto:user@example.com');
     });
 
@@ -70,7 +72,8 @@ describe('Inkframe Core', () => {
     });
 
     it('parses HTML and strips harmful scripts using DOMPurify', () => {
-      const dangerousHtml = '<p>Normal text</p><script>alert("XSS")</script><img src="x" onerror="alert(1)">';
+      const dangerousHtml =
+        '<p>Normal text</p><script>alert("XSS")</script><img src="x" onerror="alert(1)">';
       const doc = htmlToDoc(dangerousHtml);
       const outputHtml = docToHtml(doc);
 
@@ -171,11 +174,15 @@ describe('Inkframe Core', () => {
       expect(html).toContain('<sub>O</sub>');
       expect(html).toContain('<sup>2</sup>');
       expect(html).toContain('<small>Fineprint</small>');
-      expect(html.includes('color: rgb(225, 29, 72)') || html.includes('color: #e11d48')).toBe(true);
+      expect(html.includes('color: rgb(225, 29, 72)') || html.includes('color: #e11d48')).toBe(
+        true,
+      );
 
       // Roundtrip test
       const parsedDoc = htmlToDoc(html);
-      expect(parsedDoc.textContent).toContain('Underlined Strikethrough H2O E=mc2 Fineprint Colored');
+      expect(parsedDoc.textContent).toContain(
+        'Underlined Strikethrough H2O E=mc2 Fineprint Colored',
+      );
     });
 
     it('enforces mutual exclusion between subscript and superscript', () => {
@@ -216,9 +223,7 @@ describe('Inkframe Core', () => {
       });
 
       // Select "Heavily styled" (pos 1 to 15)
-      state = state.apply(
-        state.tr.setSelection(TextSelection.create(state.doc, 1, 15)),
-      );
+      state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 1, 15)));
 
       let dispatchedState: EditorState | null = null;
       const success = clearFormattingCommand(state, (tr) => {
@@ -407,7 +412,7 @@ describe('Inkframe Core', () => {
 
       const dummyView = {
         state: EditorState.create({ schema }),
-        dispatch: () => { },
+        dispatch: () => {},
       } as unknown as EditorView;
 
       const nodeView = new TaskItemNodeView(itemNode, dummyView, () => 1);
@@ -550,9 +555,7 @@ describe('Inkframe Core', () => {
       const redSwatch = '#ef4444';
       const mark = schema.marks['textColor'].create({ color: redSwatch });
       const textNode = schema.text('Vibrant red text', [mark]);
-      const doc = schema.node('doc', null, [
-        schema.node('paragraph', null, [textNode]),
-      ]);
+      const doc = schema.node('doc', null, [schema.node('paragraph', null, [textNode])]);
 
       expect(doc.check()).toBeUndefined();
       const html = docToHtml(doc);
@@ -601,7 +604,9 @@ describe('Inkframe Core', () => {
 
       // Markdown output
       const md = docToMarkdown(doc);
-      expect(md).toContain('![Scenic photo](https://images.unsplash.com/photo-example.jpg "Scenic")');
+      expect(md).toContain(
+        '![Scenic photo](https://images.unsplash.com/photo-example.jpg "Scenic")',
+      );
       expect(md).toContain('![Uploaded graphic](inkframe-img:test-uuid-1234)');
 
       // Markdown parser reconstructs images
@@ -610,7 +615,8 @@ describe('Inkframe Core', () => {
       let foundLocal = false;
       parsedFromMd.descendants((node) => {
         if (node.type.name === 'image') {
-          if (node.attrs['src'] === 'https://images.unsplash.com/photo-example.jpg') foundRemote = true;
+          if (node.attrs['src'] === 'https://images.unsplash.com/photo-example.jpg')
+            foundRemote = true;
           if (node.attrs['src'] === 'inkframe-img:test-uuid-1234') foundLocal = true;
         }
       });
@@ -620,7 +626,7 @@ describe('Inkframe Core', () => {
 
     it('inserts emojis into ProseMirror state cleanly', () => {
       const doc = schema.node('doc', null, [
-        schema.node('paragraph', null, [schema.text('Hello ')])
+        schema.node('paragraph', null, [schema.text('Hello ')]),
       ]);
       let state = EditorState.create({
         doc,
@@ -640,7 +646,7 @@ describe('Inkframe Core', () => {
     it('creates code_block with custom language and wrap attributes', () => {
       const codeNode = schema.nodes['code_block'].create(
         { language: 'python', wrap: true },
-        schema.text('def greet():\n    return "hi"')
+        schema.text('def greet():\n    return "hi"'),
       );
 
       expect(codeNode.attrs['language']).toBe('python');
@@ -652,7 +658,7 @@ describe('Inkframe Core', () => {
       const doc = schema.node('doc', null, [
         schema.nodes['code_block'].create(
           { language: 'typescript' },
-          schema.text('const answer: number = 42;')
+          schema.text('const answer: number = 42;'),
         ),
       ]);
 
@@ -676,7 +682,7 @@ describe('Inkframe Core', () => {
       const doc = schema.node('doc', null, [
         schema.nodes['code_block'].create(
           { language: 'rust', wrap: true },
-          schema.text('fn main() { println!("Hello!"); }')
+          schema.text('fn main() { println!("Hello!"); }'),
         ),
       ]);
 
@@ -700,7 +706,7 @@ describe('Inkframe Core', () => {
     it('generates syntax highlighting decorations for code_block', () => {
       const codeNode = schema.nodes['code_block'].create(
         { language: 'typescript' },
-        schema.text('import { schema } from "./schema";')
+        schema.text('import { schema } from "./schema";'),
       );
       const doc = schema.node('doc', null, [codeNode]);
       const state = EditorState.create({
@@ -723,7 +729,7 @@ describe('Inkframe Core', () => {
     it('supports cell alignment, background, and height attributes in schema', () => {
       const cell = schema.nodes['table_cell'].create(
         { alignment: 'center', background: '#1e3a5f', height: '48px' },
-        [schema.nodes['paragraph'].create(null, [schema.text('Centered Cell')])]
+        [schema.nodes['paragraph'].create(null, [schema.text('Centered Cell')])],
       );
 
       expect(cell.attrs['alignment']).toBe('center');
@@ -790,11 +796,15 @@ describe('Inkframe Core', () => {
       expect(hasRowHandle).toBe(true);
 
       // Check for column header handles (in first row)
-      const hasColHandle = allDecos.some((d: any) => classOf(d).includes('ink-table-col-header-handle'));
+      const hasColHandle = allDecos.some((d: any) =>
+        classOf(d).includes('ink-table-col-header-handle'),
+      );
       expect(hasColHandle).toBe(true);
 
       // Check for empty cell placeholder in emptyCell
-      const hasPlaceholder = allDecos.some((d: any) => classOf(d).includes('ink-table-cell-placeholder'));
+      const hasPlaceholder = allDecos.some((d: any) =>
+        classOf(d).includes('ink-table-cell-placeholder'),
+      );
       expect(hasPlaceholder).toBe(true);
     });
   });
@@ -810,7 +820,9 @@ describe('Inkframe Core', () => {
         expect(html).toContain('<u>Underlined text</u>');
 
         const parsed = htmlToDoc(html);
-        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'underline')).toBe(true);
+        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'underline')).toBe(
+          true,
+        );
       });
 
       it('creates and serializes strikethrough mark', () => {
@@ -822,7 +834,9 @@ describe('Inkframe Core', () => {
         expect(html).toContain('<s>Struck text</s>');
 
         const parsed = htmlToDoc(html);
-        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'strikethrough')).toBe(true);
+        expect(
+          parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'strikethrough'),
+        ).toBe(true);
       });
 
       it('creates and serializes subscript and superscript marks', () => {
@@ -887,7 +901,9 @@ describe('Inkframe Core', () => {
         expect(html).toContain('<small>Fine print</small>');
 
         const parsed = htmlToDoc(html);
-        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'small')).toBe(true);
+        expect(parsed.firstChild?.firstChild?.marks.some((m) => m.type.name === 'small')).toBe(
+          true,
+        );
       });
     });
 
@@ -922,7 +938,7 @@ describe('Inkframe Core', () => {
       it('preserves code block language fences across markdown round-trip', () => {
         const codeBlock = schema.nodes['code_block'].create(
           { language: 'typescript' },
-          schema.text('const answer: number = 42;')
+          schema.text('const answer: number = 42;'),
         );
         const doc = schema.node('doc', null, [codeBlock]);
 
@@ -945,11 +961,11 @@ describe('Inkframe Core', () => {
       it('preserves task item states in markdown round-trip', () => {
         const item1 = schema.nodes['task_item'].create(
           { checked: false },
-          schema.nodes['paragraph'].create(null, [schema.text('Todo task')])
+          schema.nodes['paragraph'].create(null, [schema.text('Todo task')]),
         );
         const item2 = schema.nodes['task_item'].create(
           { checked: true },
-          schema.nodes['paragraph'].create(null, [schema.text('Completed task')])
+          schema.nodes['paragraph'].create(null, [schema.text('Completed task')]),
         );
         const taskList = schema.nodes['task_list'].create(null, [item1, item2]);
         const doc = schema.node('doc', null, [taskList]);
@@ -982,7 +998,7 @@ describe('Inkframe Core', () => {
             schema.nodes['task_list'].create(null, [
               schema.nodes['task_item'].create(
                 { checked: i % 2 === 0 },
-                schema.nodes['paragraph'].create(null, [schema.text(`Item ${i}`)])
+                schema.nodes['paragraph'].create(null, [schema.text(`Item ${i}`)]),
               ),
             ]),
           ]);
@@ -998,7 +1014,6 @@ describe('Inkframe Core', () => {
           expect(view.dom).toBeDefined();
           view.destroy();
         }
-
       });
     });
 
@@ -1032,8 +1047,10 @@ describe('Inkframe Core', () => {
         // Construct a substantial multi-block document
         const paragraphs = Array.from({ length: 50 }, (_, i) =>
           schema.nodes['paragraph'].create(null, [
-            schema.text(`Paragraph ${i + 1}: inkframe performance profiling and latency evaluation test.`),
-          ])
+            schema.text(
+              `Paragraph ${i + 1}: inkframe performance profiling and latency evaluation test.`,
+            ),
+          ]),
         );
         const doc = schema.node('doc', null, paragraphs);
         let state = EditorState.create({ doc, schema });
@@ -1058,4 +1075,3 @@ describe('Inkframe Core', () => {
     });
   });
 });
-

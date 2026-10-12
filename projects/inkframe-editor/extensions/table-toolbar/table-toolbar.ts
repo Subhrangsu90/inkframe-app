@@ -283,7 +283,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       &::-webkit-scrollbar {
         display: none;
       }
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
     }
 
     .ink-tbl-btn {
@@ -391,7 +393,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       align-items: center;
       justify-content: center;
       padding: 0;
-      transition: transform 0.1s ease, border-color 0.1s ease;
+      transition:
+        transform 0.1s ease,
+        border-color 0.1s ease;
 
       &:hover {
         transform: scale(1.15);
@@ -430,7 +434,9 @@ export const CELL_BG_COLORS: CellBgColor[] = [
 export class TableToolbar {
   protected readonly svc = inject(EditorService);
   protected readonly bgColors = CELL_BG_COLORS;
-  protected readonly alignIcon = signal<'format_align_left' | 'format_align_center' | 'format_align_right'>('format_align_left');
+  protected readonly alignIcon = signal<
+    'format_align_left' | 'format_align_center' | 'format_align_right'
+  >('format_align_left');
   protected readonly colMenuPos = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
   private readonly colMenuTrigger = viewChild<MatMenuTrigger>('colMenuTrigger');
@@ -473,4 +479,3 @@ export class TableToolbar {
 
 // Backward compatibility alias
 export { TableToolbar as TableToolbarComponent };
-

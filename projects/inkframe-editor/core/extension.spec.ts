@@ -82,21 +82,13 @@ describe('Modular Extension Architecture (TipTap-style)', () => {
   });
 
   it('filters slash commands dynamically based on registered extensions', () => {
-    const minimalManager = new ExtensionManager(
-      [HeadingExtension],
-      dummyService,
-      dummyHooks,
-    );
+    const minimalManager = new ExtensionManager([HeadingExtension], dummyService, dummyHooks);
     const slashItems = minimalManager.getSlashItems();
 
     expect(slashItems.length).toBe(3);
     expect(slashItems.map((i) => i.id)).toEqual(['h1', 'h2', 'h3']);
 
-    const fullManager = new ExtensionManager(
-      DEFAULT_EXTENSIONS,
-      dummyService,
-      dummyHooks,
-    );
+    const fullManager = new ExtensionManager(DEFAULT_EXTENSIONS, dummyService, dummyHooks);
     const fullSlashItems = fullManager.getSlashItems();
 
     expect(fullSlashItems.some((i) => i.id === 'tbl')).toBe(true);

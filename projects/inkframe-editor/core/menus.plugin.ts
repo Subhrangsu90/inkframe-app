@@ -16,22 +16,10 @@ const CLOSED = { open: false, query: '', from: 0, to: 0 };
 function detectSlash(state: EditorState) {
   const { selection } = state;
   const { $from } = selection;
-  if (
-    !selection.empty ||
-    !$from.parent.isTextblock ||
-    $from.parent.type.spec.code
-  )
-    return CLOSED;
-  const before = $from.parent.textBetween(
-    0,
-    $from.parentOffset,
-    undefined,
-    '\ufffc',
-  );
+  if (!selection.empty || !$from.parent.isTextblock || $from.parent.type.spec.code) return CLOSED;
+  const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
   const m = /^\/(\w*)$/.exec(before);
-  return m
-    ? { open: true, query: m[1], from: $from.start(), to: $from.pos }
-    : CLOSED;
+  return m ? { open: true, query: m[1], from: $from.start(), to: $from.pos } : CLOSED;
 }
 
 export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
@@ -43,19 +31,14 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
       apply(tr, prev, _old, state) {
         const found = detectSlash(state);
         if (!found.open) return { ...CLOSED, dismissedAt: -1 };
-        const dismissedAt = tr.getMeta(slashKey)?.dismiss
-          ? found.from
-          : prev.dismissedAt;
-        return found.from === dismissedAt
-          ? { ...CLOSED, dismissedAt }
-          : { ...found, dismissedAt };
+        const dismissedAt = tr.getMeta(slashKey)?.dismiss ? found.from : prev.dismissedAt;
+        return found.from === dismissedAt ? { ...CLOSED, dismissedAt } : { ...found, dismissedAt };
       },
     },
 
     props: {
       // Returning true makes ProseMirror call preventDefault for us.
-      handleKeyDown: (_view, event) =>
-        !event.isComposing && hooks.onSlashKeyDown(event),
+      handleKeyDown: (_view, event) => !event.isComposing && hooks.onSlashKeyDown(event),
     },
 
     view(view) {
@@ -118,19 +101,18 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         if (showFloating) {
           const domSel = doc?.getSelection();
           const rect =
-            domSel && domSel.rangeCount
-              ? domSel.getRangeAt(0).getBoundingClientRect()
-              : null;
+            domSel && domSel.rangeCount ? domSel.getRangeAt(0).getBoundingClientRect() : null;
           if (rect && (rect.width || rect.height)) {
             // Check if selection is within the visible viewport bounds
-            const isOutOfView = vpRect && (rect.bottom < vpRect.top + 10 || rect.top > vpRect.bottom - 10);
+            const isOutOfView =
+              vpRect && (rect.bottom < vpRect.top + 10 || rect.top > vpRect.bottom - 10);
             if (isOutOfView) {
               lastFloatingCoords = null;
               hooks.onFloatingMenu(null);
             } else {
               // Decide whether to place above or below selection
               // Floating menu is ~38px tall; need ~48px clearance above selection
-              const placeBelow = vpRect ? (rect.top - 48 < vpRect.top) : false;
+              const placeBelow = vpRect ? rect.top - 48 < vpRect.top : false;
               const top = placeBelow ? rect.bottom + 8 : rect.top - 8;
               const placement = placeBelow ? 'bottom' : 'top';
 
@@ -149,7 +131,10 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
             }
           } else if (lastFloatingCoords && isInteractingWithMenu) {
             // Keep existing menu if interacting with overlay, but hide if viewport scrolled away
-            if (vpRect && (lastFloatingCoords.top < vpRect.top || lastFloatingCoords.top > vpRect.bottom)) {
+            if (
+              vpRect &&
+              (lastFloatingCoords.top < vpRect.top || lastFloatingCoords.top > vpRect.bottom)
+            ) {
               lastFloatingCoords = null;
               hooks.onFloatingMenu(null);
             } else {
@@ -167,8 +152,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         // ── Floating Table Toolbar ────────────────────────────────────
         const inTable = isInTable(state);
         const isInteractingWithTable =
-          Boolean(activeEl && activeEl.closest('.ink-table-toolbar')) ||
-          isInteractingWithMenu;
+          Boolean(activeEl && activeEl.closest('.ink-table-toolbar')) || isInteractingWithMenu;
 
         if (inTable && (view.hasFocus() || isInteractingWithTable)) {
           const { $from } = selection;
@@ -176,7 +160,9 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
           try {
             const domAt = view.domAtPos($from.pos);
             const domNode = domAt.node as HTMLElement;
-            tableEl = (domNode.nodeType === 1 ? domNode : domNode.parentElement)?.closest('table') as HTMLElement | null;
+            tableEl = (domNode.nodeType === 1 ? domNode : domNode.parentElement)?.closest(
+              'table',
+            ) as HTMLElement | null;
           } catch {
             tableEl = null;
           }
@@ -219,11 +205,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
       return {
         update(v, prev) {
-          if (
-            prev.doc.eq(v.state.doc) &&
-            prev.selection.eq(v.state.selection)
-          )
-            return;
+          if (prev.doc.eq(v.state.doc) && prev.selection.eq(v.state.selection)) return;
           render(); // synchronous: DOM is already updated here
         },
         destroy() {

@@ -19,7 +19,9 @@ export function sanitizeTextAlign(raw: unknown): Exclude<TextAlign, 'left'> | nu
 function readTextAlign(dom: HTMLElement): Exclude<TextAlign, 'left'> | null {
   // The raw attribute too: not every CSS engine accepts `-webkit-center`.
   const raw = /text-align\s*:\s*([-\w]+)/i.exec(dom.getAttribute('style') ?? '')?.[1];
-  const value = (dom.style.textAlign || raw || dom.getAttribute('align') || '').trim().toLowerCase();
+  const value = (dom.style.textAlign || raw || dom.getAttribute('align') || '')
+    .trim()
+    .toLowerCase();
   return sanitizeTextAlign(value === '-webkit-center' ? 'center' : value);
 }
 
@@ -328,11 +330,8 @@ const code_block: NodeSpec = {
         const codeEl = el.querySelector('code');
         const langClass = el.className || codeEl?.className || '';
         const match = /language-([a-z0-9_-]+)/i.exec(langClass);
-        const language = match
-          ? match[1].toLowerCase()
-          : el.dataset['language'] || 'typescript';
-        const wrap =
-          el.dataset['wrap'] === 'true' || el.style.whiteSpace === 'pre-wrap';
+        const language = match ? match[1].toLowerCase() : el.dataset['language'] || 'typescript';
+        const wrap = el.dataset['wrap'] === 'true' || el.style.whiteSpace === 'pre-wrap';
         return { language, wrap };
       },
     },
@@ -440,4 +439,3 @@ export const schema = new Schema({
     .addToEnd('small', small)
     .addToEnd('highlight', highlight),
 });
-

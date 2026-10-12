@@ -17,7 +17,10 @@ import {
 
 const { nodes, marks } = schema;
 const p = (...content: (string | PMNode)[]) =>
-  nodes['paragraph'].create(null, content.map((c) => (typeof c === 'string' ? schema.text(c) : c)));
+  nodes['paragraph'].create(
+    null,
+    content.map((c) => (typeof c === 'string' ? schema.text(c) : c)),
+  );
 const doc = (...content: PMNode[]) => nodes['doc'].create(null, content);
 
 /** A document with the query in a heading, a paragraph, a list, a code block and a table cell. */
@@ -28,7 +31,9 @@ function richDoc(): PMNode {
     p('An apple a day, ', schema.text('APPLE', [marks['strong'].create()]), ' juice.'),
     nodes['bullet_list'].create(null, [nodes['list_item'].create(null, [p('apple tree')])]),
     nodes['code_block'].create({ language: 'js' }, [schema.text('const apple = 1;')]),
-    nodes['table'].create(null, [nodes['table_row'].create(null, [cell('pineapple'), cell('pear')])]),
+    nodes['table'].create(null, [
+      nodes['table_row'].create(null, [cell('pineapple'), cell('pear')]),
+    ]),
   );
 }
 
@@ -85,7 +90,9 @@ describe('searchPlugin', () => {
 
     const decorations = search.decorations.find();
     expect(decorations).toHaveLength(6);
-    expect(decorations.filter((d) => (d as any).type.attrs.class.includes('current'))).toHaveLength(1);
+    expect(decorations.filter((d) => (d as any).type.attrs.class.includes('current'))).toHaveLength(
+      1,
+    );
     expect(state.doc.textBetween(state.selection.from, state.selection.to)).toBe('Apple');
   });
 

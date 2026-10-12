@@ -276,7 +276,11 @@ tokenizer.core.ruler.push('task_list', (state: any) => {
       for (let j = i + 1; j < tokens.length && depth > 0; j++) {
         if (tokens[j].type === 'bullet_list_open') depth++;
         if (tokens[j].type === 'bullet_list_close') depth--;
-        if (depth === 1 && tokens[j].type === 'inline' && /^\[([ xX]?)\]\s*/.test(tokens[j].content)) {
+        if (
+          depth === 1 &&
+          tokens[j].type === 'inline' &&
+          /^\[([ xX]?)\]\s*/.test(tokens[j].content)
+        ) {
           isTask = true;
           break;
         }
@@ -409,7 +413,8 @@ tokenizer.core.ruler.push('ink_callouts', (state: any) => {
         toStrip = 0;
       }
     }
-    if (children[0]?.type === 'text') children[0].content = children[0].content.replace(/^[ \t]+/, '');
+    if (children[0]?.type === 'text')
+      children[0].content = children[0].content.replace(/^[ \t]+/, '');
     if (children[0]?.type === 'text' && !children[0].content) children.shift();
     if (children[0]?.type === 'softbreak' || children[0]?.type === 'hardbreak') children.shift();
     if (!inline.content.trim() && children.length === 0) {
@@ -461,67 +466,63 @@ tokenizer.core.ruler.push('ink_alignment', (state: any) => {
 
 const alignAttr = (tok: any) => sanitizeTextAlign(tok.attrGet('align'));
 
-export const inkMarkdownParser = new MarkdownParser(
-  schema,
-  tokenizer,
-  {
-    ...defaultMarkdownParser.tokens,
-    paragraph: { block: 'paragraph', getAttrs: (tok: any) => ({ align: alignAttr(tok) }) },
-    heading: {
-      block: 'heading',
-      getAttrs: (tok: any) => ({ level: +tok.tag.slice(1), align: alignAttr(tok) }),
-    },
-    ink_highlight: {
-      mark: 'highlight',
-      getAttrs: (tok: any) => {
-        const color = tok.attrGet('color');
-        return color ? { color } : {};
-      },
-    },
-    s: { mark: 'strikethrough' },
-    ink_underline: { mark: 'underline' },
-    ink_small: { mark: 'small' },
-    ink_sub: { mark: 'subscript' },
-    ink_sup: { mark: 'superscript' },
-    ink_color: {
-      mark: 'textColor',
-      getAttrs: (tok: any) => ({ color: tok.attrGet('color') }),
-    },
-    table: { block: 'table' },
-    table_row: { block: 'table_row' },
-    table_header: {
-      block: 'table_header',
-      getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
-    },
-    table_cell: {
-      block: 'table_cell',
-      getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
-    },
-    callout: {
-      block: 'callout',
-      getAttrs: (tok: any) => ({ type: tok.attrGet('kind') }),
-    },
-    task_list: { block: 'task_list' },
-    task_item: {
-      block: 'task_item',
-      getAttrs: (tok: any) => ({
-        checked: tok.attrGet('checked') === 'true',
-      }),
-    },
-    fence: {
-      block: 'code_block',
-      getAttrs: (tok: any) => ({
-        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
-      }),
-    },
-    code_block: {
-      block: 'code_block',
-      getAttrs: (tok: any) => ({
-        language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
-      }),
+export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
+  ...defaultMarkdownParser.tokens,
+  paragraph: { block: 'paragraph', getAttrs: (tok: any) => ({ align: alignAttr(tok) }) },
+  heading: {
+    block: 'heading',
+    getAttrs: (tok: any) => ({ level: +tok.tag.slice(1), align: alignAttr(tok) }),
+  },
+  ink_highlight: {
+    mark: 'highlight',
+    getAttrs: (tok: any) => {
+      const color = tok.attrGet('color');
+      return color ? { color } : {};
     },
   },
-);
+  s: { mark: 'strikethrough' },
+  ink_underline: { mark: 'underline' },
+  ink_small: { mark: 'small' },
+  ink_sub: { mark: 'subscript' },
+  ink_sup: { mark: 'superscript' },
+  ink_color: {
+    mark: 'textColor',
+    getAttrs: (tok: any) => ({ color: tok.attrGet('color') }),
+  },
+  table: { block: 'table' },
+  table_row: { block: 'table_row' },
+  table_header: {
+    block: 'table_header',
+    getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
+  },
+  table_cell: {
+    block: 'table_cell',
+    getAttrs: (tok: any) => ({ alignment: tok.attrGet('alignment') }),
+  },
+  callout: {
+    block: 'callout',
+    getAttrs: (tok: any) => ({ type: tok.attrGet('kind') }),
+  },
+  task_list: { block: 'task_list' },
+  task_item: {
+    block: 'task_item',
+    getAttrs: (tok: any) => ({
+      checked: tok.attrGet('checked') === 'true',
+    }),
+  },
+  fence: {
+    block: 'code_block',
+    getAttrs: (tok: any) => ({
+      language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
+    }),
+  },
+  code_block: {
+    block: 'code_block',
+    getAttrs: (tok: any) => ({
+      language: tok.info ? tok.info.trim().toLowerCase() : 'typescript',
+    }),
+  },
+});
 
 export function docToMarkdown(doc: PMNode): string {
   return inkMarkdownSerializer.serialize(doc);

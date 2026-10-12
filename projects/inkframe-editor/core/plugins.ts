@@ -2,12 +2,7 @@ import { Command, EditorState, Plugin, Selection } from 'prosemirror-state';
 import { history, undo, redo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap, setBlockType, splitBlockAs, toggleMark } from 'prosemirror-commands';
-import {
-  splitListItem,
-  sinkListItem,
-  liftListItem,
-  wrapInList,
-} from 'prosemirror-schema-list';
+import { splitListItem, sinkListItem, liftListItem, wrapInList } from 'prosemirror-schema-list';
 import { Attrs, Node as PMNode, NodeType } from 'prosemirror-model';
 import { undoInputRule } from 'prosemirror-inputrules';
 import { dropCursor } from 'prosemirror-dropcursor';
@@ -22,9 +17,7 @@ import { EditorHooks } from './editor-hooks';
 
 const hardBreak: Command = (state, dispatch) => {
   dispatch?.(
-    state.tr
-      .replaceSelectionWith(state.schema.nodes['hard_break'].create())
-      .scrollIntoView(),
+    state.tr.replaceSelectionWith(state.schema.nodes['hard_break'].create()).scrollIntoView(),
   );
   return true;
 };
@@ -267,17 +260,10 @@ export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_l
 }
 
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
-  const {
-    strong,
-    em,
-    code,
-    underline,
-    strikethrough,
-    subscript,
-    superscript,
-    small,
-  } = schema.marks;
-  const { list_item, task_item, bullet_list, ordered_list, task_list, paragraph, heading } = schema.nodes;
+  const { strong, em, code, underline, strikethrough, subscript, superscript, small } =
+    schema.marks;
+  const { list_item, task_item, bullet_list, ordered_list, task_list, paragraph, heading } =
+    schema.nodes;
 
   return [
     buildInputRules(),
@@ -320,11 +306,9 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
         splitListItem(list_item)(state, dispatch) ||
         liftListItem(list_item)(state, dispatch),
       Tab: (state, dispatch) =>
-        sinkListItem(task_item)(state, dispatch) ||
-        sinkListItem(list_item)(state, dispatch),
+        sinkListItem(task_item)(state, dispatch) || sinkListItem(list_item)(state, dispatch),
       'Shift-Tab': (state, dispatch) =>
-        liftListItem(task_item)(state, dispatch) ||
-        liftListItem(list_item)(state, dispatch),
+        liftListItem(task_item)(state, dispatch) || liftListItem(list_item)(state, dispatch),
     }),
     keymap(baseKeymap),
     dropCursor(),

@@ -36,15 +36,7 @@ import {
 @Component({
   selector: 'ink-editor',
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    Toolbar,
-    FloatingMenu,
-    SlashMenu,
-    ImageLightbox,
-    TableToolbar,
-    FindReplace,
-    StatusBar,
-  ],
+  imports: [Toolbar, FloatingMenu, SlashMenu, ImageLightbox, TableToolbar, FindReplace, StatusBar],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -96,7 +88,9 @@ import {
       display: flex;
       flex-direction: column;
       position: relative;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       @media (min-width: 768px) {
         border-radius: 12px;
@@ -214,14 +208,19 @@ import {
       flex-direction: column;
       overflow: hidden;
       box-sizing: border-box;
-      transition: box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+      transition:
+        box-shadow 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease;
 
       @media (min-width: 768px) {
         border-radius: 8px;
       }
 
       &:focus-within {
-        box-shadow: 0 6px 30px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
+        box-shadow:
+          0 6px 30px -2px rgba(0, 0, 0, 0.35),
+          0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
       }
     }
     .ink-host {
@@ -390,4 +389,3 @@ export class Editor {
 
 // Backward compatibility alias
 export { Editor as EditorComponent };
-

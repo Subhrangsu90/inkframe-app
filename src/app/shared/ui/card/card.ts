@@ -146,23 +146,49 @@ export type CardShadow = 'none' | 'sm' | 'md' | 'lg';
       }
 
       /* Padding */
-      &.pad-none { padding: 0; }
-      &.pad-sm { padding: 12px; }
-      &.pad-md { padding: 20px; }
-      &.pad-lg { padding: 28px; }
+      &.pad-none {
+        padding: 0;
+      }
+      &.pad-sm {
+        padding: 12px;
+      }
+      &.pad-md {
+        padding: 20px;
+      }
+      &.pad-lg {
+        padding: 28px;
+      }
 
       /* Radius */
-      &.radius-none { border-radius: 0; }
-      &.radius-sm { border-radius: var(--ink-radius-sm); }
-      &.radius-md { border-radius: var(--ink-radius-md); }
-      &.radius-lg { border-radius: var(--ink-radius-lg); }
-      &.radius-pill { border-radius: var(--ink-radius-pill); }
+      &.radius-none {
+        border-radius: 0;
+      }
+      &.radius-sm {
+        border-radius: var(--ink-radius-sm);
+      }
+      &.radius-md {
+        border-radius: var(--ink-radius-md);
+      }
+      &.radius-lg {
+        border-radius: var(--ink-radius-lg);
+      }
+      &.radius-pill {
+        border-radius: var(--ink-radius-pill);
+      }
 
       /* Shadows */
-      &.shadow-none { box-shadow: none; }
-      &.shadow-sm { box-shadow: var(--ink-shadow-sm); }
-      &.shadow-md { box-shadow: var(--ink-shadow-md); }
-      &.shadow-lg { box-shadow: var(--ink-shadow-lg); }
+      &.shadow-none {
+        box-shadow: none;
+      }
+      &.shadow-sm {
+        box-shadow: var(--ink-shadow-sm);
+      }
+      &.shadow-md {
+        box-shadow: var(--ink-shadow-md);
+      }
+      &.shadow-lg {
+        box-shadow: var(--ink-shadow-lg);
+      }
     }
 
     .ink-card-header {

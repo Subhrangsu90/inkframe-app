@@ -55,9 +55,7 @@ export class TaskItemNodeView implements NodeView {
     return this.checkbox === event.target || this.checkbox.contains(event.target as Node);
   }
 
-  ignoreMutation(
-    mutation: MutationRecord | { type: 'selection'; target: Node },
-  ): boolean {
+  ignoreMutation(mutation: MutationRecord | { type: 'selection'; target: Node }): boolean {
     return !this.contentDOM.contains(mutation.target);
   }
 }

@@ -27,7 +27,8 @@ function parseRgb(value: string): [number, number, number] | null {
   let m = /^#([0-9a-f]{3,4})$/.exec(v);
   if (m) return [0, 1, 2].map((i) => parseInt(m![1][i] + m![1][i], 16)) as [number, number, number];
   m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/.exec(v);
-  if (m) return [0, 2, 4].map((i) => parseInt(m![1].slice(i, i + 2), 16)) as [number, number, number];
+  if (m)
+    return [0, 2, 4].map((i) => parseInt(m![1].slice(i, i + 2), 16)) as [number, number, number];
   m = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/.exec(v);
   return m ? [+m[1], +m[2], +m[3]] : null;
 }
@@ -127,7 +128,8 @@ function wordListItem(p: HTMLElement): WordListItem | null {
   const m = MSO_LIST.exec(styleOf(p));
   if (!m) return null;
   const marker =
-    Array.from(p.querySelectorAll('[style]')).find((el) => MSO_LIST_MARKER.test(styleOf(el))) ?? null;
+    Array.from(p.querySelectorAll('[style]')).find((el) => MSO_LIST_MARKER.test(styleOf(el))) ??
+    null;
   const markerText = (marker?.textContent ?? '').replace(/[\s ]+/g, '');
   return {
     p,
@@ -141,7 +143,11 @@ function wordListItem(p: HTMLElement): WordListItem | null {
 /** The list paragraphs that directly follow `p` and belong to the same list. */
 function wordListRun(first: WordListItem): WordListItem[] {
   const run = [first];
-  for (let next = first.p.nextElementSibling; next?.tagName === 'P'; next = next.nextElementSibling) {
+  for (
+    let next = first.p.nextElementSibling;
+    next?.tagName === 'P';
+    next = next.nextElementSibling
+  ) {
     const item = wordListItem(next as HTMLElement);
     if (!item || item.list !== first.list) break;
     run.push(item);
@@ -169,7 +175,8 @@ function convertWordLists(root: HTMLElement): void {
       if (!top || top.level < item.level) {
         const list = doc.createElement(item.ordered ? 'ol' : 'ul');
         if (top) {
-          const parentItem = top.list.lastElementChild ?? top.list.appendChild(doc.createElement('li'));
+          const parentItem =
+            top.list.lastElementChild ?? top.list.appendChild(doc.createElement('li'));
           parentItem.appendChild(list);
         } else {
           outer = list;
@@ -266,10 +273,13 @@ export function cleanPastedHtml(html: string): string {
     cleanGoogleDocs(body);
   }
   body.querySelectorAll<HTMLElement>('[style]').forEach(cleanStyle);
-  if (source === 'word') body.querySelectorAll('[class^="Mso"]').forEach((el) => el.removeAttribute('class'));
+  if (source === 'word')
+    body.querySelectorAll('[class^="Mso"]').forEach((el) => el.removeAttribute('class'));
   // Line breaks between blocks are empty lines (Google Docs writes them so),
   // not a paragraph holding a hard break.
-  body.querySelectorAll(':scope > br').forEach((br) => br.replaceWith(body.ownerDocument.createElement('p')));
+  body
+    .querySelectorAll(':scope > br')
+    .forEach((br) => br.replaceWith(body.ownerDocument.createElement('p')));
 
   return DOMPurify.sanitize(body.innerHTML, DOMPURIFY_CONFIG);
 }

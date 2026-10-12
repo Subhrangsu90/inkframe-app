@@ -75,11 +75,7 @@ export class ExtensionManager {
     // 3. Construct Schema with list support if needed
     let baseSchema = new Schema({ nodes: nodeMap, marks: markMap });
     if (hasLists) {
-      const nodesWithLists = addListNodes(
-        baseSchema.spec.nodes,
-        'paragraph block*',
-        'block',
-      );
+      const nodesWithLists = addListNodes(baseSchema.spec.nodes, 'paragraph block*', 'block');
       return new Schema({ nodes: nodesWithLists, marks: markMap });
     }
 

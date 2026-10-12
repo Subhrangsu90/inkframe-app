@@ -1,11 +1,7 @@
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
 import { history, undo, redo } from 'prosemirror-history';
 import { toggleMark } from 'prosemirror-commands';
-import {
-  columnResizing,
-  tableEditing,
-  goToNextCell,
-} from 'prosemirror-tables';
+import { columnResizing, tableEditing, goToNextCell } from 'prosemirror-tables';
 import { textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules';
 import { EditorExtension, createExtension } from './extension-types';
 import {
@@ -36,7 +32,12 @@ import {
   toggleHighlightCommand,
   toggleListCommand,
 } from './plugins';
-import { searchPlugin, findNextCommand, findPreviousCommand, getSearchState } from './search.plugin';
+import {
+  searchPlugin,
+  findNextCommand,
+  findPreviousCommand,
+  getSearchState,
+} from './search.plugin';
 import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder.plugin';
 import { pasteCleanupPlugin } from './paste-cleanup';
 import { tableUIPlugin } from './table-ui.plugin';
@@ -82,9 +83,7 @@ export const HardBreakExtension = createExtension({
   keymaps: (ctx) => ({
     'Shift-Enter': (state, dispatch) => {
       dispatch?.(
-        state.tr
-          .replaceSelectionWith(ctx.schema.nodes['hard_break'].create())
-          .scrollIntoView(),
+        state.tr.replaceSelectionWith(ctx.schema.nodes['hard_break'].create()).scrollIntoView(),
       );
       return true;
     },
@@ -548,13 +547,7 @@ export const CalloutExtension = createExtension({
   nodes: { callout },
   nodeViews: (ctx) => ({
     callout: (node, view, getPos) =>
-      new CalloutNodeView(
-        node,
-        view,
-        getPos,
-        ctx.service.envInjector,
-        ctx.service.appReference,
-      ),
+      new CalloutNodeView(node, view, getPos, ctx.service.envInjector, ctx.service.appReference),
   }),
   slashItems: [
     {
@@ -626,9 +619,7 @@ export const ImageExtension = createExtension({
   nodes: { image },
   nodeViews: (ctx) => ({
     image: (node, view, getPos) =>
-      new ImageNodeView(node, view, getPos, (data) =>
-        ctx.service.openImagePreview(data),
-      ),
+      new ImageNodeView(node, view, getPos, (data) => ctx.service.openImagePreview(data)),
   }),
   slashItems: [
     {

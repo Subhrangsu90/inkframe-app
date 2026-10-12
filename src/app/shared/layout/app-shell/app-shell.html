@@ -1,11 +1,7 @@
 <div class="app-layout-root" [class.sidebar-collapsed]="layout.sidebarCollapsed()">
   <!-- Mobile Drawer Backdrop Overlay -->
   @if (layout.mobileOpen()) {
-    <div
-      class="mobile-backdrop"
-      (click)="layout.closeMobile()"
-      aria-hidden="true"
-    ></div>
+    <div class="mobile-backdrop" (click)="layout.closeMobile()" aria-hidden="true"></div>
   }
 
   <!-- ═════════════════════════════════════════════ -->
@@ -86,10 +82,7 @@
 
       <div class="sidebar-docs-list ink-scrollbar">
         @for (doc of layout.documents(); track doc.id) {
-          <div
-            class="doc-item"
-            [class.active]="layout.activeDocId() === doc.id"
-          >
+          <div class="doc-item" [class.active]="layout.activeDocId() === doc.id">
             <a
               [routerLink]="['/doc', doc.id]"
               (click)="layout.setActiveDocId(doc.id); layout.closeMobile()"

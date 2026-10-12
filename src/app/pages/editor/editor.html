@@ -102,13 +102,19 @@
               <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
               <span>Share Reader Link</span>
             </div>
-            <button type="button" class="close-share-btn" (click)="showShareMenu.set(false)" title="Close">
+            <button
+              type="button"
+              class="close-share-btn"
+              (click)="showShareMenu.set(false)"
+              title="Close"
+            >
               <ink-icon name="close" [size]="11" />
             </button>
           </div>
 
           <p class="share-popover-desc">
-            Anyone with this link can view this document anywhere with zero backend or account required.
+            Anyone with this link can view this document anywhere with zero backend or account
+            required.
           </p>
 
           <div class="share-link-box">
@@ -133,7 +139,7 @@
 
           <div class="share-popover-footer">
             <a
-              [href]="shareUrl() || ('/s/' + currentDocId())"
+              [href]="shareUrl() || '/s/' + currentDocId()"
               target="_blank"
               (click)="showShareMenu.set(false)"
               class="preview-reader-link"

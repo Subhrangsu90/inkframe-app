@@ -57,72 +57,74 @@ export class Reader implements OnInit {
   async ngOnInit(): Promise<void> {
     // Share links carry the payload in the fragment (/s#<payload>); older links
     // and local document ids use the path (/s/<hash>).
-    combineLatest([this.route.paramMap, this.route.fragment]).subscribe(async ([params, fragment]) => {
-      const hash = params.get('hash') || fragment || 'doc_default';
-      const token = ++this.loadToken;
-      this.docId.set(hash);
+    combineLatest([this.route.paramMap, this.route.fragment]).subscribe(
+      async ([params, fragment]) => {
+        const hash = params.get('hash') || fragment || 'doc_default';
+        const token = ++this.loadToken;
+        this.docId.set(hash);
 
-      let active: StoredDoc | null = null;
-      let title = 'Shared Document';
-      let isShared = false;
+        let active: StoredDoc | null = null;
+        let title = 'Shared Document';
+        let isShared = false;
 
-      // 1. Check if hash is a compressed zero-backend payload
-      if (hash.startsWith('c_') || hash.startsWith('u_')) {
-        const decoded = await decompressSharedDoc(hash);
-        if (decoded) {
-          active = decoded.doc;
-          title = decoded.title;
-          isShared = true;
+        // 1. Check if hash is a compressed zero-backend payload
+        if (hash.startsWith('c_') || hash.startsWith('u_')) {
+          const decoded = await decompressSharedDoc(hash);
+          if (decoded) {
+            active = decoded.doc;
+            title = decoded.title;
+            isShared = true;
+          }
         }
-      }
 
-      // 2. If not a compressed payload, check local IndexedDB
-      if (!active) {
-        active = await this.docManager.getDoc(hash);
-        if (active) {
+        // 2. If not a compressed payload, check local IndexedDB
+        if (!active) {
+          active = await this.docManager.getDoc(hash);
+          if (active) {
+            title = extractDocTitle(active);
+            isShared = false;
+          }
+        }
+
+        // 3. Check legacy base64 encoded document
+        if (!active && hash !== 'doc_default') {
+          const decoded = await decompressSharedDoc(hash);
+          if (decoded) {
+            active = decoded.doc;
+            title = decoded.title;
+            isShared = true;
+          }
+        }
+
+        // 4. Default fallback to Welcome doc
+        if (!active) {
+          active = (await this.docManager.getDoc('doc_default')) || WELCOME_DOC;
           title = extractDocTitle(active);
           isShared = false;
         }
-      }
 
-      // 3. Check legacy base64 encoded document
-      if (!active && hash !== 'doc_default') {
-        const decoded = await decompressSharedDoc(hash);
-        if (decoded) {
-          active = decoded.doc;
-          title = decoded.title;
-          isShared = true;
+        if (token !== this.loadToken) return;
+        this.activeDoc.set(active);
+        this.docTitle.set(title);
+        this.isSharedPayload.set(isShared);
+
+        if (active?.doc) {
+          try {
+            const pmNode = schema.nodeFromJSON(migrate(active));
+            const raw = docToHtml(pmNode);
+            const resolved = await imageStorage.resolveHtmlImages(raw);
+            if (token !== this.loadToken) return;
+            // Shared documents come from the URL, i.e. from anyone. Angular's own
+            // sanitizer would strip the editor's inline styles, so sanitize with
+            // DOMPurify before marking the HTML as trusted.
+            this.renderedHtml.set(this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(resolved)));
+          } catch (e) {
+            console.warn('Failed to parse doc in reader:', e);
+            this.renderedHtml.set('<p>Unable to render shared document.</p>');
+          }
         }
-      }
-
-      // 4. Default fallback to Welcome doc
-      if (!active) {
-        active = (await this.docManager.getDoc('doc_default')) || WELCOME_DOC;
-        title = extractDocTitle(active);
-        isShared = false;
-      }
-
-      if (token !== this.loadToken) return;
-      this.activeDoc.set(active);
-      this.docTitle.set(title);
-      this.isSharedPayload.set(isShared);
-
-      if (active?.doc) {
-        try {
-          const pmNode = schema.nodeFromJSON(migrate(active));
-          const raw = docToHtml(pmNode);
-          const resolved = await imageStorage.resolveHtmlImages(raw);
-          if (token !== this.loadToken) return;
-          // Shared documents come from the URL, i.e. from anyone. Angular's own
-          // sanitizer would strip the editor's inline styles, so sanitize with
-          // DOMPurify before marking the HTML as trusted.
-          this.renderedHtml.set(this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(resolved)));
-        } catch (e) {
-          console.warn('Failed to parse doc in reader:', e);
-          this.renderedHtml.set('<p>Unable to render shared document.</p>');
-        }
-      }
-    });
+      },
+    );
   }
 
   onSheetClick(event: MouseEvent): void {

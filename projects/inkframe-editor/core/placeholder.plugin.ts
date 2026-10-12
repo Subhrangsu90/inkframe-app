@@ -9,7 +9,9 @@ export const DEFAULT_PLACEHOLDER = 'Type / for commands…';
 /** True for a document that holds nothing but one empty paragraph. */
 export function isDocEmpty(doc: PMNode): boolean {
   const first = doc.firstChild;
-  return doc.childCount === 1 && !!first && first.type.name === 'paragraph' && first.content.size === 0;
+  return (
+    doc.childCount === 1 && !!first && first.type.name === 'paragraph' && first.content.size === 0
+  );
 }
 
 /**

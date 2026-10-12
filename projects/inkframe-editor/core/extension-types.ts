@@ -7,15 +7,7 @@ import type { EditorService } from './editor-service';
 import type { SlashItem } from './slash-items';
 
 export type ExtensionGroup =
-  | 'history'
-  | 'block'
-  | 'formatting'
-  | 'list'
-  | 'insert'
-  | 'table'
-  | 'align'
-  | 'action'
-  | 'custom';
+  'history' | 'block' | 'formatting' | 'list' | 'insert' | 'table' | 'align' | 'action' | 'custom';
 
 export interface ToolbarItemDef {
   id: string;

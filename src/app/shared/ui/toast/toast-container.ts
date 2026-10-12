@@ -9,18 +9,9 @@ import { ToastMessage, ToastService } from './toast';
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="ink-toast-wrapper"
-      role="region"
-      aria-label="Notifications"
-      aria-live="polite"
-    >
+    <div class="ink-toast-wrapper" role="region" aria-label="Notifications" aria-live="polite">
       @for (toast of toastService.toasts(); track toast.id) {
-        <div
-          class="ink-toast-item"
-          [attr.data-type]="toast.type"
-          role="status"
-        >
+        <div class="ink-toast-item" [attr.data-type]="toast.type" role="status">
           <div class="ink-toast-icon">
             @switch (toast.type) {
               @case ('success') {
@@ -43,11 +34,7 @@ import { ToastMessage, ToastService } from './toast';
           </div>
 
           @if (toast.action) {
-            <button
-              type="button"
-              class="ink-toast-action-btn"
-              (click)="handleAction(toast)"
-            >
+            <button type="button" class="ink-toast-action-btn" (click)="handleAction(toast)">
               {{ toast.action.label }}
             </button>
           }

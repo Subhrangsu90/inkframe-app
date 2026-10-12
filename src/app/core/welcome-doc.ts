@@ -13,22 +13,19 @@ export const WELCOME_DOC: StoredDoc = {
       {
         type: 'paragraph',
         content: [
-          { type: 'text', text: 'Inkframe is a modern, distraction-free document editor engineered with ' },
           {
             type: 'text',
-            marks: [
-              { type: 'textColor', attrs: { color: '#a855f7' } },
-              { type: 'strong' },
-            ],
+            text: 'Inkframe is a modern, distraction-free document editor engineered with ',
+          },
+          {
+            type: 'text',
+            marks: [{ type: 'textColor', attrs: { color: '#a855f7' } }, { type: 'strong' }],
             text: 'Angular',
           },
           { type: 'text', text: ' and ' },
           {
             type: 'text',
-            marks: [
-              { type: 'textColor', attrs: { color: '#3b82f6' } },
-              { type: 'strong' },
-            ],
+            marks: [{ type: 'textColor', attrs: { color: '#3b82f6' } }, { type: 'strong' }],
             text: 'ProseMirror',
           },
           {
@@ -95,7 +92,10 @@ export const WELCOME_DOC: StoredDoc = {
                 type: 'paragraph',
                 content: [
                   { type: 'text', marks: [{ type: 'strong' }], text: 'Floating action palette: ' },
-                  { type: 'text', text: 'Highlight any text selection with your cursor or touch to style it instantly.' },
+                  {
+                    type: 'text',
+                    text: 'Highlight any text selection with your cursor or touch to style it instantly.',
+                  },
                 ],
               },
             ],
@@ -129,7 +129,10 @@ export const WELCOME_DOC: StoredDoc = {
                   { type: 'text', marks: [{ type: 'strong' }], text: 'Real-time Preview: ' },
                   { type: 'text', text: 'Switch to the ' },
                   { type: 'text', marks: [{ type: 'strong' }], text: 'Preview' },
-                  { type: 'text', text: ' tab in the top navbar to inspect clean, distraction-free reading.' },
+                  {
+                    type: 'text',
+                    text: ' tab in the top navbar to inspect clean, distraction-free reading.',
+                  },
                 ],
               },
             ],
@@ -144,7 +147,10 @@ export const WELCOME_DOC: StoredDoc = {
                   { type: 'text', marks: [{ type: 'strong' }], text: 'Instant Sharing: ' },
                   { type: 'text', text: 'Click ' },
                   { type: 'text', marks: [{ type: 'strong' }], text: 'Share' },
-                  { type: 'text', text: ' to copy a compressed zero-backend link containing the entire document.' },
+                  {
+                    type: 'text',
+                    text: ' to copy a compressed zero-backend link containing the entire document.',
+                  },
                 ],
               },
             ],
@@ -185,7 +191,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'strong' }], text: 'Shortcut / Trigger' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Shortcut / Trigger' },
+                    ],
                   },
                 ],
               },
@@ -199,7 +207,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'strong' }], text: 'Command Palette' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Command Palette' },
+                    ],
                   },
                 ],
               },
@@ -231,7 +241,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'strong' }], text: 'Syntax Highlighting' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Syntax Highlighting' },
+                    ],
                   },
                 ],
               },
@@ -240,7 +252,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', text: 'One Dark theme, line numbers, and copy button' }],
+                    content: [
+                      { type: 'text', text: 'One Dark theme, line numbers, and copy button' },
+                    ],
                   },
                 ],
               },
@@ -263,7 +277,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'strong' }], text: 'Document History' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Document History' },
+                    ],
                   },
                 ],
               },
@@ -295,7 +311,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'strong' }], text: 'Universal Export' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Universal Export' },
+                    ],
                   },
                 ],
               },
@@ -304,7 +322,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', text: 'Export to PDF, Word (.doc), Markdown, and HTML' }],
+                    content: [
+                      { type: 'text', text: 'Export to PDF, Word (.doc), Markdown, and HTML' },
+                    ],
                   },
                 ],
               },

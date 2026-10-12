@@ -7,7 +7,10 @@ import { DEFAULT_PLACEHOLDER, isDocEmpty, placeholderPlugin } from './placeholde
 
 const { nodes, marks } = schema;
 const p = (...content: (string | PMNode)[]) =>
-  nodes['paragraph'].create(null, content.map((c) => (typeof c === 'string' ? schema.text(c) : c)));
+  nodes['paragraph'].create(
+    null,
+    content.map((c) => (typeof c === 'string' ? schema.text(c) : c)),
+  );
 const doc = (...content: PMNode[]) => nodes['doc'].create(null, content);
 
 describe('countWords', () => {
@@ -37,7 +40,9 @@ describe('docStats', () => {
     );
     const stats = docStats(d);
     expect(stats.words).toBe(1 + 3 + 2 + 4); // Title | A bold word | line break | a 1 b 2
-    expect(stats.characters).toBe('Title'.length + 'A bold word'.length + 'linebreak'.length + 'a = 1b = 2'.length);
+    expect(stats.characters).toBe(
+      'Title'.length + 'A bold word'.length + 'linebreak'.length + 'a = 1b = 2'.length,
+    );
     expect(stats.readingMinutes).toBe(1);
   });
 
@@ -59,7 +64,10 @@ describe('placeholderPlugin', () => {
   it('decorates only a document holding one empty paragraph', () => {
     expect(isDocEmpty(doc(p()))).toBe(true);
     const [decoration] = decorationsOf(doc(p()));
-    expect(decoration.type.attrs).toEqual({ class: 'ink-placeholder', 'data-placeholder': DEFAULT_PLACEHOLDER });
+    expect(decoration.type.attrs).toEqual({
+      class: 'ink-placeholder',
+      'data-placeholder': DEFAULT_PLACEHOLDER,
+    });
 
     expect(decorationsOf(doc(p('text')))).toHaveLength(0);
     expect(decorationsOf(doc(p(), p()))).toHaveLength(0);

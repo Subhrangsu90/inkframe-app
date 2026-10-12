@@ -86,7 +86,10 @@ class ImageStorage {
    * Saves an image file or blob to IndexedDB and returns a stable custom URI
    * with format: ink-idb:<id> and a temporary preview object URL.
    */
-  async saveImage(file: File | Blob, name?: string): Promise<{ id: string; uri: string; url: string }> {
+  async saveImage(
+    file: File | Blob,
+    name?: string,
+  ): Promise<{ id: string; uri: string; url: string }> {
     const id = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const fileName = name || (file instanceof File ? file.name : 'image.png');
     const uri = `ink-idb:${id}`;
@@ -101,9 +104,11 @@ class ImageStorage {
     this.urlCache.set(id, objectUrl);
 
     // Pre-cache data URL asynchronously for instant sharing and exports
-    this.blobToDataUrl(file).then((dUrl) => {
-      if (dUrl) this.dataUrlCache.set(id, dUrl);
-    }).catch(() => {});
+    this.blobToDataUrl(file)
+      .then((dUrl) => {
+        if (dUrl) this.dataUrlCache.set(id, dUrl);
+      })
+      .catch(() => {});
 
     const record: ImageRecord = {
       id,
@@ -177,7 +182,12 @@ class ImageStorage {
   /**
    * Resizes and compresses an image Blob to fit cleanly inside URL share links.
    */
-  async optimizeImageBlob(blob: Blob, maxWidth = 960, maxHeight = 960, quality = 0.72): Promise<string> {
+  async optimizeImageBlob(
+    blob: Blob,
+    maxWidth = 960,
+    maxHeight = 960,
+    quality = 0.72,
+  ): Promise<string> {
     if (
       typeof document === 'undefined' ||
       typeof Image === 'undefined' ||
@@ -191,7 +201,9 @@ class ImageStorage {
       const img = new Image();
 
       timer = setTimeout(() => {
-        try { URL.revokeObjectURL(url); } catch {}
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
         this.blobToDataUrl(blob).then(resolve);
       }, 1500);
 
@@ -355,7 +367,11 @@ class ImageStorage {
       if (!node) return;
       if (node.type === 'image' && node.attrs && typeof node.attrs.src === 'string') {
         const src = node.attrs.src;
-        if (src.startsWith('ink-idb:') || src.startsWith('blob:') || (forShare && src.startsWith('data:'))) {
+        if (
+          src.startsWith('ink-idb:') ||
+          src.startsWith('blob:') ||
+          (forShare && src.startsWith('data:'))
+        ) {
           const dataUrl = await this.resolveToDataUrl(src, forShare);
           if (dataUrl && dataUrl.startsWith('data:')) {
             node.attrs.src = dataUrl;

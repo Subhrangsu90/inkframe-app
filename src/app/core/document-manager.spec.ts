@@ -72,21 +72,37 @@ describe('DocumentManager.clearAll', () => {
 });
 
 describe('document previews', () => {
-  const doc = (...content: any[]): StoredDoc => ({ schemaVersion: SCHEMA_VERSION, doc: { type: 'doc', content } });
+  const doc = (...content: any[]): StoredDoc => ({
+    schemaVersion: SCHEMA_VERSION,
+    doc: { type: 'doc', content },
+  });
   const p = (...runs: any[]) => ({ type: 'paragraph', content: runs });
-  const h1 = (text: string) => ({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text }] });
+  const h1 = (text: string) => ({
+    type: 'heading',
+    attrs: { level: 1 },
+    content: [{ type: 'text', text }],
+  });
 
   it('skips the title heading and joins text runs and blocks naturally', () => {
     const stored = doc(
       h1('Plan'),
-      p({ type: 'text', text: 'Ship ' }, { type: 'text', text: 'bold', marks: [{ type: 'strong' }] }, { type: 'text', text: 'ly.' }),
-      { type: 'bullet_list', content: [{ type: 'list_item', content: [p({ type: 'text', text: 'First' })] }] },
+      p(
+        { type: 'text', text: 'Ship ' },
+        { type: 'text', text: 'bold', marks: [{ type: 'strong' }] },
+        { type: 'text', text: 'ly.' },
+      ),
+      {
+        type: 'bullet_list',
+        content: [{ type: 'list_item', content: [p({ type: 'text', text: 'First' })] }],
+      },
     );
     expect(extractDocExcerpt(stored, 'Plan')).toBe('Ship boldly. First');
   });
 
   it('keeps a leading heading that is not the title', () => {
-    expect(extractDocExcerpt(doc(h1('Intro'), p({ type: 'text', text: 'Body' })), 'Other')).toBe('Intro Body');
+    expect(extractDocExcerpt(doc(h1('Intro'), p({ type: 'text', text: 'Body' })), 'Other')).toBe(
+      'Intro Body',
+    );
   });
 
   it('shortens long text at a word boundary', () => {

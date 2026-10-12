@@ -10,12 +10,7 @@ import { Command, EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
-import {
-  redo,
-  redoDepth,
-  undo,
-  undoDepth,
-} from 'prosemirror-history';
+import { redo, redoDepth, undo, undoDepth } from 'prosemirror-history';
 
 import { CalloutKind, TextAlign } from './schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
@@ -39,12 +34,7 @@ import {
 } from './search.plugin';
 import { DocStats, countWords, docStats, docText } from './doc-stats';
 import { htmlHasText } from './paste-cleanup';
-import {
-  EditorHooks,
-  FloatingMenuState,
-  SlashMenuState,
-  TableMenuState,
-} from './editor-hooks';
+import { EditorHooks, FloatingMenuState, SlashMenuState, TableMenuState } from './editor-hooks';
 import { slashKey } from './menus.plugin';
 import { sanitizeHref } from './link-utils';
 import {
@@ -108,9 +98,7 @@ export class EditorService implements EditorHooks {
 
   // ── Modular Extension System ─────────────────────────────────────
   readonly extensions = signal<EditorExtension[]>(DEFAULT_EXTENSIONS);
-  readonly extensionManager = computed(
-    () => new ExtensionManager(this.extensions(), this, this),
-  );
+  readonly extensionManager = computed(() => new ExtensionManager(this.extensions(), this, this));
 
   get envInjector(): EnvironmentInjector {
     return this.env;
@@ -163,9 +151,9 @@ export class EditorService implements EditorHooks {
   }
 
   readonly customToolbarItems = computed(() =>
-    this.extensionManager().getToolbarItems().filter(
-      (item) => !item.group || item.group === 'custom' || item.group === 'action',
-    ),
+    this.extensionManager()
+      .getToolbarItems()
+      .filter((item) => !item.group || item.group === 'custom' || item.group === 'action'),
   );
 
   readonly customFloatingItems = computed(() =>
@@ -247,15 +235,11 @@ export class EditorService implements EditorHooks {
   }
 
   readonly tableMenu = signal<TableMenuState | null>(null, {
-    equal: (a, b) =>
-      a === b ||
-      (!!a && !!b && a.left === b.left && a.top === b.top),
+    equal: (a, b) => a === b || (!!a && !!b && a.left === b.left && a.top === b.top),
   });
 
   readonly floatingMenu = signal<FloatingMenuState | null>(null, {
-    equal: (a, b) =>
-      a === b ||
-      (!!a && !!b && a.left === b.left && a.top === b.top),
+    equal: (a, b) => a === b || (!!a && !!b && a.left === b.left && a.top === b.top),
   });
   readonly slashMenu = signal<SlashMenuState | null>(null, {
     equal: (a, b) =>
@@ -273,10 +257,7 @@ export class EditorService implements EditorHooks {
     const q = this.slashMenu()?.query.toLowerCase() ?? '';
     const items = this.extensionManager().getSlashItems();
     return items.filter(
-      (i) =>
-        !q ||
-        i.label.toLowerCase().includes(q) ||
-        i.keywords.some((k) => k.startsWith(q)),
+      (i) => !q || i.label.toLowerCase().includes(q) || i.keywords.some((k) => k.startsWith(q)),
     );
   });
 
@@ -320,8 +301,7 @@ export class EditorService implements EditorHooks {
         if (htmlHasText(data?.getData('text/html') ?? '')) return false;
         return this.handleImageFiles(event, data?.files);
       },
-      handleDrop: (_view, event) =>
-        this.handleImageFiles(event, event.dataTransfer?.files),
+      handleDrop: (_view, event) => this.handleImageFiles(event, event.dataTransfer?.files),
       dispatchTransaction(this: EditorView, tr) {
         const next = this.state.apply(tr);
         this.updateState(next);
@@ -388,16 +368,16 @@ export class EditorService implements EditorHooks {
         if (this.searchOpen()) {
           this.searchOpen.set(false);
           const v = this.view;
-          setSearchQueryCommand('', { caseSensitive: this.searchCaseSensitive() })(v.state, v.dispatch);
+          setSearchQueryCommand('', { caseSensitive: this.searchCaseSensitive() })(
+            v.state,
+            v.dispatch,
+          );
         }
       }
     }
   }
 
-  private createState(
-    stored?: StoredDoc | null,
-    plugins?: readonly Plugin[],
-  ) {
+  private createState(stored?: StoredDoc | null, plugins?: readonly Plugin[]) {
     const mgr = this.extensionManager();
     const currentSchema = mgr.schema;
     const activePlugins = plugins ?? mgr.buildPlugins();
@@ -426,8 +406,8 @@ export class EditorService implements EditorHooks {
       !type
         ? false
         : empty
-        ? !!type.isInSet(state.storedMarks ?? $from.marks())
-        : state.doc.rangeHasMark(from, to, type);
+          ? !!type.isInSet(state.storedMarks ?? $from.marks())
+          : state.doc.rangeHasMark(from, to, type);
 
     this.isBold.set(active(state.schema.marks['strong']));
     this.isItalic.set(active(state.schema.marks['em']));
@@ -490,10 +470,7 @@ export class EditorService implements EditorHooks {
     const parent = $from.parent;
     this.block.set({
       type: parent.type.name,
-      level:
-        parent.type.name === 'heading'
-          ? (parent.attrs['level'] as number)
-          : null,
+      level: parent.type.name === 'heading' ? (parent.attrs['level'] as number) : null,
       list,
     });
 
@@ -537,9 +514,7 @@ export class EditorService implements EditorHooks {
         return true;
       }
       case 'Escape':
-        this.view?.dispatch(
-          this.view.state.tr.setMeta(slashKey, { dismiss: true }),
-        );
+        this.view?.dispatch(this.view.state.tr.setMeta(slashKey, { dismiss: true }));
         return true;
       default:
         return false;
@@ -633,9 +608,7 @@ export class EditorService implements EditorHooks {
         dispatch?.(state.tr.addStoredMark(markType.create({ color })));
       } else {
         dispatch?.(
-          state.tr
-            .removeMark(from, to, markType)
-            .addMark(from, to, markType.create({ color })),
+          state.tr.removeMark(from, to, markType).addMark(from, to, markType.create({ color })),
         );
       }
       return true;
@@ -780,21 +753,13 @@ export class EditorService implements EditorHooks {
           ),
         ),
       );
-      dispatch?.(
-        state.tr
-          .replaceSelectionWith(table.create(null, body))
-          .scrollIntoView(),
-      );
+      dispatch?.(state.tr.replaceSelectionWith(table.create(null, body)).scrollIntoView());
       return true;
     });
   }
 
   /** Inserts an image either from an IndexedDB-stored file or an external URL */
-  async insertImage(
-    fileOrSrc: File | Blob | string,
-    alt?: string,
-    title?: string,
-  ): Promise<void> {
+  async insertImage(fileOrSrc: File | Blob | string, alt?: string, title?: string): Promise<void> {
     if (!this.nodeType('image')) return;
 
     let src: string;
@@ -802,8 +767,7 @@ export class EditorService implements EditorHooks {
     if (typeof fileOrSrc === 'string') {
       src = fileOrSrc;
     } else {
-      defaultAlt =
-        defaultAlt || (fileOrSrc instanceof File ? fileOrSrc.name : 'image');
+      defaultAlt = defaultAlt || (fileOrSrc instanceof File ? fileOrSrc.name : 'image');
       const saved = await imageStorage.saveImage(fileOrSrc, defaultAlt);
       src = saved.uri;
     }
@@ -814,9 +778,7 @@ export class EditorService implements EditorHooks {
     this.run((state, dispatch) => {
       dispatch?.(
         state.tr
-          .replaceSelectionWith(
-            image.create({ src, alt: defaultAlt, title: title ?? null }),
-          )
+          .replaceSelectionWith(image.create({ src, alt: defaultAlt, title: title ?? null }))
           .scrollIntoView(),
       );
       return true;

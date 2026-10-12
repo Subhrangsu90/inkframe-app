@@ -26,7 +26,9 @@ const VIEW_MODE_KEY = 'inkframe-docs-view';
 
 function savedViewMode(): ViewMode {
   try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid';
+    return typeof localStorage !== 'undefined' && localStorage.getItem(VIEW_MODE_KEY) === 'list'
+      ? 'list'
+      : 'grid';
   } catch {
     return 'grid';
   }
@@ -43,12 +45,7 @@ export interface TemplateStarter {
 @Component({
   selector: 'ink-docs',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    InkIcon,
-  ],
+  imports: [CommonModule, FormsModule, RouterLink, InkIcon],
   templateUrl: './docs.html',
   styleUrl: './docs.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -99,8 +96,15 @@ export class Docs implements OnInit {
         doc: {
           type: 'doc',
           content: [
-            { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Untitled Document' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'Start writing your thoughts here...' }] },
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Untitled Document' }],
+            },
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Start writing your thoughts here...' }],
+            },
           ],
         },
       },
@@ -115,12 +119,33 @@ export class Docs implements OnInit {
         doc: {
           type: 'doc',
           content: [
-            { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Team Sync & Agenda' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Attendees' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'Alex, Sarah, Jordan, Subhrangsu' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Key Decisions' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '1. Ship the new modular sidebar architecture.' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '2. Keep offline local-first privacy standard.' }] },
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Team Sync & Agenda' }],
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: 'Attendees' }],
+            },
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Alex, Sarah, Jordan, Subhrangsu' }],
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: 'Key Decisions' }],
+            },
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: '1. Ship the new modular sidebar architecture.' }],
+            },
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: '2. Keep offline local-first privacy standard.' }],
+            },
           ],
         },
       },
@@ -135,11 +160,35 @@ export class Docs implements OnInit {
         doc: {
           type: 'doc',
           content: [
-            { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Architecture RFC' }] },
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Architecture RFC' }],
+            },
             { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Overview' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'This design doc outlines the client-side ProseMirror editor system.' }] },
-            { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Pipeline' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'Zero server dependencies, 100% client-side IndexedDB persistence.' }] },
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'This design doc outlines the client-side ProseMirror editor system.',
+                },
+              ],
+            },
+            {
+              type: 'heading',
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: 'Data Pipeline' }],
+            },
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Zero server dependencies, 100% client-side IndexedDB persistence.',
+                },
+              ],
+            },
           ],
         },
       },
@@ -154,8 +203,15 @@ export class Docs implements OnInit {
         doc: {
           type: 'doc',
           content: [
-            { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'Crafting Minimal Interfaces' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: 'Good design gets out of the user\'s way.' }] },
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Crafting Minimal Interfaces' }],
+            },
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: "Good design gets out of the user's way." }],
+            },
           ],
         },
       },

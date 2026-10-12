@@ -8,11 +8,6 @@
     "declarationMap": true,
     "types": []
   },
-  "include": [
-    "src/**/*.ts",
-    "core/**/*.ts",
-    "toolbar/**/*.ts",
-    "extensions/**/*.ts"
-  ],
+  "include": ["src/**/*.ts", "core/**/*.ts", "toolbar/**/*.ts", "extensions/**/*.ts"],
   "exclude": ["**/*.spec.ts", "**/*.fixtures.ts"]
 }

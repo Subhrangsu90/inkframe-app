@@ -17,7 +17,10 @@ export const appConfig: ApplicationConfig = {
     // Icons come from the self-hosted Material Symbols subset (styles/fonts/icons.css).
     // Set the class explicitly instead of letting mat-icon guess from loaded fonts.
     provideAppInitializer(() => {
-      inject(MatIconRegistry).setDefaultFontSetClass('material-symbols-outlined', 'mat-ligature-font');
+      inject(MatIconRegistry).setDefaultFontSetClass(
+        'material-symbols-outlined',
+        'mat-ligature-font',
+      );
     }),
   ],
 };

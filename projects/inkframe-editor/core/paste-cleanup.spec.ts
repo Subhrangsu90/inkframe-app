@@ -26,7 +26,8 @@ function outline(node: PMNode, depth = 0): string[] {
       const align = child.attrs['align'] ? `[${child.attrs['align']}]` : '';
       lines.push(`${indent}${name}${align}: ${child.textContent}`);
     } else {
-      const checked = child.type.name === 'task_item' ? `[${child.attrs['checked'] ? 'x' : ' '}]` : '';
+      const checked =
+        child.type.name === 'task_item' ? `[${child.attrs['checked'] ? 'x' : ' '}]` : '';
       lines.push(`${indent}${child.type.name}${checked}`, ...outline(child, depth + 1));
     }
   });
@@ -151,7 +152,9 @@ describe('Paste from Google Docs', () => {
     expect(marksOn(doc, '2')).toEqual({ superscript: true });
     // The link's own blue and underline are link styling, not formatting.
     expect(marksOn(doc, 'link')).toEqual({ link: 'https://example.com/' });
-    expect(textNodes(doc).some((n) => n.marks.some((m) => m.type.name === 'textColor'))).toBe(false);
+    expect(textNodes(doc).some((n) => n.marks.some((m) => m.type.name === 'textColor'))).toBe(
+      false,
+    );
     expect(marksOn(doc, 'Launch plan')).toEqual({});
   });
 });
@@ -178,7 +181,9 @@ describe('cleanPastedHtml', () => {
   });
 
   it('removes scripts and event handlers', () => {
-    const html = cleanPastedHtml('<p onclick="alert(1)">hi<script>alert(2)</script><img src="x.png" onerror="alert(3)"></p>');
+    const html = cleanPastedHtml(
+      '<p onclick="alert(1)">hi<script>alert(2)</script><img src="x.png" onerror="alert(3)"></p>',
+    );
     expect(html).not.toMatch(/script|onclick|onerror/);
     expect(html).toContain('hi');
   });

@@ -135,9 +135,7 @@ export class CodeBlockNodeView implements NodeView {
       if (!this.view.editable) return;
       const pos = this.getPos();
       if (pos != null) {
-        this.view.dispatch(
-          this.view.state.tr.delete(pos, pos + this.node.nodeSize),
-        );
+        this.view.dispatch(this.view.state.tr.delete(pos, pos + this.node.nodeSize));
       }
     });
 
@@ -163,10 +161,8 @@ export class CodeBlockNodeView implements NodeView {
   };
 
   private getLanguageLabel(langId: string): string {
-    const found = CODE_LANGUAGES.find(
-      (l) => l.id.toLowerCase() === (langId || '').toLowerCase(),
-    );
-    return found ? found.label : (langId ? langId.toUpperCase() : 'Select language');
+    const found = CODE_LANGUAGES.find((l) => l.id.toLowerCase() === (langId || '').toLowerCase());
+    return found ? found.label : langId ? langId.toUpperCase() : 'Select language';
   }
 
   private populateLanguageMenu(): void {
@@ -303,10 +299,7 @@ export class CodeBlockNodeView implements NodeView {
 
   stopEvent(event: Event): boolean {
     const target = event.target as HTMLElement;
-    return (
-      this.toolbar.contains(target) ||
-      this.langMenu.contains(target)
-    );
+    return this.toolbar.contains(target) || this.langMenu.contains(target);
   }
 
   ignoreMutation(mutation: any): boolean {

@@ -21,10 +21,7 @@ import { LayoutService } from '../../shared/layout/layout.service';
 @Component({
   selector: 'ink-settings',
   standalone: true,
-  imports: [
-    CommonModule,
-    InkIcon,
-  ],
+  imports: [CommonModule, InkIcon],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

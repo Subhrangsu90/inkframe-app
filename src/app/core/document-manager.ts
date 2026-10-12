@@ -26,13 +26,19 @@ export function extractDocTitle(stored: StoredDoc): string {
     if (Array.isArray(content)) {
       for (const node of content) {
         if (node.type === 'heading' && Array.isArray(node.content)) {
-          const text = node.content.map((c: any) => c.text || '').join('').trim();
+          const text = node.content
+            .map((c: any) => c.text || '')
+            .join('')
+            .trim();
           if (text) return text;
         }
       }
       for (const node of content) {
         if (node.type === 'paragraph' && Array.isArray(node.content)) {
-          const text = node.content.map((c: any) => c.text || '').join('').trim();
+          const text = node.content
+            .map((c: any) => c.text || '')
+            .join('')
+            .trim();
           if (text) {
             return text.length > 40 ? text.slice(0, 40) + '...' : text;
           }
@@ -49,7 +55,9 @@ function plainText(node: any): string {
   if (node.type === 'hard_break') return ' ';
   if (!Array.isArray(node.content)) return '';
   // Text runs inside one paragraph join directly; separate blocks get a space.
-  const inline = node.content.every((c: any) => typeof c.text === 'string' || c.type === 'hard_break');
+  const inline = node.content.every(
+    (c: any) => typeof c.text === 'string' || c.type === 'hard_break',
+  );
   return node.content.map(plainText).join(inline ? '' : ' ');
 }
 
@@ -62,7 +70,9 @@ export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180
     const blocks: any[] = (stored?.doc as any)?.content ?? [];
     const first = blocks[0];
     const body =
-      first?.type === 'heading' && plainText(first).trim() === title.trim() ? blocks.slice(1) : blocks;
+      first?.type === 'heading' && plainText(first).trim() === title.trim()
+        ? blocks.slice(1)
+        : blocks;
     const text = body.map(plainText).join(' ').replace(/\s+/g, ' ').trim();
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength).replace(/\s+\S*$/, '') + '…';

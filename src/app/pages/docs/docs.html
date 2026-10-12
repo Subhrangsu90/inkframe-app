@@ -26,7 +26,12 @@
       class="search-input"
     />
     @if (searchQuery()) {
-      <button type="button" class="search-clear-btn" (click)="searchQuery.set('')" aria-label="Clear search">
+      <button
+        type="button"
+        class="search-clear-btn"
+        (click)="searchQuery.set('')"
+        aria-label="Clear search"
+      >
         <ink-icon name="close" [size]="12" />
       </button>
     } @else {
@@ -113,11 +118,17 @@
           </span>
           @if (searchQuery()) {
             <h3 class="empty-title">No documents match “{{ searchQuery() }}”</h3>
-            <p class="empty-desc">Search looks at document titles. Try a shorter or different word.</p>
-            <button type="button" class="secondary-btn" (click)="searchQuery.set('')">Clear search</button>
+            <p class="empty-desc">
+              Search looks at document titles. Try a shorter or different word.
+            </p>
+            <button type="button" class="secondary-btn" (click)="searchQuery.set('')">
+              Clear search
+            </button>
           } @else {
             <h3 class="empty-title">No documents yet</h3>
-            <p class="empty-desc">Create a blank document or start from one of the templates above.</p>
+            <p class="empty-desc">
+              Create a blank document or start from one of the templates above.
+            </p>
             <button type="button" class="new-doc-btn" (click)="createNewDoc()">
               <ink-icon name="plus" [size]="14" [strokeWidth]="2.25" />
               <span>New document</span>
@@ -144,13 +155,31 @@
                 </p>
               </div>
               <div class="doc-actions">
-                <button type="button" class="icon-btn" (click)="shareDocLink(doc.id, $event)" title="Copy share link" aria-label="Copy share link">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="shareDocLink(doc.id, $event)"
+                  title="Copy share link"
+                  aria-label="Copy share link"
+                >
                   <ink-icon name="share" [size]="13" />
                 </button>
-                <button type="button" class="icon-btn" (click)="duplicateDoc(doc.id, $event)" title="Duplicate" aria-label="Duplicate">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="duplicateDoc(doc.id, $event)"
+                  title="Duplicate"
+                  aria-label="Duplicate"
+                >
                   <ink-icon name="copy" [size]="13" />
                 </button>
-                <button type="button" class="icon-btn danger" (click)="deleteDoc(doc.id, $event)" title="Delete" aria-label="Delete">
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  (click)="deleteDoc(doc.id, $event)"
+                  title="Delete"
+                  aria-label="Delete"
+                >
                   <ink-icon name="trash" [size]="13" />
                 </button>
               </div>
@@ -161,7 +190,9 @@
         <div class="docs-list">
           @for (doc of filteredDocs(); track doc.id) {
             <article class="doc-row" [class.is-active]="layout.activeDocId() === doc.id">
-              <span class="doc-row-icon" aria-hidden="true"><ink-icon name="file-text" [size]="15" /></span>
+              <span class="doc-row-icon" aria-hidden="true"
+                ><ink-icon name="file-text" [size]="15"
+              /></span>
               <div class="doc-row-main">
                 <h3 class="doc-row-title">
                   <a [routerLink]="['/doc', doc.id]" class="stretched-link">{{ doc.title }}</a>
@@ -170,16 +201,36 @@
                   <p class="doc-row-excerpt">{{ doc.excerpt }}</p>
                 }
               </div>
-              <span class="doc-row-words">{{ doc.wordCount }} {{ doc.wordCount === 1 ? 'word' : 'words' }}</span>
+              <span class="doc-row-words"
+                >{{ doc.wordCount }} {{ doc.wordCount === 1 ? 'word' : 'words' }}</span
+              >
               <span class="doc-row-time">{{ formatTime(doc.updatedAt) }}</span>
               <div class="doc-actions">
-                <button type="button" class="icon-btn" (click)="shareDocLink(doc.id, $event)" title="Copy share link" aria-label="Copy share link">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="shareDocLink(doc.id, $event)"
+                  title="Copy share link"
+                  aria-label="Copy share link"
+                >
                   <ink-icon name="share" [size]="13" />
                 </button>
-                <button type="button" class="icon-btn" (click)="duplicateDoc(doc.id, $event)" title="Duplicate" aria-label="Duplicate">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="duplicateDoc(doc.id, $event)"
+                  title="Duplicate"
+                  aria-label="Duplicate"
+                >
                   <ink-icon name="copy" [size]="13" />
                 </button>
-                <button type="button" class="icon-btn danger" (click)="deleteDoc(doc.id, $event)" title="Delete" aria-label="Delete">
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  (click)="deleteDoc(doc.id, $event)"
+                  title="Delete"
+                  aria-label="Delete"
+                >
                   <ink-icon name="trash" [size]="13" />
                 </button>
               </div>

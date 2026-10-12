@@ -1,4 +1,11 @@
-import { Command, EditorState, Plugin, PluginKey, TextSelection, Transaction } from 'prosemirror-state';
+import {
+  Command,
+  EditorState,
+  Plugin,
+  PluginKey,
+  TextSelection,
+  Transaction,
+} from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import { Node as PMNode } from 'prosemirror-model';
 
@@ -43,7 +50,11 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
  * blocks. Inline nodes such as images count as one character, so text on
  * either side of them is not joined into a match.
  */
-export function findMatches(doc: PMNode, query: string, options: SearchOptions = {}): SearchMatch[] {
+export function findMatches(
+  doc: PMNode,
+  query: string,
+  options: SearchOptions = {},
+): SearchMatch[] {
   if (!query) return [];
   const pattern = new RegExp(escapeRegExp(query), options.caseSensitive ? 'g' : 'gi');
   const matches: SearchMatch[] = [];

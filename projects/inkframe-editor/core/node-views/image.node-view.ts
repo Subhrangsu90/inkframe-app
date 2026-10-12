@@ -116,20 +116,13 @@ export class ImageNodeView implements NodeView {
       e.stopPropagation();
       const pos = this.getPos();
       if (pos != null) {
-        this.view.dispatch(
-          this.view.state.tr.delete(pos, pos + this.node.nodeSize),
-        );
+        this.view.dispatch(this.view.state.tr.delete(pos, pos + this.node.nodeSize));
       }
     });
     this.toolbarEl.appendChild(deleteBtn);
 
     // Resize handles: SE (bottom-right), E (right), SW (bottom-left), W (left)
-    const handlePositions: Array<'se' | 'e' | 'sw' | 'w'> = [
-      'se',
-      'e',
-      'sw',
-      'w',
-    ];
+    const handlePositions: Array<'se' | 'e' | 'sw' | 'w'> = ['se', 'e', 'sw', 'w'];
     handlePositions.forEach((pos) => {
       const handle = document.createElement('div');
       handle.className = `ink-image-resize-handle handle-${pos}`;
@@ -163,17 +156,13 @@ export class ImageNodeView implements NodeView {
     }
   }
 
-  private onResizeStart(
-    e: MouseEvent,
-    direction: 'se' | 'e' | 'sw' | 'w',
-  ): void {
+  private onResizeStart(e: MouseEvent, direction: 'se' | 'e' | 'sw' | 'w'): void {
     e.preventDefault();
     e.stopPropagation();
 
     const startX = e.clientX;
     const startWidth = this.dom.offsetWidth;
-    const parentWidth =
-      this.dom.parentElement?.clientWidth || window.innerWidth;
+    const parentWidth = this.dom.parentElement?.clientWidth || window.innerWidth;
     this.dom.classList.add('is-resizing');
 
     this.badgeEl.style.display = 'block';
@@ -264,10 +253,7 @@ export class ImageNodeView implements NodeView {
 
   stopEvent(event: Event): boolean {
     const target = event.target as HTMLElement;
-    return (
-      this.toolbarEl.contains(target) ||
-      target.classList.contains('ink-image-resize-handle')
-    );
+    return this.toolbarEl.contains(target) || target.classList.contains('ink-image-resize-handle');
   }
 
   ignoreMutation(): boolean {

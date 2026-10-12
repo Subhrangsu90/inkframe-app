@@ -71,12 +71,7 @@ export type EditorViewTab = 'rich' | 'preview';
 @Component({
   selector: 'ink-editor-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    Editor,
-    InkIcon,
-  ],
+  imports: [CommonModule, FormsModule, Editor, InkIcon],
   templateUrl: './editor.html',
   styleUrl: './editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -271,7 +266,11 @@ export class EditorView implements OnInit {
       }
     }
     const finalMd = md || '# ' + this.docTitle();
-    const filename = `${this.docTitle().replace(/[^\w\s-]/g, '').trim() || 'document'}.md`;
+    const filename = `${
+      this.docTitle()
+        .replace(/[^\w\s-]/g, '')
+        .trim() || 'document'
+    }.md`;
 
     const blob = new Blob([finalMd], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);

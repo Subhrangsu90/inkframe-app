@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Injectable,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injectable, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -54,11 +48,7 @@ export class ConfirmDialogService {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (dialogService.state(); as current) {
-      <div
-        class="ink-dialog-backdrop"
-        role="presentation"
-        (click)="dialogService.close(false)"
-      >
+      <div class="ink-dialog-backdrop" role="presentation" (click)="dialogService.close(false)">
         <div
           class="ink-dialog-card"
           role="alertdialog"
@@ -68,13 +58,9 @@ export class ConfirmDialogService {
           (keydown.escape)="dialogService.close(false)"
         >
           <div class="ink-dialog-header">
-            <div
-              class="ink-dialog-icon-badge"
-              [class.destructive]="current.options.isDestructive"
-            >
+            <div class="ink-dialog-icon-badge" [class.destructive]="current.options.isDestructive">
               <mat-icon>{{
-                current.options.icon ||
-                  (current.options.isDestructive ? 'warning' : 'help_outline')
+                current.options.icon || (current.options.isDestructive ? 'warning' : 'help_outline')
               }}</mat-icon>
             </div>
             <div class="ink-dialog-header-text">

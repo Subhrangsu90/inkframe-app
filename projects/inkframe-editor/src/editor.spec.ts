@@ -109,7 +109,9 @@ describe('<ink-editor> status bar and find panel', () => {
     const { fixture, view, el } = await setup('first');
     expect(statusItems(el)).toEqual(['1 word', '5 characters', '1 min read']);
     // Screen readers hear "1 word, 5 characters, 1 min read".
-    expect(el.querySelector('.ink-status-bar')!.textContent).toContain('1 word·, 5 characters·, 1 min read');
+    expect(el.querySelector('.ink-status-bar')!.textContent).toContain(
+      '1 word·, 5 characters·, 1 min read',
+    );
 
     view.dispatch(view.state.tr.insertText(' and second', 6));
     await fixture.whenStable();

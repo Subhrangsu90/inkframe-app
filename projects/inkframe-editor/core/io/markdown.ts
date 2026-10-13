@@ -1,4 +1,5 @@
 import { Node as PMNode } from 'prosemirror-model';
+import { Transform } from 'prosemirror-transform';
 import {
   MarkdownParser,
   MarkdownSerializer,
@@ -17,6 +18,8 @@ import {
   schema,
 } from '../schema';
 import { sanitizeCssColor } from '../link-utils';
+import { sanitizeListStart } from '../lists/list-schema';
+import { isListNode } from '../lists/list-commands';
 
 const ALIGN_MARKER: Record<string, string> = {
   left: ':---',
@@ -44,6 +47,32 @@ function keepingAlignment(serialize: NodeSerializer): NodeSerializer {
   };
 }
 
+/**
+ * Whether a list can be written tight (no blank line between items): every
+ * item is one unaligned line of text plus nested lists. A second paragraph,
+ * or the blank lines around an alignment wrapper, need a loose list.
+ */
+function canBeTight(list: PMNode): boolean {
+  let tight = true;
+  list.forEach((item) =>
+    item.forEach((child, _, i) => {
+      if (i > 0 ? !isListNode(child) : !!sanitizeTextAlign(child.attrs['align'])) tight = false;
+    }),
+  );
+  return tight;
+}
+
+/**
+ * Lists are written tight unless they were imported loose (`tight: false`)
+ * or cannot be written tight.
+ */
+function withTightness(list: PMNode): PMNode {
+  const tight = list.attrs['tight'] !== false && canBeTight(list);
+  return tight === list.attrs['tight']
+    ? list
+    : list.type.create({ ...list.attrs, tight }, list.content);
+}
+
 // Extend serializer with callouts, task lists, and tables
 export const inkMarkdownSerializer = new MarkdownSerializer(
   {
@@ -55,8 +84,22 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
       state.write(`> [!${type}]\n`);
       state.wrapBlock('> ', null, node, () => state.renderContent(node));
     },
+    // `*` for bullets and `-` for tasks: a different marker starts a new list,
+    // so a bullet list right before a task list stays a separate list.
+    bullet_list(state, node) {
+      state.renderList(withTightness(node), '  ', () => '* ');
+    },
+    ordered_list(state, node) {
+      const list = withTightness(node);
+      const start = sanitizeListStart(list.attrs['order']);
+      const width = String(start + list.childCount - 1).length;
+      state.renderList(list, state.repeat(' ', width + 2), (i) => {
+        const number = String(start + i);
+        return `${state.repeat(' ', width - number.length)}${number}. `;
+      });
+    },
     task_list(state, node) {
-      state.renderList(node, '  ', () => '- ');
+      state.renderList(withTightness(node), '  ', () => '- ');
     },
     task_item(state, node) {
       const box = node.attrs['checked'] ? '[x] ' : '[ ] ';
@@ -371,7 +414,7 @@ tokenizer.core.ruler.push('ink_tables', (state: StateCore) => {
 
 const CALLOUT_ALIASES: Record<string, CalloutKind> = {
   info: 'info',
-  note: 'info',
+  note: 'note',
   important: 'info',
   warning: 'warning',
   success: 'success',
@@ -472,6 +515,16 @@ tokenizer.core.ruler.push('ink_alignment', (state) => {
 
 const alignAttr = (tok: Token) => sanitizeTextAlign(tok.attrGet('align'));
 
+/** markdown-it hides the paragraphs of tight lists (as prosemirror-markdown reads them). */
+function listIsTight(tokens: Token[], i: number): boolean {
+  while (++i < tokens.length) {
+    if (tokens[i].type !== 'list_item_open' && tokens[i].type !== 'task_item_open') {
+      return tokens[i].hidden;
+    }
+  }
+  return false;
+}
+
 export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
   ...defaultMarkdownParser.tokens,
   paragraph: { block: 'paragraph', getAttrs: (tok) => ({ align: alignAttr(tok) }) },
@@ -509,7 +562,10 @@ export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
     block: 'callout',
     getAttrs: (tok) => ({ type: tok.attrGet('kind') }),
   },
-  task_list: { block: 'task_list' },
+  task_list: {
+    block: 'task_list',
+    getAttrs: (_tok, tokens, i) => ({ tight: listIsTight(tokens, i) }),
+  },
   task_item: {
     block: 'task_item',
     getAttrs: (tok) => ({
@@ -534,6 +590,21 @@ export function docToMarkdown(doc: PMNode): string {
   return inkMarkdownSerializer.serialize(doc);
 }
 
+/**
+ * `tight: false` records that a Markdown list was written loose by choice.
+ * A list that had to be loose (see canBeTight) keeps the default, so a
+ * document survives export and import unchanged.
+ */
+function keepLooseOnlyByChoice(doc: PMNode): PMNode {
+  const tr = new Transform(doc);
+  doc.descendants((node, pos) => {
+    if (isListNode(node) && node.attrs['tight'] === false && !canBeTight(node)) {
+      tr.setNodeAttribute(pos, 'tight', true);
+    }
+  });
+  return tr.doc;
+}
+
 export function markdownToDoc(markdown: string): PMNode {
-  return inkMarkdownParser.parse(markdown);
+  return keepLooseOnlyByChoice(inkMarkdownParser.parse(markdown));
 }

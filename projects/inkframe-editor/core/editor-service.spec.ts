@@ -8,6 +8,7 @@ import { EditorService } from './editor-service';
 import { DEFAULT_HIGHLIGHT_COLOR, schema as staticSchema } from './schema';
 import {
   BoldExtension,
+  BulletListExtension,
   DEFAULT_EXTENSIONS,
   HeadingExtension,
   HistoryExtension,
@@ -221,6 +222,123 @@ describe('EditorService with the extension-built schema', () => {
     select(4, 4); // in "a"
     expect(press(view, 'Tab')).toBe(true);
     expect(view.state.selection.from).toBeGreaterThan(7); // inside the second cell
+  });
+
+  describe('lists', () => {
+    const item = (text: string, ...nested: unknown[]) => ({
+      type: 'list_item',
+      content: [{ type: 'paragraph', content: text ? [{ type: 'text', text }] : [] }, ...nested],
+    });
+    const listDoc = (...content: unknown[]): StoredDoc => ({
+      schemaVersion: SCHEMA_VERSION,
+      doc: { type: 'doc', content },
+    });
+    /** Puts the cursor at the start (or end) of the first textblock with this text. */
+    function cursorIn(view: EditorView, text: string, end = false) {
+      let pos = -1;
+      view.state.doc.descendants((node, p) => {
+        if (pos < 0 && node.isTextblock && node.textContent === text) {
+          pos = p + 1 + (end ? node.content.size : 0);
+        }
+        return pos < 0;
+      });
+      select(pos, pos);
+    }
+
+    it('Tab on the first item is handled (focus stays in the editor), and changes nothing', () => {
+      const view = mount(listDoc({ type: 'bullet_list', content: [item('one'), item('two')] }));
+      cursorIn(view, 'one');
+      const before = view.state.doc;
+      expect(press(view, 'Tab')).toBe(true);
+      expect(view.state.doc.eq(before)).toBe(true);
+    });
+
+    it('Backspace outdents, Delete joins the next item, Alt+Shift+Up moves an item', () => {
+      const view = mount(
+        listDoc({
+          type: 'bullet_list',
+          content: [item('A', { type: 'bullet_list', content: [item('B')] }), item('C')],
+        }),
+      );
+      cursorIn(view, 'B');
+      expect(press(view, 'Backspace')).toBe(true);
+      expect(view.state.doc.firstChild!.childCount).toBe(3); // A, B, C side by side
+
+      cursorIn(view, 'B', true);
+      expect(press(view, 'Delete')).toBe(true);
+      expect(view.state.doc.firstChild!.child(1).textContent).toBe('BC');
+
+      expect(press(view, 'ArrowUp', { alt: true, shift: true })).toBe(true);
+      expect(view.state.doc.firstChild!.child(0).textContent).toBe('BC');
+    });
+
+    it('Ctrl+Enter checks the task at the cursor', () => {
+      const view = mount(
+        listDoc({
+          type: 'task_list',
+          content: [
+            {
+              type: 'task_item',
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: 'todo' }] }],
+            },
+          ],
+        }),
+      );
+      cursorIn(view, 'todo');
+      expect(press(view, 'Enter', { ctrl: true })).toBe(true);
+      expect(view.state.doc.firstChild!.firstChild!.attrs['checked']).toBe(true);
+      expect(svc.listState()).toMatchObject({ kind: 'task_list', level: 1 });
+    });
+
+    it('merges two lists when the paragraph between them is deleted, and undoes in one step', () => {
+      const view = mount(
+        listDoc(
+          { type: 'bullet_list', content: [item('A')] },
+          { type: 'paragraph' },
+          { type: 'bullet_list', content: [item('B')] },
+        ),
+      );
+      const before = view.state.doc;
+      cursorIn(view, '');
+      expect(press(view, 'Backspace')).toBe(true);
+      expect(view.state.doc.childCount).toBe(1);
+      expect(view.state.doc.firstChild!.childCount).toBe(2);
+      svc.undo();
+      expect(view.state.doc.eq(before)).toBe(true);
+    });
+
+    it('each list command is one undo step that restores nesting and attributes exactly', () => {
+      const view = mount(
+        listDoc({
+          type: 'ordered_list',
+          attrs: { order: 4 },
+          content: [item('A'), item('B', { type: 'bullet_list', content: [item('C')] })],
+        }),
+      );
+      const before = view.state.doc;
+      cursorIn(view, 'B');
+      svc.toggleList('task_list');
+      expect(view.state.doc.firstChild!.type.name).toBe('task_list');
+      svc.undo();
+      expect(view.state.doc.eq(before)).toBe(true);
+
+      svc.setNumberStyle('upper-alpha');
+      svc.restartListNumbering();
+      expect(view.state.doc.childCount).toBe(2);
+      svc.undo();
+      svc.undo();
+      expect(view.state.doc.eq(before)).toBe(true);
+    });
+
+    it('a bullet list without headings or numbered lists still builds its schema', () => {
+      svc = createService();
+      svc.mount(document.createElement('div'), {
+        doc: listDoc({ type: 'bullet_list', content: [item('only')] }),
+        extensions: [HistoryExtension, BulletListExtension],
+      });
+      expect(svc.view!.state.schema.nodes['ordered_list']).toBeUndefined();
+      expect(svc.view!.state.doc.firstChild!.type.name).toBe('bullet_list');
+    });
   });
 
   it('highlights through commands and Mod-Alt-h, and tracks the current color', () => {

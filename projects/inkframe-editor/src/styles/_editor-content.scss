@@ -68,23 +68,39 @@
   // Every list property is declared here rather than left to browser
   // defaults: CSS resets such as Tailwind's preflight set `list-style: none`
   // on all ul/ol, which removes bullets and numbers from documents.
-  ul {
-    list-style-type: disc;
+  //
+  // Bullets (disc, circle, square) and numbers (1., a., i.) cycle every three
+  // levels, counting every enclosing list, through the 9 levels lists can
+  // nest. A style chosen for one list is an inline style and wins.
+  $nesting: '';
+  @for $level from 1 through 9 {
+    $step: ($level - 1) % 3;
+    #{$nesting}ul {
+      @if $step == 0 {
+        list-style-type: disc;
+      } @else if $step == 1 {
+        list-style-type: circle;
+      } @else {
+        list-style-type: square;
+      }
+    }
+    #{$nesting}ol {
+      @if $step == 0 {
+        list-style-type: decimal;
+      } @else if $step == 1 {
+        list-style-type: lower-alpha;
+      } @else {
+        list-style-type: lower-roman;
+      }
+    }
+    $nesting: $nesting + ':is(ul, ol) ';
   }
-  ul ul {
-    list-style-type: circle;
-  }
-  ul ul ul {
-    list-style-type: square;
-  }
-  ol {
-    list-style-type: decimal;
-  }
-  ol ol {
-    list-style-type: lower-alpha;
-  }
-  ol ol ol {
-    list-style-type: lower-roman;
+
+  // An item can start with a heading; it sits on the marker's line.
+  li > :is(h1, h2, h3, h4, h5, h6):first-child,
+  .ink-task-content > :is(h1, h2, h3, h4, h5, h6):first-child {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   li::marker {
@@ -156,6 +172,11 @@
         }
       }
     }
+  }
+
+  // The list item being dragged by its handle (listDragPlugin).
+  .ink-list-drag-source {
+    opacity: 0.45;
   }
 
   blockquote {
@@ -410,6 +431,11 @@
     background: rgba(59, 130, 246, 0.12);
     color: #cbd5e1;
   }
+  &.callout-note {
+    border-left-color: #a855f7;
+    background: rgba(168, 85, 247, 0.12);
+    color: #e9d5ff;
+  }
   &.callout-warning {
     border-left-color: #f59e0b;
     background: rgba(245, 158, 11, 0.12);
@@ -448,6 +474,14 @@
       color: #1e40af;
       strong {
         color: #1e3a8a;
+      }
+    }
+    &.callout-note {
+      border-left-color: #a855f7;
+      background: #faf5ff;
+      color: #6b21a8;
+      strong {
+        color: #581c87;
       }
     }
     &.callout-warning {
@@ -1514,5 +1548,75 @@ td:hover .ink-table-col-header-handle,
   .ink-image {
     cursor: zoom-in !important;
     pointer-events: auto !important;
+  }
+}
+
+/* ── Lists: drag handle, drop line, drop cursor ── */
+
+/* Shown beside the list item under the mouse; drag it to move the item. */
+.ink-list-drag-handle {
+  position: absolute;
+  z-index: 6;
+  width: 14px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: grab;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  /* Six dots, drawn without an icon font. */
+  background-image: radial-gradient(
+    circle,
+    var(--ink-text-muted, #8b8d98) 1.25px,
+    transparent 1.6px
+  );
+  background-size: 6px 6px;
+  background-position: 1px 1px;
+  background-repeat: repeat;
+
+  &.is-visible {
+    opacity: 0.75;
+    visibility: visible;
+  }
+
+  &:hover {
+    opacity: 1;
+    background-color: var(--ink-bg-hover, rgba(127, 127, 127, 0.12));
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+/* Where a dragged list item will land: its left edge shows the nesting level. */
+.ink-list-drop-line {
+  position: absolute;
+  z-index: 6;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink-accent-primary, #8b5cf6);
+  pointer-events: none;
+  /* Hidden with visibility, not display: a displayed element is needed to position it. */
+  visibility: hidden;
+
+  &.is-visible {
+    visibility: visible;
+  }
+}
+
+/* ProseMirror's drop cursor for other dragged content (dropCursor class option). */
+.ink-drop-cursor {
+  background: var(--ink-accent-primary, #8b5cf6);
+}
+
+.ProseMirror-preview ~ .ink-list-drag-handle,
+.ProseMirror-preview ~ .ink-list-drop-line {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-list-drag-handle {
+    transition: none;
   }
 }

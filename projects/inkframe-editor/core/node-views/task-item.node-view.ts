@@ -1,5 +1,13 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
+import { isTaskIndeterminate } from '../lists/list-schema';
+
+/** The checkbox's accessible name: the task's first line, shortened. */
+function taskLabel(node: PMNode): string {
+  const text = (node.firstChild?.textContent ?? '').trim().replace(/\s+/g, ' ');
+  if (!text) return 'Task';
+  return text.length > 80 ? `Task: ${text.slice(0, 79)}…` : `Task: ${text}`;
+}
 
 export class TaskItemNodeView implements NodeView {
   readonly dom: HTMLElement;
@@ -35,6 +43,15 @@ export class TaskItemNodeView implements NodeView {
     this.contentDOM.className = 'ink-task-content';
 
     this.dom.append(this.checkbox, this.contentDOM);
+    this.render();
+  }
+
+  /** Mixed state and label, which depend on the nested tasks and the text. */
+  private render(): void {
+    const indeterminate = isTaskIndeterminate(this.node);
+    this.checkbox.indeterminate = indeterminate;
+    this.dom.classList.toggle('indeterminate', indeterminate);
+    this.checkbox.setAttribute('aria-label', taskLabel(this.node));
   }
 
   update(node: PMNode): boolean {
@@ -48,6 +65,7 @@ export class TaskItemNodeView implements NodeView {
     } else {
       this.dom.classList.remove('checked');
     }
+    this.render();
     return true;
   }
 

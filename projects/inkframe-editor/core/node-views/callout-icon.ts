@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { CALLOUT_KINDS, CalloutKind } from '../schema';
 
-const ICONS: Record<CalloutKind, string> = {
-  info: 'info',
-  warning: 'warning',
-  success: 'check_circle',
-  danger: 'dangerous',
+// Written as `icon: '…'` so scripts/build-icon-font.mjs finds the names: the
+// self-hosted icon font holds only the icons it finds, and a missing one shows
+// its name as text instead (as "dangerous" did).
+const ICONS: Record<CalloutKind, { icon: string }> = {
+  info: { icon: 'info' },
+  note: { icon: 'sticky_note_2' },
+  warning: { icon: 'warning' },
+  success: { icon: 'check_circle' },
+  danger: { icon: 'error' },
 };
 
 @Component({
@@ -48,7 +52,8 @@ const ICONS: Record<CalloutKind, string> = {
 export class CalloutIcon {
   readonly kind = input<CalloutKind>('info');
   readonly kindChange = output<CalloutKind>();
-  protected readonly icon = computed(() => ICONS[this.kind()]);
+  // Shared documents can carry any kind: unknown ones show the info icon.
+  protected readonly icon = computed(() => (ICONS[this.kind()] ?? ICONS.info).icon);
 
   protected next() {
     const i = CALLOUT_KINDS.indexOf(this.kind());

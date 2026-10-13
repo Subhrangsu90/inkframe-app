@@ -54,8 +54,15 @@ describe('Markdown round trip', () => {
   it('reads GitHub-style alerts as callouts', () => {
     const back = markdownToDoc('> [!NOTE]\n> Useful info').firstChild!;
     expect(back.type.name).toBe('callout');
-    expect(back.attrs['type']).toBe('info');
+    expect(back.attrs['type']).toBe('note');
     expect(back.textContent).toBe('Useful info');
+    expect(markdownToDoc('> [!TIP]\n> x').firstChild!.attrs['type']).toBe('success');
+  });
+
+  it('round-trips note callouts', () => {
+    const note = nodes['callout'].create({ type: 'note' }, [p(schema.text('Remember'))]);
+    expect(docToMarkdown(doc(note))).toBe('> [!NOTE]\n> Remember');
+    expect(roundTrip(doc(note)).firstChild!.attrs['type']).toBe('note');
   });
 
   it('keeps plain blockquotes as blockquotes', () => {

@@ -1,11 +1,19 @@
 import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
-import { addListNodes } from 'prosemirror-schema-list';
 import { tableNodes } from 'prosemirror-tables';
 import { sanitizeCssColor, sanitizeCssLength, sanitizeHref } from './link-utils';
+import {
+  LIST_LEAD_GROUP,
+  bullet_list,
+  list_item,
+  ordered_list,
+  task_item,
+  task_list,
+} from './lists/list-schema';
 
-export type CalloutKind = 'info' | 'warning' | 'success' | 'danger';
-export const CALLOUT_KINDS: CalloutKind[] = ['info', 'warning', 'success', 'danger'];
+export type CalloutKind = 'info' | 'note' | 'warning' | 'success' | 'danger';
+/** In the order a click on the callout's icon cycles through them. */
+export const CALLOUT_KINDS: CalloutKind[] = ['info', 'note', 'warning', 'success', 'danger'];
 
 /** Paragraph and heading alignment. `left` is stored as `null` (the default). */
 export type TextAlign = 'left' | 'center' | 'right' | 'justify';
@@ -44,12 +52,13 @@ export function sanitizeHighlightColor(raw: unknown): string | null {
   return color && !NO_HIGHLIGHT.test(color) && !ZERO_ALPHA.test(color) ? color : null;
 }
 
-// addListNodes() needs an OrderedMap (it calls .append()), not a plain object,
-// so build a base schema first and use its spec.
+// Built only for its OrderedMap of node and mark specs, which the schema below extends.
 const base = new Schema({ nodes: basicNodes, marks: basicMarks });
 
+// Paragraphs and headings can start a list item (the list_lead group).
 const paragraph: NodeSpec = {
   ...basicNodes.paragraph,
+  group: `block ${LIST_LEAD_GROUP}`,
   attrs: { align: { default: null } },
   parseDOM: [{ tag: 'p', getAttrs: (dom) => ({ align: readTextAlign(dom as HTMLElement) }) }],
   toDOM: (node) => ['p', textAlignAttrs(node.attrs['align']), 0],
@@ -57,6 +66,7 @@ const paragraph: NodeSpec = {
 
 const heading: NodeSpec = {
   ...basicNodes.heading,
+  group: `block ${LIST_LEAD_GROUP}`,
   attrs: { level: { default: 1, validate: 'number' }, align: { default: null } },
   parseDOM: [1, 2, 3, 4, 5, 6].map((level) => ({
     tag: `h${level}`,
@@ -206,72 +216,6 @@ const code: MarkSpec = {
   excludes: '_',
 };
 
-const task_list: NodeSpec = {
-  group: 'block',
-  content: 'task_item+',
-  parseDOM: [
-    { tag: 'ul.ink-task-list' },
-    { tag: 'ul[data-type="task_list"]' },
-    { tag: 'ul.contains-task-list' },
-  ],
-  toDOM: () => ['ul', { class: 'ink-task-list', 'data-type': 'task_list' }, 0],
-};
-
-const task_item: NodeSpec = {
-  content: 'paragraph block*',
-  attrs: {
-    checked: { default: false },
-  },
-  defining: true,
-  parseDOM: [
-    {
-      tag: 'li.ink-task-item',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        const checkbox = el.querySelector('input[type="checkbox"]');
-        const checked =
-          el.getAttribute('data-checked') === 'true' ||
-          el.classList.contains('checked') ||
-          (checkbox ? (checkbox as HTMLInputElement).checked : false);
-        return { checked };
-      },
-    },
-    {
-      tag: 'li[data-type="task_item"]',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        const checkbox = el.querySelector('input[type="checkbox"]');
-        const checked =
-          el.getAttribute('data-checked') === 'true' ||
-          el.classList.contains('checked') ||
-          (checkbox ? (checkbox as HTMLInputElement).checked : false);
-        return { checked };
-      },
-    },
-    {
-      tag: 'li.task-list-item',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        const checkbox = el.querySelector('input[type="checkbox"]');
-        const checked =
-          el.getAttribute('data-checked') === 'true' ||
-          el.classList.contains('checked') ||
-          (checkbox ? (checkbox as HTMLInputElement).checked : false);
-        return { checked };
-      },
-    },
-  ],
-  toDOM: (node) => [
-    'li',
-    {
-      class: `ink-task-item${node.attrs['checked'] ? ' checked' : ''}`,
-      'data-type': 'task_item',
-      'data-checked': String(node.attrs['checked']),
-    },
-    0,
-  ],
-};
-
 const image: NodeSpec = {
   inline: true,
   attrs: {
@@ -382,15 +326,16 @@ export const tableNodeSpecs = tableNodes({
   },
 });
 
-const baseNodesWithTasks = base.spec.nodes
+const nodes = base.spec.nodes
   .update('paragraph', paragraph)
   .update('heading', heading)
   .update('image', image)
   .update('code_block', code_block)
   .addToEnd('task_list', task_list)
-  .addToEnd('task_item', task_item);
-
-const nodes = addListNodes(baseNodesWithTasks, 'paragraph block*', 'block')
+  .addToEnd('task_item', task_item)
+  .addToEnd('ordered_list', ordered_list)
+  .addToEnd('bullet_list', bullet_list)
+  .addToEnd('list_item', list_item)
   .append(tableNodeSpecs)
   .addToEnd('callout', callout);
 
@@ -409,6 +354,9 @@ export {
   code,
   task_list,
   task_item,
+  bullet_list,
+  ordered_list,
+  list_item,
   image,
   code_block,
   base,

@@ -269,6 +269,16 @@ ink-reader {
       text-decoration: line-through;
       opacity: 0.65;
     }
+
+    /* Some, not all, nested tasks done: a dash, as the editor's checkbox shows. */
+    &.indeterminate::before {
+      border-color: var(--ink-accent-primary, #7c3aed);
+      background: linear-gradient(
+          var(--ink-accent-primary, #7c3aed),
+          var(--ink-accent-primary, #7c3aed)
+        )
+        center / 9px 2px no-repeat;
+    }
   }
 }
 

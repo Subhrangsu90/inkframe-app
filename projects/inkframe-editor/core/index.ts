@@ -1,5 +1,6 @@
 // Secondary entry point: @inkframe-ui/editor/core
 export * from './schema';
+export * from './lists';
 export * from './plugins';
 export * from './migrations';
 export * from './image-storage';

@@ -1,8 +1,7 @@
-import { Command, EditorState, Plugin, Selection } from 'prosemirror-state';
+import { Command, EditorState, Plugin } from 'prosemirror-state';
 import { history, undo, redo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap, setBlockType, splitBlockAs, toggleMark } from 'prosemirror-commands';
-import { splitListItem, sinkListItem, liftListItem, wrapInList } from 'prosemirror-schema-list';
 import { Attrs, Node as PMNode, NodeType } from 'prosemirror-model';
 import { undoInputRule } from 'prosemirror-inputrules';
 import { dropCursor } from 'prosemirror-dropcursor';
@@ -14,6 +13,12 @@ import { menusPlugin } from './menus.plugin';
 import { highlightPlugin } from './highlight.plugin';
 import { tableUIPlugin } from './table-ui.plugin';
 import { EditorHooks } from './editor-hooks';
+import { listKeymap, toggleListCommand } from './lists/list-commands';
+import { listJoinPlugin } from './lists/list-join.plugin';
+import { listDragPlugin } from './lists/list-drag.plugin';
+
+// Lists moved to ./lists; kept here for code that imports it from this module.
+export { toggleListCommand } from './lists/list-commands';
 
 const hardBreak: Command = (state, dispatch) => {
   dispatch?.(
@@ -178,91 +183,10 @@ export const toggleHighlightCommand: Command = (state, dispatch, view) =>
     ? removeHighlightCommand(state, dispatch, view)
     : setHighlightCommand()(state, dispatch, view);
 
-export function toggleListCommand(kind: 'bullet_list' | 'ordered_list' | 'task_list'): Command {
-  return (state, dispatch) => {
-    const { $from } = state.selection;
-    const { task_list, list_item, task_item } = state.schema.nodes;
-
-    // Find innermost list ancestor
-    let listDepth = -1;
-    for (let d = $from.depth; d > 0; d--) {
-      const typeName = $from.node(d).type.name;
-      if (typeName === 'bullet_list' || typeName === 'ordered_list' || typeName === 'task_list') {
-        listDepth = d;
-        break;
-      }
-    }
-
-    const targetList = state.schema.nodes[kind];
-    if (!targetList) return false;
-
-    // 1. If not currently inside any list: wrap in the requested list
-    if (listDepth === -1) {
-      return wrapInList(targetList)(state, dispatch);
-    }
-
-    const currentListNode = $from.node(listDepth);
-    const currentKind = currentListNode.type.name;
-
-    // 2. If already in this exact list type: toggle off (lift out of list)
-    if (currentKind === kind) {
-      const itemType = kind === 'task_list' ? task_item : list_item;
-      return itemType ? liftListItem(itemType)(state, dispatch) : false;
-    }
-
-    // 3. Auto-switch seamlessly between list types!
-    // Converting to/from a task list needs both item types in the schema.
-    if ((kind === 'task_list' || currentKind === 'task_list') && (!task_item || !list_item)) {
-      return false;
-    }
-    if (!dispatch) return true;
-
-    const listPos = $from.before(listDepth);
-    let tr = state.tr;
-
-    if (
-      (currentKind === 'bullet_list' && kind === 'ordered_list') ||
-      (currentKind === 'ordered_list' && kind === 'bullet_list')
-    ) {
-      // Direct markup swap between bullet_list and ordered_list
-      tr = tr.setNodeMarkup(listPos, state.schema.nodes[kind]);
-    } else if (kind === 'task_list') {
-      // Convert list_item children to task_item children with checked: false
-      const items: PMNode[] = [];
-      currentListNode.forEach((child) => {
-        if (child.type === list_item) {
-          items.push(task_item.create({ checked: false }, child.content));
-        } else {
-          items.push(child);
-        }
-      });
-      const newListNode = task_list.create(null, items);
-      tr = tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newListNode);
-    } else {
-      // Converting from task_list to bullet_list or ordered_list
-      const items: PMNode[] = [];
-      currentListNode.forEach((child) => {
-        if (child.type === task_item) {
-          items.push(list_item.create(null, child.content));
-        } else {
-          items.push(child);
-        }
-      });
-      const newListNode = state.schema.nodes[kind].create(null, items);
-      tr = tr.replaceWith(listPos, listPos + currentListNode.nodeSize, newListNode);
-    }
-
-    const mappedPos = tr.mapping.map($from.pos);
-    tr = tr.setSelection(Selection.near(tr.doc.resolve(mappedPos)));
-    dispatch(tr.scrollIntoView());
-    return true;
-  };
-}
-
 export function buildPlugins(hooks: EditorHooks): Plugin[] {
   const { strong, em, code, underline, strikethrough, subscript, superscript, small } =
     schema.marks;
-  const { list_item, task_item, paragraph, heading } = schema.nodes;
+  const { paragraph, heading } = schema.nodes;
 
   return [
     buildInputRules(),
@@ -299,16 +223,8 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
       'Mod-Alt-5': setBlockType(heading, { level: 5 }),
       'Mod-Alt-6': setBlockType(heading, { level: 6 }),
       'Shift-Enter': hardBreak,
-      Enter: (state, dispatch) =>
-        splitListItem(task_item, { checked: false })(state, dispatch) ||
-        liftListItem(task_item)(state, dispatch) ||
-        splitListItem(list_item)(state, dispatch) ||
-        liftListItem(list_item)(state, dispatch),
-      Tab: (state, dispatch) =>
-        sinkListItem(task_item)(state, dispatch) || sinkListItem(list_item)(state, dispatch),
-      'Shift-Tab': (state, dispatch) =>
-        liftListItem(task_item)(state, dispatch) || liftListItem(list_item)(state, dispatch),
     }),
+    keymap(listKeymap()),
     keymap(baseKeymap),
     dropCursor(),
     gapCursor(),
@@ -320,5 +236,7 @@ export function buildPlugins(hooks: EditorHooks): Plugin[] {
     tableEditing(),
     highlightPlugin(),
     tableUIPlugin(),
+    listJoinPlugin(),
+    listDragPlugin(),
   ];
 }

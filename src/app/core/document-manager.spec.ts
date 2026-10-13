@@ -1,5 +1,5 @@
 import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DocumentManager, extractDocExcerpt } from './document-manager';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 
@@ -35,6 +35,22 @@ describe('DocumentManager persistence', () => {
     const index = await manager.getIndex();
     expect(index.map((d) => d.id)).toEqual([nextId]);
     expect(nextId).not.toBe(only.meta.id);
+  });
+
+  it('reports a full storage instead of pretending the document was saved', async () => {
+    const a = await manager.createDoc('A', docWith('first'));
+    const full = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    try {
+      await expect(manager.saveDoc(a.meta.id, docWith('second'))).rejects.toMatchObject({
+        name: 'StorageError',
+        reason: 'quota',
+      });
+    } finally {
+      full.mockRestore();
+    }
+    expect(await manager.getDoc(a.meta.id)).toEqual(docWith('first'));
   });
 
   it('saves no longer mirror every document into the legacy key', async () => {

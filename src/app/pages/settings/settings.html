@@ -94,6 +94,72 @@
       </div>
     </section>
 
+    <!-- BACKUP -->
+    <section class="settings-section" aria-labelledby="backup-heading">
+      <div class="section-label">
+        <h2 id="backup-heading" class="section-title">Backup</h2>
+        <p class="section-desc">
+          Your documents exist only in this browser. Clearing site data or losing this device
+          deletes them, so export a backup now and then.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Export backup</span>
+            <span class="setting-desc">
+              One .inkframe.json file with every document, its version history and its images.
+            </span>
+          </div>
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="exportBackup()"
+            [disabled]="backupBusy() !== null"
+          >
+            @if (backupBusy() === 'export') {
+              <span class="btn-spinner" aria-hidden="true"></span>
+            } @else {
+              <ink-icon name="download" [size]="14" />
+            }
+            Export backup
+          </button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Restore from backup</span>
+            <span class="setting-desc">
+              Add the documents in a backup file to this browser, or replace everything here with
+              them.
+            </span>
+          </div>
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="restoreInput.click()"
+            [disabled]="backupBusy() !== null"
+          >
+            @if (backupBusy() === 'restore') {
+              <span class="btn-spinner" aria-hidden="true"></span>
+            } @else {
+              <ink-icon name="upload" [size]="14" />
+            }
+            Restore…
+          </button>
+          <input
+            #restoreInput
+            type="file"
+            class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
+            [accept]="backupAccept"
+            (change)="onBackupFileChosen($event)"
+          />
+        </div>
+      </div>
+    </section>
+
     <!-- DANGER ZONE -->
     <section class="settings-section" aria-labelledby="danger-heading">
       <div class="section-label">

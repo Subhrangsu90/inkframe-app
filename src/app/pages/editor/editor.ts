@@ -15,6 +15,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { Editor } from '@inkframe-ui/editor';
 import {
   DEFAULT_EXTENSIONS,
@@ -28,15 +31,28 @@ import {
   EditorExtension,
   createExtension,
   StoredDoc,
-  docToMarkdown,
+  StorageError,
+  docToHtml,
+  imageStorage,
+  migrate,
+  sanitizeHtml,
   schema,
 } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../../shared/layout/layout.service';
 import { DocumentManager, extractDocTitle } from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
 import { InkIcon } from '../../shared/ui/icons/icon';
-import { ToastService } from '../../shared/ui';
+import { ConfirmDialogService, ToastService } from '../../shared/ui';
 import { buildShareableUrl } from '../../core/share-codec';
+import {
+  docToMarkdownText,
+  downloadHtml,
+  downloadMarkdown,
+  printDocument,
+} from '../../core/doc-export';
+import { VersionHistory, VersionMeta } from '../../core/version-history';
+import { StorageHealth } from '../../core/storage-health';
+import { VersionPanel } from './version-panel/version-panel';
 
 // Custom plugin demo
 const CustomPluginDemo: EditorExtension = createExtension({
@@ -71,12 +87,21 @@ export type EditorViewTab = 'rich' | 'preview';
 @Component({
   selector: 'ink-editor-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, Editor, InkIcon],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatMenuModule,
+    MatDividerModule,
+    Editor,
+    InkIcon,
+    VersionPanel,
+  ],
   templateUrl: './editor.html',
   styleUrl: './editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.escape)': 'showShareMenu.set(false)',
+    '(document:keydown)': 'onDocumentKeydown($event)',
   },
 })
 export class EditorView implements OnInit {
@@ -85,6 +110,10 @@ export class EditorView implements OnInit {
   private readonly docManager = inject(DocumentManager);
   private readonly layout = inject(LayoutService);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly versionHistory = inject(VersionHistory);
+  private readonly storageHealth = inject(StorageHealth);
+  private readonly sanitizer = inject(DomSanitizer);
 
   readonly editorRef = viewChild<Editor>('editorComp');
 
@@ -128,7 +157,32 @@ export class EditorView implements OnInit {
   readonly currentDocId = signal<string>('doc_default');
   readonly docTitle = signal<string>('Welcome to Inkframe');
   readonly currentStoredDoc = signal<StoredDoc | null>(null);
-  readonly saveStatus = signal<'saved' | 'saving'>('saved');
+  /** `error`: storage refused the latest edits (see the storage banner). */
+  readonly saveStatus = signal<'saved' | 'saving' | 'error'>('saved');
+  /** An export or print being prepared. */
+  readonly exporting = signal(false);
+
+  // Version history
+  readonly historyOpen = signal(false);
+  readonly versions = signal<VersionMeta[]>([]);
+  readonly previewVersion = signal<VersionMeta | null>(null);
+  readonly previewHtml = signal<SafeHtml | null>(null);
+  readonly historyBusy = signal(false);
+  /** When the previewed version was saved. (Not the date pipe: it adds 12 kB to every page.) */
+  readonly previewWhen = computed(() => {
+    const version = this.previewVersion();
+    return version
+      ? new Date(version.createdAt).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })
+      : '';
+  });
+  private previewToken = 0;
+
+  /** Saves run one after another, in the order edits were made. */
+  private saveChain: Promise<void> = Promise.resolve();
+  private pendingSaves = 0;
 
   // Plugin preset system
   readonly activePreset = signal<PluginPreset>('starter-kit');
@@ -204,10 +258,12 @@ export class EditorView implements OnInit {
       // stay untouched, so edits are never saved into the wrong document.
       this.editorRef()?.loadDoc(doc);
 
+      if (docId !== this.currentDocId()) this.closeHistory();
       this.currentDocId.set(docId);
       this.layout.setActiveDocId(docId);
       this.currentStoredDoc.set(doc);
       this.docTitle.set(extractDocTitle(doc));
+      this.saveStatus.set('saved');
     } catch (e) {
       if (token !== this.loadToken) return;
       console.warn('Failed to load document:', e);
@@ -227,22 +283,18 @@ export class EditorView implements OnInit {
   }
 
   // ── Document Editing & Autosave ──────────────────────────────────
-  async onDocChanged(doc: StoredDoc): Promise<void> {
-    this.saveStatus.set('saving');
+  onDocChanged(doc: StoredDoc): Promise<boolean> {
+    // Read before anything is awaited: on a document switch the editor emits
+    // the previous document's last edits, and the ids change right after.
+    const id = this.currentDocId();
+    const previous = this.currentStoredDoc();
     this.currentStoredDoc.set(doc);
 
     const title = extractDocTitle(doc);
     if (title && title !== 'Untitled Document') {
       this.docTitle.set(title);
     }
-
-    const id = this.currentDocId();
-    await this.docManager.saveDoc(id, doc, this.docTitle());
-    await this.layout.refreshDocs();
-
-    setTimeout(() => {
-      this.saveStatus.set('saved');
-    }, 250);
+    return this.queueSave(id, doc, this.docTitle(), previous);
   }
 
   async onTitleChange(newTitle: string): Promise<void> {
@@ -251,9 +303,77 @@ export class EditorView implements OnInit {
     this.isEditingTitle.set(false);
 
     const doc = this.currentStoredDoc() || WELCOME_DOC;
-    await this.docManager.saveDoc(this.currentDocId(), doc, trimmed);
-    await this.layout.refreshDocs();
-    this.toast.success('Document title updated');
+    if (await this.queueSave(this.currentDocId(), doc, trimmed)) {
+      this.toast.success('Document title updated');
+    }
+  }
+
+  /**
+   * Saves after any earlier save has finished. When storage refuses the
+   * edits the status shows "Not saved" and the storage banner offers a
+   * backup, which includes them. With `previous`, records the edit in the
+   * version history. Resolves to whether the save succeeded.
+   */
+  private queueSave(
+    id: string,
+    doc: StoredDoc,
+    title: string,
+    previous?: StoredDoc | null,
+  ): Promise<boolean> {
+    this.pendingSaves++;
+    this.saveStatus.set('saving');
+    const task = this.saveChain.then(async () => {
+      let saved = true;
+      try {
+        await this.docManager.saveDoc(id, doc, title);
+        this.storageHealth.markSaved(id);
+      } catch (e) {
+        saved = false;
+        console.warn('Failed to save document:', e);
+        this.storageHealth.markUnsaved(id, title, doc);
+      }
+      this.pendingSaves--;
+      if (id === this.currentDocId()) {
+        if (!saved) this.saveStatus.set('error');
+        else if (this.pendingSaves === 0 && this.saveStatus() !== 'error') {
+          this.saveStatus.set('saved');
+        }
+      }
+      if (saved) {
+        await this.layout.refreshDocs();
+        if (previous !== undefined) {
+          await this.versionHistory
+            .recordEdit(id, previous, doc)
+            .catch((e) => console.warn('Failed to save a version:', e));
+        }
+      }
+      return saved;
+    });
+    this.saveChain = task.then(
+      () => undefined,
+      () => undefined,
+    );
+    return task;
+  }
+
+  /** The document as it is in the editor now, including edits not saved yet. */
+  private liveDoc(): StoredDoc {
+    return this.editorRef()?.getJSON() ?? this.currentStoredDoc() ?? WELCOME_DOC;
+  }
+
+  /** Saves pending edits and waits until every save has finished. */
+  private async settle(): Promise<void> {
+    this.flushPendingEdits();
+    await this.saveChain;
+  }
+
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    // Ctrl/Cmd+P prints the document itself, not the app around it.
+    const mod = event.ctrlKey || event.metaKey;
+    if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      void this.printDoc();
+    }
   }
 
   // ── Preset Selection ─────────────────────────────────────────────
@@ -268,54 +388,48 @@ export class EditorView implements OnInit {
 
   // ── Export Actions ───────────────────────────────────────────────
   exportMarkdown(): void {
-    const editor = this.editorRef();
-    let md = editor?.getMarkdown();
-    if (!md) {
-      const stored = this.currentStoredDoc();
-      if (stored?.doc) {
-        try {
-          const pmNode = schema.nodeFromJSON(stored.doc);
-          md = docToMarkdown(pmNode);
-        } catch {
-          // Unreadable document: fall back to the title below.
-        }
-      }
+    try {
+      this.toast.success('Downloaded ' + downloadMarkdown(this.liveDoc(), this.docTitle()));
+    } catch (e) {
+      console.warn('Markdown export failed:', e);
+      this.toast.error('The document could not be exported');
     }
-    const finalMd = md || '# ' + this.docTitle();
-    const filename = `${
-      this.docTitle()
-        .replace(/[^\w\s-]/g, '')
-        .trim() || 'document'
-    }.md`;
-
-    const blob = new Blob([finalMd], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.toast.success('Downloaded ' + filename);
   }
 
-  copyMarkdown(): void {
-    const editor = this.editorRef();
-    let md = editor?.getMarkdown();
-    if (!md) {
-      const stored = this.currentStoredDoc();
-      if (stored?.doc) {
-        try {
-          const pmNode = schema.nodeFromJSON(stored.doc);
-          md = docToMarkdown(pmNode);
-        } catch {
-          // Unreadable document: fall back to the title below.
-        }
-      }
+  async exportHtml(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      this.toast.success('Downloaded ' + (await downloadHtml(this.liveDoc(), this.docTitle())));
+    } catch (e) {
+      console.warn('HTML export failed:', e);
+      this.toast.error('The document could not be exported');
+    } finally {
+      this.exporting.set(false);
     }
-    const finalMd = md || '# ' + this.docTitle();
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(finalMd);
-      this.toast.success('Markdown copied to clipboard!');
+  }
+
+  /** Opens the print dialog with the document alone; "Save as PDF" there makes a PDF. */
+  async printDoc(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      await printDocument(this.liveDoc(), this.docTitle());
+    } catch (e) {
+      console.warn('Print failed:', e);
+      this.toast.error('The document could not be printed');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  async copyMarkdown(): Promise<void> {
+    try {
+      const markdown = docToMarkdownText(this.liveDoc()) || '# ' + this.docTitle();
+      await navigator.clipboard.writeText(markdown);
+      this.toast.success('Markdown copied to clipboard');
+    } catch {
+      this.toast.error('The Markdown could not be copied');
     }
   }
 
@@ -345,6 +459,148 @@ export class EditorView implements OnInit {
       await navigator.clipboard.writeText(url);
       this.toast.success('Shareable link copied to clipboard!');
       this.showShareMenu.set(false);
+    }
+  }
+
+  // ── Version History ──────────────────────────────────────────────
+  /** The toolbar's history button toggles the panel. */
+  async toggleHistory(): Promise<void> {
+    if (this.historyOpen()) {
+      this.closeHistory();
+      return;
+    }
+    // So the list includes the latest edits' automatic version.
+    await this.settle();
+    this.historyOpen.set(true);
+    await this.loadVersions();
+  }
+
+  closeHistory(): void {
+    this.exitPreview();
+    this.historyOpen.set(false);
+  }
+
+  private async loadVersions(): Promise<void> {
+    const id = this.currentDocId();
+    const list = await this.versionHistory.list(id);
+    if (id === this.currentDocId()) this.versions.set(list);
+  }
+
+  /** Shows a version in place of the editor; null returns to the current text. */
+  async selectVersion(meta: VersionMeta | null): Promise<void> {
+    if (!meta) {
+      this.exitPreview();
+      return;
+    }
+    const token = ++this.previewToken;
+    try {
+      const stored = await this.versionHistory.get(meta.id);
+      if (!stored) throw new Error(`Version ${meta.id} is missing`);
+      const html = await imageStorage.resolveHtmlImages(
+        docToHtml(schema.nodeFromJSON(migrate(stored))),
+      );
+      if (token !== this.previewToken) return;
+      // The content is the person's own document; it is sanitized all the
+      // same, as the reader does, because Angular's sanitizer would strip the
+      // editor's inline styles.
+      this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(html)));
+      this.previewVersion.set(meta);
+    } catch (e) {
+      if (token !== this.previewToken) return;
+      console.warn('Failed to open version:', e);
+      this.toast.error('This version could not be opened');
+    }
+  }
+
+  exitPreview(): void {
+    this.previewToken++;
+    this.previewVersion.set(null);
+    this.previewHtml.set(null);
+  }
+
+  /**
+   * Makes the previewed version the current text. The text it replaces is
+   * saved as a version first, so restoring can itself be undone.
+   */
+  async restorePreviewedVersion(): Promise<void> {
+    const meta = this.previewVersion();
+    if (!meta || this.historyBusy()) return;
+    this.historyBusy.set(true);
+    try {
+      const target = await this.versionHistory.get(meta.id);
+      if (!target) throw new Error(`Version ${meta.id} is missing`);
+      await this.settle();
+      const id = this.currentDocId();
+      await this.versionHistory.snapshot(id, this.liveDoc(), 'before-restore');
+
+      this.editorRef()?.loadDoc(target);
+      this.currentStoredDoc.set(target);
+      const title = extractDocTitle(target);
+      if (title !== 'Untitled Document') this.docTitle.set(title);
+      if (!(await this.queueSave(id, target, this.docTitle()))) {
+        throw new StorageError('quota');
+      }
+
+      this.exitPreview();
+      await this.loadVersions();
+      this.toast.success('Version restored. The text it replaced is in the version history.', 5000);
+    } catch (e) {
+      console.warn('Failed to restore version:', e);
+      this.toast.error(
+        e instanceof StorageError
+          ? 'Storage is full, so the version could not be restored.'
+          : 'This version could not be restored',
+      );
+    } finally {
+      this.historyBusy.set(false);
+    }
+  }
+
+  /** Saves the current text as a named version, which is kept until deleted. */
+  async saveNamedVersion(name: string): Promise<void> {
+    if (this.historyBusy()) return;
+    this.historyBusy.set(true);
+    try {
+      await this.settle();
+      await this.versionHistory.snapshot(
+        this.currentDocId(),
+        this.liveDoc(),
+        'named',
+        name || 'Saved version',
+      );
+      await this.loadVersions();
+      this.toast.success('Version saved');
+    } catch (e) {
+      console.warn('Failed to save version:', e);
+      this.toast.error(
+        e instanceof StorageError && e.reason === 'quota'
+          ? 'Storage is full, so the version could not be saved.'
+          : 'The version could not be saved',
+      );
+    } finally {
+      this.historyBusy.set(false);
+    }
+  }
+
+  async deleteVersion(meta: VersionMeta): Promise<void> {
+    const when = new Date(meta.createdAt).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete this version?',
+      message: `The version${meta.name ? ` "${meta.name}"` : ''} from ${when} will be permanently deleted. Your document is not changed.`,
+      confirmText: 'Delete version',
+      isDestructive: true,
+      icon: 'delete_outline',
+    });
+    if (!confirmed) return;
+    try {
+      await this.versionHistory.remove(meta.docId, meta.id);
+      if (this.previewVersion()?.id === meta.id) this.exitPreview();
+      await this.loadVersions();
+    } catch {
+      this.toast.error('The version could not be deleted');
     }
   }
 }

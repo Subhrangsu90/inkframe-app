@@ -11,12 +11,22 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ThemeService, AppTheme } from '@inkframe-ui/editor/core';
+import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
 import { DocumentManager } from '../../core/document-manager';
 import { WELCOME_DOC } from '../../core/welcome-doc';
+import {
+  BACKUP_EXTENSION,
+  BackupError,
+  BackupService,
+  ParsedBackup,
+  describeRestore,
+} from '../../core/backup';
+import { StorageHealth } from '../../core/storage-health';
 import { InkIcon } from '../../shared/ui/icons/icon';
 import { ConfirmDialogService, ToastService } from '../../shared/ui';
 import { LayoutService } from '../../shared/layout/layout.service';
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 @Component({
   selector: 'ink-settings',
@@ -31,7 +41,13 @@ export class Settings implements OnInit {
   private readonly docManager = inject(DocumentManager);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly backup = inject(BackupService);
+  private readonly storageHealth = inject(StorageHealth);
   readonly layout = inject(LayoutService);
+
+  readonly backupAccept = `${BACKUP_EXTENSION},.json,application/json`;
+  /** The backup action in progress, if any. */
+  readonly backupBusy = signal<'export' | 'restore' | null>(null);
 
   // Dynamic header templates
   readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
@@ -97,11 +113,78 @@ export class Settings implements OnInit {
     }
   }
 
+  async exportBackup(): Promise<void> {
+    if (this.backupBusy()) return;
+    this.backupBusy.set('export');
+    try {
+      const filename = await this.backup.download(this.storageHealth.unsavedDocs());
+      this.toast.success('Downloaded ' + filename);
+    } catch (e) {
+      console.warn('Backup failed:', e);
+      this.toast.error('The backup could not be created');
+    } finally {
+      this.backupBusy.set(null);
+    }
+  }
+
+  async onBackupFileChosen(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // so choosing the same file again fires (change) again
+    if (!file || this.backupBusy()) return;
+
+    let backup: ParsedBackup;
+    try {
+      backup = this.backup.parse(await file.text());
+    } catch (e) {
+      this.toast.error(e instanceof BackupError ? e.message : 'This file could not be read');
+      return;
+    }
+
+    const made = backup.createdAt
+      ? ` from ${new Date(backup.createdAt).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })}`
+      : '';
+    const choice = await this.confirmDialog.choose({
+      title: 'Restore from backup?',
+      message:
+        `This backup${made} has ${plural(backup.documents.length, 'document')}. ` +
+        'Merge adds what is missing in this browser and never overwrites a document: one that differs is added as a copy. ' +
+        `Replace all permanently deletes the ${plural(this.docCount(), 'document')} here first.`,
+      confirmText: 'Merge',
+      secondaryText: 'Replace all',
+      secondaryIsDestructive: true,
+      icon: 'history',
+    });
+    if (choice === 'cancel') return;
+
+    this.backupBusy.set('restore');
+    try {
+      const summary = await this.backup.restore(backup, choice === 'confirm' ? 'merge' : 'replace');
+      this.toast.success(describeRestore(summary), 5000);
+    } catch (e) {
+      console.warn('Restore failed:', e);
+      this.toast.error(
+        e instanceof BackupError
+          ? e.message
+          : e instanceof StorageError && e.reason === 'quota'
+            ? 'Storage is full, so the backup was only partly restored.'
+            : 'The backup could not be restored',
+      );
+    } finally {
+      await this.layout.refreshDocs();
+      await this.updateStats();
+      this.backupBusy.set(null);
+    }
+  }
+
   async clearStorage(): Promise<void> {
     const confirmed = await this.confirmDialog.confirm({
       title: 'Delete all data?',
       message:
-        'This permanently deletes every document and image stored on this device. Export anything you want to keep first. This cannot be undone.',
+        'This permanently deletes every document and image stored on this device. Export a backup first if you might need them. This cannot be undone.',
       confirmText: 'Delete everything',
       cancelText: 'Cancel',
       isDestructive: true,

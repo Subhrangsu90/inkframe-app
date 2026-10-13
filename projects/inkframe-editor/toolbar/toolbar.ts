@@ -1022,8 +1022,8 @@ import {
           <button
             type="button"
             class="ink-tb-icon-btn"
-            aria-label="Revision history"
-            matTooltip="Revision history"
+            aria-label="Version history"
+            matTooltip="Version history"
             (click)="openHistory()"
           >
             <mat-icon>history</mat-icon>

@@ -57,4 +57,26 @@ describe('ConfirmDialogComponent keyboard behavior', () => {
     service.close(true);
     expect(await second).toBe(true);
   });
+
+  it('offers a second answer between Cancel and the confirm button', async () => {
+    const fixture = TestBed.createComponent(Host);
+    const service = TestBed.inject(ConfirmDialogService);
+    const answer = service.choose({
+      title: 'Restore?',
+      message: '',
+      confirmText: 'Merge',
+      secondaryText: 'Replace all',
+      secondaryIsDestructive: true,
+    });
+    await fixture.whenStable();
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        '.ink-dialog-actions button',
+      ),
+    );
+    expect(buttons.map((b) => b.textContent!.trim())).toEqual(['Cancel', 'Replace all', 'Merge']);
+    expect(buttons[1].classList).toContain('ink-dialog-btn-destructive');
+    buttons[1].click();
+    expect(await answer).toBe('secondary');
+  });
 });

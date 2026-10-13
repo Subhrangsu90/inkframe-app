@@ -19,11 +19,21 @@ export interface ConfirmDialogOptions {
   cancelText?: string;
   isDestructive?: boolean;
   icon?: string;
+  /**
+   * A second answer, shown between Cancel and the confirm button (for
+   * example "Replace" next to "Merge"). Ask with choose() to receive it.
+   */
+  secondaryText?: string;
+  /** Shows the second answer in the danger color. */
+  secondaryIsDestructive?: boolean;
 }
+
+/** The answer to a question asked with choose(). */
+export type DialogChoice = 'confirm' | 'secondary' | 'cancel';
 
 interface ActiveDialogState {
   options: ConfirmDialogOptions;
-  resolve: (value: boolean) => void;
+  resolve: (value: DialogChoice) => void;
 }
 
 @Injectable({
@@ -33,11 +43,16 @@ export class ConfirmDialogService {
   private readonly _state = signal<ActiveDialogState | null>(null);
   public readonly state = this._state.asReadonly();
 
-  public confirm(options: ConfirmDialogOptions): Promise<boolean> {
+  public async confirm(options: ConfirmDialogOptions): Promise<boolean> {
+    return (await this.choose(options)) === 'confirm';
+  }
+
+  /** Like confirm(), for questions with a second answer (`secondaryText`). */
+  public choose(options: ConfirmDialogOptions): Promise<DialogChoice> {
     // A new question replaces an open one, which then counts as cancelled
     // (otherwise its caller would wait forever).
-    this.close(false);
-    return new Promise<boolean>((resolve) => {
+    this.answer('cancel');
+    return new Promise<DialogChoice>((resolve) => {
       this._state.set({
         options,
         resolve,
@@ -46,9 +61,13 @@ export class ConfirmDialogService {
   }
 
   public close(result: boolean): void {
+    this.answer(result ? 'confirm' : 'cancel');
+  }
+
+  public answer(choice: DialogChoice): void {
     const current = this._state();
     if (current) {
-      current.resolve(result);
+      current.resolve(choice);
       this._state.set(null);
     }
   }
@@ -97,6 +116,17 @@ export class ConfirmDialogService {
             >
               {{ current.options.cancelText || 'Cancel' }}
             </button>
+            @if (current.options.secondaryText) {
+              <button
+                type="button"
+                class="ink-dialog-btn ink-focus-ring"
+                [class.ink-dialog-btn-destructive]="current.options.secondaryIsDestructive"
+                [class.ink-dialog-btn-cancel]="!current.options.secondaryIsDestructive"
+                (click)="dialogService.answer('secondary')"
+              >
+                {{ current.options.secondaryText }}
+              </button>
+            }
             <button
               type="button"
               class="ink-dialog-btn ink-focus-ring"
@@ -192,6 +222,7 @@ export class ConfirmDialogService {
 
     .ink-dialog-actions {
       display: flex;
+      flex-wrap: wrap;
       justify-content: flex-end;
       gap: 10px;
     }

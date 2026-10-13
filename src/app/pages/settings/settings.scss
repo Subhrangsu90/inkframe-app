@@ -193,6 +193,32 @@
   color: var(--ink-text-muted);
 }
 
+.secondary-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ink-border-strong);
+  border-top-color: var(--ink-accent);
+  border-radius: 50%;
+  animation: settings-spin 0.7s linear infinite;
+}
+
+@keyframes settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-spinner {
+    animation-duration: 2s;
+  }
+}
+
 .danger-btn {
   background: var(--ink-danger);
   border: 1px solid transparent;

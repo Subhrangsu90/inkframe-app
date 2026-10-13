@@ -5,11 +5,12 @@ import { InkIcon } from '../../ui/icons/icon';
 import { ThemeService } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../layout.service';
 import { formatRelativeTime } from '../../../core/document-manager';
+import { StorageBanner } from '../storage-banner/storage-banner';
 
 @Component({
   selector: 'ink-app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, InkIcon],
+  imports: [CommonModule, RouterLink, RouterLinkActive, InkIcon, StorageBanner],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

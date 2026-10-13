@@ -21,6 +21,7 @@ export * from './keep-menu-open.directive';
 export * from './slash-items';
 export * from './editor-service';
 export * from './io/html';
+export * from './io/html-document';
 export * from './io/markdown';
 export * from './node-views/callout-icon';
 export * from './node-views/callout.node-view';

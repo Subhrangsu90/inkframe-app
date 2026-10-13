@@ -29,9 +29,21 @@
     }
 
     <!-- Live Autosave Status Indicator -->
-    <div class="save-status" [class.saving]="saveStatus() === 'saving'" role="status">
+    <div
+      class="save-status"
+      [class.saving]="saveStatus() === 'saving'"
+      [class.error]="saveStatus() === 'error'"
+      [attr.title]="
+        saveStatus() === 'error'
+          ? 'Your latest changes could not be saved in this browser. Export a backup to keep them.'
+          : null
+      "
+      role="status"
+    >
       <span class="status-dot"></span>
-      <span class="status-label">{{ saveStatus() === 'saving' ? 'Saving…' : 'Saved' }}</span>
+      <span class="status-label">{{
+        saveStatus() === 'saving' ? 'Saving…' : saveStatus() === 'error' ? 'Not saved' : 'Saved'
+      }}</span>
     </div>
   </div>
 </ng-template>
@@ -153,16 +165,39 @@
       }
     </div>
 
-    <!-- Export Action -->
+    <!-- Export Menu -->
     <button
       type="button"
       class="export-btn"
-      (click)="exportMarkdown()"
-      title="Export as Markdown (.md)"
+      [matMenuTriggerFor]="exportMenu"
+      [disabled]="exporting()"
+      aria-label="Export, print or copy"
+      title="Export, print or copy"
     >
       <ink-icon name="download" [size]="14" />
       <span class="hidden sm:inline">Export</span>
+      <ink-icon name="chevron-down" [size]="12" class="hidden sm:inline-flex" />
     </button>
+    <mat-menu #exportMenu="matMenu" xPosition="before" class="ink-export-menu">
+      <button mat-menu-item (click)="exportMarkdown()">
+        <span class="menu-item-glyph"><ink-icon name="file-text" [size]="16" /></span>
+        <span class="menu-item-text">Markdown (.md)</span>
+      </button>
+      <button mat-menu-item (click)="exportHtml()">
+        <span class="menu-item-glyph"><ink-icon name="file-code" [size]="16" /></span>
+        <span class="menu-item-text">Web page (.html)</span>
+      </button>
+      <button mat-menu-item (click)="printDoc()">
+        <span class="menu-item-glyph"><ink-icon name="printer" [size]="16" /></span>
+        <span class="menu-item-text">Print or save as PDF</span>
+        <span class="menu-shortcut">Ctrl+P</span>
+      </button>
+      <mat-divider />
+      <button mat-menu-item (click)="copyMarkdown()">
+        <span class="menu-item-glyph"><ink-icon name="copy" [size]="16" /></span>
+        <span class="menu-item-text">Copy as Markdown</span>
+      </button>
+    </mat-menu>
   </div>
 </ng-template>
 
@@ -171,7 +206,46 @@
 <!-- ═════════════════════════════════════════════ -->
 <div class="editor-workspace-body" [class.is-preview]="activeView() === 'preview'">
   <div class="view-panel editor-view-panel">
-    <div class="editor-scroll-container">
+    <!-- A version from the history, shown in place of the editor -->
+    @if (previewVersion(); as version) {
+      <div class="version-preview-bar" role="status">
+        <ink-icon name="history" [size]="15" class="version-preview-icon" />
+        <p class="version-preview-text">
+          <strong>{{ version.name || 'Earlier version' }}</strong>
+          <span>
+            {{ previewWhen() }} · {{ version.wordCount }}
+            {{ version.wordCount === 1 ? 'word' : 'words' }}
+          </span>
+        </p>
+        <div class="version-preview-actions">
+          <button type="button" class="version-btn" (click)="exitPreview()">
+            <ink-icon name="chevron-left" [size]="14" />
+            <!-- On phones the version list covers the page, so this returns to it. -->
+            <span class="hidden md:inline">Back to current</span>
+            <span class="md:hidden">All versions</span>
+          </button>
+          <button
+            type="button"
+            class="version-btn version-btn-primary"
+            (click)="restorePreviewedVersion()"
+            [disabled]="historyBusy()"
+          >
+            <ink-icon name="rotate-ccw" [size]="14" />
+            <span>Restore this version</span>
+          </button>
+        </div>
+      </div>
+      <div class="version-preview ink-scrollbar">
+        <article class="version-sheet">
+          <div
+            class="ink-static-doc ProseMirror ProseMirror-preview"
+            [innerHTML]="previewHtml()"
+          ></div>
+        </article>
+      </div>
+    }
+
+    <div class="editor-scroll-container" [hidden]="previewVersion() !== null">
       <ink-editor
         #editorComp
         [initialDoc]="currentStoredDoc()"
@@ -179,7 +253,20 @@
         [editable]="activeView() === 'rich'"
         [showToolbar]="activeView() === 'rich' && showToolbar()"
         (changed)="onDocChanged($event)"
+        (historyRequested)="toggleHistory()"
       />
     </div>
   </div>
+
+  @if (historyOpen()) {
+    <ink-version-panel
+      [versions]="versions()"
+      [selectedId]="previewVersion()?.id ?? null"
+      [busy]="historyBusy()"
+      (selected)="selectVersion($event)"
+      (saveRequested)="saveNamedVersion($event)"
+      (removed)="deleteVersion($event)"
+      (closed)="closeHistory()"
+    />
+  }
 </div>

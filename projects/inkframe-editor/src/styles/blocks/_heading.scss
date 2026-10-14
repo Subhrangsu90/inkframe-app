@@ -1,0 +1,47 @@
+/* ── Headings ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Heading levels, inside `.ProseMirror`. */
+@mixin document {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--ink-text-heading, #ffffff);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.65em;
+    @media (min-width: 768px) {
+      font-size: 2em;
+    }
+  }
+  h2 {
+    font-size: 1.35em;
+    @media (min-width: 768px) {
+      font-size: 1.5em;
+    }
+  }
+  h3 {
+    font-size: 1.15em;
+    @media (min-width: 768px) {
+      font-size: 1.25em;
+    }
+  }
+  h4 {
+    font-size: 1.05em;
+  }
+  h5 {
+    font-size: 1em;
+  }
+  h6 {
+    font-size: 0.9em;
+    color: var(--ink-text-secondary);
+  }
+}

@@ -5,17 +5,15 @@ import { Slice } from 'prosemirror-model';
 import { TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { EditorService } from './editor-service';
-import { DEFAULT_HIGHLIGHT_COLOR, schema as staticSchema } from '../schema/schema';
-import {
-  BoldExtension,
-  DEFAULT_EXTENSIONS,
-  HeadingExtension,
-  HistoryExtension,
-  ItalicExtension,
-} from '../extensions/default-extensions';
+import { schema as staticSchema } from '../schema/schema';
+import { DEFAULT_HIGHLIGHT_COLOR } from '../extensions/highlight/highlight-schema';
+import { DEFAULT_EXTENSIONS } from '../extensions/starter-kit';
+import { BoldExtension, ItalicExtension } from '../extensions/marks/marks-extensions';
+import { HeadingExtension } from '../extensions/heading/heading-extension';
+import { HistoryExtension } from '../extensions/history/history-extension';
 import { BulletListExtension } from '../extensions/lists/list-extensions';
 import { createExtension } from './extension-types';
-import { taskItemRule } from '../extensions/input-rules';
+import { taskItemRule } from '../extensions/lists/list-input-rules';
 import { SCHEMA_VERSION, StoredDoc } from '../schema/migrations';
 import {
   GOOGLE_DOCS_CLIPBOARD,

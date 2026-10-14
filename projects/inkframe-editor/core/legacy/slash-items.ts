@@ -1,14 +1,6 @@
-import type { EditorService } from './editor-service';
+import type { SlashItem } from '../editor/extension-types';
 
-export interface SlashItem {
-  id: string;
-  label: string;
-  hint: string;
-  icon: string; // Material icon name
-  keywords: string[];
-  run(svc: EditorService): void;
-}
-
+/** @deprecated The slash menu shows the `slashItems` of the enabled extensions. Removed in 2.0. */
 export const SLASH_ITEMS: SlashItem[] = [
   {
     id: 'p',

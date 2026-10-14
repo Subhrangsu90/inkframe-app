@@ -8,11 +8,16 @@
  * so --ink-editor-font-size scales the whole document (editor, preview and
  * reader alike). Spacing stays in rem.
  */
+@use './blocks/blockquote';
 @use './blocks/callout';
 @use './blocks/code-block';
+@use './blocks/divider';
+@use './blocks/heading';
+@use './blocks/highlight';
 @use './blocks/image';
 @use './blocks/link';
 @use './blocks/lists';
+@use './blocks/marks';
 @use './blocks/placeholder';
 @use './blocks/search';
 @use './blocks/table';
@@ -32,95 +37,21 @@
     margin: 0;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    color: var(--ink-text-heading, #ffffff);
-    font-weight: 600;
-    line-height: 1.3;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  h1 {
-    font-size: 1.65em;
-    @media (min-width: 768px) {
-      font-size: 2em;
-    }
-  }
-  h2 {
-    font-size: 1.35em;
-    @media (min-width: 768px) {
-      font-size: 1.5em;
-    }
-  }
-  h3 {
-    font-size: 1.15em;
-    @media (min-width: 768px) {
-      font-size: 1.25em;
-    }
-  }
-  h4 {
-    font-size: 1.05em;
-  }
-  h5 {
-    font-size: 1em;
-  }
-  h6 {
-    font-size: 0.9em;
-    color: var(--ink-text-secondary);
-  }
+  @include heading.document;
 
   @include lists.document;
 
-  blockquote {
-    border-left: 3px solid var(--ink-accent-primary, #8b5cf6);
-    margin: 1rem 0;
-    padding: 0.45rem 1rem;
-    color: var(--ink-text-secondary);
-    background: transparent;
-    border-radius: 0;
-    font-style: italic;
-  }
+  @include blockquote.document;
 
   @include code-block.document;
 
-  code {
-    background: var(--ink-badge-bg, rgba(255, 255, 255, 0.08));
-    color: var(--ink-accent-light, #a78bfa);
-    padding: 0.15rem 0.4rem;
-    border-radius: 0;
-    font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
-    font-size: 0.86em;
-    border: 1px solid var(--ink-border-subtle);
-  }
+  @include marks.document;
 
   @include link.document;
 
-  hr {
-    border: none;
-    border-top: 1px solid var(--ink-border-default);
-    margin: 1.75rem 0;
-  }
+  @include divider.document;
 
-  // Highlight colors are light pastels: the text on them is always dark, so it
-  // stays readable in the dark theme too (and matches exported HTML, where
-  // browsers draw <mark> text black).
-  mark {
-    color: #1b1b1f;
-    border-radius: 0;
-    padding: 0.05em 0.1em;
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
-
-    a,
-    code {
-      color: inherit;
-    }
-  }
+  @include highlight.document;
 
   @include placeholder.document;
 
@@ -137,16 +68,9 @@
   @include callout.light;
 
   .ProseMirror {
-    blockquote {
-      border-left: 3px solid #2563eb;
-      background: #f8fafc;
-      color: #475569;
-    }
+    @include blockquote.light;
 
-    code:not(pre code) {
-      background: #f1f5f9;
-      color: #2563eb;
-    }
+    @include marks.light;
   }
 }
 

@@ -1,0 +1,11 @@
+/* ── Dividers ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Horizontal rules, inside `.ProseMirror`. */
+@mixin document {
+  hr {
+    border: none;
+    border-top: 1px solid var(--ink-border-default);
+    margin: 1.75rem 0;
+  }
+}

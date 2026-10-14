@@ -265,7 +265,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | B2 | ~~Landing page promises features that don't exist~~ | `src/app/pages/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
 | B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/pages/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
 | B4 | ~~History button does nothing~~ | `toolbar.ts` → `historyRequested` | ✅ Done in M2: the button opens the version history panel. |
-| B5 | ~~`Ctrl+K` advertised but unbound~~ | `default-extensions.ts` (LinkExtension) | ✅ Done in M0. Opens the floating menu's link popover when text is selected, otherwise the toolbar's; the URL field is focused. |
+| B5 | ~~`Ctrl+K` advertised but unbound~~ | `extensions/link/link-extension.ts` | ✅ Done in M0. Opens the floating menu's link popover when text is selected, otherwise the toolbar's; the URL field is focused. |
 | B6 | SSR server rejects every host | `angular.json` → `security.allowedHosts: []` | Set production hosts, or `NG_ALLOWED_HOSTS` at deploy time. |
 | B7 | ~~No backup and restore~~ | Settings | ✅ Done in M2: Settings → Backup, and the storage banner. |
 | B8 | README is the Angular CLI placeholder | `README.md` | Product README plus library README ([section 8](#8-library-productization-inkframe-uieditor)). |
@@ -273,7 +273,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 ### 4.3 Technical debt (fix during M0–M2)
 
 - **Dead preset code:** the editor page defines extension presets and a demo plugin with no UI. Either expose presets in a developer playground or remove them.
-- **Legacy APIs:** `buildPlugins()`, `SLASH_ITEMS` and the static `schema` export predate the extension system. Deprecate them in the library's public API and point users to `ExtensionManager` and `DEFAULT_EXTENSIONS`.
+- **Legacy APIs:** ~~`buildPlugins()` and `SLASH_ITEMS`~~ are marked `@deprecated` (with `buildInputRules()`, in `core/legacy/`) and point users to `ExtensionManager` and `DEFAULT_EXTENSIONS`. Still open: the static `schema` export, which predates the extension system but is what the Markdown and HTML converters use.
 - ~~**Component tests can't run.**~~ Resolved in M0: tests run through `ng test` (AOT, type-checked). The first component test found that `<ink-editor>` cannot emit edits while being destroyed; edits are now flushed by a `canDeactivate` guard and on `visibilitychange` / `pagehide`.
 - ~~**No linter.**~~ Resolved: angular-eslint (`npm run lint`) runs in CI. Specs may use `any`; template accessibility exceptions are commented where they are made.
 - ~~**Formatting isn't enforced.**~~ Resolved: the codebase was formatted in one commit (listed in `.git-blame-ignore-revs`) and `format:check` runs in CI. `.gitattributes` keeps checkouts on LF so the check passes on Windows too.

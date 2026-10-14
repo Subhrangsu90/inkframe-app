@@ -894,3 +894,90 @@ describe('Task lists and switching list types', () => {
     expect(md).toContain('[x] Subtask B');
   });
 });
+
+describe('List nodes', () => {
+  it('supports list nodes (bullet_list, ordered_list, list_item)', () => {
+    const li = schema.nodes['list_item'].create(null, [
+      schema.nodes['paragraph'].create(null, [schema.text('List item 1')]),
+    ]);
+    const ul = schema.nodes['bullet_list'].create(null, [li]);
+    expect(ul.type.name).toBe('bullet_list');
+    expect(ul.childCount).toBe(1);
+
+    const ol = schema.nodes['ordered_list'].create(null, [li]);
+    expect(ol.type.name).toBe('ordered_list');
+    expect(ol.childCount).toBe(1);
+  });
+
+  it('supports task_list and task_item nodes with checked attributes and markdown/html IO', () => {
+    const unchecked = schema.nodes['task_item'].create({ checked: false }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Buy milk')]),
+    ]);
+    const checked = schema.nodes['task_item'].create({ checked: true }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Write tests')]),
+    ]);
+    const taskList = schema.nodes['task_list'].create(null, [unchecked, checked]);
+
+    expect(taskList.type.name).toBe('task_list');
+    expect(taskList.childCount).toBe(2);
+    expect(unchecked.attrs['checked']).toBe(false);
+    expect(checked.attrs['checked']).toBe(true);
+
+    // Markdown serialization
+    const md = docToMarkdown(schema.node('doc', null, [taskList]));
+    expect(md).toContain('- [ ] Buy milk');
+    expect(md).toContain('- [x] Write tests');
+
+    // HTML serialization
+    const html = docToHtml(schema.node('doc', null, [taskList]));
+    expect(html).toContain('ink-task-list');
+    expect(html).toContain('ink-task-item');
+    expect(html).toContain('data-checked="true"');
+    expect(html).toContain('data-checked="false"');
+
+    // HTML round-trip
+    const fromHtml = htmlToDoc(html);
+    const htmlList = fromHtml.firstChild;
+    expect(htmlList?.type.name).toBe('task_list');
+    expect(htmlList?.childCount).toBe(2);
+    expect(htmlList?.child(0).attrs['checked']).toBe(false);
+    expect(htmlList?.child(1).attrs['checked']).toBe(true);
+
+    // Markdown round-trip
+    const fromMd = markdownToDoc(md);
+    const mdList = fromMd.firstChild;
+    expect(mdList?.type.name).toBe('task_list');
+    expect(mdList?.childCount).toBe(2);
+    expect(mdList?.child(0).attrs['checked']).toBe(false);
+    expect(mdList?.child(1).attrs['checked']).toBe(true);
+  });
+});
+
+describe('Task item node view lifecycle', () => {
+  it('mounts and destroys 100 times without leaking or throwing', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    for (let i = 0; i < 100; i++) {
+      const doc = schema.node('doc', null, [
+        schema.nodes['task_list'].create(null, [
+          schema.nodes['task_item'].create(
+            { checked: i % 2 === 0 },
+            schema.nodes['paragraph'].create(null, [schema.text(`Item ${i}`)]),
+          ),
+        ]),
+      ]);
+
+      const state = EditorState.create({ doc, schema });
+      const view = new EditorView(container, {
+        state,
+        nodeViews: {
+          task_item: (node, v, getPos) => new TaskItemNodeView(node, v, getPos as () => number),
+        },
+      });
+
+      expect(view.dom).toBeDefined();
+      view.destroy();
+    }
+  });
+});

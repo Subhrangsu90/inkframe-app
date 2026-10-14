@@ -13,12 +13,12 @@ import {
   ExtensionContext,
   ToolbarItemDef,
   FloatingItemDef,
+  SlashItem,
 } from './extension-types';
 import { EditorService } from './editor-service';
 import { EditorHooks } from './editor-hooks';
-import { SlashItem } from './slash-items';
 import { menusPlugin } from './menus.plugin';
-import { paragraph } from '../schema/schema';
+import { paragraph } from '../extensions/document/document-schema';
 import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from '../extensions/lists/list-schema';
 import { listKeymap } from '../extensions/lists/list-commands';
 import { listJoinPlugin } from '../extensions/lists/list-join.plugin';

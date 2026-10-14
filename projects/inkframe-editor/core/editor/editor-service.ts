@@ -15,12 +15,18 @@ import { redo, redoDepth, undo, undoDepth } from 'prosemirror-history';
 import { TextAlign } from '../extensions/text-align/text-align-schema';
 import { CalloutKind } from '../extensions/callout/callout-schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from '../schema/migrations';
+import { clearFormattingCommand } from '../extensions/clear-formatting/clear-formatting-commands';
 import {
-  clearFormattingCommand,
   removeHighlightCommand,
   setHighlightCommand,
   toggleHighlightCommand,
-} from '../extensions/commands';
+} from '../extensions/highlight/highlight-commands';
+import { toggleCodeCommand } from '../extensions/marks/marks-commands';
+import {
+  removeTextColorCommand,
+  setTextColorCommand,
+} from '../extensions/text-color/text-color-commands';
+import { insertDividerCommand } from '../extensions/divider/divider-commands';
 import {
   setBlockTypeKeepingAlign,
   setTextAlignCommand,
@@ -68,10 +74,9 @@ import {
   setCellAttr,
   toggleHeaderRow,
 } from 'prosemirror-tables';
-import { SlashItem } from './slash-items';
-import { EditorExtension } from './extension-types';
+import { EditorExtension, SlashItem } from './extension-types';
 import { ExtensionManager } from './extension-manager';
-import { DEFAULT_EXTENSIONS } from '../extensions/default-extensions';
+import { DEFAULT_EXTENSIONS } from '../extensions/starter-kit';
 import { insertTableCommand } from '../extensions/table/table-commands';
 import {
   setCodeBlockLanguageCommand,
@@ -586,36 +591,8 @@ export class EditorService implements EditorHooks {
     this.toggleFormatMark('em');
   }
   toggleCode() {
-    const codeType = this.markType('code');
-    if (!codeType) return;
-    this.run((state, dispatch) => {
-      const { from, to, empty, $from } = state.selection;
-      const hasCode = empty
-        ? !!codeType.isInSet(state.storedMarks ?? $from.marks())
-        : state.doc.rangeHasMark(from, to, codeType);
-
-      let tr = state.tr;
-      if (hasCode) {
-        if (empty) {
-          tr = tr.removeStoredMark(codeType);
-        } else {
-          tr = tr.removeMark(from, to, codeType);
-        }
-      } else {
-        if (empty) {
-          tr = tr.setStoredMarks([codeType.create()]);
-        } else {
-          Object.values(state.schema.marks).forEach((m) => {
-            if (m !== codeType) {
-              tr = tr.removeMark(from, to, m);
-            }
-          });
-          tr = tr.addMark(from, to, codeType.create());
-        }
-      }
-      dispatch?.(tr);
-      return true;
-    });
+    if (!this.markType('code')) return;
+    this.run(toggleCodeCommand);
   }
   toggleUnderline() {
     this.toggleFormatMark('underline');
@@ -633,32 +610,12 @@ export class EditorService implements EditorHooks {
     this.toggleFormatMark('small');
   }
   setTextColor(color: string) {
-    const markType = this.markType('textColor');
-    if (!markType || this.isCode()) return;
-    this.run((state, dispatch) => {
-      const { from, to, empty } = state.selection;
-      if (empty) {
-        dispatch?.(state.tr.addStoredMark(markType.create({ color })));
-      } else {
-        dispatch?.(
-          state.tr.removeMark(from, to, markType).addMark(from, to, markType.create({ color })),
-        );
-      }
-      return true;
-    });
+    if (!this.markType('textColor') || this.isCode()) return;
+    this.run(setTextColorCommand(color));
   }
   removeTextColor() {
-    const markType = this.markType('textColor');
-    if (!markType) return;
-    this.run((state, dispatch) => {
-      const { from, to, empty } = state.selection;
-      if (empty) {
-        dispatch?.(state.tr.removeStoredMark(markType));
-      } else {
-        dispatch?.(state.tr.removeMark(from, to, markType));
-      }
-      return true;
-    });
+    if (!this.markType('textColor')) return;
+    this.run(removeTextColorCommand);
   }
   /** Highlights the selection; inline code cannot be highlighted. */
   setHighlight(color: string) {
@@ -785,12 +742,8 @@ export class EditorService implements EditorHooks {
   }
 
   insertDivider() {
-    const rule = this.nodeType('horizontal_rule');
-    if (!rule) return;
-    this.run((state, dispatch) => {
-      dispatch?.(state.tr.replaceSelectionWith(rule.create()).scrollIntoView());
-      return true;
-    });
+    if (!this.nodeType('horizontal_rule')) return;
+    this.run(insertDividerCommand);
   }
 
   insertTable(rows = 3, cols = 3) {

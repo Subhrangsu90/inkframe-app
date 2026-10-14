@@ -1,0 +1,24 @@
+/* ── Block quotes ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Block quotes, inside `.ProseMirror`. */
+@mixin document {
+  blockquote {
+    border-left: 3px solid var(--ink-accent-primary, #8b5cf6);
+    margin: 1rem 0;
+    padding: 0.45rem 1rem;
+    color: var(--ink-text-secondary);
+    background: transparent;
+    border-radius: 0;
+    font-style: italic;
+  }
+}
+
+/* Light theme colors, inside `.theme-light .ProseMirror`. */
+@mixin light {
+  blockquote {
+    border-left: 3px solid #2563eb;
+    background: #f8fafc;
+    color: #475569;
+  }
+}

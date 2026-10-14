@@ -4,7 +4,6 @@ import { InputRule } from 'prosemirror-inputrules';
 import { NodeViewConstructor } from 'prosemirror-view';
 import { EditorHooks } from './editor-hooks';
 import type { EditorService } from './editor-service';
-import type { SlashItem } from './slash-items';
 
 export type ExtensionGroup =
   'history' | 'block' | 'formatting' | 'list' | 'insert' | 'table' | 'align' | 'action' | 'custom';
@@ -29,6 +28,15 @@ export interface ToolbarItemDef {
     isActive?: (svc: EditorService) => boolean;
     run: (svc: EditorService) => void;
   }[];
+}
+
+export interface SlashItem {
+  id: string;
+  label: string;
+  hint: string;
+  icon: string; // Material icon name
+  keywords: string[];
+  run(svc: EditorService): void;
 }
 
 export interface FloatingItemDef {

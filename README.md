@@ -44,6 +44,7 @@ projects/inkframe-editor/
     io/                  Markdown and HTML import and export
     storage/             Image storage in IndexedDB
     ui-helpers/          Theme, on-screen keyboard, menu and color helpers
+    legacy/              Deprecated APIs, removed in 2.0
   toolbar/               @inkframe-ui/editor/toolbar
   ui/                    @inkframe-ui/editor/ui: menus and panels
 public/                  Static files: icons, web app manifest
@@ -78,6 +79,8 @@ The path is relative to `projects/inkframe-editor/src`.
 ## Things to know
 
 **Imports in the app.** Within one top-level folder of `src/app` (`core`, `documents`, `pages`, `shared`), import with relative paths. To reach another top-level folder, use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`.
+
+**Editor features.** Each feature has a folder in `projects/inkframe-editor/core/extensions/`, with the same files: `<feature>-schema.ts` (node and mark specs), `<feature>-commands.ts` (ProseMirror commands), `<feature>-extension.ts` (the `EditorExtension`), plugins and node views, a spec, and an `index.ts` that exports them. Its styles are mixins in `src/styles/blocks/_<feature>.scss`, which `_editor-content.scss` includes where the rules belong in its order. `EditorService` methods check what the editor allows (editable, the node exists, not inside inline code) and run the feature's command. A new feature is added to `starter-kit.ts`, its specs to `schema/schema.ts`, and its folder to `core/index.ts`.
 
 **Icons.** The app and the library use a self-hosted subset of Material Symbols, with only the icons in use. After adding or renaming an icon, run `npm run icons:build`, which downloads the new subset from Google Fonts and writes it into the repository. CI fails if the subset is out of date. The script finds icon names written as `<mat-icon>name</mat-icon>` or `icon: 'name'`. Add icons chosen at runtime to `DYNAMIC_ICONS` in [scripts/build-icon-font.mjs](scripts/build-icon-font.mjs).
 

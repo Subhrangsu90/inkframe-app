@@ -44,7 +44,7 @@
 .settings-container {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 16px 64px;
+  padding: 28px 16px calc(64px + env(safe-area-inset-bottom));
 
   @media (min-width: 768px) {
     padding: 44px 32px 80px;
@@ -248,6 +248,11 @@
     height: 6px;
     border-radius: 50%;
     background: currentColor;
+  }
+
+  &.muted {
+    background: var(--ink-surface-2);
+    color: var(--ink-text-muted);
   }
 }
 
@@ -464,4 +469,13 @@
   transition:
     opacity var(--ink-transition-base),
     transform var(--ink-transition-base);
+}
+
+/* Touch screens: 44px targets */
+@media (pointer: coarse) {
+  .secondary-btn,
+  .danger-btn,
+  .link-btn {
+    height: 44px;
+  }
 }

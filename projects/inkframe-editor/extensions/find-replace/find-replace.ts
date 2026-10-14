@@ -277,6 +277,19 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
       }
     }
 
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-find-input,
+      .ink-find-text-btn {
+        height: 44px;
+      }
+
+      .ink-find-btn {
+        width: 44px;
+        height: 44px;
+      }
+    }
+
     @media (max-width: 480px) {
       :host {
         left: 8px;

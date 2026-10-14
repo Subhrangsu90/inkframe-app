@@ -13,6 +13,9 @@ interface SlashPluginState {
 export const slashKey = new PluginKey<SlashPluginState>('ink-slash');
 const CLOSED = { open: false, query: '', from: 0, to: 0 };
 
+/** Below the line, the slash menu needs this much room (px), or it opens above when there is more there. */
+const SLASH_MENU_MIN_HEIGHT = 220;
+
 function detectSlash(state: EditorState) {
   const { selection } = state;
   const { $from } = selection;
@@ -67,12 +70,19 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
             // Keep slash menu clamped on small mobile screens
             const slashWidth = Math.min(300, screenW - 24);
             const clampedLeft = Math.max(12, Math.min(c.left, screenW - slashWidth - 12));
+            // Open above the line when the space below is short and there is
+            // more above, as when typing just above an on-screen keyboard.
+            const roomBelow = (vpRect?.bottom ?? window.innerHeight) - c.bottom - 8;
+            const roomAbove = c.top - (vpRect?.top ?? 0) - 8;
+            const above = roomBelow < SLASH_MENU_MIN_HEIGHT && roomAbove > roomBelow;
             hooks.onSlashMenu({
               query: slash.query,
               from: slash.from,
               to: slash.to,
               left: clampedLeft,
-              top: c.bottom,
+              top: above ? c.top : c.bottom,
+              placement: above ? 'top' : 'bottom',
+              maxHeight: Math.round(Math.max(above ? roomAbove : roomBelow, 120)),
             });
           } else {
             hooks.onSlashMenu(null);
@@ -197,6 +207,8 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
 
       window.addEventListener('scroll', schedule, true);
       window.addEventListener('resize', schedule);
+      // An on-screen keyboard that covers the page resizes only the visual viewport.
+      window.visualViewport?.addEventListener('resize', schedule);
       view.dom.addEventListener('focus', schedule);
       view.dom.addEventListener('blur', schedule);
 
@@ -208,6 +220,7 @@ export function menusPlugin(hooks: EditorHooks): Plugin<SlashPluginState> {
         destroy() {
           window.removeEventListener('scroll', schedule, true);
           window.removeEventListener('resize', schedule);
+          window.visualViewport?.removeEventListener('resize', schedule);
           view.dom.removeEventListener('focus', schedule);
           view.dom.removeEventListener('blur', schedule);
           cancelAnimationFrame(raf);

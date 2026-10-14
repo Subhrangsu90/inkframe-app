@@ -289,6 +289,13 @@ export class ConfirmDialogService {
         transform: scale(1);
       }
     }
+
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-dialog-btn {
+        height: 44px;
+      }
+    }
   `,
 })
 export class ConfirmDialogComponent {

@@ -328,6 +328,18 @@ export const CELL_BG_COLORS: CellBgColor[] = [
       }
     }
 
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-tbl-btn {
+        min-height: 44px;
+      }
+
+      .ink-tbl-icon-btn {
+        width: 44px;
+        height: 44px;
+      }
+    }
+
     .tbl-icon {
       font-size: 16px;
       width: 16px;

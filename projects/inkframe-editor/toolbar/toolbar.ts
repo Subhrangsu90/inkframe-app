@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -66,12 +67,14 @@ import {
         </button>
       }
 
+      <!-- mousedown: a click or tap must not move focus out of the document, which would close the on-screen keyboard. -->
       <div
         #toolbarEl
         class="ink-toolbar"
         role="toolbar"
         aria-label="Editor toolbar"
         (scroll)="onToolbarScroll()"
+        (mousedown)="$event.preventDefault()"
         (pointerdown)="onPointerDown($event)"
         (pointermove)="onPointerMove($event)"
         (pointerup)="onPointerUp()"
@@ -1384,6 +1387,30 @@ import {
     .small-text {
       font-size: 12px;
     }
+
+    /* Touch screens: 44px targets. A swipe scrolls the row, so the scroll buttons would only cover buttons. */
+    @media (pointer: coarse) {
+      .ink-toolbar {
+        min-height: 56px;
+        padding: 6px 8px;
+        cursor: auto;
+      }
+      .ink-tb-icon-btn {
+        width: 44px;
+        height: 44px;
+      }
+      .ink-tb-align-btn,
+      .ink-tb-list-btn {
+        width: auto;
+        min-width: 44px;
+      }
+      .ink-tb-block-btn {
+        height: 44px;
+      }
+      .ink-tb-scroll-btn {
+        display: none;
+      }
+    }
   `,
 })
 export class Toolbar implements OnDestroy {
@@ -1420,6 +1447,11 @@ export class Toolbar implements OnDestroy {
 
   protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');
   private readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
+  private readonly menuTriggers = viewChildren(MatMenuTrigger);
+  /** When the toolbar was last pressed, and whether the document had focus then. */
+  private lastPress = { at: 0, documentFocused: false };
+  /** Whether the open menu should hand focus back to the document when it closes. */
+  private refocusDocumentOnClose = false;
   private handledLinkRequests = this.svc.linkEditorRequests();
   protected readonly canScrollLeft = signal(false);
   protected readonly canScrollRight = signal(false);
@@ -1443,6 +1475,23 @@ export class Toolbar implements OnDestroy {
       if (requests === this.handledLinkRequests) return;
       this.handledLinkRequests = requests;
       if (!untracked(() => this.svc.floatingMenu())) this.linkTrigger()?.openMenu();
+    });
+
+    // A menu opened by a click or tap while typing returns focus to the
+    // document when it closes, not to its button: on a phone that keeps the
+    // on-screen keyboard up. Menus opened from the keyboard return to their button.
+    effect((onCleanup) => {
+      const subscriptions = this.menuTriggers().flatMap((trigger) => [
+        trigger.menuOpened.subscribe(() => {
+          this.refocusDocumentOnClose =
+            this.lastPress.documentFocused && Date.now() - this.lastPress.at < 1000;
+        }),
+        trigger.menuClosed.subscribe(() => {
+          if (this.refocusDocumentOnClose) this.svc.focus();
+          this.refocusDocumentOnClose = false;
+        }),
+      ]);
+      onCleanup(() => subscriptions.forEach((s) => s.unsubscribe()));
     });
   }
 
@@ -1499,6 +1548,7 @@ export class Toolbar implements OnDestroy {
   }
 
   protected onPointerDown(event: PointerEvent): void {
+    this.lastPress = { at: Date.now(), documentFocused: this.svc.view?.hasFocus() ?? false };
     if (event.button !== 0 && event.pointerType === 'mouse') return;
 
     const el = this.toolbarRef()?.nativeElement;

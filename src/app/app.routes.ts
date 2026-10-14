@@ -1,5 +1,19 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import type { EditorView } from './pages/editor/editor';
+import { LayoutService } from './shared/layout/layout.service';
+
+/** Creates an empty document and opens it; storage errors lead to the library. */
+async function openNewDocument() {
+  const router = inject(Router);
+  const layout = inject(LayoutService);
+  try {
+    const id = await layout.createDocWithoutOpening();
+    return router.createUrlTree(['/doc', id]);
+  } catch {
+    return router.createUrlTree(['/docs']);
+  }
+}
 
 export const routes: Routes = [
   // Landing Page
@@ -20,6 +34,12 @@ export const routes: Routes = [
     // Save debounced edits before the editor is destroyed: once destruction
     // starts, the editor can no longer emit them.
     canDeactivate: [(page: EditorView) => (page.flushPendingEdits(), true)],
+  },
+  // A new document: the installed app's "New document" shortcut (manifest.webmanifest)
+  {
+    path: 'new',
+    canActivate: [openNewDocument],
+    children: [],
   },
   // Redirect editor/ to docs
   {

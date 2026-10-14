@@ -65,6 +65,11 @@ import { ToastMessage, ToastService } from './toast';
       pointer-events: none;
       max-width: 90vw;
       width: max-content;
+
+      /* Phones: above the editor's toolbar, the home indicator and the on-screen keyboard. */
+      @media (max-width: 767px) {
+        bottom: calc(88px + env(safe-area-inset-bottom) + var(--ink-keyboard-inset, 0px));
+      }
     }
 
     .ink-toast-item {
@@ -186,6 +191,19 @@ import { ToastMessage, ToastService } from './toast';
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-toast-action-btn {
+        min-height: 44px;
+      }
+
+      .ink-toast-close-btn {
+        width: 44px;
+        height: 44px;
+        margin: -8px -12px -8px 0;
       }
     }
   `,

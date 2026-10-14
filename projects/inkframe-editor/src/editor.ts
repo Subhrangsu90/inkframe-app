@@ -22,6 +22,7 @@ import {
   markdownToDoc,
   EditorExtension,
   DEFAULT_EXTENSIONS,
+  VisualViewportTracker,
 } from '@inkframe-ui/editor/core';
 import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
@@ -40,7 +41,11 @@ import {
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="ink-editor-wrapper" [class.is-preview]="!editable()">
+    <div
+      class="ink-editor-wrapper"
+      [class.is-preview]="!editable()"
+      [class.ink-toolbar-bottom]="mobileToolbar() === 'bottom'"
+    >
       @if (showToolbar() && editable()) {
         <ink-toolbar />
       }
@@ -105,6 +110,7 @@ import {
         .ProseMirror {
           cursor: default;
         }
+        .ink-task-check,
         .ink-task-checkbox {
           cursor: default !important;
           pointer-events: none !important;
@@ -147,6 +153,36 @@ import {
             box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
             border-color: var(--ink-border-subtle, #282a30);
           }
+        }
+      }
+    }
+    /*
+     * mobileToolbar="bottom": on phones the toolbar sits below the page, in
+     * thumb reach, and above the on-screen keyboard when the page is sized to
+     * the visible area (see VisualViewportTracker). While typing, the status
+     * bar gives its space to the text.
+     */
+    @media (max-width: 767px) {
+      .ink-toolbar-bottom {
+        > ink-toolbar {
+          order: 1;
+        }
+        > ink-toolbar .ink-toolbar {
+          border-top: 1px solid var(--ink-border-default, #2e3036);
+          border-bottom: 0;
+          padding-bottom: max(6px, env(safe-area-inset-bottom));
+        }
+        /* The toolbar has the same formatting, and phones show their own menu over a selection. */
+        > ink-floating-menu {
+          display: none;
+        }
+      }
+      [data-ink-keyboard] .ink-toolbar-bottom {
+        > ink-toolbar .ink-toolbar {
+          padding-bottom: 6px;
+        }
+        > ink-status-bar {
+          display: none;
         }
       }
     }
@@ -254,6 +290,7 @@ export class Editor {
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
   private readonly destroyRef = inject(DestroyRef);
+  private readonly viewportTracker = inject(VisualViewportTracker);
   private timer?: ReturnType<typeof setTimeout>;
 
   /** Read once at mount. Use loadDoc() to replace the document later. */
@@ -264,6 +301,12 @@ export class Editor {
   readonly showToolbar = input(true);
   /** Words, characters and reading time below the document. */
   readonly showStatusBar = input(true);
+  /**
+   * Where the toolbar goes on screens narrower than 768px. `'bottom'` puts it
+   * below the page, within thumb reach. It stays above the on-screen keyboard
+   * when the page is sized with `calc(100dvh - var(--ink-keyboard-inset, 0px))`.
+   */
+  readonly mobileToolbar = input<'top' | 'bottom'>('top');
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 
@@ -276,6 +319,8 @@ export class Editor {
         extensions: this.extensions(),
         onChange: () => this.scheduleEmit(),
       });
+      // Hides the status bar while the keyboard is open (see the styles).
+      if (this.mobileToolbar() === 'bottom') this.viewportTracker.start();
       if (this.viewport()?.nativeElement) {
         this.viewport()!.nativeElement.scrollTop = 0;
       }

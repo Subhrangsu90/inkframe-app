@@ -10,6 +10,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
 import { AppShellComponent } from './shared/layout/app-shell/app-shell';
+import { PwaService } from './core/pwa';
 
 /**
  * Switches the page to the light theme (dark text on white paper) and
@@ -51,8 +52,12 @@ export class App {
 
   constructor() {
     const doc = inject(DOCUMENT);
-    // Printing from the browser's menu: print in the light theme.
+    const pwa = inject(PwaService);
     afterNextRender(() => {
+      // Install prompt, offline status and updates.
+      pwa.start();
+
+      // Printing from the browser's menu: print in the light theme.
       let restore: (() => void) | null = null;
       doc.defaultView?.addEventListener('beforeprint', () => {
         restore ??= useLightThemeForPrint(doc);

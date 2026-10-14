@@ -1620,3 +1620,44 @@ td:hover .ink-table-col-header-handle,
     transition: none;
   }
 }
+
+/* ── Task checkboxes sit in a label, the larger target on touch screens ── */
+.ProseMirror ul.ink-task-list li.ink-task-item .ink-task-check {
+  display: flex;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ── Touch screens: 44px targets for the controls inside the document ── */
+@media (pointer: coarse) {
+  .ink-code-block-wrapper .ink-code-toolbar {
+    .ink-code-lang-btn {
+      min-height: 44px;
+    }
+
+    .ink-code-tool-btn {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
+  .ink-image-container .ink-image-wrapper .ink-image-toolbar .ink-image-tool-btn {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  /* Larger, in the same place: the negative margin keeps the callout's layout. */
+  .callout .callout-icon {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -8px;
+  }
+
+  /* 44px wide and as tall as the item, without moving the text. */
+  .ProseMirror ul.ink-task-list li.ink-task-item .ink-task-check {
+    align-self: stretch;
+    justify-content: center;
+    width: 44px;
+    margin: 0 calc((17px - 44px) / 2);
+  }
+}

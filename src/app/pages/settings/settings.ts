@@ -22,6 +22,7 @@ import {
   describeRestore,
 } from '../../core/backup';
 import { StorageHealth } from '../../core/storage-health';
+import { PwaService } from '../../core/pwa';
 import { InkIcon } from '../../shared/ui/icons/icon';
 import { ConfirmDialogService, ToastService } from '../../shared/ui';
 import { LayoutService } from '../../shared/layout/layout.service';
@@ -44,6 +45,7 @@ export class Settings implements OnInit {
   private readonly backup = inject(BackupService);
   private readonly storageHealth = inject(StorageHealth);
   readonly layout = inject(LayoutService);
+  readonly pwa = inject(PwaService);
 
   readonly backupAccept = `${BACKUP_EXTENSION},.json,application/json`;
   /** The backup action in progress, if any. */

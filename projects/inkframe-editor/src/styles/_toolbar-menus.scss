@@ -775,3 +775,74 @@ mat-divider.mat-divider,
     }
   }
 }
+
+/* ── Touch screens: 44px menu items ── */
+@media (pointer: coarse) {
+  .mat-mdc-menu-item {
+    min-height: 44px !important;
+    height: auto !important;
+  }
+}
+
+/*
+ * ── Phones: menus open as bottom sheets ──
+ * Full width at the bottom of the screen, above the on-screen keyboard
+ * (--ink-keyboard-inset, see VisualViewportTracker), instead of next to their
+ * button. Other connected overlays opt in with the pane class
+ * `ink-phone-sheet`. The overlay positions panes with inline styles, hence
+ * !important.
+ */
+@media (max-width: 639px) {
+  .cdk-overlay-connected-position-bounding-box:has(
+    > .cdk-overlay-pane > .mat-mdc-menu-panel,
+    > .cdk-overlay-pane.ink-phone-sheet
+  ) {
+    inset: auto 0 var(--ink-keyboard-inset, 0px) 0 !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    align-items: stretch !important;
+    justify-content: flex-end !important;
+
+    > .cdk-overlay-pane {
+      position: static !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      transform: none !important;
+    }
+
+    /* A scrim behind the sheet; tapping it closes the sheet. */
+    > .cdk-overlay-backdrop.cdk-overlay-backdrop-showing {
+      visibility: visible;
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.32);
+    }
+  }
+
+  .cdk-overlay-pane > .mat-mdc-menu-panel {
+    width: 100%;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: min(75dvh, calc(100dvh - var(--ink-keyboard-inset, 0px) - 48px)) !important;
+    overflow-y: auto !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom)) !important;
+    transform-origin: bottom center !important;
+
+    .mat-mdc-menu-content {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* Keyboard shortcuts mean little on a phone. */
+    .menu-shortcut {
+      display: none;
+    }
+  }
+
+  [data-ink-keyboard] .cdk-overlay-pane > .mat-mdc-menu-panel {
+    padding-bottom: 8px !important;
+  }
+}

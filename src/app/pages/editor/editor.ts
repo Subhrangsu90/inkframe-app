@@ -18,6 +18,8 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angular/cdk/overlay';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Editor } from '@inkframe-ui/editor';
 import {
   DEFAULT_EXTENSIONS,
@@ -53,6 +55,7 @@ import {
 import { VersionHistory, VersionMeta } from '../../core/version-history';
 import { StorageHealth } from '../../core/storage-health';
 import { VersionPanel } from './version-panel/version-panel';
+import { PwaService } from '../../core/pwa';
 
 // Custom plugin demo
 const CustomPluginDemo: EditorExtension = createExtension({
@@ -92,6 +95,9 @@ export type EditorViewTab = 'rich' | 'preview';
     FormsModule,
     MatMenuModule,
     MatDividerModule,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
+    CdkTrapFocus,
     Editor,
     InkIcon,
     VersionPanel,
@@ -145,8 +151,12 @@ export class EditorView implements OnInit {
       });
     });
 
+    // Reloading for an app update waits until every edit is saved.
+    const removeBeforeReload = inject(PwaService).beforeReload(() => this.settle());
+
     inject(DestroyRef).onDestroy(() => {
       this.layout.clearHeaderTemplates();
+      removeBeforeReload();
     });
   }
 
@@ -189,6 +199,11 @@ export class EditorView implements OnInit {
   readonly showToolbar = computed(() => this.activePreset() !== 'zen');
   readonly showPresetMenu = signal<boolean>(false);
   readonly showShareMenu = signal<boolean>(false);
+  /** The share popover opens below its button, aligned to its right edge (or left, without room). */
+  readonly sharePositions: ConnectedPosition[] = [
+    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 8 },
+    { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 8 },
+  ];
   readonly shareUrl = signal<string>('');
   readonly isEditingTitle = signal<boolean>(false);
 

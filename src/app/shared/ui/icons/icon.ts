@@ -57,6 +57,7 @@ export type InkIconName =
   | 'search'
   | 'folder'
   | 'external-link'
+  | 'install'
   | 'sidebar'
   | 'plus'
   | 'trash'
@@ -328,6 +329,13 @@ export type InkIconName =
           <path d="M15 3h6v6" />
           <path d="M10 14 21 3" />
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        }
+        @case ('install') {
+          <path d="M12 13V7" />
+          <path d="m15 10-3 3-3-3" />
+          <rect width="20" height="14" x="2" y="3" rx="2" />
+          <path d="M12 17v4" />
+          <path d="M8 21h8" />
         }
         @case ('sidebar') {
           <rect x="3" y="3" width="18" height="18" rx="2" />

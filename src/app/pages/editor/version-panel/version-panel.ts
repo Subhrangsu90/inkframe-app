@@ -451,6 +451,21 @@ const REASON_LABELS: Partial<Record<VersionMeta['reason'], string>> = {
         animation: none;
       }
     }
+
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .vp-icon-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .vp-save-btn,
+      .vp-primary-btn,
+      .vp-text-btn,
+      .vp-name-input {
+        height: 44px;
+      }
+    }
   `,
 })
 export class VersionPanel {

@@ -92,78 +92,96 @@
 <ng-template #headerRight>
   <div class="header-actions">
     <!-- Share Reader Page Link Popover / Button -->
-    <div class="share-dropdown-wrap">
-      <button
-        type="button"
-        class="share-btn"
-        (click)="toggleShareMenu()"
-        title="Share reader page link"
+    <button
+      type="button"
+      class="share-btn"
+      cdkOverlayOrigin
+      #shareOrigin="cdkOverlayOrigin"
+      (click)="toggleShareMenu()"
+      [attr.aria-expanded]="showShareMenu()"
+      aria-haspopup="dialog"
+      title="Share reader page link"
+    >
+      <ink-icon name="share" [size]="13" />
+      <span class="hidden sm:inline">Share</span>
+    </button>
+
+    <!-- Below the button; a bottom sheet on phones. A click outside or Escape closes it. -->
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="shareOrigin"
+      [cdkConnectedOverlayOpen]="showShareMenu()"
+      [cdkConnectedOverlayPositions]="sharePositions"
+      [cdkConnectedOverlayHasBackdrop]="true"
+      cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+      cdkConnectedOverlayPanelClass="ink-phone-sheet"
+      (backdropClick)="showShareMenu.set(false)"
+      (detach)="showShareMenu.set(false)"
+    >
+      <div
+        class="share-popover"
+        role="dialog"
+        aria-labelledby="share-popover-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
       >
-        <ink-icon name="share" [size]="13" />
-        <span class="hidden sm:inline">Share</span>
-      </button>
-
-      @if (showShareMenu()) {
-        <!-- Backdrop: a click outside closes the popover (Escape does too, see the component's host). -->
-        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-        <div class="share-popover-backdrop" (click)="showShareMenu.set(false)"></div>
-
-        <div class="share-popover">
-          <div class="share-popover-header">
-            <div class="flex items-center gap-1.5 font-semibold text-xs text-ink-text-heading">
-              <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
-              <span>Share Reader Link</span>
-            </div>
-            <button
-              type="button"
-              class="close-share-btn"
-              (click)="showShareMenu.set(false)"
-              title="Close"
-            >
-              <ink-icon name="close" [size]="11" />
-            </button>
+        <div class="share-popover-header">
+          <div class="flex items-center gap-1.5 font-semibold text-xs text-ink-text-heading">
+            <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
+            <span id="share-popover-title">Share Reader Link</span>
           </div>
-
-          <p class="share-popover-desc">
-            Anyone with this link can view this document anywhere with zero backend or account
-            required.
-          </p>
-
-          <div class="share-link-box">
-            <input
-              type="text"
-              readonly
-              [value]="shareUrl() || 'Generating shareable link...'"
-              class="share-link-input font-mono"
-              #shareInput
-              (click)="shareInput.select()"
-            />
-            <button
-              type="button"
-              class="share-copy-action-btn"
-              (click)="copyReaderLink()"
-              title="Copy link"
-            >
-              <ink-icon name="copy" [size]="12" />
-              <span>Copy</span>
-            </button>
-          </div>
-
-          <div class="share-popover-footer">
-            <a
-              [href]="shareUrl() || '/s/' + currentDocId()"
-              target="_blank"
-              (click)="showShareMenu.set(false)"
-              class="preview-reader-link"
-              title="Open reader page"
-            >
-              <ink-icon name="external-link" [size]="12" />
-              <span>Open Reader View</span>
-            </a>
-          </div>
+          <button
+            type="button"
+            class="close-share-btn"
+            (click)="showShareMenu.set(false)"
+            aria-label="Close"
+            title="Close"
+          >
+            <ink-icon name="close" [size]="11" />
+          </button>
         </div>
-      }
-    </div>
+
+        <p class="share-popover-desc">
+          Anyone with this link can view this document anywhere with zero backend or account
+          required.
+        </p>
+
+        <div class="share-link-box">
+          <input
+            type="text"
+            readonly
+            [value]="shareUrl() || 'Generating shareable link...'"
+            class="share-link-input font-mono"
+            aria-label="Share link"
+            #shareInput
+            (click)="shareInput.select()"
+          />
+          <button
+            type="button"
+            class="share-copy-action-btn"
+            (click)="copyReaderLink()"
+            title="Copy link"
+            cdkFocusInitial
+          >
+            <ink-icon name="copy" [size]="12" />
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <div class="share-popover-footer">
+          <a
+            [href]="shareUrl() || '/s/' + currentDocId()"
+            target="_blank"
+            (click)="showShareMenu.set(false)"
+            class="preview-reader-link"
+            title="Open reader page"
+          >
+            <ink-icon name="external-link" [size]="12" />
+            <span>Open Reader View</span>
+          </a>
+        </div>
+      </div>
+    </ng-template>
 
     <!-- Export Menu -->
     <button
@@ -176,7 +194,7 @@
     >
       <ink-icon name="download" [size]="14" />
       <span class="hidden sm:inline">Export</span>
-      <ink-icon name="chevron-down" [size]="12" class="hidden sm:inline-flex" />
+      <ink-icon name="chevron-down" [size]="12" class="export-caret" />
     </button>
     <mat-menu #exportMenu="matMenu" xPosition="before" class="ink-export-menu">
       <button mat-menu-item (click)="exportMarkdown()">
@@ -252,6 +270,7 @@
         [extensions]="extensions()"
         [editable]="activeView() === 'rich'"
         [showToolbar]="activeView() === 'rich' && showToolbar()"
+        mobileToolbar="bottom"
         (changed)="onDocChanged($event)"
         (historyRequested)="toggleHistory()"
       />

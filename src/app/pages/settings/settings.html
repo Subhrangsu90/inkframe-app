@@ -63,6 +63,70 @@
       </div>
     </section>
 
+    <!-- APP: install, offline, updates -->
+    <section class="settings-section" aria-labelledby="app-heading">
+      <div class="section-label">
+        <h2 id="app-heading" class="section-title">App</h2>
+        <p class="section-desc">
+          Install Inkframe to open it in its own window, from your home screen or app list.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Install Inkframe</span>
+            <span class="setting-desc">
+              @if (pwa.standalone()) {
+                You are using the installed app.
+              } @else if (pwa.canInstall()) {
+                Adds Inkframe to your apps. Your documents stay the same.
+              } @else if (pwa.installFromShareMenu()) {
+                Tap Share in your browser, then Add to Home Screen.
+              } @else {
+                If your browser can install apps, Install is in its menu or address bar.
+              }
+            </span>
+          </div>
+          @if (pwa.standalone()) {
+            <span class="status-chip"><span class="chip-dot"></span>Installed</span>
+          } @else if (pwa.canInstall()) {
+            <button type="button" class="secondary-btn" (click)="pwa.install()">
+              <ink-icon name="install" [size]="14" />
+              Install
+            </button>
+          }
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Works offline</span>
+            <span class="setting-desc">
+              @if (pwa.offlineReady()) {
+                Inkframe is saved in this browser and starts without an internet connection.
+              } @else {
+                Inkframe is saved for offline use after it has loaded once. Some browsers, and
+                private windows, don't allow it.
+              }
+            </span>
+          </div>
+          @if (pwa.offlineReady()) {
+            <span class="status-chip"><span class="chip-dot"></span>Ready</span>
+          } @else {
+            <span class="status-chip muted"><span class="chip-dot"></span>Not yet</span>
+          }
+        </div>
+        @if (pwa.updateReady()) {
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Update ready</span>
+              <span class="setting-desc">A new version starts when Inkframe reloads.</span>
+            </div>
+            <button type="button" class="secondary-btn" (click)="pwa.reload()">Reload</button>
+          </div>
+        }
+      </div>
+    </section>
+
     <!-- STORAGE -->
     <section class="settings-section" aria-labelledby="storage-heading">
       <div class="section-label">

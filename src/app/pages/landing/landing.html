@@ -45,7 +45,7 @@
     "
   >
     <!-- Brand -->
-    <a routerLink="/" class="flex items-center gap-2.5 shrink-0 group">
+    <a routerLink="/" class="flex items-center gap-2.5 shrink-0 group pointer-coarse:min-h-11">
       <span
         class="w-7 h-7 rounded-ink-sm bg-ink-accent flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0"
       >
@@ -89,7 +89,7 @@
         href="https://github.com/Subhrangsu90/inkframe-app"
         target="_blank"
         rel="noopener noreferrer"
-        class="w-9 h-9 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
+        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         aria-label="View on GitHub"
       >
         <ink-icon name="github" [size]="18" />
@@ -99,7 +99,7 @@
       <button
         (click)="toggleTheme($event)"
         type="button"
-        class="w-9 h-9 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
+        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
         [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
       >
         <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="18" />
@@ -114,7 +114,7 @@
       <button
         (click)="toggleMobileMenu()"
         type="button"
-        class="lg:hidden w-9 h-9 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all shrink-0"
+        class="lg:hidden w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all shrink-0"
         aria-label="Toggle navigation menu"
       >
         <ink-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" [size]="18" />
@@ -276,7 +276,7 @@
                 <button
                   type="button"
                   (click)="setHeroTab('rich')"
-                  class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="
                     heroTab() === 'rich'
                       ? 'bg-ink-surface text-ink-text font-semibold shadow-sm'
@@ -289,7 +289,7 @@
                 <button
                   type="button"
                   (click)="setHeroTab('markdown')"
-                  class="px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
                   [class]="
                     heroTab() === 'markdown'
                       ? 'bg-ink-surface text-ink-text font-semibold shadow-sm'
@@ -313,57 +313,51 @@
 
             <!-- Editor Content Area -->
             <div class="bg-ink-surface p-0">
-              <!-- Toolbar (visible in rich mode) -->
+              <!-- Toolbar (visible in rich mode): a picture of the editor's toolbar, not controls -->
               @if (heroTab() === 'rich') {
                 <div
                   class="flex items-center gap-1 px-4 py-2 border-b border-ink-border/40 bg-ink-surface"
+                  aria-hidden="true"
                 >
                   <div class="flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="bold" [size]="14" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    </span>
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="italic" [size]="14" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    </span>
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="underline" [size]="14" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    </span>
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="strikethrough" [size]="14" />
-                    </button>
+                    </span>
                   </div>
                   <div class="w-px h-5 bg-ink-border/60 mx-1.5"></div>
                   <div class="flex items-center gap-0.5">
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="list" [size]="15" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    </span>
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="code" [size]="15" />
-                    </button>
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted hover:bg-ink-surface-2 transition-colors"
+                    </span>
+                    <span
+                      class="w-8 h-8 rounded-ink-sm flex items-center justify-center text-ink-text-muted"
                     >
                       <ink-icon name="link" [size]="15" />
-                    </button>
+                    </span>
                   </div>
                   <div class="flex-1"></div>
                   <span class="text-[11px] text-ink-text-muted font-mono">247 words</span>
@@ -399,7 +393,7 @@
                       <button
                         type="button"
                         (click)="copyCode()"
-                        class="inline-flex items-center gap-1.5 text-[11px] font-mono transition-colors px-2 py-0.5 rounded cursor-pointer"
+                        class="inline-flex items-center gap-1.5 text-[11px] font-mono transition-colors px-2 py-0.5 pointer-coarse:min-h-11 rounded cursor-pointer"
                         [class]="
                           codeCopied()
                             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
@@ -720,7 +714,8 @@
             </h3>
             <p class="text-ink-text-muted text-sm sm:text-base leading-relaxed">
               Documents and images are stored in your browser, on this device. Nothing you write is
-              uploaded, and there is no tracking of any kind.
+              uploaded, and there is no tracking of any kind. After your first visit Inkframe works
+              offline, and you can install it as an app.
             </p>
           </div>
 
@@ -971,7 +966,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Bold text', isMac() ? '⌘ + B' : 'Ctrl + B')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
               >
                 <span>{{ isMac() ? '⌘ + B' : 'Ctrl + B' }}</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Bold)</span>
@@ -979,7 +974,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Slash command menu', '/')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
               >
                 <span>/</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Menu)</span>
@@ -987,7 +982,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Insert link', isMac() ? '⌘ + K' : 'Ctrl + K')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent transition-all cursor-pointer"
               >
                 <span>{{ isMac() ? '⌘ + K' : 'Ctrl + K' }}</span>
                 <span class="text-[10px] text-ink-text-muted opacity-80">(Link)</span>
@@ -1162,21 +1157,21 @@
           <li>
             <a
               href="#features"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Features</a
             >
           </li>
           <li>
             <a
               href="#shortcuts"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Shortcuts</a
             >
           </li>
           <li>
             <a
               routerLink="/docs"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Editor</a
             >
           </li>
@@ -1192,7 +1187,7 @@
               href="https://github.com/Subhrangsu90/inkframe-app#readme"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Documentation</a
             >
           </li>
@@ -1201,7 +1196,7 @@
               href="https://github.com/Subhrangsu90/inkframe-app"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Source code</a
             >
           </li>
@@ -1210,7 +1205,7 @@
               href="https://github.com/Subhrangsu90/inkframe-app/issues"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors"
+              class="text-sm text-ink-text-muted hover:text-ink-text transition-colors pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:min-h-11"
               >Report a problem</a
             >
           </li>

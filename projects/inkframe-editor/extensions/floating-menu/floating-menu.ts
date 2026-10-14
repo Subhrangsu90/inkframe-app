@@ -396,6 +396,14 @@ import {
         color: var(--ink-btn-active-text, #60a5fa);
       }
     }
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-floating button {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+      }
+    }
     .ink-floating mat-divider {
       height: 18px;
       border-top-color: var(--ink-border-default, #2e3036);

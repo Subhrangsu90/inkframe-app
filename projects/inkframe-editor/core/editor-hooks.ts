@@ -9,7 +9,12 @@ export interface SlashMenuState {
   from: number;
   to: number;
   left: number;
+  /** The menu's top edge, or with `placement: 'top'` its bottom edge. */
   top: number;
+  /** Above or below the line; below unless there is more room above (default 'bottom'). */
+  placement?: 'top' | 'bottom';
+  /** The height that fits between the line and the edge of the editor's visible area. */
+  maxHeight?: number;
 }
 
 export interface TableMenuState {

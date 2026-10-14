@@ -452,6 +452,26 @@ describe('Task lists', () => {
     expect(docToHtml(doc(tl(parent)))).toContain('ink-task-item indeterminate');
   });
 
+  it('a tap anywhere on the checkbox label (the touch target) checks the task', () => {
+    const d = doc(tl(ti(false, p('milk'))));
+    const view: any = { state: EditorState.create({ doc: d }) };
+    view.dispatch = (tr: any) => (view.state = view.state.apply(tr));
+    const nodeView = new TaskItemNodeView(d.firstChild!.firstChild!, view, () => 1);
+    document.body.append(nodeView.dom);
+    const label = nodeView.dom.querySelector('label.ink-task-check') as HTMLLabelElement;
+    const box = label.querySelector('input') as HTMLInputElement;
+
+    label.click();
+    expect(box.checked).toBe(true);
+    expect(view.state.doc.firstChild!.firstChild!.attrs['checked']).toBe(true);
+    // ProseMirror leaves the label's events to the node view.
+    expect(nodeView.stopEvent(new MouseEvent('mousedown'))).toBe(false);
+    const press = new MouseEvent('mousedown');
+    Object.defineProperty(press, 'target', { value: label });
+    expect(nodeView.stopEvent(press)).toBe(true);
+    nodeView.dom.remove();
+  });
+
   it('"- [ ] " at the start of a bullet item turns it into a task (GitHub style)', () => {
     const d = doc(ul(b('first'), b('[x]'), b('last')));
     const start = posOf(d, '[x]');

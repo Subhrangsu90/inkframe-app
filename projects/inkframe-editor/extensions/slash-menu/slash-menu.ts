@@ -15,6 +15,8 @@ import { EditorService } from '@inkframe-ui/editor/core';
         aria-label="Insert block"
         [style.left.px]="m.left"
         [style.top.px]="m.top"
+        [style.max-height]="m.maxHeight ? 'min(21rem, ' + m.maxHeight + 'px)' : null"
+        [class.above]="m.placement === 'top'"
         (mousedown)="$event.preventDefault()"
       >
         @for (item of svc.slashItems(); track item.id; let i = $index) {
@@ -63,6 +65,12 @@ import { EditorService } from '@inkframe-ui/editor/core';
       transition:
         background-color 0.15s ease,
         border-color 0.15s ease;
+
+      /* Opens above the line: its top position is then the menu's bottom edge. */
+      &.above {
+        margin: 0;
+        transform: translateY(calc(-100% - 4px));
+      }
 
       &::-webkit-scrollbar {
         width: 5px;

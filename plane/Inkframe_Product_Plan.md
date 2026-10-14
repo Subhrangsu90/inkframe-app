@@ -120,7 +120,7 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | --- | --- | --- |
 | "Zero network requests" / "zero tracking" | Fonts and Material Symbols load from Google servers. | Self-host fonts and icons (M0). |
 | "Split view" / "Raw Markdown" | Not built. | Optional Markdown source view (P2) or remove the copy. |
-| "Works offline" (after first visit, on a fresh device) | No service worker yet. | PWA (M3). |
+| ~~"Works offline" (after first visit)~~ | ✅ Unblocked by M3. The landing page now says it, with "you can install it as an app". | |
 | "Sync across devices", "Collaborate in real time", "AI writing assistant" | Not built. | M6.2, M6.5, M6.4. Always paired with "optional, no account needed to write". |
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
 
@@ -201,9 +201,9 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Feature | Status | Priority | Notes |
 | --- | --- | --- | --- |
 | Light and dark theme | ✅ | P0 | |
-| **Self-hosted fonts and icons** | ⬜ | P0 | Required by U1. |
-| **PWA: installable, offline after first visit** | ⬜ | P0 | Angular service worker. |
-| Mobile: keyboard-pinned toolbar, bottom sheets | 🟡 | P1 | Layout is responsive; toolbar is not pinned above the keyboard. |
+| **Self-hosted fonts and icons** | ✅ | P0 | Done in M0 (B1). |
+| **PWA: installable, offline after first visit** | ✅ | P0 | Angular service worker (production builds). Install from the sidebar or Settings → App (iPhone and iPad: Share → Add to Home Screen). Updates show a "Reload" toast, which saves edits first. |
+| Mobile: keyboard-pinned toolbar, bottom sheets | 🟡 | P1 | Built in M3: toolbar below the page on phones and above the on-screen keyboard, menus and Share as bottom sheets, 44px touch targets, safe-area insets. Checked in emulation; still to test on real iOS and Android devices. |
 | Accessibility: WCAG 2.1 AA | 🟡 | P0 | Needs an axe audit and `aria-activedescendant` on the slash menu. |
 | Internationalization | ⬜ | P2 | |
 
@@ -242,11 +242,11 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ## 4. Current state and launch blockers
 
-### 4.1 Baseline (2026-10-12)
+### 4.1 Baseline (2026-10-14)
 
-- **Tests:** 289 tests pass through the Angular CLI test runner (`npm test`; 216 library, 73 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec, document storage, storage errors, version history, backup round trips, import and the storage banner.
+- **Tests:** 311 tests pass through the Angular CLI test runner (`npm test`; 227 library, 84 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, toolbar focus, on-screen keyboard tracking, share codec, document storage, storage errors, version history, backup round trips, import, the storage banner, install and update handling, and the `/new` route.
 - **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the Prettier format check, ESLint (angular-eslint, including the template accessibility rules), the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
-- **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 563 kB raw, 132 kB transferred (M2 added 4 kB transferred; backups load on demand).
+- **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 581 kB raw, 136.5 kB transferred (M3 added 4.5 kB: service worker registration and install handling; M2 added 4 kB). Production builds include the service worker (`ngsw-config.json`): it caches 1.8 MB up front (all scripts, styles and the Latin fonts) and the other fonts and icons when first used.
 - **Schema:** version 4. M1 added the `highlight` mark and the `align` attribute (version 2); version 3 dropped fixed table row heights so rows fit their text; version 4 added list attributes shared by all list types. Older documents migrate on load.
 - **Recently fixed:**
   - **Keyboard:** Tab and Shift+Tab indent list items again (the table extension's Tab binding had replaced them). Extensions that bind the same key now run in order until one handles it.
@@ -282,6 +282,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 - **Unknown document ids:** opening `/doc/<unknown id>` creates a document but the sidebar only lists it after its first save.
 - **Reader images are mouse-only:** a click opens the lightbox, but images cannot be focused. Fix in the M4 accessibility pass.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
+- **Uncompressed responses:** `src/server.ts` sends files without compression, so a first visit (and the service worker's download) is about 1.8 MB instead of roughly 450 kB. Add compression, or serve the static files from a CDN, in M4.
 - **Long share links:** images are inlined, so share links can reach hundreds of kilobytes. Some chat apps truncate long URLs; document the limit and warn in the share dialog.
 
 ---
@@ -335,11 +336,13 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 
 ### M3: Mobile and PWA
 
+**Status (2026-10-14):** built, and tested in Chrome's phone emulation against the production build. Still open: a pass on real iOS Safari and Android Chrome devices, because an on-screen keyboard cannot be emulated (the checks replaced the `visualViewport` size instead). Lighthouse 12 removed its PWA category; Chrome's own installability check reports no errors.
+
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Service worker, manifest, install prompt | M | App starts offline after one visit; Lighthouse PWA checks pass. |
-| Keyboard-pinned mobile toolbar (`visualViewport`), bottom-sheet drawers | M | Tested on iOS Safari and Android Chrome; no layout jump when the keyboard opens. |
-| Touch targets ≥ 44px, safe-area insets | S | |
+| ✅ Service worker, manifest, install prompt | M | App starts offline after one visit: with the server stopped, the landing page, library, editor, settings and reader all load, and edits are kept. Installable (no installability errors in Chrome); "Install app" in the sidebar and Settings → App. Updates offer "Reload", which saves edits first. A `/new` shortcut creates a document. |
+| 🟡 Keyboard-pinned mobile toolbar (`visualViewport`), bottom-sheet drawers | M | On phones the toolbar sits below the page. `VisualViewportTracker` keeps the layout above a keyboard that covers the page (iOS); `interactive-widget=resizes-content` makes Chrome on Android resize the page instead. Menus, Export and Share open as bottom sheets. Toolbar presses keep focus, and so the keyboard, in the document. Still to test on iOS Safari and Android Chrome devices. |
+| ✅ Touch targets ≥ 44px, safe-area insets | S | Every control on touch screens is at least 44px (checked across pages, menus, panels and dialogs; task checkboxes get a 44px-wide label). Header, sidebar, toolbar, sheets and page ends respect `env(safe-area-inset-*)`. |
 
 ### M4: Launch
 
@@ -530,7 +533,8 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | `/editor` | Redirect | — | Redirects to `/docs`. |
 | `/s#<payload>` | Reader | Client | Share links; the payload never reaches the server. |
 | `/s/:hash` | Reader | Client | Older share links and local document ids. |
-| `/settings` | Settings | Prerender | Theme, data management. |
+| `/settings` | Settings | Prerender | Theme, app install and offline status, data management. |
+| `/new` | Redirect | Client | Creates a document and opens it; the installed app's "New document" shortcut. |
 | `**` | 404 | Client | |
 
 ### 6.4 Data and storage
@@ -541,6 +545,7 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | IndexedDB `inkframe_storage` → `documents` (M2) | Version history: a list of version metadata per document, and one record per version's content | `inkframe_versions_<docId>`, `inkframe_version_<versionId>` |
 | IndexedDB `inkframe_storage` → `images` | Image blobs with metadata | `img_<timestamp>_<random>`, referenced as `ink-idb:<id>` |
 | localStorage | Theme, sidebar state, active document id; fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
+| Cache Storage (M3) | The app itself, cached by the service worker. No documents. | `ngsw:/:…` |
 
 **Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 4 to 5; versions 2 to 4 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
 
@@ -614,10 +619,10 @@ Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surf
 | Element | Spec |
 | --- | --- |
 | Top bar | One row, 56px (48px on mobile): back/logo, inline-editable title, save status, view switch, Share (primary), `⋯` menu. |
-| Toolbar | Sticky 44px strip, no enclosing card. Groups: history · block type · inline marks · lists · insert. Active state uses `--ink-accent-soft`. |
+| Toolbar | Sticky 44px strip, no enclosing card. Groups: history · block type · inline marks · lists · insert. Active state uses `--ink-accent-soft`. Under 768px it sits below the page, above the on-screen keyboard; the status bar hides while typing, and the selection menu is not shown (the toolbar has the same formatting, and phones show their own menu over a selection). |
 | Canvas | `--ink-bg` background; one `--ink-surface` sheet, max width 760px (wide 980px, full width as options), never wrapped in another bordered box. |
 | Status bar | 28px, muted: words, characters, reading time; width toggle. |
-| Panels | Documents and outline as 360px drawers with a soft scrim; bottom sheets on mobile. Version history is a 340px panel beside the page with no scrim, because the page shows the version being previewed; under 768px it covers the page and gives way to the preview. |
+| Panels | Documents and outline as 360px drawers with a soft scrim. Under 640px, menus (toolbar, Export) and the Share popover open as bottom sheets above the keyboard; the documents drawer stays a side drawer, since it is the app's navigation. Version history is a 340px panel beside the page with no scrim, because the page shows the version being previewed; under 768px it covers the page and gives way to the preview. |
 | Block mode (M7) | No toolbar strip. Optional cover (200px desktop, 120px mobile) and a 64px page icon above the title. Canvas width 900px by default, full width as an option. Block handles sit in the left margin (outside the text column) at 24px, muted until hovered. The sidebar shows the page tree instead of a flat document list. |
 
 ### 7.3 States every screen must cover
@@ -632,7 +637,7 @@ Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surf
 
 ### 7.4 Mobile (< 768px)
 
-Full-bleed sheet with 16–20px padding and a 16px minimum input font size (prevents iOS zoom). One horizontally scrolling toolbar row pinned above the keyboard via `visualViewport`. `100dvh` and `env(safe-area-inset-*)`. Landing collapses to one column with full-width buttons and a sheet menu.
+Full-bleed sheet with 16–20px padding and a 16px minimum input font size (prevents iOS zoom). One horizontally scrolling toolbar row pinned above the keyboard via `visualViewport`. `100dvh` and `env(safe-area-inset-*)`. Landing collapses to one column with full-width buttons and a sheet menu. The header keeps the sidebar button, the title and the main actions; the theme toggle moves into the sidebar. On touch screens (`pointer: coarse`) every control is at least 44px.
 
 ### 7.5 Accessibility
 
@@ -646,7 +651,7 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 | --- | --- |
 | Entry points | `@inkframe-ui/editor` (component), `/core`, `/toolbar`, `/extensions`, `/styles`. |
 | Dependencies | Angular, CDK and Material as peer dependencies; ProseMirror packages, `markdown-it`, DOMPurify and Prism as dependencies. |
-| Public API for 1.0 | `<ink-editor>` inputs (`initialDoc`, `editable`, `extensions`, `showToolbar`, `debounceMs`) and outputs (`changed`, `historyRequested`); methods `loadDoc`, `flush`, `getJSON`, `getHtml`, `getMarkdown`, `loadMarkdown`, `loadHtml`; `EditorService` commands and signals; `createExtension`, `DEFAULT_EXTENSIONS`, individual extensions; I/O helpers and `sanitizeHtml`. |
+| Public API for 1.0 | `<ink-editor>` inputs (`initialDoc`, `editable`, `extensions`, `showToolbar`, `showStatusBar`, `mobileToolbar`, `debounceMs`) and outputs (`changed`, `historyRequested`); methods `loadDoc`, `flush`, `getJSON`, `getHtml`, `getMarkdown`, `loadMarkdown`, `loadHtml`; `EditorService` commands and signals; `createExtension`, `DEFAULT_EXTENSIONS`, individual extensions; I/O helpers and `sanitizeHtml`; `VisualViewportTracker` for layouts that stay above the on-screen keyboard. |
 | Deprecations before 1.0 | `buildPlugins`, `SLASH_ITEMS` and direct use of the static `schema` in commands. Mark `@deprecated`; remove in 2.0. |
 | Block mode (M7) | Ships as a minor release: `BlockHandlesExtension`, `ToggleExtension`, `PageLinkExtension`, `ColumnsExtension`, the `BLOCK_MODE_EXTENSIONS` preset and a `mode` input on `<ink-editor>`. `PageLinkExtension` takes a resolver for titles, icons and navigation, so host apps plug in their own page model. |
 | Versioning | Semver. Schema changes are minor releases with migrations; removing a node or mark is a major release. Keep a `CHANGELOG.md`. |

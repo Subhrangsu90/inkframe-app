@@ -1,10 +1,19 @@
 .app-layout-root {
   display: flex;
   height: 100vh;
-  height: 100dvh;
+  /*
+   * The visible area: above an on-screen keyboard that covers the page
+   * (iOS Safari). Browsers that resize the page for it shrink 100dvh instead.
+   */
+  height: calc(100dvh - var(--ink-keyboard-inset, 0px));
   width: 100vw;
   overflow: hidden;
   position: relative;
+}
+
+/* While typing, follow the visible area when the browser scrolls it down to show the caret. */
+:host-context([data-ink-keyboard]) .app-layout-root {
+  transform: translateY(var(--ink-viewport-offset-top, 0px));
 }
 
 /* ═══════════════════════════════════════════════ */
@@ -30,8 +39,7 @@
 .app-sidebar {
   width: 260px;
   min-width: 260px;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background-color: var(--ink-surface);
@@ -62,6 +70,8 @@
     top: 0;
     bottom: 0;
     left: 0;
+    width: calc(260px + env(safe-area-inset-left));
+    padding-left: env(safe-area-inset-left);
     transform: translateX(-100%);
     box-shadow: var(--ink-shadow-lg);
 
@@ -73,8 +83,8 @@
 
 /* Sidebar Top Header */
 .sidebar-header {
-  height: 52px;
-  padding: 0 14px;
+  height: calc(52px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 14px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -198,7 +208,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   border-radius: var(--ink-radius-sm);
   text-decoration: none;
   color: var(--ink-text-muted);
@@ -372,8 +388,8 @@
 
 /* Sidebar Bottom User Status & Profile */
 .sidebar-user-footer {
-  height: 52px;
-  padding: 0 14px;
+  height: calc(52px + env(safe-area-inset-bottom));
+  padding: 0 14px env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -424,6 +440,12 @@
   color: var(--ink-text-muted);
 }
 
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .footer-icon-btn {
   width: 28px;
   height: 28px;
@@ -432,6 +454,10 @@
   align-items: center;
   justify-content: center;
   color: var(--ink-text-muted);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
   text-decoration: none;
   transition: all var(--ink-transition-fast);
 
@@ -447,8 +473,7 @@
 .app-workspace-container {
   flex: 1 1 0;
   min-width: 0;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -457,12 +482,14 @@
 
 /* ── The Non-Solid Translucent Glass Header ── */
 .app-header {
-  height: 52px;
-  min-height: 52px;
+  /* Below the status bar and beside the notch, in the installed app and in landscape. */
+  height: calc(52px + env(safe-area-inset-top));
+  min-height: calc(52px + env(safe-area-inset-top));
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 14px;
+  padding: env(safe-area-inset-top) max(14px, env(safe-area-inset-right)) 0
+    max(14px, env(safe-area-inset-left));
   /* Translucent glassmorphism (not solid) */
   background: color-mix(in srgb, var(--ink-surface) 75%, transparent);
   backdrop-filter: blur(12px);
@@ -564,4 +591,83 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Beside the notch in landscape. Pages leave room for the home indicator themselves. */
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+/* ═══════════════════════════════════════════════ */
+/* PHONES & TOUCH SCREENS                          */
+/* ═══════════════════════════════════════════════ */
+/* The theme toggle moves from the header to the sidebar on phones. */
+.footer-theme-btn {
+  @media (min-width: 640px) {
+    display: none;
+  }
+}
+
+/* Phones: the document title takes the room the header has left. */
+@media (max-width: 639px) {
+  .app-header {
+    /* The left column always keeps room for the sidebar button. */
+    grid-template-columns: minmax(44px, 1fr) auto auto;
+    gap: 6px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  .header-left-col {
+    gap: 6px;
+    width: 100%;
+  }
+
+  .header-left-content {
+    flex: 1 1 0;
+  }
+
+  .header-right-col {
+    gap: 6px;
+  }
+
+  .theme-toggle-btn {
+    display: none;
+  }
+}
+
+/* Touch screens: 44px targets; delete buttons show without hovering. */
+@media (pointer: coarse) {
+  .header-sidebar-toggle,
+  .theme-toggle-btn,
+  .sidebar-toggle-btn,
+  .footer-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .header-sidebar-toggle {
+    border-color: transparent;
+  }
+
+  .sidebar-brand-link,
+  .empty-create-link {
+    min-height: 44px;
+  }
+
+  .new-doc-btn,
+  .sidebar-nav-item,
+  .doc-item-link {
+    min-height: 44px;
+  }
+
+  .doc-delete-btn {
+    width: 44px;
+    height: 44px;
+    margin-right: 0;
+  }
+}
+
+@media (hover: none) {
+  .doc-delete-btn {
+    opacity: 1;
+    visibility: visible;
+  }
 }

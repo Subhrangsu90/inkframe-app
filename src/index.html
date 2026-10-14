@@ -10,13 +10,22 @@
     <base href="/" />
     <!-- Never tell third parties (e.g. hosts of images embedded in documents) which page or document is open. -->
     <meta name="referrer" content="no-referrer" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#131315" media="(prefers-color-scheme: dark)" />
+    <!-- resizes-content: where supported (Chrome on Android), the on-screen keyboard shrinks the page instead of covering it. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <!-- Until the app starts; then it follows the app's theme (core/pwa.ts). -->
+    <meta name="theme-color" content="#17171a" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Inkframe" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   </head>
   <body>
     <app-root></app-root>

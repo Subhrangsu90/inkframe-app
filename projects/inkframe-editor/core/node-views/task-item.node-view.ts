@@ -13,6 +13,7 @@ export class TaskItemNodeView implements NodeView {
   readonly dom: HTMLElement;
   readonly contentDOM: HTMLElement;
   private readonly checkbox: HTMLInputElement;
+  private readonly check: HTMLLabelElement;
 
   constructor(
     private node: PMNode,
@@ -39,10 +40,16 @@ export class TaskItemNodeView implements NodeView {
       }
     });
 
+    // The label is the checkbox's larger target on touch screens (see the styles).
+    this.check = document.createElement('label');
+    this.check.className = 'ink-task-check';
+    this.check.contentEditable = 'false';
+    this.check.append(this.checkbox);
+
     this.contentDOM = document.createElement('div');
     this.contentDOM.className = 'ink-task-content';
 
-    this.dom.append(this.checkbox, this.contentDOM);
+    this.dom.append(this.check, this.contentDOM);
     this.render();
   }
 
@@ -70,7 +77,7 @@ export class TaskItemNodeView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return this.checkbox === event.target || this.checkbox.contains(event.target as Node);
+    return this.check.contains(event.target as Node);
   }
 
   ignoreMutation(mutation: MutationRecord | { type: 'selection'; target: Node }): boolean {

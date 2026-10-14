@@ -217,10 +217,6 @@
   gap: 8px;
 }
 
-.share-dropdown-wrap {
-  position: relative;
-}
-
 .share-btn,
 .export-btn {
   height: 32px;
@@ -270,28 +266,40 @@
   }
 }
 
-.share-popover-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-}
-
+/* Rendered in an overlay below the Share button; a bottom sheet on phones. */
 .share-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
   width: 340px;
   max-width: calc(100vw - 24px);
+  box-sizing: border-box;
   background: var(--ink-surface);
   border: 1px solid var(--ink-border-strong);
   border-radius: var(--ink-radius-md);
   box-shadow: var(--ink-shadow-lg);
   padding: 16px;
-  z-index: 100;
   display: flex;
   flex-direction: column;
   gap: 12px;
   animation: popoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (max-width: 639px) {
+    width: 100%;
+    max-width: none;
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+    padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+    animation-name: sheetIn;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
 }
 
 @keyframes popoverIn {
@@ -401,6 +409,61 @@
   }
 }
 
+/* Phones: the title takes the room the header has left; buttons show icons only. */
+@media (max-width: 639px) {
+  .header-doc-meta {
+    width: 100%;
+  }
+
+  .header-title-btn {
+    max-width: 100%;
+  }
+
+  .header-title-input {
+    width: 100%;
+  }
+
+  .export-caret {
+    display: none;
+  }
+}
+
+/* Touch screens: 44px targets */
+@media (pointer: coarse) {
+  .header-title-btn {
+    min-height: 44px;
+  }
+
+  .segmented-pill {
+    padding: 0;
+    gap: 0;
+  }
+
+  .tab-btn {
+    height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .share-btn,
+  .export-btn {
+    height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .close-share-btn {
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px -10px 0;
+  }
+
+  .share-copy-action-btn,
+  .version-btn {
+    height: 44px;
+  }
+}
+
 /* ═══════════════════════════════════════════════ */
 /* MAIN WORKSPACE BODY & PANELS                    */
 /* ═══════════════════════════════════════════════ */
@@ -427,14 +490,14 @@
   }
 }
 
-/* The editor fills whatever height the screen leaves below the header. */
+/* The editor fills whatever height the screen leaves below the header; edge to edge on phones. */
 .editor-scroll-container {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 0;
 
   /* Kept in the page (not removed) while a version is previewed. */
   &[hidden] {
@@ -447,7 +510,8 @@
 
   ink-editor {
     --ink-editor-height: 100%;
-    --ink-editor-min-height: 320px;
+    /* Small enough to fit above an on-screen keyboard on a small phone. */
+    --ink-editor-min-height: 160px;
     flex: 1 1 0;
     min-height: 0;
     display: flex;
@@ -573,6 +637,30 @@
 :host ::ng-deep {
   .editor-scroll-container .ink-editor-wrapper {
     box-shadow: var(--ink-shadow-sm);
+
+    @media (max-width: 767px) {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+
+  /* Phones: one full-width sheet with 16px margins (no card on a canvas). */
+  @media (max-width: 639px) {
+    .editor-scroll-container {
+      .ink-editor-viewport {
+        padding: 0;
+      }
+      .ink-doc-page,
+      .ink-doc-page:focus-within {
+        min-height: 100%;
+        border: 0;
+        box-shadow: none;
+      }
+      .ink-host {
+        padding: 20px 16px 40px;
+      }
+    }
   }
 
   .editor-workspace-body.is-preview,

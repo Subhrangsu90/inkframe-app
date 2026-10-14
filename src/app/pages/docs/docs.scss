@@ -239,7 +239,7 @@
 .docs-container {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 24px 16px 56px;
+  padding: 24px 16px calc(56px + env(safe-area-inset-bottom));
 
   @media (min-width: 768px) {
     padding: 36px 32px 72px;
@@ -734,5 +734,42 @@
 @media (prefers-reduced-motion: reduce) {
   .drop-overlay {
     animation: none;
+  }
+}
+
+/* Phones: the header keeps only the sidebar button, search, Import and New. */
+@media (max-width: 639px) {
+  .page-heading,
+  .view-switch {
+    display: none;
+  }
+
+  .docs-search-bar {
+    width: min(220px, calc(100vw - 196px));
+  }
+}
+
+/* Touch screens: 44px targets */
+@media (pointer: coarse) {
+  .docs-search-bar {
+    height: 44px;
+    padding-right: 0;
+  }
+
+  .search-input {
+    align-self: stretch;
+  }
+
+  .search-clear-btn,
+  .mode-btn,
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .new-doc-btn,
+  .secondary-btn {
+    height: 44px;
+    min-width: 44px;
   }
 }

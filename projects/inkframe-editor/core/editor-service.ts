@@ -267,7 +267,9 @@ export class EditorService implements EditorHooks {
         a.from === b.from &&
         a.to === b.to &&
         a.left === b.left &&
-        a.top === b.top),
+        a.top === b.top &&
+        a.placement === b.placement &&
+        a.maxHeight === b.maxHeight),
   });
   readonly slashActive = signal(0);
   readonly slashItems = computed(() => {

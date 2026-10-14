@@ -1,5 +1,8 @@
 import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { Router, UrlTree, provideRouter } from '@angular/router';
+import { LayoutService } from './shared/layout/layout.service';
 import {
   DocumentManager,
   extractDocTitle,
@@ -183,5 +186,31 @@ describe('Application Route Definitions', () => {
     expect(typeof editorRoute?.loadComponent).toBe('function');
     expect(typeof readerRoute?.loadComponent).toBe('function');
     expect(typeof settingsRoute?.loadComponent).toBe('function');
+  });
+
+  describe('/new, the "New document" shortcut of the installed app', () => {
+    async function open(createDoc: () => Promise<string>): Promise<string> {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: LayoutService, useValue: { createDocWithoutOpening: vi.fn(createDoc) } },
+        ],
+      });
+      const guard = routes.find((r) => r.path === 'new')!.canActivate![0] as () => Promise<UrlTree>;
+      const tree = await TestBed.runInInjectionContext(guard);
+      return TestBed.inject(Router).serializeUrl(tree);
+    }
+
+    it('creates a document and opens it', async () => {
+      expect(await open(async () => 'doc_42')).toBe('/doc/doc_42');
+    });
+
+    it('opens the library when storage refuses the new document', async () => {
+      expect(
+        await open(async () => {
+          throw new DOMException('full', 'QuotaExceededError');
+        }),
+      ).toBe('/docs');
+    });
   });
 });

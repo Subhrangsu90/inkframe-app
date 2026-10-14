@@ -97,16 +97,22 @@ export class LayoutService {
     return list;
   }
 
+  /** Creates an empty document and lists it; returns its id. Throws when storage refuses it. */
+  async createDocWithoutOpening(title = 'Untitled Document'): Promise<string> {
+    const created = await this.docManager.createDoc(title);
+    await this.refreshDocs();
+    return created.meta.id;
+  }
+
   async createNewDoc(title?: string): Promise<string> {
     this.isCreating.set(true);
     try {
-      const created = await this.docManager.createDoc(title || 'Untitled Document');
-      await this.refreshDocs();
-      this.setActiveDocId(created.meta.id);
+      const id = await this.createDocWithoutOpening(title || undefined);
+      this.setActiveDocId(id);
       this.closeMobile();
-      await this.router.navigate(['/doc', created.meta.id]);
+      await this.router.navigate(['/doc', id]);
       this.toast.success('New document created');
-      return created.meta.id;
+      return id;
     } catch (e) {
       this.toast.error('Failed to create document');
       throw e;

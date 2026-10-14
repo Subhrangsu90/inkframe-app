@@ -274,7 +274,7 @@ Colors, spacing and the document font size are CSS custom properties prefixed `-
 | `@inkframe-ui/editor` | `Editor` (`<ink-editor>`) |
 | `@inkframe-ui/editor/core` | `EditorService`, the schema, extensions, converters, `ThemeService` and types |
 | `@inkframe-ui/editor/toolbar` | `Toolbar` (`<ink-toolbar>`) |
-| `@inkframe-ui/editor/extensions` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar |
+| `@inkframe-ui/editor/ui` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar |
 | `@inkframe-ui/editor/styles` | The editor stylesheet (Sass) |
 
 Most apps only need `<ink-editor>`. The other entry points are for building your own editor layout around `EditorService`.

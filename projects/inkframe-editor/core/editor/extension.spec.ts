@@ -9,7 +9,7 @@ import {
   HeadingExtension,
   HistoryExtension,
   BulletListExtension,
-} from './index';
+} from '../index';
 
 describe('Modular Extension Architecture (TipTap-style)', () => {
   const dummyService = {

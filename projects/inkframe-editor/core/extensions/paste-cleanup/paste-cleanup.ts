@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { DOMPURIFY_CONFIG } from './io/html';
-import { sanitizeCssColor } from './link-utils';
-import { NumberStyle, defaultNumberStyle } from './lists/list-schema';
+import { DOMPURIFY_CONFIG } from '../../io/html';
+import { sanitizeCssColor } from '../../schema/link-utils';
+import { NumberStyle, defaultNumberStyle } from '../lists/list-schema';
 
 export type PasteSource = 'word' | 'google-docs' | 'other';
 

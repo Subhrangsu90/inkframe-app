@@ -75,7 +75,7 @@ Each USP lists the proof in the product and what must be true before we claim it
 | **U3** | **Share without a server.** One link carries the whole document. | `/s#<payload>` share links decode client-side; the fragment never reaches a server. | Clear size guidance in the share dialog (images make links long); a graceful error page for broken links. |
 | **U4** | **Markdown in, Markdown out.** Write visually and keep portable files. | Markdown import and export round-trips headings, lists, tasks, tables, callouts, code and inline formatting (covered by tests). | "Import Markdown file" in the UI; documented mapping for the few formats Markdown can't express (colors become inline HTML). |
 | **U5** | **Developer-grade blocks.** | Code blocks with 15 languages, line numbers, wrap and copy; tables with handles and cell styling; callouts; task lists. | Nothing extra; already shippable. |
-| **U6** | **The same editor, as an Angular library.** | `@inkframe-ui/editor` with `/core`, `/toolbar` and `/extensions` entry points and an `EditorExtension` API. | Library published to npm with docs, a stable API and versioning ([section 8](#8-library-productization-inkframe-uieditor)). |
+| **U6** | **The same editor, as an Angular library.** | `@inkframe-ui/editor` with `/core`, `/toolbar` and `/ui` entry points and an `EditorExtension` API. | Library published to npm with docs, a stable API and versioning ([section 8](#8-library-productization-inkframe-uieditor)). |
 
 **Lead message:** U1 + U2 together ("a real document editor that keeps your words on your device"). U3 is the memorable hook; U4–U6 are supporting pillars for technical audiences.
 
@@ -649,7 +649,7 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 
 | Area | Plan |
 | --- | --- |
-| Entry points | `@inkframe-ui/editor` (component), `/core`, `/toolbar`, `/extensions`, `/styles`. |
+| Entry points | `@inkframe-ui/editor` (component), `/core`, `/toolbar`, `/ui`, `/styles`. |
 | Dependencies | Angular, CDK and Material as peer dependencies; ProseMirror packages, `markdown-it`, DOMPurify and Prism as dependencies. |
 | Public API for 1.0 | `<ink-editor>` inputs (`initialDoc`, `editable`, `extensions`, `showToolbar`, `showStatusBar`, `mobileToolbar`, `debounceMs`) and outputs (`changed`, `historyRequested`); methods `loadDoc`, `flush`, `getJSON`, `getHtml`, `getMarkdown`, `loadMarkdown`, `loadHtml`; `EditorService` commands and signals; `createExtension`, `DEFAULT_EXTENSIONS`, individual extensions; I/O helpers and `sanitizeHtml`; `VisualViewportTracker` for layouts that stay above the on-screen keyboard. |
 | Deprecations before 1.0 | `buildPlugins`, `SLASH_ITEMS` and direct use of the static `schema` in commands. Mark `@deprecated`; remove in 2.0. |

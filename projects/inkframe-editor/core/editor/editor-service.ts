@@ -12,8 +12,8 @@ import { MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
 import { redo, redoDepth, undo, undoDepth } from 'prosemirror-history';
 
-import { CalloutKind, TextAlign } from './schema';
-import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
+import { CalloutKind, TextAlign } from '../schema/schema';
+import { SCHEMA_VERSION, StoredDoc, migrate } from '../schema/migrations';
 import {
   clearFormattingCommand,
   removeHighlightCommand,
@@ -22,8 +22,8 @@ import {
   setTextAlignCommand,
   textAlignAt,
   toggleHighlightCommand,
-} from './plugins';
-import { ListKind, NumberStyle } from './lists/list-schema';
+} from '../extensions/commands';
+import { ListKind, NumberStyle } from '../extensions/lists/list-schema';
 import {
   ListState,
   continueListNumberingCommand,
@@ -38,7 +38,7 @@ import {
   sinkListItemCommand,
   toggleListCommand,
   toggleTaskCheckedCommand,
-} from './lists/list-commands';
+} from '../extensions/lists/list-commands';
 import {
   findNextCommand,
   findPreviousCommand,
@@ -46,12 +46,12 @@ import {
   replaceAllCommand,
   replaceCurrentCommand,
   setSearchQueryCommand,
-} from './search.plugin';
+} from '../extensions/search/search.plugin';
 import { DocStats, countWords, docStats, docText } from './doc-stats';
-import { htmlHasText } from './paste-cleanup';
+import { htmlHasText } from '../extensions/paste-cleanup/paste-cleanup';
 import { EditorHooks, FloatingMenuState, SlashMenuState, TableMenuState } from './editor-hooks';
 import { slashKey } from './menus.plugin';
-import { sanitizeHref } from './link-utils';
+import { sanitizeHref } from '../schema/link-utils';
 import {
   addColumnAfter,
   addColumnBefore,
@@ -67,8 +67,8 @@ import {
 import { SlashItem } from './slash-items';
 import { EditorExtension } from './extension-types';
 import { ExtensionManager } from './extension-manager';
-import { DEFAULT_EXTENSIONS } from './default-extensions';
-import { imageStorage } from './image-storage';
+import { DEFAULT_EXTENSIONS } from '../extensions/default-extensions';
+import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
   type: string; // 'paragraph' | 'heading' | 'code_block' | ...

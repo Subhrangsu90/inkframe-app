@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { Node as PMNode } from 'prosemirror-model';
 import { CellSelection } from 'prosemirror-tables';
-import { DEFAULT_HIGHLIGHT_COLOR, schema } from './schema';
+import { DEFAULT_HIGHLIGHT_COLOR, schema } from './schema/schema';
 import {
   removeHighlightCommand,
   setBlockTypeKeepingAlign,
@@ -11,10 +11,10 @@ import {
   splitAlignedBlockCommand,
   textAlignAt,
   toggleHighlightCommand,
-} from './plugins';
+} from './extensions/commands';
 import { docToHtml, htmlToDoc } from './io/html';
 import { docToMarkdown, markdownToDoc } from './io/markdown';
-import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
+import { SCHEMA_VERSION, StoredDoc, migrate } from './schema/migrations';
 
 const { nodes, marks } = schema;
 const text = (t: string, m: ReturnType<typeof marks.highlight.create>[] = []) => schema.text(t, m);

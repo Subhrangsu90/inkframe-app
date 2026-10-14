@@ -9,7 +9,7 @@ import {
   ordered_list,
   task_item,
   task_list,
-} from './lists/list-schema';
+} from '../extensions/lists/list-schema';
 
 export type CalloutKind = 'info' | 'note' | 'warning' | 'success' | 'danger';
 /** In the order a click on the callout's icon cycles through them. */

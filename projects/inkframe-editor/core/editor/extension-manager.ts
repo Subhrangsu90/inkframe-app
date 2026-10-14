@@ -18,11 +18,11 @@ import { EditorService } from './editor-service';
 import { EditorHooks } from './editor-hooks';
 import { SlashItem } from './slash-items';
 import { menusPlugin } from './menus.plugin';
-import { paragraph } from './schema';
-import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from './lists/list-schema';
-import { listKeymap } from './lists/list-commands';
-import { listJoinPlugin } from './lists/list-join.plugin';
-import { listDragPlugin } from './lists/list-drag.plugin';
+import { paragraph } from '../schema/schema';
+import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from '../extensions/lists/list-schema';
+import { listKeymap } from '../extensions/lists/list-commands';
+import { listJoinPlugin } from '../extensions/lists/list-join.plugin';
+import { listDragPlugin } from '../extensions/lists/list-drag.plugin';
 
 export class ExtensionManager {
   readonly extensions: readonly EditorExtension[];

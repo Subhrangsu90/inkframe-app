@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { schema } from './schema';
-import { sanitizeCssColor, sanitizeCssLength } from './link-utils';
+import { schema } from './schema/schema';
+import { sanitizeCssColor, sanitizeCssLength } from './schema/link-utils';
 import { docToHtml, sanitizeHtml } from './io/html';
-import { tableUIKey, tableUIPlugin } from './table-ui.plugin';
+import { tableUIKey, tableUIPlugin } from './extensions/table/table-ui.plugin';
 
 const injection = 'red; background-image: url(https://tracker.example/x)';
 

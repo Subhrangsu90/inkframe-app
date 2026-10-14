@@ -1,4 +1,4 @@
-import { TextAlign } from './schema';
+import { TextAlign } from '../../schema/schema';
 
 export interface TextAlignOption {
   value: TextAlign;

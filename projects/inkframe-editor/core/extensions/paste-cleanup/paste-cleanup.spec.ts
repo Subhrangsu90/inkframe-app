@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DOMParser as PMDOMParser, Node as PMNode } from 'prosemirror-model';
-import { schema } from './schema';
+import { schema } from '../../schema/schema';
 import { cleanPastedHtml, detectPasteSource, htmlHasText } from './paste-cleanup';
 import {
   GOOGLE_DOCS_CLIPBOARD,

@@ -16,10 +16,10 @@ import {
   sanitizeHighlightColor,
   sanitizeTextAlign,
   schema,
-} from '../schema';
-import { sanitizeCssColor } from '../link-utils';
-import { sanitizeListStart } from '../lists/list-schema';
-import { isListNode } from '../lists/list-commands';
+} from '../schema/schema';
+import { sanitizeCssColor } from '../schema/link-utils';
+import { sanitizeListStart } from '../extensions/lists/list-schema';
+import { isListNode } from '../extensions/lists/list-commands';
 
 const ALIGN_MARKER: Record<string, string> = {
   left: ':---',

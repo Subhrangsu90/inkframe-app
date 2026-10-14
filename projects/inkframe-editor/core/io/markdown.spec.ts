@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Node as PMNode } from 'prosemirror-model';
-import { schema } from '../schema';
+import { schema } from '../schema/schema';
 import { docToMarkdown, markdownToDoc } from './markdown';
 
 const { marks, nodes } = schema;

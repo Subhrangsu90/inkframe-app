@@ -1,6 +1,6 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
-import { isTaskIndeterminate } from '../lists/list-schema';
+import { isTaskIndeterminate } from './list-schema';
 
 /** The checkbox's accessible name: the task's first line, shortened. */
 function taskLabel(node: PMNode): string {

@@ -1,4 +1,4 @@
-// Secondary entry point: @inkframe-ui/editor/extensions
+// Secondary entry point: @inkframe-ui/editor/ui
 export * from './floating-menu/floating-menu';
 export * from './slash-menu/slash-menu';
 export * from './table-toolbar/table-toolbar';

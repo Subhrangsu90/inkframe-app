@@ -32,7 +32,7 @@ import {
   TableToolbar,
   FindReplace,
   StatusBar,
-} from '@inkframe-ui/editor/extensions';
+} from '@inkframe-ui/editor/ui';
 
 @Component({
   selector: 'ink-editor',

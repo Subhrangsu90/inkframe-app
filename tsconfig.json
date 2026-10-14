@@ -10,7 +10,7 @@
       "@inkframe-ui/editor": ["./projects/inkframe-editor/src/public-api.ts", "./dist/inkframe-editor"],
       "@inkframe-ui/editor/core": ["./projects/inkframe-editor/core/index.ts", "./dist/inkframe-editor/core"],
       "@inkframe-ui/editor/toolbar": ["./projects/inkframe-editor/toolbar/index.ts", "./dist/inkframe-editor/toolbar"],
-      "@inkframe-ui/editor/extensions": ["./projects/inkframe-editor/extensions/index.ts", "./dist/inkframe-editor/extensions"]
+      "@inkframe-ui/editor/ui": ["./projects/inkframe-editor/ui/index.ts", "./dist/inkframe-editor/ui"]
     },
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

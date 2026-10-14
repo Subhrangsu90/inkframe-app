@@ -3,11 +3,11 @@ import { Node as PMNode } from 'prosemirror-model';
 import { Command, EditorState, Plugin, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { history, undo } from 'prosemirror-history';
-import { schema } from '../schema';
-import { docToHtml, htmlToDoc } from '../io/html';
-import { docToMarkdown, markdownToDoc } from '../io/markdown';
-import { cleanPastedHtml } from '../paste-cleanup';
-import { TaskItemNodeView } from '../node-views/task-item.node-view';
+import { schema } from '../../schema/schema';
+import { docToHtml, htmlToDoc } from '../../io/html';
+import { docToMarkdown, markdownToDoc } from '../../io/markdown';
+import { cleanPastedHtml } from '../paste-cleanup/paste-cleanup';
+import { TaskItemNodeView } from './task-item.node-view';
 import {
   MAX_LIST_DEPTH,
   SKIP_LIST_JOIN,

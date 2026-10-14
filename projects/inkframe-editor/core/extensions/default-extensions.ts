@@ -3,7 +3,7 @@ import { history, undo, redo } from 'prosemirror-history';
 import { toggleMark } from 'prosemirror-commands';
 import { columnResizing, tableEditing, goToNextCell } from 'prosemirror-tables';
 import { textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules';
-import { EditorExtension, createExtension } from './extension-types';
+import { EditorExtension, createExtension } from '../editor/extension-types';
 import {
   paragraph,
   heading,
@@ -25,7 +25,7 @@ import {
   image,
   code_block,
   tableNodeSpecs,
-} from './schema';
+} from '../schema/schema';
 import { markRule } from './input-rules';
 import { bulletListRule, orderedListRule, taskItemRule } from './lists/list-input-rules';
 import { toggleListCommand } from './lists/list-commands';
@@ -35,21 +35,21 @@ import {
   setTextAlignCommand,
   splitAlignedBlockCommand,
   toggleHighlightCommand,
-} from './plugins';
+} from './commands';
 import {
   searchPlugin,
   findNextCommand,
   findPreviousCommand,
   getSearchState,
-} from './search.plugin';
-import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder.plugin';
-import { pasteCleanupPlugin } from './paste-cleanup';
-import { tableUIPlugin } from './table-ui.plugin';
-import { highlightPlugin } from './highlight.plugin';
-import { CalloutNodeView } from './node-views/callout.node-view';
-import { ImageNodeView } from './node-views/image.node-view';
-import { TaskItemNodeView } from './node-views/task-item.node-view';
-import { CodeBlockNodeView } from './node-views/code-block.node-view';
+} from './search/search.plugin';
+import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder/placeholder.plugin';
+import { pasteCleanupPlugin } from './paste-cleanup/paste-cleanup';
+import { tableUIPlugin } from './table/table-ui.plugin';
+import { highlightPlugin } from './code-block/highlight.plugin';
+import { CalloutNodeView } from './callout/callout.node-view';
+import { ImageNodeView } from './image/image.node-view';
+import { TaskItemNodeView } from './lists/task-item.node-view';
+import { CodeBlockNodeView } from './code-block/code-block.node-view';
 
 // ── Essential Document Nodes ──────────────────────────────────────
 

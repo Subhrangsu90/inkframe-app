@@ -1,4 +1,4 @@
-// core/menus.plugin.ts
+// core/editor/menus.plugin.ts
 import { EditorState, Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { isInTable } from 'prosemirror-tables';
 import { EditorHooks, FloatingMenuState, TableMenuState } from './editor-hooks';

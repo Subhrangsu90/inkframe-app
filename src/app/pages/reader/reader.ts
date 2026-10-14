@@ -20,7 +20,7 @@ import {
   ThemeService,
   imageStorage,
 } from '@inkframe-ui/editor/core';
-import { ImageLightbox, type ImagePreviewPayload } from '@inkframe-ui/editor/extensions';
+import { ImageLightbox, type ImagePreviewPayload } from '@inkframe-ui/editor/ui';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ToastService } from '@app/shared/ui';
 import { decompressSharedDoc, buildShareableUrl } from '@app/documents/transfer/share-codec';

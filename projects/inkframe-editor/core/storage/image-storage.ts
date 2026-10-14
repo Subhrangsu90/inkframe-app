@@ -2,7 +2,7 @@
  * IndexedDB storage for images in Inkframe.
  * SSR-safe: handles server environments without errors.
  */
-import type { DocJSON } from './migrations';
+import type { DocJSON } from '../schema/migrations';
 
 export interface StoredImageMetadata {
   id: string;

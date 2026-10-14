@@ -5,7 +5,7 @@ import {
   textblockTypeInputRule,
 } from 'prosemirror-inputrules';
 import { MarkType } from 'prosemirror-model';
-import { schema } from './schema';
+import { schema } from '../schema/schema';
 import { bulletListRule, orderedListRule, taskItemRule } from './lists/list-input-rules';
 
 // The list rules moved to ./lists; kept here for code that imports them from this module.

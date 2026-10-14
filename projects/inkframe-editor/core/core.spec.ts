@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
-import { schema } from './schema';
-import { sanitizeHref } from './link-utils';
-import { migrate, SCHEMA_VERSION, StoredDoc } from './migrations';
-import { clearFormattingCommand, toggleListCommand } from './plugins';
+import { schema } from './schema/schema';
+import { sanitizeHref } from './schema/link-utils';
+import { migrate, SCHEMA_VERSION, StoredDoc } from './schema/migrations';
+import { clearFormattingCommand, toggleListCommand } from './extensions/commands';
 import { docToHtml, htmlToDoc } from './io/html';
 import { docToMarkdown, markdownToDoc } from './io/markdown';
 import { splitListItem, liftListItem } from 'prosemirror-schema-list';
-import { taskItemRule } from './input-rules';
-import { TaskItemNodeView } from './node-views/task-item.node-view';
+import { taskItemRule } from './extensions/input-rules';
+import { TaskItemNodeView } from './extensions/lists/task-item.node-view';
 import { EditorView } from 'prosemirror-view';
-import { imageStorage } from './image-storage';
-import { highlightPlugin, highlightKey } from './highlight.plugin';
-import { tableUIPlugin, tableUIKey } from './table-ui.plugin';
+import { imageStorage } from './storage/image-storage';
+import { highlightPlugin, highlightKey } from './extensions/code-block/highlight.plugin';
+import { tableUIPlugin, tableUIKey } from './extensions/table/table-ui.plugin';
 
 describe('Inkframe Core', () => {
   describe('Link Sanitization (Security)', () => {
@@ -540,7 +540,7 @@ describe('Inkframe Core', () => {
 
   describe('Phase 4: Color Palette & Dual-Tab Media & Emojis', () => {
     it('defines 21 color swatches (3x7 grid) and common emojis', async () => {
-      const { TEXT_COLORS, COMMON_EMOJIS } = await import('./colors');
+      const { TEXT_COLORS, COMMON_EMOJIS } = await import('./ui-helpers/colors');
       expect(TEXT_COLORS.length).toBe(21);
       expect(COMMON_EMOJIS.length).toBeGreaterThanOrEqual(20);
 

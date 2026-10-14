@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { Node as PMNode } from 'prosemirror-model';
-import { schema } from './schema';
+import { schema } from '../schema/schema';
 import { WORDS_PER_MINUTE, countWords, docStats } from './doc-stats';
-import { DEFAULT_PLACEHOLDER, isDocEmpty, placeholderPlugin } from './placeholder.plugin';
+import {
+  DEFAULT_PLACEHOLDER,
+  isDocEmpty,
+  placeholderPlugin,
+} from '../extensions/placeholder/placeholder.plugin';
 
 const { nodes, marks } = schema;
 const p = (...content: (string | PMNode)[]) =>

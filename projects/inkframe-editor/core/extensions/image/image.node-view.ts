@@ -1,6 +1,6 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { EditorView, NodeView } from 'prosemirror-view';
-import { imageStorage } from '../image-storage';
+import { imageStorage } from '../../storage/image-storage';
 
 export interface ImagePreviewPayload {
   src: string;

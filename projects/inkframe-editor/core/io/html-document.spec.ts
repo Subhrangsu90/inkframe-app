@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { schema } from '../schema';
+import { schema } from '../schema/schema';
 import { docToHtmlDocument, HTML_DOCUMENT_CSS } from './html-document';
 
 const doc = schema.nodeFromJSON({

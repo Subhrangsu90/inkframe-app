@@ -37,9 +37,15 @@ src/                     The Inkframe app
   server.ts              Express server for SSR
 projects/inkframe-editor/
   src/                   @inkframe-ui/editor: the <ink-editor> component and the styles
-  core/                  @inkframe-ui/editor/core: EditorService, schema, extensions, converters
+  core/                  @inkframe-ui/editor/core
+    editor/              EditorService and the extension system
+    extensions/          Editor features, one folder each (lists, table, code-block…)
+    schema/              Document schema and migrations
+    io/                  Markdown and HTML import and export
+    storage/             Image storage in IndexedDB
+    ui-helpers/          Theme, on-screen keyboard, menu and color helpers
   toolbar/               @inkframe-ui/editor/toolbar
-  extensions/            @inkframe-ui/editor/extensions: menus and panels
+  ui/                    @inkframe-ui/editor/ui: menus and panels
 public/                  Static files: icons, web app manifest
 scripts/                 Build and CI helper scripts
 docs/                    Product plan
@@ -64,7 +70,7 @@ docs/                    Product plan
 To run one library spec file:
 
 ```bash
-npx ng test inkframe-editor --watch=false --include="../core/lists/lists.spec.ts"
+npx ng test inkframe-editor --watch=false --include="../core/extensions/lists/lists.spec.ts"
 ```
 
 The path is relative to `projects/inkframe-editor/src`.

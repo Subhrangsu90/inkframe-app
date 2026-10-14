@@ -5,7 +5,7 @@ import { Slice } from 'prosemirror-model';
 import { TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { EditorService } from './editor-service';
-import { DEFAULT_HIGHLIGHT_COLOR, schema as staticSchema } from './schema';
+import { DEFAULT_HIGHLIGHT_COLOR, schema as staticSchema } from '../schema/schema';
 import {
   BoldExtension,
   BulletListExtension,
@@ -13,15 +13,15 @@ import {
   HeadingExtension,
   HistoryExtension,
   ItalicExtension,
-} from './default-extensions';
+} from '../extensions/default-extensions';
 import { createExtension } from './extension-types';
-import { taskItemRule } from './input-rules';
-import { SCHEMA_VERSION, StoredDoc } from './migrations';
+import { taskItemRule } from '../extensions/input-rules';
+import { SCHEMA_VERSION, StoredDoc } from '../schema/migrations';
 import {
   GOOGLE_DOCS_CLIPBOARD,
   IMAGE_ONLY_CLIPBOARD,
   WORD_CLIPBOARD,
-} from './paste-cleanup.fixtures';
+} from '../extensions/paste-cleanup/paste-cleanup.fixtures';
 
 function createService(): EditorService {
   const injector = Injector.create({

@@ -8,8 +8,8 @@ import {
   extractDocTitle,
   extractDocWordCount,
   formatRelativeTime,
-} from './core/document-manager';
-import { WELCOME_DOC } from './core/welcome-doc';
+} from './documents/document-manager';
+import { WELCOME_DOC } from './documents/welcome-doc';
 import { routes } from './app.routes';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 

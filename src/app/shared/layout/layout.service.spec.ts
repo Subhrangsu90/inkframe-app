@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LayoutService } from './layout.service';
-import { DocMeta, DocumentManager } from '../../core/document-manager';
+import { DocMeta, DocumentManager } from '@app/documents/document-manager';
 import { ConfirmDialogService } from '../ui';
 
 describe('LayoutService.deleteDoc', () => {

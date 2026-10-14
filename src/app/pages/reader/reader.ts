@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { InkIcon } from '../../shared/ui/icons/icon';
-import { DocumentManager, type StoredDoc, extractDocTitle } from '../../core/document-manager';
-import { WELCOME_DOC } from '../../core/welcome-doc';
+import { InkIcon } from '@app/shared/ui/icons/icon';
+import { DocumentManager, type StoredDoc, extractDocTitle } from '@app/documents/document-manager';
+import { WELCOME_DOC } from '@app/documents/welcome-doc';
 import {
   docToHtml,
   migrate,
@@ -22,8 +22,8 @@ import {
 } from '@inkframe-ui/editor/core';
 import { ImageLightbox, type ImagePreviewPayload } from '@inkframe-ui/editor/extensions';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ToastService } from '../../shared/ui';
-import { decompressSharedDoc, buildShareableUrl } from '../../core/share-codec';
+import { ToastService } from '@app/shared/ui';
+import { decompressSharedDoc, buildShareableUrl } from '@app/documents/transfer/share-codec';
 import { combineLatest } from 'rxjs';
 
 @Component({

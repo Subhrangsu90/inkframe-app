@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { StorageError, StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
-import type { UnsavedDoc } from './backup';
+import type { UnsavedDoc } from './transfer/backup';
 
 /**
  * - `ok`: documents and images are saved.

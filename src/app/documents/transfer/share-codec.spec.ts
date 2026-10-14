@@ -7,7 +7,7 @@ import {
   buildShareableUrl,
   base64UrlToBytes,
 } from './share-codec';
-import { StoredDoc } from './document-manager';
+import { StoredDoc } from '../document-manager';
 
 describe('share-codec', () => {
   it('correctly converts bytes to base64url and back', () => {

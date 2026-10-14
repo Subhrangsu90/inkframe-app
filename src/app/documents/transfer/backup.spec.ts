@@ -9,8 +9,8 @@ import {
   InkframeBackup,
   describeRestore,
 } from './backup';
-import { DocumentManager } from './document-manager';
-import { VersionHistory } from './version-history';
+import { DocumentManager } from '../document-manager';
+import { VersionHistory } from '../versions/version-history';
 
 const docWith = (text: string, imageId?: string): StoredDoc => ({
   schemaVersion: SCHEMA_VERSION,

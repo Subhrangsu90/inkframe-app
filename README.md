@@ -27,9 +27,13 @@ Then open <http://localhost:4200>. The app imports the library from source, so l
 
 ```text
 src/                     The Inkframe app
-  app/core/              Documents, versions, backup, sharing, import/export, PWA
+  app/core/              App-wide services (PWA install and updates)
+  app/documents/         Saving and loading documents, storage health, the welcome document
+    versions/            Version history
+    transfer/            Backup and restore, import, export, share links
   app/pages/             Routed pages: landing, docs list, editor, reader, settings
   app/shared/            App shell layout and UI components
+  styles/                Global styles and design tokens
   server.ts              Express server for SSR
 projects/inkframe-editor/
   src/                   @inkframe-ui/editor: the <ink-editor> component and the styles
@@ -66,6 +70,8 @@ npx ng test inkframe-editor --watch=false --include="../core/lists/lists.spec.ts
 The path is relative to `projects/inkframe-editor/src`.
 
 ## Things to know
+
+**Imports in the app.** Within one top-level folder of `src/app` (`core`, `documents`, `pages`, `shared`), import with relative paths. To reach another top-level folder, use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`.
 
 **Icons.** The app and the library use a self-hosted subset of Material Symbols, with only the icons in use. After adding or renaming an icon, run `npm run icons:build`, which downloads the new subset from Google Fonts and writes it into the repository. CI fails if the subset is out of date. The script finds icon names written as `<mat-icon>name</mat-icon>` or `icon: 'name'`. Add icons chosen at runtime to `DYNAMIC_ICONS` in [scripts/build-icon-font.mjs](scripts/build-icon-font.mjs).
 

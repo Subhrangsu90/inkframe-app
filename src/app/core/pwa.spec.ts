@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SwUpdate } from '@angular/service-worker';
 import { Subject } from 'rxjs';
-import { ToastService } from '../shared/ui';
+import { ToastService } from '@app/shared/ui';
 import { PwaService, isIos } from './pwa';
 
 /** A browser's install prompt event, as Chromium fires it. */

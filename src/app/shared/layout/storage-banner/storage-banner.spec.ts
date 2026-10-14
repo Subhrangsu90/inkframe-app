@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { imageStorage } from '@inkframe-ui/editor/core';
 import { StorageBanner } from './storage-banner';
-import { StorageHealth } from '../../../core/storage-health';
-import { BackupService } from '../../../core/backup';
+import { StorageHealth } from '@app/documents/storage-health';
+import { BackupService } from '@app/documents/transfer/backup';
 
 /** Makes the next document writes fail the way a full or blocked browser does. */
 const refuseWrites = (name: string) =>

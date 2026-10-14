@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, TemplateRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { DocumentManager, DocMeta } from '../../core/document-manager';
+import { DocumentManager, DocMeta } from '@app/documents/document-manager';
 import { ConfirmDialogService, ToastService } from '../ui';
 
 const STORAGE_COLLAPSED_KEY = 'inkframe_sidebar_collapsed';

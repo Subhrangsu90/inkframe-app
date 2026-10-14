@@ -10,8 +10,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { InkIcon } from '../../../shared/ui/icons/icon';
-import type { VersionMeta } from '../../../core/version-history';
+import { InkIcon } from '@app/shared/ui/icons/icon';
+import type { VersionMeta } from '@app/documents/versions/version-history';
 
 export interface VersionGroup {
   label: string;

@@ -1,4 +1,4 @@
-import { type StoredDoc, extractDocTitle } from './document-manager';
+import { type StoredDoc, extractDocTitle } from '../document-manager';
 import { markdownToDoc, SCHEMA_VERSION, imageStorage } from '@inkframe-ui/editor/core';
 
 export interface DecodedSharedDoc {

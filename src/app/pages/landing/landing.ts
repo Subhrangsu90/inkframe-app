@@ -11,7 +11,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { revealThemeChange } from '@inkframe-ui/editor/core';
-import { InkIcon, Card, Button } from '../../shared/ui';
+import { InkIcon, Card, Button } from '@app/shared/ui';
 
 @Component({
   selector: 'ink-landing',

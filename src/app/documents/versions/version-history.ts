@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { StoredDoc } from '@inkframe-ui/editor/core';
-import { extractDocText, extractDocTitle, extractDocWordCount } from './document-manager';
+import { extractDocText, extractDocTitle, extractDocWordCount } from '../document-manager';
 import {
   VersionMeta,
   VersionReason,

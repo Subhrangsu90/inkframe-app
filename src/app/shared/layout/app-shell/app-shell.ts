@@ -11,9 +11,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { InkIcon } from '../../ui/icons/icon';
 import { ThemeService, VisualViewportTracker } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../layout.service';
-import { formatRelativeTime } from '../../../core/document-manager';
+import { formatRelativeTime } from '@app/documents/document-manager';
 import { StorageBanner } from '../storage-banner/storage-banner';
-import { PwaService } from '../../../core/pwa';
+import { PwaService } from '@app/core/pwa';
 
 @Component({
   selector: 'ink-app-shell',

@@ -1,7 +1,7 @@
 import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
-import { ToastService } from '../shared/ui';
+import { ToastService } from '@app/shared/ui';
 
 /** Fired by Chromium browsers when the app can be installed; not in the DOM typings. */
 export interface BeforeInstallPromptEvent extends Event {

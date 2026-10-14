@@ -575,7 +575,7 @@ Browser (Inkframe app)                          Backend (signed-in users only)
 
 | Interface | Implementations | Lives in |
 | --- | --- | --- |
-| `DocumentStore` | `LocalDocumentStore` (today's code), `CloudDocumentStore` | App (`src/app/core`) |
+| `DocumentStore` | `LocalDocumentStore` (today's code), `CloudDocumentStore` | App (`src/app/documents`) |
 | `ImageStore` | IndexedDB; cloud with a local cache | Library `/core` (`imageStorage` gains a cloud resolver) |
 | `AuthService` | The chosen provider's SDK | App |
 | `AiProvider` | Server proxy client in the app; library consumers bring their own | Library `/core` (interface), app (implementation) |
@@ -602,7 +602,7 @@ Every table is protected by per-owner (and per-member) access rules enforced in 
 
 Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surfaces, hairline borders, very light shadows, generous whitespace, one accent color (violet) reserved for the single primary action per screen. Motion is short (120–200 ms) and respects `prefers-reduced-motion`.
 
-**Source of truth:** `src/tokens.scss` (app) and `projects/inkframe-editor/src/styles/_variables.scss` (library). Tailwind v4 maps the `--ink-*` tokens to utilities in `src/styles.scss`.
+**Source of truth:** `src/styles/tokens.scss` (app) and `projects/inkframe-editor/src/styles/_variables.scss` (library). Tailwind v4 maps the `--ink-*` tokens to utilities in `src/styles/styles.scss`.
 
 | Token group | Light | Dark |
 | --- | --- | --- |

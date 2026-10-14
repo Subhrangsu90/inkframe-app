@@ -8,10 +8,10 @@ import {
   migrate,
   schema,
 } from '@inkframe-ui/editor/core';
-import { DocMeta, DocumentManager } from './document-manager';
-import { VersionHistory, VersionMeta } from './version-history';
+import { DocMeta, DocumentManager } from '../document-manager';
+import { VersionHistory, VersionMeta } from '../versions/version-history';
 import { dataUrlToBlob, downloadFile } from './data-url';
-import { newVersionId } from './version-store';
+import { newVersionId } from '../versions/version-store';
 
 export const BACKUP_FORMAT = 'inkframe-backup';
 export const BACKUP_VERSION = 1;

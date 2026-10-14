@@ -5,7 +5,7 @@
 @use 'tailwindcss';
 
 /* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
-@use '../projects/inkframe-editor/src/styles/index.scss' as editor-styles;
+@use '../../projects/inkframe-editor/src/styles/index.scss' as editor-styles;
 @use './tokens.scss';
 @use './static-doc.scss';
 

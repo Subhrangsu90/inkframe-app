@@ -6,7 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { StorageHealth } from '../../../core/storage-health';
+import { StorageHealth } from '@app/documents/storage-health';
 import { InkIcon } from '../../ui/icons/icon';
 import { ToastService } from '../../ui/toast/toast';
 
@@ -187,7 +187,7 @@ export class StorageBanner {
     try {
       // Loaded on demand: backups need the editor schema, which the shell
       // around every page should not download.
-      const { BackupService } = await import('../../../core/backup');
+      const { BackupService } = await import('@app/documents/transfer/backup');
       const backup = this.injector.get(BackupService);
       const filename = await backup.download(this.health.unsavedDocs());
       this.toast.success('Downloaded ' + filename);

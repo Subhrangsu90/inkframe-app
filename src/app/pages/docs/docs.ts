@@ -14,14 +14,14 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LayoutService } from '../../shared/layout/layout.service';
-import { DocumentManager, DocMeta, formatRelativeTime } from '../../core/document-manager';
-import { InkIcon, InkIconName } from '../../shared/ui/icons/icon';
-import { ToastService } from '../../shared/ui';
+import { LayoutService } from '@app/shared/layout/layout.service';
+import { DocumentManager, DocMeta, formatRelativeTime } from '@app/documents/document-manager';
+import { InkIcon, InkIconName } from '@app/shared/ui/icons/icon';
+import { ToastService } from '@app/shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
-import { buildShareableUrl } from '../../core/share-codec';
-import { IMPORT_ACCEPT, ImportError, readImportFile } from '../../core/doc-import';
-import { BACKUP_EXTENSION } from '../../core/backup';
+import { buildShareableUrl } from '@app/documents/transfer/share-codec';
+import { IMPORT_ACCEPT, ImportError, readImportFile } from '@app/documents/transfer/doc-import';
+import { BACKUP_EXTENSION } from '@app/documents/transfer/backup';
 
 const hasFiles = (event: DragEvent) => !!event.dataTransfer?.types.includes('Files');
 

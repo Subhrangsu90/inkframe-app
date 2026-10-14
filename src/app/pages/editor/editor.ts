@@ -40,22 +40,22 @@ import {
   sanitizeHtml,
   schema,
 } from '@inkframe-ui/editor/core';
-import { LayoutService } from '../../shared/layout/layout.service';
-import { DocumentManager, extractDocTitle } from '../../core/document-manager';
-import { WELCOME_DOC } from '../../core/welcome-doc';
-import { InkIcon } from '../../shared/ui/icons/icon';
-import { ConfirmDialogService, ToastService } from '../../shared/ui';
-import { buildShareableUrl } from '../../core/share-codec';
+import { LayoutService } from '@app/shared/layout/layout.service';
+import { DocumentManager, extractDocTitle } from '@app/documents/document-manager';
+import { WELCOME_DOC } from '@app/documents/welcome-doc';
+import { InkIcon } from '@app/shared/ui/icons/icon';
+import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { buildShareableUrl } from '@app/documents/transfer/share-codec';
 import {
   docToMarkdownText,
   downloadHtml,
   downloadMarkdown,
   printDocument,
-} from '../../core/doc-export';
-import { VersionHistory, VersionMeta } from '../../core/version-history';
-import { StorageHealth } from '../../core/storage-health';
+} from '@app/documents/transfer/doc-export';
+import { VersionHistory, VersionMeta } from '@app/documents/versions/version-history';
+import { StorageHealth } from '@app/documents/storage-health';
 import { VersionPanel } from './version-panel/version-panel';
-import { PwaService } from '../../core/pwa';
+import { PwaService } from '@app/core/pwa';
 
 // Custom plugin demo
 const CustomPluginDemo: EditorExtension = createExtension({

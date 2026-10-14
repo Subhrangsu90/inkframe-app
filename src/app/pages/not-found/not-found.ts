@@ -8,8 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { InkIcon } from '../../shared/ui/icons/icon';
-import { LayoutService } from '../../shared/layout/layout.service';
+import { InkIcon } from '@app/shared/ui/icons/icon';
+import { LayoutService } from '@app/shared/layout/layout.service';
 
 @Component({
   selector: 'ink-not-found',

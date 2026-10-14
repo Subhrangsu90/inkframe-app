@@ -9,7 +9,7 @@ import {
   retainedVersions,
 } from './version-history';
 import { readVersionContent, readVersionList } from './version-store';
-import { DocumentManager } from './document-manager';
+import { DocumentManager } from '../document-manager';
 
 const docWith = (text: string): StoredDoc => ({
   schemaVersion: SCHEMA_VERSION,

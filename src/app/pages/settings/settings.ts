@@ -12,20 +12,20 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
-import { DocumentManager } from '../../core/document-manager';
-import { WELCOME_DOC } from '../../core/welcome-doc';
+import { DocumentManager } from '@app/documents/document-manager';
+import { WELCOME_DOC } from '@app/documents/welcome-doc';
 import {
   BACKUP_EXTENSION,
   BackupError,
   BackupService,
   ParsedBackup,
   describeRestore,
-} from '../../core/backup';
-import { StorageHealth } from '../../core/storage-health';
-import { PwaService } from '../../core/pwa';
-import { InkIcon } from '../../shared/ui/icons/icon';
-import { ConfirmDialogService, ToastService } from '../../shared/ui';
-import { LayoutService } from '../../shared/layout/layout.service';
+} from '@app/documents/transfer/backup';
+import { StorageHealth } from '@app/documents/storage-health';
+import { PwaService } from '@app/core/pwa';
+import { InkIcon } from '@app/shared/ui/icons/icon';
+import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { LayoutService } from '@app/shared/layout/layout.service';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 

@@ -40,7 +40,7 @@
               "node_modules/@fontsource-variable/inter/index.css",
               "node_modules/@fontsource-variable/jetbrains-mono/index.css",
               "projects/inkframe-editor/src/styles/fonts/icons.css",
-              "src/styles.scss"
+              "src/styles/styles.scss"
             ],
             "server": "src/main.server.ts",
             "outputMode": "server",

@@ -7,7 +7,7 @@ import {
   imageStorage,
 } from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
-import { deleteVersions, VERSION_KEY_PREFIX } from './version-store';
+import { deleteVersions, VERSION_KEY_PREFIX } from './versions/version-store';
 
 export type { StoredDoc };
 

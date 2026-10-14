@@ -7,7 +7,6 @@ import {
   paragraph,
   heading,
   highlight,
-  link,
   underline,
   strikethrough,
   subscript,
@@ -17,21 +16,8 @@ import {
   code,
 } from '../schema/schema';
 import { markRule } from './input-rules';
-import {
-  clearFormattingCommand,
-  setBlockTypeKeepingAlign,
-  setTextAlignCommand,
-  splitAlignedBlockCommand,
-  toggleHighlightCommand,
-} from './commands';
-import {
-  searchPlugin,
-  findNextCommand,
-  findPreviousCommand,
-  getSearchState,
-} from './search/search.plugin';
-import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder/placeholder.plugin';
-import { pasteCleanupPlugin } from './paste-cleanup/paste-cleanup';
+import { clearFormattingCommand, toggleHighlightCommand } from './commands';
+import { setBlockTypeKeepingAlign } from './text-align/text-align-commands';
 import { TableExtension } from './table/table-extension';
 import { CodeBlockExtension } from './code-block/code-block-extension';
 import {
@@ -41,6 +27,11 @@ import {
 } from './lists/list-extensions';
 import { CalloutExtension } from './callout/callout-extension';
 import { ImageExtension } from './image/image-extension';
+import { LinkExtension } from './link/link-extension';
+import { SearchExtension } from './search/search-extension';
+import { PlaceholderExtension } from './placeholder/placeholder-extension';
+import { PasteCleanupExtension } from './paste-cleanup/paste-cleanup-extension';
+import { TextAlignExtension } from './text-align/text-align-extension';
 
 // ── Essential Document Nodes ──────────────────────────────────────
 
@@ -336,20 +327,6 @@ export const HighlightExtension = createExtension({
   }),
 });
 
-// ── Alignment ─────────────────────────────────────────────────────
-
-/** Left, center, right and justified paragraphs and headings. */
-export const TextAlignExtension = createExtension({
-  name: 'text_align',
-  keymaps: () => ({
-    'Shift-Mod-l': setTextAlignCommand('left'),
-    'Shift-Mod-e': setTextAlignCommand('center'),
-    'Shift-Mod-r': setTextAlignCommand('right'),
-    'Shift-Mod-j': setTextAlignCommand('justify'),
-    Enter: splitAlignedBlockCommand,
-  }),
-});
-
 // ── Structure Blocks (Headings, Quote) ────────────────────────────
 
 export const HeadingExtension = createExtension({
@@ -412,57 +389,6 @@ export const BlockquoteExtension = createExtension({
   ],
 });
 
-// ── Links ─────────────────────────────────────────────────────────
-
-export const LinkExtension = createExtension({
-  name: 'link',
-  marks: { link },
-  keymaps: (ctx) => ({
-    'Mod-k': () => {
-      ctx.service.requestLinkEditor();
-      return true; // also stops the browser's own Ctrl+K (address bar search)
-    },
-  }),
-  toolbarItems: [
-    {
-      id: 'link',
-      group: 'insert',
-      icon: 'link',
-      tooltip: 'Insert or edit link (Ctrl+K)',
-      shortcut: 'Ctrl+K',
-      isActive: (s) => s.isLink(),
-      run: (s) => {
-        if (typeof window === 'undefined') return;
-        const current = s.getLinkHref() || '';
-        const href = window.prompt('Enter link URL (https://...):', current);
-        if (href) {
-          s.setLink(href);
-        } else if (href === '') {
-          s.removeLink();
-        }
-      },
-    },
-  ],
-  floatingItems: [
-    {
-      id: 'link',
-      icon: 'link',
-      tooltip: 'Link (Ctrl+K)',
-      isActive: (s) => s.isLink(),
-      run: (s) => {
-        if (typeof window === 'undefined') return;
-        const current = s.getLinkHref() || '';
-        const href = window.prompt('Enter link URL (https://...):', current);
-        if (href) {
-          s.setLink(href);
-        } else if (href === '') {
-          s.removeLink();
-        }
-      },
-    },
-  ],
-});
-
 // ── Horizontal Rule / Divider ─────────────────────────────────────
 
 export const DividerExtension = createExtension({
@@ -497,60 +423,6 @@ export const ClearFormattingExtension = createExtension({
       run: (s) => s.clearFormatting(),
     },
   ],
-});
-
-// ── Find and Replace ──────────────────────────────────────────────
-
-const whileSearching =
-  (command: typeof findNextCommand): typeof findNextCommand =>
-  (state, dispatch, view) =>
-    !!getSearchState(state)?.query && command(state, dispatch, view);
-
-export const SearchExtension = createExtension({
-  name: 'search',
-  plugins: () => [searchPlugin()],
-  keymaps: (ctx) => ({
-    'Mod-f': () => {
-      ctx.service.openSearch();
-      return true; // instead of the browser's find bar, which cannot see into the editor's state
-    },
-    // Mod-h on Windows and Linux, Shift-Mod-h on macOS (where Cmd+H hides the app).
-    'Mod-h': () => {
-      ctx.service.openSearch({ replace: true });
-      return true;
-    },
-    'Shift-Mod-h': () => {
-      ctx.service.openSearch({ replace: true });
-      return true;
-    },
-    'Mod-g': whileSearching(findNextCommand),
-    'Shift-Mod-g': whileSearching(findPreviousCommand),
-    Escape: () => {
-      if (!ctx.service.searchOpen()) return false;
-      ctx.service.closeSearch();
-      return true;
-    },
-  }),
-});
-
-// ── Placeholder ───────────────────────────────────────────────────
-
-/** Shows `text` while the document is empty. */
-export function createPlaceholderExtension(text: string = DEFAULT_PLACEHOLDER): EditorExtension {
-  return createExtension({
-    name: 'placeholder',
-    plugins: () => [placeholderPlugin(text)],
-  });
-}
-
-export const PlaceholderExtension = createPlaceholderExtension();
-
-// ── Paste Cleanup ─────────────────────────────────────────────────
-
-/** Cleans up HTML pasted from Word, Google Docs and web pages (see `cleanPastedHtml`). */
-export const PasteCleanupExtension = createExtension({
-  name: 'paste_cleanup',
-  plugins: () => [pasteCleanupPlugin()],
 });
 
 // ── Default / StarterKit Extension Pack ───────────────────────────

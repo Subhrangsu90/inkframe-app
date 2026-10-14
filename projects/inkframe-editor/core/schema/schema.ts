@@ -1,10 +1,12 @@
 import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
-import { sanitizeCssColor, sanitizeHref } from './link-utils';
+import { sanitizeCssColor } from './sanitize-css';
 import { tableNodeSpecs } from '../extensions/table/table-schema';
 import { callout } from '../extensions/callout/callout-schema';
 import { code_block } from '../extensions/code-block/code-block-schema';
 import { image } from '../extensions/image/image-schema';
+import { link } from '../extensions/link/link-schema';
+import { readTextAlign, textAlignAttrs } from '../extensions/text-align/text-align-schema';
 import {
   LIST_LEAD_GROUP,
   bullet_list,
@@ -13,30 +15,6 @@ import {
   task_item,
   task_list,
 } from '../extensions/lists/list-schema';
-
-/** Paragraph and heading alignment. `left` is stored as `null` (the default). */
-export type TextAlign = 'left' | 'center' | 'right' | 'justify';
-export const TEXT_ALIGNMENTS: TextAlign[] = ['left', 'center', 'right', 'justify'];
-
-/** Returns the alignment if it is one the schema stores (center, right, justify), otherwise null. */
-export function sanitizeTextAlign(raw: unknown): Exclude<TextAlign, 'left'> | null {
-  return raw === 'center' || raw === 'right' || raw === 'justify' ? raw : null;
-}
-
-function readTextAlign(dom: HTMLElement): Exclude<TextAlign, 'left'> | null {
-  // The raw attribute too: not every CSS engine accepts `-webkit-center`.
-  const raw = /text-align\s*:\s*([-\w]+)/i.exec(dom.getAttribute('style') ?? '')?.[1];
-  const value = (dom.style.textAlign || raw || dom.getAttribute('align') || '')
-    .trim()
-    .toLowerCase();
-  return sanitizeTextAlign(value === '-webkit-center' ? 'center' : value);
-}
-
-// The value is checked against the allow-list: shared documents can carry any attribute value.
-const textAlignAttrs = (raw: unknown) => {
-  const align = sanitizeTextAlign(raw);
-  return align ? { style: `text-align: ${align}` } : {};
-};
 
 /** The highlight color used when none is chosen (also for `<mark>` and `==text==` without a color). */
 export const DEFAULT_HIGHLIGHT_COLOR = '#fef08a';
@@ -72,31 +50,6 @@ const heading: NodeSpec = {
     getAttrs: (dom: HTMLElement) => ({ level, align: readTextAlign(dom) }),
   })),
   toDOM: (node) => [`h${node.attrs['level']}`, textAlignAttrs(node.attrs['align']), 0],
-};
-
-const link: MarkSpec = {
-  attrs: { href: {}, title: { default: null } },
-  inclusive: false,
-  parseDOM: [
-    {
-      tag: 'a[href]',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        const href = sanitizeHref(el.getAttribute('href'));
-        return href ? { href, title: el.getAttribute('title') } : false; // false = drop the mark
-      },
-    },
-  ],
-  toDOM: (mark) => [
-    'a',
-    {
-      href: sanitizeHref(mark.attrs['href']) ?? '#',
-      title: mark.attrs['title'],
-      rel: 'noopener noreferrer nofollow',
-      target: '_blank',
-    },
-    0,
-  ],
 };
 
 const underline: MarkSpec = {
@@ -206,7 +159,6 @@ const nodes = base.spec.nodes
 export {
   paragraph,
   heading,
-  link,
   underline,
   strikethrough,
   subscript,

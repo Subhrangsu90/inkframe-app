@@ -1,0 +1,19 @@
+/* ── Placeholder ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* The empty document's placeholder text, inside `.ProseMirror`. */
+@mixin document {
+  // Empty document placeholder (placeholderPlugin).
+  p.ink-placeholder::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--ink-text-muted);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &.ProseMirror-preview p.ink-placeholder::before {
+    content: none;
+  }
+}

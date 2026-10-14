@@ -1,5 +1,5 @@
 import { NodeSpec } from 'prosemirror-model';
-import { sanitizeCssLength } from '../../schema/link-utils';
+import { sanitizeCssLength } from '../../schema/sanitize-css';
 
 export const image: NodeSpec = {
   inline: true,

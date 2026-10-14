@@ -1,0 +1,16 @@
+/* ── Links ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Links, inside `.ProseMirror`. */
+@mixin document {
+  a {
+    color: var(--ink-accent-primary, #8b5cf6);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+}

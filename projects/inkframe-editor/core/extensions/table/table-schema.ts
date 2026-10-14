@@ -1,5 +1,5 @@
 import { tableNodes } from 'prosemirror-tables';
-import { sanitizeCssColor } from '../../schema/link-utils';
+import { sanitizeCssColor } from '../../schema/sanitize-css';
 
 /**
  * Table, row and cell specs, with alignment and background cell attributes.

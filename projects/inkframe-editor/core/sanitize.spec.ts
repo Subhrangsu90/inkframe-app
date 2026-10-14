@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { schema } from './schema/schema';
-import { sanitizeCssColor, sanitizeCssLength } from './schema/link-utils';
+import { sanitizeCssColor, sanitizeCssLength } from './schema/sanitize-css';
 import { docToHtml, sanitizeHtml } from './io/html';
 
 const injection = 'red; background-image: url(https://tracker.example/x)';

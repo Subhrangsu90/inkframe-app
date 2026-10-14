@@ -8,11 +8,14 @@
  * so --ink-editor-font-size scales the whole document (editor, preview and
  * reader alike). Spacing stays in rem.
  */
-@use './blocks/table';
 @use './blocks/callout';
 @use './blocks/code-block';
 @use './blocks/image';
+@use './blocks/link';
 @use './blocks/lists';
+@use './blocks/placeholder';
+@use './blocks/search';
+@use './blocks/table';
 
 .ProseMirror {
   outline: none;
@@ -95,16 +98,7 @@
     border: 1px solid var(--ink-border-subtle);
   }
 
-  a {
-    color: var(--ink-accent-primary, #8b5cf6);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
-
-    &:hover {
-      opacity: 0.85;
-    }
-  }
+  @include link.document;
 
   hr {
     border: none;
@@ -128,32 +122,9 @@
     }
   }
 
-  // Empty document placeholder (placeholderPlugin).
-  p.ink-placeholder::before {
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    color: var(--ink-text-muted);
-    pointer-events: none;
-    user-select: none;
-  }
+  @include placeholder.document;
 
-  &.ProseMirror-preview p.ink-placeholder::before {
-    content: none;
-  }
-
-  // Find and replace matches (searchPlugin).
-  .ink-search-match {
-    background-color: var(--ink-search-match-bg);
-    border-radius: 2px;
-    box-shadow: 0 0 0 1px var(--ink-search-match-bg);
-  }
-
-  .ink-search-match-current {
-    background-color: var(--ink-search-current-bg);
-    box-shadow: 0 0 0 1px var(--ink-search-current-ring);
-    color: #1b1b1f;
-  }
+  @include search.document;
 
   @include table.document;
 }

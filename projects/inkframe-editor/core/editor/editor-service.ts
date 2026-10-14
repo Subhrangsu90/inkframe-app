@@ -12,18 +12,20 @@ import { MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
 import { redo, redoDepth, undo, undoDepth } from 'prosemirror-history';
 
-import { TextAlign } from '../schema/schema';
+import { TextAlign } from '../extensions/text-align/text-align-schema';
 import { CalloutKind } from '../extensions/callout/callout-schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from '../schema/migrations';
 import {
   clearFormattingCommand,
   removeHighlightCommand,
-  setBlockTypeKeepingAlign,
   setHighlightCommand,
-  setTextAlignCommand,
-  textAlignAt,
   toggleHighlightCommand,
 } from '../extensions/commands';
+import {
+  setBlockTypeKeepingAlign,
+  setTextAlignCommand,
+  textAlignAt,
+} from '../extensions/text-align/text-align-commands';
 import { ListKind, NumberStyle } from '../extensions/lists/list-schema';
 import {
   ListState,
@@ -52,7 +54,8 @@ import { DocStats, countWords, docStats, docText } from './doc-stats';
 import { htmlHasText } from '../extensions/paste-cleanup/paste-cleanup';
 import { EditorHooks, FloatingMenuState, SlashMenuState, TableMenuState } from './editor-hooks';
 import { slashKey } from './menus.plugin';
-import { sanitizeHref } from '../schema/link-utils';
+import { sanitizeHref } from '../extensions/link/link-utils';
+import { linkHrefAt, removeLinkCommand, setLinkCommand } from '../extensions/link/link-commands';
 import {
   addColumnAfter,
   addColumnBefore,
@@ -855,49 +858,18 @@ export class EditorService implements EditorHooks {
   /** Returns current link href if the selection has a link mark. */
   getLinkHref(): string | null {
     const v = this.view;
-    const linkMark = this.markType('link');
-    if (!v || !linkMark) return null;
-    const { from, to, empty, $from } = v.state.selection;
-    if (empty) {
-      const mark = linkMark.isInSet(v.state.storedMarks ?? $from.marks());
-      return mark ? (mark.attrs['href'] as string) : null;
-    }
-    let href: string | null = null;
-    v.state.doc.nodesBetween(from, to, (node) => {
-      const mark = node.marks.find((m) => m.type === linkMark);
-      if (mark) href = mark.attrs['href'] as string;
-    });
-    return href;
+    return v ? linkHrefAt(v.state) : null;
   }
 
   removeLink(): void {
-    const linkMark = this.markType('link');
-    if (!linkMark) return;
-    this.run((state, dispatch) => {
-      const { from, to } = state.selection;
-      dispatch?.(state.tr.removeMark(from, to, linkMark));
-      return true;
-    });
+    if (!this.markType('link')) return;
+    this.run(removeLinkCommand);
   }
 
   /** Returns false (and does nothing) if the URL protocol is not allowed. */
   setLink(href: string): boolean {
-    const safe = sanitizeHref(href);
-    const linkMark = this.markType('link');
-    if (!safe || !linkMark) return false;
-    this.run((state, dispatch) => {
-      const { from, to, empty } = state.selection;
-      if (empty) {
-        dispatch?.(state.tr.addStoredMark(linkMark.create({ href: safe })));
-      } else {
-        dispatch?.(
-          state.tr
-            .removeMark(from, to, linkMark)
-            .addMark(from, to, linkMark.create({ href: safe })),
-        );
-      }
-      return true;
-    });
+    if (!sanitizeHref(href) || !this.markType('link')) return false;
+    this.run(setLinkCommand(href));
     return true;
   }
 

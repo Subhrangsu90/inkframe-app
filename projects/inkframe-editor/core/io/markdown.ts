@@ -10,14 +10,10 @@ import MarkdownIt from 'markdown-it';
 import type StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
 import type Token from 'markdown-it/lib/token.mjs';
-import {
-  DEFAULT_HIGHLIGHT_COLOR,
-  sanitizeHighlightColor,
-  sanitizeTextAlign,
-  schema,
-} from '../schema/schema';
-import { sanitizeCssColor } from '../schema/link-utils';
+import { DEFAULT_HIGHLIGHT_COLOR, sanitizeHighlightColor, schema } from '../schema/schema';
+import { sanitizeCssColor } from '../schema/sanitize-css';
 import { CalloutKind } from '../extensions/callout/callout-schema';
+import { sanitizeTextAlign } from '../extensions/text-align/text-align-schema';
 import { sanitizeListStart } from '../extensions/lists/list-schema';
 import { isListNode } from '../extensions/lists/list-commands';
 

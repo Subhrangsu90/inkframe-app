@@ -1,7 +1,7 @@
 import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
-import { tableNodes } from 'prosemirror-tables';
 import { sanitizeCssColor, sanitizeCssLength, sanitizeHref } from './link-utils';
+import { tableNodeSpecs } from '../extensions/table/table-schema';
 import {
   LIST_LEAD_GROUP,
   bullet_list,
@@ -290,41 +290,6 @@ const code_block: NodeSpec = {
     ['code', { class: `language-${node.attrs['language'] || 'typescript'}` }, 0],
   ],
 };
-
-/**
- * Table, row and cell specs, with alignment and background cell attributes.
- * Rows have no fixed height: they fit their text.
- */
-export const tableNodeSpecs = tableNodes({
-  tableGroup: 'block',
-  cellContent: 'block+',
-  cellAttributes: {
-    alignment: {
-      default: null,
-      getFromDOM(dom) {
-        const value = (dom as HTMLElement).style.textAlign;
-        return value === 'left' || value === 'center' || value === 'right' ? value : null;
-      },
-      setDOMAttr(value, attrs) {
-        if (value === 'left' || value === 'center' || value === 'right') {
-          attrs['style'] = (attrs['style'] || '') + `text-align: ${value};`;
-        }
-      },
-    },
-    background: {
-      default: null,
-      getFromDOM(dom) {
-        return sanitizeCssColor((dom as HTMLElement).style.backgroundColor);
-      },
-      setDOMAttr(value, attrs) {
-        const color = sanitizeCssColor(value);
-        if (color) {
-          attrs['style'] = (attrs['style'] || '') + `background-color: ${color};`;
-        }
-      },
-    },
-  },
-});
 
 const nodes = base.spec.nodes
   .update('paragraph', paragraph)

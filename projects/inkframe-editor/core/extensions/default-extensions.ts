@@ -1,7 +1,6 @@
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
 import { history, undo, redo } from 'prosemirror-history';
 import { toggleMark } from 'prosemirror-commands';
-import { columnResizing, tableEditing, goToNextCell } from 'prosemirror-tables';
 import { textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules';
 import { EditorExtension, createExtension } from '../editor/extension-types';
 import {
@@ -24,7 +23,6 @@ import {
   list_item,
   image,
   code_block,
-  tableNodeSpecs,
 } from '../schema/schema';
 import { markRule } from './input-rules';
 import { bulletListRule, orderedListRule, taskItemRule } from './lists/list-input-rules';
@@ -44,7 +42,7 @@ import {
 } from './search/search.plugin';
 import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder/placeholder.plugin';
 import { pasteCleanupPlugin } from './paste-cleanup/paste-cleanup';
-import { tableUIPlugin } from './table/table-ui.plugin';
+import { TableExtension } from './table/table-extension';
 import { highlightPlugin } from './code-block/highlight.plugin';
 import { CalloutNodeView } from './callout/callout.node-view';
 import { ImageNodeView } from './image/image.node-view';
@@ -507,32 +505,6 @@ export const TaskListExtension = createExtension({
       icon: 'check_box',
       keywords: ['todo', 'task', 'checklist', 'check'],
       run: (s) => s.toggleTaskList(),
-    },
-  ],
-});
-
-// ── Tables ────────────────────────────────────────────────────────
-
-export const TableExtension = createExtension({
-  name: 'table',
-  nodes: tableNodeSpecs,
-  plugins: () => [
-    columnResizing({ handleWidth: 6, cellMinWidth: 45, lastColumnResizable: true }),
-    tableEditing(),
-    tableUIPlugin(),
-  ],
-  keymaps: () => ({
-    Tab: goToNextCell(1),
-    'Shift-Tab': goToNextCell(-1),
-  }),
-  slashItems: [
-    {
-      id: 'tbl',
-      label: 'Table',
-      hint: '3 × 3 interactive table',
-      icon: 'table_chart',
-      keywords: ['grid', 'table'],
-      run: (s) => s.insertTable(3, 3),
     },
   ],
 });

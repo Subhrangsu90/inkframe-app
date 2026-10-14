@@ -68,6 +68,7 @@ import { SlashItem } from './slash-items';
 import { EditorExtension } from './extension-types';
 import { ExtensionManager } from './extension-manager';
 import { DEFAULT_EXTENSIONS } from '../extensions/default-extensions';
+import { insertTableCommand } from '../extensions/table/table-commands';
 import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
@@ -808,20 +809,8 @@ export class EditorService implements EditorHooks {
   }
 
   insertTable(rows = 3, cols = 3) {
-    const { table, table_row, table_cell, table_header } = this.schema.nodes;
-    if (!table || !table_row || !table_cell || !table_header) return;
-    this.run((state, dispatch) => {
-      const body = Array.from({ length: rows }, (_, r) =>
-        table_row.create(
-          null,
-          Array.from({ length: cols }, () =>
-            (r === 0 ? table_header : table_cell).createAndFill()!,
-          ),
-        ),
-      );
-      dispatch?.(state.tr.replaceSelectionWith(table.create(null, body)).scrollIntoView());
-      return true;
-    });
+    if (!this.nodeType('table')) return;
+    this.run(insertTableCommand(rows, cols));
   }
 
   /** Inserts an image either from an IndexedDB-stored file or an external URL */

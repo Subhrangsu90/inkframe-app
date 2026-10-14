@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { EditorState } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
 import { schema } from './schema/schema';
 import { sanitizeCssColor, sanitizeCssLength } from './schema/link-utils';
 import { docToHtml, sanitizeHtml } from './io/html';
-import { tableUIKey, tableUIPlugin } from './extensions/table/table-ui.plugin';
 
 const injection = 'red; background-image: url(https://tracker.example/x)';
 
@@ -56,45 +53,6 @@ describe('style attribute sanitization', () => {
     ]);
     // The DOM may normalise the hex value to rgb().
     expect(docToHtml(doc, { highlightCode: false })).toMatch(/color: (#ef4444|rgb\(239, 68, 68\))/);
-  });
-});
-
-describe('table UI widgets', () => {
-  function makeView(text: string) {
-    const cell = schema.nodes['table_cell'].create(null, [
-      schema.nodes['paragraph'].create(null, [schema.text(text)]),
-    ]);
-    const table = schema.nodes['table'].create(null, [
-      schema.nodes['table_row'].create(null, [cell]),
-    ]);
-    const state = EditorState.create({
-      schema,
-      doc: schema.node('doc', null, [table]),
-      plugins: [tableUIPlugin()],
-    });
-    const view = new EditorView(document.createElement('div'), { state });
-    return view;
-  }
-
-  it('act on the editor that rendered them, not the last one mounted', () => {
-    const first = makeView('first');
-    const second = makeView('second'); // mounted last
-
-    const rowWidget = tableUIKey
-      .getState(first.state)
-      .find()
-      .find(
-        (d: any) =>
-          typeof d.type.toDOM === 'function' &&
-          d.type.toDOM(first, () => d.from).className === 'ink-table-row-handle',
-      );
-    const handle = rowWidget.type.toDOM(first, () => rowWidget.from) as HTMLElement;
-    handle.querySelector('button')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-
-    expect(first.state.doc.firstChild!.childCount).toBe(2);
-    expect(second.state.doc.firstChild!.childCount).toBe(1);
-    first.destroy();
-    second.destroy();
   });
 });
 

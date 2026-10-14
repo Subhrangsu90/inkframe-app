@@ -11,7 +11,7 @@ export * from './extensions/code-block/highlight.plugin';
 export * from './extensions/input-rules';
 export * from './schema/link-utils';
 export * from './editor/menus.plugin';
-export * from './extensions/table/table-ui.plugin';
+export * from './extensions/table';
 export * from './extensions/search/search.plugin';
 export * from './extensions/placeholder/placeholder.plugin';
 export * from './extensions/paste-cleanup/paste-cleanup';

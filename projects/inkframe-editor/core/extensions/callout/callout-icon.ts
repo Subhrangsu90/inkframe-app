@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { CALLOUT_KINDS, CalloutKind } from '../../schema/schema';
+import { CALLOUT_KINDS, CalloutKind } from './callout-schema';
 
 // Written as `icon: '…'` so scripts/build-icon-font.mjs finds the names: the
 // self-hosted icon font holds only the icons it finds, and a missing one shows

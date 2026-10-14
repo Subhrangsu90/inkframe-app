@@ -11,13 +11,13 @@ import type StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
 import type Token from 'markdown-it/lib/token.mjs';
 import {
-  CalloutKind,
   DEFAULT_HIGHLIGHT_COLOR,
   sanitizeHighlightColor,
   sanitizeTextAlign,
   schema,
 } from '../schema/schema';
 import { sanitizeCssColor } from '../schema/link-utils';
+import { CalloutKind } from '../extensions/callout/callout-schema';
 import { sanitizeListStart } from '../extensions/lists/list-schema';
 import { isListNode } from '../extensions/lists/list-commands';
 

@@ -12,7 +12,8 @@ import { MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands';
 import { redo, redoDepth, undo, undoDepth } from 'prosemirror-history';
 
-import { CalloutKind, TextAlign } from '../schema/schema';
+import { TextAlign } from '../schema/schema';
+import { CalloutKind } from '../extensions/callout/callout-schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from '../schema/migrations';
 import {
   clearFormattingCommand,
@@ -69,6 +70,11 @@ import { EditorExtension } from './extension-types';
 import { ExtensionManager } from './extension-manager';
 import { DEFAULT_EXTENSIONS } from '../extensions/default-extensions';
 import { insertTableCommand } from '../extensions/table/table-commands';
+import {
+  setCodeBlockLanguageCommand,
+  toggleCodeBlockWrapCommand,
+} from '../extensions/code-block/code-block-commands';
+import { insertImageCommand } from '../extensions/image/image-commands';
 import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
@@ -757,35 +763,11 @@ export class EditorService implements EditorHooks {
   }
 
   setCodeBlockLanguage(pos: number, lang: string): void {
-    this.run((state, dispatch) => {
-      const node = state.doc.nodeAt(pos);
-      if (node && node.type.name === 'code_block') {
-        dispatch?.(
-          state.tr.setNodeMarkup(pos, undefined, {
-            ...node.attrs,
-            language: lang,
-          }),
-        );
-        return true;
-      }
-      return false;
-    });
+    this.run(setCodeBlockLanguageCommand(pos, lang));
   }
 
   toggleCodeBlockWrap(pos: number): void {
-    this.run((state, dispatch) => {
-      const node = state.doc.nodeAt(pos);
-      if (node && node.type.name === 'code_block') {
-        dispatch?.(
-          state.tr.setNodeMarkup(pos, undefined, {
-            ...node.attrs,
-            wrap: !node.attrs['wrap'],
-          }),
-        );
-        return true;
-      }
-      return false;
-    });
+    this.run(toggleCodeBlockWrapCommand(pos));
   }
   insertCallout(kind: CalloutKind = 'info') {
     const callout = this.nodeType('callout');
@@ -827,17 +809,9 @@ export class EditorService implements EditorHooks {
       src = saved.uri;
     }
 
-    // Resolve the type after the await: extensions may have been swapped meanwhile.
-    const image = this.nodeType('image');
-    if (!image) return;
-    this.run((state, dispatch) => {
-      dispatch?.(
-        state.tr
-          .replaceSelectionWith(image.create({ src, alt: defaultAlt, title: title ?? null }))
-          .scrollIntoView(),
-      );
-      return true;
-    });
+    // Check again after the await: extensions may have been swapped meanwhile.
+    if (!this.nodeType('image')) return;
+    this.run(insertImageCommand(src, defaultAlt, title ?? null));
   }
 
   // ── Table operations ─────────────────────────────────────────────

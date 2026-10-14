@@ -3,6 +3,7 @@ import { Node as PMNode } from 'prosemirror-model';
 import { Command, EditorState, Plugin, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { history, undo } from 'prosemirror-history';
+import { liftListItem, splitListItem } from 'prosemirror-schema-list';
 import { schema } from '../../schema/schema';
 import { docToHtml, htmlToDoc } from '../../io/html';
 import { docToMarkdown, markdownToDoc } from '../../io/markdown';
@@ -667,5 +668,229 @@ describe('Pasting numbered lists from Word', () => {
 
     const roman = htmlToDoc(cleanPastedHtml(wordHtml(wordItem('iv.', 'four', 'l2'))));
     expect(roman.firstChild!.attrs).toMatchObject({ order: 4, numberStyle: 'lower-roman' });
+  });
+});
+
+describe('Task lists and switching list types', () => {
+  it('transforms [ ] input rule into task_list with unchecked task_item', () => {
+    const doc = schema.node('doc', null, [
+      schema.nodes['paragraph'].create(null, [schema.text('[ ] Buy milk')]),
+    ]);
+    const state = EditorState.create({ schema, doc });
+    const rule = taskItemRule();
+    // Match "[ ] " at start of paragraph: start = 1, end = 5
+    const match = '[ ] '.match(/^\s*\[([ xX]?)\]\s$/)!;
+    const tr = (rule as any).handler(state, match, 1, 5);
+
+    expect(tr).toBeTruthy();
+    const updatedDoc = tr.doc;
+    const list = updatedDoc.firstChild;
+    expect(list?.type.name).toBe('task_list');
+    const item = list?.firstChild;
+    expect(item?.type.name).toBe('task_item');
+    expect(item?.attrs['checked']).toBe(false);
+    expect(item?.textContent).toBe('Buy milk');
+  });
+
+  it('transforms [x] input rule into task_list with checked task_item', () => {
+    const doc = schema.node('doc', null, [
+      schema.nodes['paragraph'].create(null, [schema.text('[x] Finished chore')]),
+    ]);
+    const state = EditorState.create({ schema, doc });
+    const rule = taskItemRule();
+    const match = '[x] '.match(/^\s*\[([ xX]?)\]\s$/)!;
+    const tr = (rule as any).handler(state, match, 1, 5);
+
+    expect(tr).toBeTruthy();
+    const updatedDoc = tr.doc;
+    const list = updatedDoc.firstChild;
+    expect(list?.type.name).toBe('task_list');
+    const item = list?.firstChild;
+    expect(item?.type.name).toBe('task_item');
+    expect(item?.attrs['checked']).toBe(true);
+    expect(item?.textContent).toBe('Finished chore');
+  });
+
+  it('splitListItem creates a new unchecked task item when splitting a checked item', () => {
+    const checkedItem = schema.nodes['task_item'].create({ checked: true }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Done with task')]),
+    ]);
+    const taskList = schema.nodes['task_list'].create(null, [checkedItem]);
+    const doc = schema.node('doc', null, [taskList]);
+
+    // Selection at the end of "Done with task" (pos 17)
+    let state = EditorState.create({ schema, doc });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 17)));
+
+    let nextState: EditorState | null = null;
+    const cmd = splitListItem(schema.nodes['task_item'], { checked: false });
+    const handled = cmd(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+
+    expect(handled).toBe(true);
+    expect(nextState).toBeTruthy();
+    const list = nextState!.doc.firstChild;
+    expect(list?.type.name).toBe('task_list');
+    expect(list?.childCount).toBe(2);
+    expect(list?.child(0).attrs['checked']).toBe(true);
+    expect(list?.child(1).attrs['checked']).toBe(false);
+  });
+
+  it('split or lift command lifts empty task item out of task_list on Enter', () => {
+    const emptyItem = schema.nodes['task_item'].create({ checked: false }, [
+      schema.nodes['paragraph'].create(null),
+    ]);
+    const taskList = schema.nodes['task_list'].create(null, [emptyItem]);
+    const doc = schema.node('doc', null, [taskList]);
+
+    let state = EditorState.create({ schema, doc });
+    // Selection in the empty item (pos 3)
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 3)));
+
+    let nextState: EditorState | null = null;
+    const cmd = (s: EditorState, d?: (tr: any) => void) =>
+      splitListItem(schema.nodes['task_item'], { checked: false })(s, d) ||
+      liftListItem(schema.nodes['task_item'])(s, d);
+    const handled = cmd(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+
+    expect(handled).toBe(true);
+    expect(nextState).toBeTruthy();
+    // Should lift out and turn into a regular paragraph
+    expect(nextState!.doc.firstChild?.type.name).toBe('paragraph');
+  });
+
+  it('TaskItemNodeView renders checkbox, contentDOM, and updates state reactively', () => {
+    const itemNode = schema.nodes['task_item'].create({ checked: false }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Task item')]),
+    ]);
+
+    const dummyView = {
+      state: EditorState.create({ schema }),
+      dispatch: () => {},
+    } as unknown as EditorView;
+
+    const nodeView = new TaskItemNodeView(itemNode, dummyView, () => 1);
+    expect(nodeView.dom.tagName.toLowerCase()).toBe('li');
+    expect(nodeView.dom.className).toBe('ink-task-item');
+    expect(nodeView.contentDOM).toBeTruthy();
+
+    const checkbox = nodeView.dom.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(checkbox).toBeTruthy();
+    expect(checkbox.checked).toBe(false);
+
+    // Verify stopEvent prevents ProseMirror from intercepting checkbox interactions
+    const clickEvent = new MouseEvent('click');
+    Object.defineProperty(clickEvent, 'target', { value: checkbox });
+    expect(nodeView.stopEvent(clickEvent)).toBe(true);
+
+    // Verify node update changes checked attribute and class
+    const updatedNode = schema.nodes['task_item'].create({ checked: true }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Task item')]),
+    ]);
+    const updated = nodeView.update(updatedNode);
+    expect(updated).toBe(true);
+    expect(checkbox.checked).toBe(true);
+    expect(nodeView.dom.classList.contains('checked')).toBe(true);
+  });
+
+  it('toggleListCommand auto-switches seamlessly between bullet, ordered, and task lists without manual unselecting', () => {
+    // 1. Start with a bullet list
+    const li = schema.nodes['list_item'].create(null, [
+      schema.nodes['paragraph'].create(null, [schema.text('First item')]),
+    ]);
+    const bulletList = schema.nodes['bullet_list'].create(null, [li]);
+    let state = EditorState.create({
+      schema,
+      doc: schema.node('doc', null, [bulletList]),
+    });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 4)));
+
+    // 2. Auto-switch to ordered_list without unselecting
+    let nextState: EditorState = state;
+    toggleListCommand('ordered_list')(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+    expect(nextState.doc.firstChild?.type.name).toBe('ordered_list');
+    expect(nextState.doc.firstChild?.firstChild?.type.name).toBe('list_item');
+    expect(nextState.doc.firstChild?.firstChild?.textContent).toBe('First item');
+
+    // 3. Auto-switch from ordered_list to task_list without unselecting
+    state = nextState;
+    toggleListCommand('task_list')(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+    expect(nextState.doc.firstChild?.type.name).toBe('task_list');
+    expect(nextState.doc.firstChild?.firstChild?.type.name).toBe('task_item');
+    expect(nextState.doc.firstChild?.firstChild?.attrs['checked']).toBe(false);
+    expect(nextState.doc.firstChild?.firstChild?.textContent).toBe('First item');
+
+    // 4. Auto-switch from task_list back to bullet_list without unselecting
+    state = nextState;
+    toggleListCommand('bullet_list')(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+    expect(nextState.doc.firstChild?.type.name).toBe('bullet_list');
+    expect(nextState.doc.firstChild?.firstChild?.type.name).toBe('list_item');
+    expect(nextState.doc.firstChild?.firstChild?.textContent).toBe('First item');
+
+    // 5. Selecting the same active list lifts out to paragraph (toggles off)
+    state = nextState;
+    toggleListCommand('bullet_list')(state, (tr) => {
+      nextState = state.apply(tr);
+    });
+    expect(nextState.doc.firstChild?.type.name).toBe('paragraph');
+    expect(nextState.doc.firstChild?.textContent).toBe('First item');
+  });
+
+  it('supports arbitrary nesting combinations across bullet, ordered, and task lists', () => {
+    // 1. Bullet list with nested Ordered list and nested Task list
+    const taskItem1 = schema.nodes['task_item'].create({ checked: false }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Subtask A')]),
+    ]);
+    const taskItem2 = schema.nodes['task_item'].create({ checked: true }, [
+      schema.nodes['paragraph'].create(null, [schema.text('Subtask B')]),
+    ]);
+    const nestedTaskList = schema.nodes['task_list'].create(null, [taskItem1, taskItem2]);
+
+    const orderedItem = schema.nodes['list_item'].create(null, [
+      schema.nodes['paragraph'].create(null, [schema.text('Ordered step 1')]),
+      nestedTaskList,
+    ]);
+    const nestedOrderedList = schema.nodes['ordered_list'].create(null, [orderedItem]);
+
+    const rootBulletItem = schema.nodes['list_item'].create(null, [
+      schema.nodes['paragraph'].create(null, [schema.text('Main bullet')]),
+      nestedOrderedList,
+    ]);
+    const rootDoc = schema.node('doc', null, [
+      schema.nodes['bullet_list'].create(null, [rootBulletItem]),
+    ]);
+
+    expect(rootDoc.check()).toBeUndefined(); // valid schema structure
+
+    // HTML serialization & round-trip of mixed nested hierarchy
+    const html = docToHtml(rootDoc);
+    expect(html).toContain('<ul>');
+    expect(html).toContain('<ol>');
+    expect(html).toContain('ink-task-list');
+
+    const parsedDoc = htmlToDoc(html);
+    expect(parsedDoc.firstChild?.type.name).toBe('bullet_list');
+    const innerOrdered = parsedDoc.firstChild?.firstChild?.lastChild;
+    expect(innerOrdered?.type.name).toBe('ordered_list');
+    const innerTask = innerOrdered?.firstChild?.lastChild;
+    expect(innerTask?.type.name).toBe('task_list');
+    expect(innerTask?.child(0).attrs['checked']).toBe(false);
+    expect(innerTask?.child(1).attrs['checked']).toBe(true);
+
+    // Markdown export
+    const md = docToMarkdown(rootDoc);
+    expect(md).toContain('Main bullet');
+    expect(md).toContain('Ordered step 1');
+    expect(md).toContain('[ ] Subtask A');
+    expect(md).toContain('[x] Subtask B');
   });
 });

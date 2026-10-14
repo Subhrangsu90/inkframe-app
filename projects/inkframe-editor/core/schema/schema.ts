@@ -1,7 +1,10 @@
 import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
-import { sanitizeCssColor, sanitizeCssLength, sanitizeHref } from './link-utils';
+import { sanitizeCssColor, sanitizeHref } from './link-utils';
 import { tableNodeSpecs } from '../extensions/table/table-schema';
+import { callout } from '../extensions/callout/callout-schema';
+import { code_block } from '../extensions/code-block/code-block-schema';
+import { image } from '../extensions/image/image-schema';
 import {
   LIST_LEAD_GROUP,
   bullet_list,
@@ -10,10 +13,6 @@ import {
   task_item,
   task_list,
 } from '../extensions/lists/list-schema';
-
-export type CalloutKind = 'info' | 'note' | 'warning' | 'success' | 'danger';
-/** In the order a click on the callout's icon cycles through them. */
-export const CALLOUT_KINDS: CalloutKind[] = ['info', 'note', 'warning', 'success', 'danger'];
 
 /** Paragraph and heading alignment. `left` is stored as `null` (the default). */
 export type TextAlign = 'left' | 'center' | 'right' | 'justify';
@@ -73,31 +72,6 @@ const heading: NodeSpec = {
     getAttrs: (dom: HTMLElement) => ({ level, align: readTextAlign(dom) }),
   })),
   toDOM: (node) => [`h${node.attrs['level']}`, textAlignAttrs(node.attrs['align']), 0],
-};
-
-const callout: NodeSpec = {
-  group: 'block',
-  content: 'block+',
-  defining: true,
-  attrs: { type: { default: 'info' } },
-  parseDOM: [
-    {
-      tag: 'div[data-callout]',
-      getAttrs: (d) => {
-        const kind = (d as HTMLElement).dataset['callout'] as CalloutKind;
-        return { type: CALLOUT_KINDS.includes(kind) ? kind : 'info' };
-      },
-      contentElement: '.callout-body',
-    },
-  ],
-  toDOM: (n) => [
-    'div',
-    {
-      'data-callout': n.attrs['type'],
-      class: `callout callout-${n.attrs['type']}`,
-    },
-    ['div', { class: 'callout-body' }, 0],
-  ],
 };
 
 const link: MarkSpec = {
@@ -216,81 +190,6 @@ const code: MarkSpec = {
   excludes: '_',
 };
 
-const image: NodeSpec = {
-  inline: true,
-  attrs: {
-    src: {},
-    alt: { default: null },
-    title: { default: null },
-    width: { default: null },
-  },
-  group: 'inline',
-  draggable: true,
-  parseDOM: [
-    {
-      tag: 'img[src]',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        return {
-          src: el.getAttribute('src'),
-          title: el.getAttribute('title'),
-          alt: el.getAttribute('alt'),
-          width: sanitizeCssLength(el.getAttribute('width') || el.style.width),
-        };
-      },
-    },
-  ],
-  toDOM: (node) => {
-    const width = sanitizeCssLength(node.attrs['width']);
-    return [
-      'img',
-      {
-        src: node.attrs['src'],
-        alt: node.attrs['alt'],
-        title: node.attrs['title'],
-        class: 'ink-image',
-        ...(width ? { width, style: `width: ${width}` } : {}),
-      },
-    ];
-  },
-};
-
-const code_block: NodeSpec = {
-  content: 'text*',
-  marks: '',
-  group: 'block',
-  code: true,
-  defining: true,
-  attrs: {
-    language: { default: 'typescript' },
-    wrap: { default: false },
-  },
-  parseDOM: [
-    {
-      tag: 'pre',
-      preserveWhitespace: 'full',
-      getAttrs: (dom) => {
-        const el = dom as HTMLElement;
-        const codeEl = el.querySelector('code');
-        const langClass = el.className || codeEl?.className || '';
-        const match = /language-([a-z0-9_-]+)/i.exec(langClass);
-        const language = match ? match[1].toLowerCase() : el.dataset['language'] || 'typescript';
-        const wrap = el.dataset['wrap'] === 'true' || el.style.whiteSpace === 'pre-wrap';
-        return { language, wrap };
-      },
-    },
-  ],
-  toDOM: (node) => [
-    'pre',
-    {
-      class: `ink-code-block language-${node.attrs['language'] || 'typescript'}${node.attrs['wrap'] ? ' wrap' : ''}`,
-      'data-language': node.attrs['language'] || 'typescript',
-      'data-wrap': String(node.attrs['wrap'] ?? false),
-    },
-    ['code', { class: `language-${node.attrs['language'] || 'typescript'}` }, 0],
-  ],
-};
-
 const nodes = base.spec.nodes
   .update('paragraph', paragraph)
   .update('heading', heading)
@@ -307,7 +206,6 @@ const nodes = base.spec.nodes
 export {
   paragraph,
   heading,
-  callout,
   link,
   underline,
   strikethrough,
@@ -317,13 +215,6 @@ export {
   small,
   highlight,
   code,
-  task_list,
-  task_item,
-  bullet_list,
-  ordered_list,
-  list_item,
-  image,
-  code_block,
   base,
   nodes,
 };

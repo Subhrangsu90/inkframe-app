@@ -8,12 +8,12 @@ import { EditorService } from './editor-service';
 import { DEFAULT_HIGHLIGHT_COLOR, schema as staticSchema } from '../schema/schema';
 import {
   BoldExtension,
-  BulletListExtension,
   DEFAULT_EXTENSIONS,
   HeadingExtension,
   HistoryExtension,
   ItalicExtension,
 } from '../extensions/default-extensions';
+import { BulletListExtension } from '../extensions/lists/list-extensions';
 import { createExtension } from './extension-types';
 import { taskItemRule } from '../extensions/input-rules';
 import { SCHEMA_VERSION, StoredDoc } from '../schema/migrations';

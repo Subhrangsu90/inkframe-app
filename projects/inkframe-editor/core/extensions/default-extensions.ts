@@ -7,7 +7,6 @@ import {
   paragraph,
   heading,
   highlight,
-  callout,
   link,
   underline,
   strikethrough,
@@ -16,17 +15,8 @@ import {
   textColor,
   small,
   code,
-  task_list,
-  task_item,
-  bullet_list,
-  ordered_list,
-  list_item,
-  image,
-  code_block,
 } from '../schema/schema';
 import { markRule } from './input-rules';
-import { bulletListRule, orderedListRule, taskItemRule } from './lists/list-input-rules';
-import { toggleListCommand } from './lists/list-commands';
 import {
   clearFormattingCommand,
   setBlockTypeKeepingAlign,
@@ -43,11 +33,14 @@ import {
 import { DEFAULT_PLACEHOLDER, placeholderPlugin } from './placeholder/placeholder.plugin';
 import { pasteCleanupPlugin } from './paste-cleanup/paste-cleanup';
 import { TableExtension } from './table/table-extension';
-import { highlightPlugin } from './code-block/highlight.plugin';
-import { CalloutNodeView } from './callout/callout.node-view';
-import { ImageNodeView } from './image/image.node-view';
-import { TaskItemNodeView } from './lists/task-item.node-view';
-import { CodeBlockNodeView } from './code-block/code-block.node-view';
+import { CodeBlockExtension } from './code-block/code-block-extension';
+import {
+  BulletListExtension,
+  OrderedListExtension,
+  TaskListExtension,
+} from './lists/list-extensions';
+import { CalloutExtension } from './callout/callout-extension';
+import { ImageExtension } from './image/image-extension';
 
 // ── Essential Document Nodes ──────────────────────────────────────
 
@@ -357,7 +350,7 @@ export const TextAlignExtension = createExtension({
   }),
 });
 
-// ── Structure Blocks (Headings, Quote, Code Block) ────────────────
+// ── Structure Blocks (Headings, Quote) ────────────────────────────
 
 export const HeadingExtension = createExtension({
   name: 'heading',
@@ -419,117 +412,6 @@ export const BlockquoteExtension = createExtension({
   ],
 });
 
-export const CodeBlockExtension = createExtension({
-  name: 'code_block',
-  nodes: { code_block },
-  inputRules: (ctx) => [
-    textblockTypeInputRule(/^`{3}([a-z0-9_-]+)?\s$/, ctx.schema.nodes['code_block'], (m) => ({
-      language: m[1]?.toLowerCase() || 'typescript',
-    })),
-  ],
-  plugins: () => [highlightPlugin()],
-  nodeViews: () => ({
-    code_block: (node, view, getPos) => new CodeBlockNodeView(node, view, getPos),
-  }),
-  slashItems: [
-    {
-      id: 'cb',
-      label: 'Code block',
-      hint: 'Monospace block with syntax highlighting',
-      icon: 'code',
-      keywords: ['code', 'pre', 'typescript', 'block'],
-      run: (s) => s.codeBlock(),
-    },
-  ],
-});
-
-// ── Lists (Bullet, Numbered, Task list) ───────────────────────────
-// Each list extension brings its list node; bullet and numbered lists share
-// list_item. Any of them also brings the list keys (Enter, Tab, Backspace,
-// Delete, Mod-Enter, Alt+Shift+Up/Down), the merging of adjacent lists and
-// drag-to-move (see ExtensionManager).
-
-export const BulletListExtension = createExtension({
-  name: 'bullet_list',
-  nodes: { bullet_list, list_item },
-  inputRules: (ctx) => [bulletListRule(ctx.schema.nodes['bullet_list'])],
-  keymaps: () => ({
-    'Shift-Mod-8': toggleListCommand('bullet_list'),
-  }),
-  slashItems: [
-    {
-      id: 'ul',
-      label: 'Bullet list',
-      hint: 'Unordered list',
-      icon: 'format_list_bulleted',
-      keywords: ['ul', 'bullets', 'list'],
-      run: (s) => s.toggleList('bullet_list'),
-    },
-  ],
-});
-
-export const OrderedListExtension = createExtension({
-  name: 'ordered_list',
-  nodes: { ordered_list, list_item },
-  inputRules: (ctx) => [orderedListRule(ctx.schema.nodes['ordered_list'])],
-  keymaps: () => ({
-    'Shift-Mod-7': toggleListCommand('ordered_list'),
-  }),
-  slashItems: [
-    {
-      id: 'ol',
-      label: 'Numbered list',
-      hint: 'Ordered list',
-      icon: 'format_list_numbered',
-      keywords: ['ol', 'numbers', 'list'],
-      run: (s) => s.toggleList('ordered_list'),
-    },
-  ],
-});
-
-export const TaskListExtension = createExtension({
-  name: 'task_list',
-  nodes: { task_list, task_item },
-  inputRules: () => [taskItemRule()],
-  keymaps: () => ({
-    'Shift-Mod-6': toggleListCommand('task_list'),
-  }),
-  nodeViews: () => ({
-    task_item: (node, view, getPos) => new TaskItemNodeView(node, view, getPos),
-  }),
-  slashItems: [
-    {
-      id: 'todo',
-      label: 'Task list',
-      hint: 'Checklist with interactive checkboxes',
-      icon: 'check_box',
-      keywords: ['todo', 'task', 'checklist', 'check'],
-      run: (s) => s.toggleTaskList(),
-    },
-  ],
-});
-
-// ── Callouts ──────────────────────────────────────────────────────
-
-export const CalloutExtension = createExtension({
-  name: 'callout',
-  nodes: { callout },
-  nodeViews: (ctx) => ({
-    callout: (node, view, getPos) =>
-      new CalloutNodeView(node, view, getPos, ctx.service.envInjector, ctx.service.appReference),
-  }),
-  slashItems: [
-    {
-      id: 'cl',
-      label: 'Callout',
-      hint: 'Highlighted note or alert block',
-      icon: 'info',
-      keywords: ['note', 'info', 'callout', 'alert'],
-      run: (s) => s.insertCallout('info'),
-    },
-  ],
-});
-
 // ── Links ─────────────────────────────────────────────────────────
 
 export const LinkExtension = createExtension({
@@ -576,37 +458,6 @@ export const LinkExtension = createExtension({
         } else if (href === '') {
           s.removeLink();
         }
-      },
-    },
-  ],
-});
-
-// ── Images ────────────────────────────────────────────────────────
-
-export const ImageExtension = createExtension({
-  name: 'image',
-  nodes: { image },
-  nodeViews: (ctx) => ({
-    image: (node, view, getPos) =>
-      new ImageNodeView(node, view, getPos, (data) => ctx.service.openImagePreview(data)),
-  }),
-  slashItems: [
-    {
-      id: 'img',
-      label: 'Image',
-      hint: 'Upload image (indexedDB backed)',
-      icon: 'image',
-      keywords: ['image', 'photo', 'picture', 'upload'],
-      run: (s) => {
-        if (typeof document === 'undefined') return;
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = () => {
-          const file = input.files?.[0];
-          if (file) s.insertImage(file);
-        };
-        input.click();
       },
     },
   ],

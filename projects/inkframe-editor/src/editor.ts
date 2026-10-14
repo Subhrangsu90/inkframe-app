@@ -150,7 +150,7 @@ import {
         }
         .ink-doc-page {
           &:focus-within {
-            // box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
+            /* box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45)); */
             border-color: var(--ink-border-subtle, #282a30);
           }
         }

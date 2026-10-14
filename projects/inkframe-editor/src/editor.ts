@@ -150,7 +150,7 @@ import {
         }
         .ink-doc-page {
           &:focus-within {
-            box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
+            // box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
             border-color: var(--ink-border-subtle, #282a30);
           }
         }
@@ -249,12 +249,6 @@ import {
         box-shadow 0.15s ease,
         background-color 0.15s ease,
         border-color 0.15s ease;
-
-      &:focus-within {
-        box-shadow:
-          0 6px 30px -2px rgba(0, 0, 0, 0.35),
-          0 0 0 1px var(--ink-border-focus, rgba(96, 165, 250, 0.2));
-      }
     }
     .ink-host {
       flex: 1 0 auto;

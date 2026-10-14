@@ -22,8 +22,23 @@ import {
   setTextAlignCommand,
   textAlignAt,
   toggleHighlightCommand,
-  toggleListCommand,
 } from './plugins';
+import { ListKind, NumberStyle } from './lists/list-schema';
+import {
+  ListState,
+  continueListNumberingCommand,
+  liftListItemCommand,
+  listStateAt,
+  moveListItemCommand,
+  restartListNumberingCommand,
+  sameListState,
+  setBulletStyleCommand,
+  setListStartCommand,
+  setNumberStyleCommand,
+  sinkListItemCommand,
+  toggleListCommand,
+  toggleTaskCheckedCommand,
+} from './lists/list-commands';
 import {
   findNextCommand,
   findPreviousCommand,
@@ -58,7 +73,7 @@ import { imageStorage } from './image-storage';
 export interface BlockInfo {
   type: string; // 'paragraph' | 'heading' | 'code_block' | ...
   level: number | null; // heading level
-  list: 'bullet_list' | 'ordered_list' | 'task_list' | null; // innermost enclosing list
+  list: ListKind | null; // innermost enclosing list
 }
 
 export interface MountOptions {
@@ -181,6 +196,8 @@ export class EditorService implements EditorHooks {
     { type: 'paragraph', level: null, list: null },
     { equal: sameBlock },
   );
+  /** The list at the cursor (type, styles, what can be done with it), or null outside lists. */
+  readonly listState = signal<ListState | null>(null, { equal: sameListState });
   readonly canUndo = signal(false);
   readonly canRedo = signal(false);
   readonly isInTable = signal(false);
@@ -477,6 +494,7 @@ export class EditorService implements EditorHooks {
       list,
     });
 
+    this.listState.set(listStateAt(state));
     this.canUndo.set(undoDepth(state) > 0);
     this.canRedo.set(redoDepth(state) > 0);
     this.isInTable.set(isInTable(state));
@@ -674,13 +692,56 @@ export class EditorService implements EditorHooks {
     );
   }
 
-  toggleList(kind: 'bullet_list' | 'ordered_list' | 'task_list') {
+  toggleList(kind: ListKind) {
     if (!this.nodeType(kind)) return;
     this.run(toggleListCommand(kind));
   }
 
   toggleTaskList() {
     this.toggleList('task_list');
+  }
+
+  /** Nests the list items in the selection under the item before them (Tab). */
+  indentListItem() {
+    this.run(sinkListItemCommand());
+  }
+
+  /** Moves the list items in the selection one level out (Shift+Tab). */
+  outdentListItem() {
+    this.run(liftListItemCommand);
+  }
+
+  /** Moves the list items in the selection past their neighbor (Alt+Shift+Up/Down). */
+  moveListItem(direction: 'up' | 'down') {
+    this.run(moveListItemCommand(direction));
+  }
+
+  /** Checks or unchecks the tasks in the selection (Ctrl+Enter). */
+  toggleTaskChecked() {
+    this.run(toggleTaskCheckedCommand);
+  }
+
+  /** Restarts the numbering at the item at the cursor, from `start`. */
+  setListStart(start: number) {
+    this.run(setListStartCommand(start));
+  }
+
+  restartListNumbering() {
+    this.run(restartListNumberingCommand);
+  }
+
+  /** Continues the numbering of the numbered list before this one. */
+  continueListNumbering() {
+    this.run(continueListNumberingCommand);
+  }
+
+  /** A named bullet style, a custom symbol, or null for bullets by depth. */
+  setBulletStyle(style: string | null) {
+    this.run(setBulletStyleCommand(style));
+  }
+
+  setNumberStyle(style: NumberStyle | null) {
+    this.run(setNumberStyleCommand(style));
   }
 
   blockquote() {

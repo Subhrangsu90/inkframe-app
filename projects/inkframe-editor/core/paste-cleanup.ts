@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { DOMPURIFY_CONFIG } from './io/html';
 import { sanitizeCssColor } from './link-utils';
+import { NumberStyle, defaultNumberStyle } from './lists/list-schema';
 
 export type PasteSource = 'word' | 'google-docs' | 'other';
 
@@ -121,7 +122,38 @@ interface WordListItem {
   marker: Element | null;
   list: string;
   level: number;
-  ordered: boolean;
+  /** For numbered items: the number style and the item's number. */
+  number: { style: NumberStyle; value: number } | null;
+}
+
+const ROMAN_VALUES: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+
+function romanValue(text: string): number | null {
+  if (!/^m{0,3}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/.test(text)) return null;
+  let total = 0;
+  for (let i = 0; i < text.length; i++) {
+    const value = ROMAN_VALUES[text[i]];
+    const next = ROMAN_VALUES[text[i + 1]] ?? 0;
+    total += value < next ? -value : value;
+  }
+  return total || null;
+}
+
+/** Reads a number marker (`3.`, `c)`, `(iv)`, `B.`) as a number style and value. */
+function readNumberMarker(marker: string): WordListItem['number'] {
+  const m = /^\(?(\d+|[a-z]{1,5})[.)]$/i.exec(marker);
+  if (!m) return null;
+  const text = m[1];
+  if (/^\d+$/.test(text)) return { style: 'decimal', value: +text };
+  const lower = text.toLowerCase();
+  const upper = text !== lower;
+  // "i" and multi-letter numerals are Roman; a single other letter is a letter.
+  const roman = lower === 'i' || lower.length > 1 ? romanValue(lower) : null;
+  if (roman) return { style: upper ? 'upper-roman' : 'lower-roman', value: roman };
+  if (lower.length === 1) {
+    return { style: upper ? 'upper-alpha' : 'lower-alpha', value: lower.charCodeAt(0) - 96 };
+  }
+  return { style: upper ? 'upper-alpha' : 'lower-alpha', value: 1 };
 }
 
 function wordListItem(p: HTMLElement): WordListItem | null {
@@ -136,8 +168,20 @@ function wordListItem(p: HTMLElement): WordListItem | null {
     marker,
     list: m[1],
     level: +m[2],
-    ordered: /^\(?(\d+|[a-z]{1,5})[.)]$/i.test(markerText),
+    number: readNumberMarker(markerText),
   };
+}
+
+/**
+ * Sets a new Word list's start number, and its number style when it differs
+ * from what the editor shows at that level anyway (1., a., i., ...).
+ */
+function numberWordList(list: HTMLElement, item: WordListItem, level: number): void {
+  if (!item.number) return;
+  if (item.number.value !== 1) list.setAttribute('start', String(item.number.value));
+  if (item.number.style !== defaultNumberStyle(level)) {
+    list.setAttribute('data-number-style', item.number.style);
+  }
 }
 
 /** The list paragraphs that directly follow `p` and belong to the same list. */
@@ -173,7 +217,8 @@ function convertWordLists(root: HTMLElement): void {
       while (stack.length && stack[stack.length - 1].level > item.level) stack.pop();
       let top = stack[stack.length - 1];
       if (!top || top.level < item.level) {
-        const list = doc.createElement(item.ordered ? 'ol' : 'ul');
+        const list = doc.createElement(item.number ? 'ol' : 'ul');
+        numberWordList(list, item, stack.length + 1);
         if (top) {
           const parentItem =
             top.list.lastElementChild ?? top.list.appendChild(doc.createElement('li'));

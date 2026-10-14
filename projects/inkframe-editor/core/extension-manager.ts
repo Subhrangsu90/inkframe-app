@@ -1,6 +1,5 @@
 import { NodeSpec, MarkSpec, Schema } from 'prosemirror-model';
 import { nodes as basicNodes } from 'prosemirror-schema-basic';
-import { addListNodes, splitListItem, sinkListItem, liftListItem } from 'prosemirror-schema-list';
 import { Command, Plugin } from 'prosemirror-state';
 import { keymap } from 'prosemirror-keymap';
 import { baseKeymap, chainCommands } from 'prosemirror-commands';
@@ -20,6 +19,10 @@ import { EditorHooks } from './editor-hooks';
 import { SlashItem } from './slash-items';
 import { menusPlugin } from './menus.plugin';
 import { paragraph } from './schema';
+import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from './lists/list-schema';
+import { listKeymap } from './lists/list-commands';
+import { listJoinPlugin } from './lists/list-join.plugin';
+import { listDragPlugin } from './lists/list-drag.plugin';
 
 export class ExtensionManager {
   readonly extensions: readonly EditorExtension[];
@@ -49,12 +52,7 @@ export class ExtensionManager {
       hard_break: basicNodes.hard_break,
     };
 
-    let hasLists = false;
-
     for (const ext of this.extensions) {
-      if (ext.name === 'bullet_list' || ext.name === 'ordered_list') {
-        hasLists = true;
-      }
       if (ext.nodes) {
         for (const [key, spec] of Object.entries(ext.nodes)) {
           nodeMap[key] = spec;
@@ -72,14 +70,21 @@ export class ExtensionManager {
       }
     }
 
-    // 3. Construct Schema with list support if needed
-    const baseSchema = new Schema({ nodes: nodeMap, marks: markMap });
-    if (hasLists) {
-      const nodesWithLists = addListNodes(baseSchema.spec.nodes, 'paragraph block*', 'block');
-      return new Schema({ nodes: nodesWithLists, marks: markMap });
+    // 3. List items start with a block of the list_lead group (paragraphs and
+    // headings). When an extension replaced those with specs outside the
+    // group, items start with a paragraph instead.
+    const hasLead = Object.values(nodeMap).some((spec) =>
+      spec.group?.split(' ').includes(LIST_LEAD_GROUP),
+    );
+    if (!hasLead) {
+      for (const name of ['list_item', 'task_item']) {
+        if (nodeMap[name]?.content === LIST_ITEM_CONTENT) {
+          nodeMap[name] = { ...nodeMap[name], content: 'paragraph block*' };
+        }
+      }
     }
 
-    return baseSchema;
+    return new Schema({ nodes: nodeMap, marks: markMap });
   }
 
   createContext(): ExtensionContext {
@@ -112,25 +117,10 @@ export class ExtensionManager {
     // 3. Extension Keymaps
     const combinedKeymap: Record<string, Command> = {};
 
-    // List items Enter/Tab behaviors if list item nodes are present
-    const list_item = this.schema.nodes['list_item'];
-    const task_item = this.schema.nodes['task_item'];
-
-    if (list_item || task_item) {
-      combinedKeymap['Enter'] = (state, dispatch) =>
-        !!(task_item && splitListItem(task_item, { checked: false })(state, dispatch)) ||
-        !!(task_item && liftListItem(task_item)(state, dispatch)) ||
-        !!(list_item && splitListItem(list_item)(state, dispatch)) ||
-        !!(list_item && liftListItem(list_item)(state, dispatch));
-
-      combinedKeymap['Tab'] = (state, dispatch) =>
-        !!(task_item && sinkListItem(task_item)(state, dispatch)) ||
-        !!(list_item && sinkListItem(list_item)(state, dispatch));
-
-      combinedKeymap['Shift-Tab'] = (state, dispatch) =>
-        !!(task_item && liftListItem(task_item)(state, dispatch)) ||
-        !!(list_item && liftListItem(list_item)(state, dispatch));
-    }
+    // List keys (Enter, Tab, Backspace, ...) act on the innermost list item at
+    // the cursor and return false outside lists, so they come first.
+    const hasListItems = !!(this.schema.nodes['list_item'] || this.schema.nodes['task_item']);
+    if (hasListItems) Object.assign(combinedKeymap, listKeymap());
 
     // Merge each extension's keymap. When several bind the same key, they run
     // in order until one handles it (e.g. Tab indents a list item, otherwise
@@ -147,9 +137,12 @@ export class ExtensionManager {
     plugins.push(keymap(combinedKeymap));
     plugins.push(keymap(baseKeymap));
 
-    // 4. Cursor plugins
-    plugins.push(dropCursor());
+    // 4. Cursor plugins (the drop cursor is styled by the .ink-drop-cursor class)
+    plugins.push(dropCursor({ color: false, width: 2, class: 'ink-drop-cursor' }));
     plugins.push(gapCursor());
+
+    // Lists: joining adjacent lists after edits, and dragging items.
+    if (hasListItems) plugins.push(listJoinPlugin(), listDragPlugin());
 
     // 5. Extension-specific ProseMirror plugins
     for (const ext of this.extensions) {

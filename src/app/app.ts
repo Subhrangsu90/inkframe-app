@@ -1,8 +1,41 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
 import { AppShellComponent } from './shared/layout/app-shell/app-shell';
+
+/**
+ * Switches the page to the light theme (dark text on white paper) and
+ * returns a function that switches it back. Changes only the DOM, not the
+ * saved preference.
+ */
+export function useLightThemeForPrint(doc: Document): () => void {
+  const elements = [doc.documentElement, doc.body];
+  const saved = elements.map((el) => ({
+    el,
+    theme: el.getAttribute('data-theme'),
+    className: el.className,
+  }));
+  for (const el of elements) {
+    el.setAttribute('data-theme', 'light');
+    el.classList.remove('dark', 'theme-dark');
+    el.classList.add('theme-light');
+  }
+  return () => {
+    for (const { el, theme, className } of saved) {
+      if (theme === null) el.removeAttribute('data-theme');
+      else el.setAttribute('data-theme', theme);
+      el.className = className;
+    }
+  };
+}
 
 @Component({
   selector: 'app-root',
@@ -17,6 +50,19 @@ export class App {
   readonly isStandalone = signal<boolean>(true);
 
   constructor() {
+    const doc = inject(DOCUMENT);
+    // Printing from the browser's menu: print in the light theme.
+    afterNextRender(() => {
+      let restore: (() => void) | null = null;
+      doc.defaultView?.addEventListener('beforeprint', () => {
+        restore ??= useLightThemeForPrint(doc);
+      });
+      doc.defaultView?.addEventListener('afterprint', () => {
+        restore?.();
+        restore = null;
+      });
+    });
+
     this.updateStandalone(this.router.url);
 
     this.router.events

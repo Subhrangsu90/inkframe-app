@@ -3,8 +3,10 @@
  * - 1: initial schema.
  * - 2: `highlight` mark; `align` attribute on paragraphs and headings.
  * - 3: table cells lose the `height` attribute; rows fit their text.
+ * - 4: list attributes (start number, bullet and number style, tight) shared
+ *   by all list types; list items can start with a heading; `note` callouts.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /** The envelope that is saved to your database. */
 export interface StoredDoc {
@@ -34,6 +36,8 @@ const migrations: Record<number, Migration> = {
   // "newer schema" error instead of failing on an unknown mark.
   1: (doc) => doc,
   2: dropCellHeights,
+  // Only additions again: every version 3 document is a valid version 4 document.
+  3: (doc) => doc,
 };
 
 /** Removes the fixed row height from table cells (version 2 to 3). */

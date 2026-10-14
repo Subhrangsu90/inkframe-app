@@ -288,7 +288,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', text: 'Named document management and auto-saves' }],
+                    content: [
+                      { type: 'text', text: 'Automatic and named versions, restore any of them' },
+                    ],
                   },
                 ],
               },
@@ -297,7 +299,9 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'code' }], text: 'History Drawer' }],
+                    content: [
+                      { type: 'text', marks: [{ type: 'code' }], text: 'History button (toolbar)' },
+                    ],
                   },
                 ],
               },
@@ -312,7 +316,7 @@ export const WELCOME_DOC: StoredDoc = {
                   {
                     type: 'paragraph',
                     content: [
-                      { type: 'text', marks: [{ type: 'strong' }], text: 'Universal Export' },
+                      { type: 'text', marks: [{ type: 'strong' }], text: 'Export & Backup' },
                     ],
                   },
                 ],
@@ -323,7 +327,10 @@ export const WELCOME_DOC: StoredDoc = {
                   {
                     type: 'paragraph',
                     content: [
-                      { type: 'text', text: 'Export to PDF, Word (.doc), Markdown, and HTML' },
+                      {
+                        type: 'text',
+                        text: 'Markdown, HTML, print or PDF; full backups in Settings',
+                      },
                     ],
                   },
                 ],
@@ -333,7 +340,7 @@ export const WELCOME_DOC: StoredDoc = {
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', marks: [{ type: 'code' }], text: 'More Menu (···)' }],
+                    content: [{ type: 'text', marks: [{ type: 'code' }], text: 'Export menu' }],
                   },
                 ],
               },
@@ -504,8 +511,8 @@ export class Canvas {
               {
                 type: 'paragraph',
                 content: [
-                  { type: 'text', marks: [{ type: 'code' }], text: 'Ctrl + S' },
-                  { type: 'text', text: ' — Save changes & create revision record' },
+                  { type: 'text', marks: [{ type: 'code' }], text: 'Ctrl + P' },
+                  { type: 'text', text: ' — Print or save as PDF' },
                 ],
               },
             ],

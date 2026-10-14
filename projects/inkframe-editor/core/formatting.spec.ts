@@ -264,7 +264,7 @@ describe('Schema migrations', () => {
         ],
       },
     };
-    expect(SCHEMA_VERSION).toBe(3);
+    expect(SCHEMA_VERSION).toBe(4);
     const migrated = migrate(v1);
     expect(migrated).toEqual(v1.doc);
     const node = schema.nodeFromJSON(migrated);
@@ -310,6 +310,34 @@ describe('Schema migrations', () => {
     const node = schema.nodeFromJSON(migrated);
     node.check();
     expect(docToHtml(node)).not.toContain('height');
+  });
+
+  it('loads version 3 lists unchanged, with the new list attributes at their defaults', () => {
+    const item = (text: string) => ({
+      type: 'list_item',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+    });
+    const v3: StoredDoc = {
+      schemaVersion: 3,
+      doc: {
+        type: 'doc',
+        content: [
+          { type: 'ordered_list', attrs: { order: 3 }, content: [item('three'), item('four')] },
+          { type: 'bullet_list', content: [item('dot')] },
+        ],
+      },
+    };
+    const migrated = migrate(v3);
+    expect(migrated).toEqual(v3.doc);
+    const node = schema.nodeFromJSON(migrated);
+    node.check();
+    expect(node.child(0).attrs).toEqual({
+      order: 3,
+      bulletStyle: null,
+      numberStyle: null,
+      tight: true,
+    });
+    expect(node.child(1).attrs['bulletStyle']).toBeNull();
   });
 
   it('ignores row heights in pasted or imported HTML', () => {

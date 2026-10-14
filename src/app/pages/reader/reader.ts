@@ -166,10 +166,17 @@ export class Reader implements OnInit {
 
     if (this.isSharedPayload()) {
       // Import this shared document into the user's local storage
-      const created = await this.docManager.createDoc(this.docTitle());
-      await this.docManager.saveDoc(created.meta.id, doc, this.docTitle());
+      let id: string;
+      try {
+        id = (await this.docManager.createDoc(this.docTitle(), doc)).meta.id;
+      } catch {
+        this.toast.error(
+          'The document could not be saved: storage in this browser is full or blocked',
+        );
+        return;
+      }
       this.toast.success('Saved to your notes! Opening editor...');
-      await this.router.navigate(['/doc', created.meta.id]);
+      await this.router.navigate(['/doc', id]);
     } else {
       await this.router.navigate(['/doc', this.docId()]);
     }

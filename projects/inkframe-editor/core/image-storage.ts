@@ -16,6 +16,45 @@ interface ImageRecord extends StoredImageMetadata {
   blob: Blob;
 }
 
+/**
+ * Why browser storage refused a write: `quota` when it is full, `unavailable`
+ * when the browser blocks it (site data disabled, some private windows) or the
+ * write failed for another reason.
+ */
+export type StorageFailure = 'quota' | 'unavailable';
+
+/** Thrown by writes that browser storage refused. Nothing was saved. */
+export class StorageError extends Error {
+  constructor(
+    readonly reason: StorageFailure,
+    options?: { cause?: unknown },
+  ) {
+    super(
+      reason === 'quota' ? 'Browser storage is full' : 'Browser storage is unavailable',
+      options,
+    );
+    this.name = 'StorageError';
+  }
+}
+
+/**
+ * Where documents are kept: IndexedDB normally; localStorage (small, and no
+ * images) when IndexedDB is blocked; nowhere when both are blocked.
+ */
+export type StorageMode = 'indexeddb' | 'local' | 'none';
+
+/** Receives the outcome of every document and image write. */
+export type StorageWriteListener = (
+  result: { ok: true } | { ok: false; error: StorageError },
+) => void;
+
+export function isQuotaError(error: unknown): boolean {
+  return (
+    error instanceof DOMException &&
+    (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+  );
+}
+
 const DB_NAME = 'inkframe_storage';
 const STORE_NAME = 'images';
 const DOC_STORE_NAME = 'documents';
@@ -26,6 +65,8 @@ class ImageStorage {
   private readonly urlCache = new Map<string, string>();
   private readonly dataUrlCache = new Map<string, string>();
   private readonly blobCache = new Map<string, Blob>();
+  private readonly metaCache = new Map<string, StoredImageMetadata>();
+  private readonly writeListeners = new Set<StorageWriteListener>();
 
   private isBrowser(): boolean {
     return typeof window !== 'undefined';
@@ -65,6 +106,83 @@ class ImageStorage {
     });
 
     return this.dbPromise;
+  }
+
+  /**
+   * Calls `listener` after every document and image write with its outcome,
+   * for apps that show storage health. Returns a function that removes it.
+   */
+  onWrite(listener: StorageWriteListener): () => void {
+    this.writeListeners.add(listener);
+    return () => this.writeListeners.delete(listener);
+  }
+
+  private report(error?: StorageError): void {
+    const result = error ? ({ ok: false, error } as const) : ({ ok: true } as const);
+    for (const listener of this.writeListeners) {
+      try {
+        listener(result);
+      } catch (e) {
+        console.error('Storage write listener failed:', e);
+      }
+    }
+  }
+
+  /** Where documents are saved in this browser (see StorageMode). */
+  async storageMode(): Promise<StorageMode> {
+    if (!this.isBrowser()) return 'none';
+    if (await this.getDB()) return 'indexeddb';
+    try {
+      // Reading throws when the browser blocks site data.
+      localStorage.getItem(DOC_STORE_NAME);
+      return 'local';
+    } catch {
+      return 'none';
+    }
+  }
+
+  /**
+   * Runs one IndexedDB write and resolves once it is committed: a request can
+   * succeed and its transaction still abort, which is how quota errors arrive.
+   * Throws a StorageError; every outcome goes to the write listeners.
+   */
+  private async idbWrite(storeName: string, write: (store: IDBObjectStore) => void): Promise<void> {
+    for (let attempt = 0; ; attempt++) {
+      const db = await this.getDB();
+      if (!db) {
+        const error = new StorageError('unavailable');
+        this.report(error);
+        throw error;
+      }
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(storeName, 'readwrite');
+          // A failed request aborts the transaction. Wait for that: when a
+          // transaction aborts, its other requests fail with AbortError first,
+          // while tx.error holds the cause (QuotaExceededError when full).
+          let requestError: DOMException | null = null;
+          tx.onerror = (event) => {
+            requestError ??= (event.target as IDBRequest | null)?.error ?? null;
+          };
+          tx.oncomplete = () => resolve();
+          tx.onabort = () =>
+            reject(tx.error ?? requestError ?? new DOMException('Write aborted', 'AbortError'));
+          write(tx.objectStore(storeName));
+        });
+        this.report();
+        return;
+      } catch (e) {
+        // A connection that another tab closed (by deleting or upgrading the
+        // database) cannot start transactions: reopen it once and retry.
+        if (attempt === 0 && e instanceof DOMException && e.name === 'InvalidStateError') {
+          this.dbPromise = null;
+          continue;
+        }
+        const error = new StorageError(isQuotaError(e) ? 'quota' : 'unavailable', { cause: e });
+        this.report(error);
+        throw error;
+      }
+    }
   }
 
   /**
@@ -121,19 +239,60 @@ class ImageStorage {
       createdAt: Date.now(),
       blob: file,
     };
+    const { blob: _blob, ...meta } = record;
+    this.metaCache.set(id, meta);
 
-    const db = await this.getDB();
-    if (db) {
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.put(record);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
+    // Without IndexedDB the image lives in memory for this visit only.
+    if (await this.getDB()) {
+      await this.idbWrite(STORE_NAME, (store) => store.put(record));
     }
 
     return { id, uri, url: objectUrl };
+  }
+
+  /**
+   * Stores an image under a known id, replacing any image with that id. Used
+   * to restore backups, whose documents refer to images as `ink-idb:<id>`.
+   */
+  async putImage(meta: StoredImageMetadata, blob: Blob): Promise<void> {
+    this.blobCache.set(meta.id, blob);
+    this.metaCache.set(meta.id, meta);
+    const cached = this.urlCache.get(meta.id);
+    if (cached) {
+      URL.revokeObjectURL(cached);
+      this.urlCache.delete(meta.id);
+    }
+    this.dataUrlCache.delete(meta.id);
+    if (!this.isBrowser() || !(await this.getDB())) return;
+    const record: ImageRecord = { ...meta, blob };
+    await this.idbWrite(STORE_NAME, (store) => store.put(record));
+  }
+
+  /** An image's metadata and data, or null when there is no image with this id. */
+  async getImage(id: string): Promise<{ meta: StoredImageMetadata; blob: Blob } | null> {
+    const db = await this.getDB();
+    if (db) {
+      const record = await new Promise<ImageRecord | undefined>((resolve) => {
+        const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(id);
+        req.onsuccess = () => resolve(req.result as ImageRecord | undefined);
+        req.onerror = () => resolve(undefined);
+      });
+      if (record) {
+        const { blob, ...meta } = record;
+        return { meta, blob };
+      }
+    }
+    // Images saved while IndexedDB was unavailable exist only in memory.
+    const blob = this.blobCache.get(id);
+    if (!blob) return null;
+    const meta = this.metaCache.get(id) ?? {
+      id,
+      name: 'image',
+      type: blob.type || 'image/png',
+      size: blob.size,
+      createdAt: Date.now(),
+    };
+    return { meta, blob };
   }
 
   /**
@@ -457,6 +616,8 @@ class ImageStorage {
       this.urlCache.delete(id);
     }
     this.dataUrlCache.delete(id);
+    this.blobCache.delete(id);
+    this.metaCache.delete(id);
 
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -468,33 +629,27 @@ class ImageStorage {
   }
 
   /**
-   * Persists a document to IndexedDB asynchronously without blocking the UI thread.
-   * Includes fallback to localStorage if IndexedDB is inaccessible.
+   * Persists a document in IndexedDB, or in localStorage when IndexedDB is
+   * unavailable. Throws a StorageError when storage refuses it; nothing is
+   * saved then.
    */
   async saveDocument<T = unknown>(key: string, doc: T): Promise<void> {
     if (!this.isBrowser()) return;
-    try {
-      const db = await this.getDB();
-      if (!db) throw new Error('IndexedDB unavailable');
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(DOC_STORE_NAME, 'readwrite');
-        const store = tx.objectStore(DOC_STORE_NAME);
-        const req = store.put(doc, key);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
-    } catch (e) {
-      console.warn('Failed to save to IndexedDB, fallback to localStorage:', e);
-      try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(key, JSON.stringify(doc));
-        }
-      } catch {
-        // Neither IndexedDB nor localStorage accepted the document (quota exceeded
-        // or storage blocked). The caller is not told yet: see the storage-full
-        // banner planned for M2.
-      }
+    if (await this.getDB()) {
+      // No localStorage fallback when an IndexedDB write fails: getDocument()
+      // reads IndexedDB first, so the fallback copy would be hidden behind the
+      // older one there and the edit lost on reload.
+      await this.idbWrite(DOC_STORE_NAME, (store) => store.put(doc, key));
+      return;
     }
+    try {
+      localStorage.setItem(key, JSON.stringify(doc));
+    } catch (e) {
+      const error = new StorageError(isQuotaError(e) ? 'quota' : 'unavailable', { cause: e });
+      this.report(error);
+      throw error;
+    }
+    this.report();
   }
 
   /**
@@ -506,6 +661,7 @@ class ImageStorage {
     this.urlCache.clear();
     this.dataUrlCache.clear();
     this.blobCache.clear();
+    this.metaCache.clear();
     if (!this.isBrowser() || typeof indexedDB === 'undefined') return;
 
     const db = await this.dbPromise;

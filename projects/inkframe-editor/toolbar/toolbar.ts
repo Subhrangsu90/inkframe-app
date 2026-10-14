@@ -28,6 +28,10 @@ import {
   ColorSwatch,
   focusLinkInput,
   textAlignIcon,
+  BULLET_STYLES,
+  NUMBER_STYLES,
+  MAX_LIST_START,
+  defaultNumberStyle,
 } from '@inkframe-ui/editor/core';
 
 @Component({
@@ -499,6 +503,118 @@ import {
                 <mat-icon>checklist</mat-icon>
               </button>
             }
+            <button
+              type="button"
+              class="ink-tb-icon-btn ink-tb-list-btn"
+              [disabled]="!svc.listState()"
+              [matMenuTriggerFor]="listMenu"
+              aria-label="List options"
+              matTooltip="List options"
+            >
+              <mat-icon>tune</mat-icon>
+              <mat-icon class="caret">arrow_drop_down</mat-icon>
+            </button>
+            <mat-menu #listMenu="matMenu" class="ink-toolbar-mat-menu">
+              @if (svc.listState(); as list) {
+                @if (list.kind === 'bullet_list') {
+                  <div class="menu-section-label" role="presentation">Bullet style</div>
+                  <button
+                    mat-menu-item
+                    [class.selected]="!list.bulletStyle"
+                    (click)="svc.setBulletStyle(null)"
+                  >
+                    <span class="menu-item-glyph">{{ levelBullet(list.level) }}</span>
+                    <span class="menu-item-text">By level</span>
+                  </button>
+                  @for (style of bulletStyles; track style.value) {
+                    <button
+                      mat-menu-item
+                      [class.selected]="list.bulletStyle === style.value"
+                      (click)="svc.setBulletStyle(style.value)"
+                    >
+                      <span class="menu-item-glyph">{{ style.glyph }}</span>
+                      <span class="menu-item-text">{{ style.label }}</span>
+                    </button>
+                  }
+                  <mat-divider />
+                }
+                @if (list.kind === 'ordered_list') {
+                  <div class="menu-section-label" role="presentation">Numbering</div>
+                  <button
+                    mat-menu-item
+                    [class.selected]="!list.numberStyle"
+                    (click)="svc.setNumberStyle(null)"
+                  >
+                    <span class="menu-item-glyph">{{ levelNumber(list.level) }}</span>
+                    <span class="menu-item-text">By level</span>
+                  </button>
+                  @for (style of numberStyles; track style.value) {
+                    <button
+                      mat-menu-item
+                      [class.selected]="list.numberStyle === style.value"
+                      (click)="svc.setNumberStyle(style.value)"
+                    >
+                      <span class="menu-item-glyph">{{ style.glyph }}</span>
+                      <span class="menu-item-text">{{ style.label }}</span>
+                    </button>
+                  }
+                  <mat-divider />
+                  <button
+                    mat-menu-item
+                    [disabled]="!list.canRestart"
+                    (click)="svc.restartListNumbering()"
+                  >
+                    <span class="menu-item-glyph">1.</span>
+                    <span class="menu-item-text">Restart numbering here</span>
+                  </button>
+                  <button
+                    mat-menu-item
+                    [disabled]="!list.canContinue"
+                    (click)="svc.continueListNumbering()"
+                  >
+                    <span class="menu-item-glyph">…</span>
+                    <span class="menu-item-text">Continue previous numbering</span>
+                  </button>
+                  <button mat-menu-item (click)="promptListStart(list.itemNumber)">
+                    <span class="menu-item-glyph">#</span>
+                    <span class="menu-item-text">Set number here…</span>
+                  </button>
+                  <mat-divider />
+                }
+                @if (list.kind === 'task_list') {
+                  <button mat-menu-item (click)="svc.toggleTaskChecked()">
+                    <mat-icon>check_box</mat-icon>
+                    <span class="menu-item-text">Mark done or not done</span>
+                    <span class="menu-shortcut">Ctrl+Enter</span>
+                  </button>
+                  <mat-divider />
+                }
+                <button mat-menu-item [disabled]="!list.canIndent" (click)="svc.indentListItem()">
+                  <span class="menu-item-glyph">⇥</span>
+                  <span class="menu-item-text">Indent</span>
+                  <span class="menu-shortcut">Tab</span>
+                </button>
+                <button mat-menu-item [disabled]="!list.canOutdent" (click)="svc.outdentListItem()">
+                  <span class="menu-item-glyph">⇤</span>
+                  <span class="menu-item-text">Outdent</span>
+                  <span class="menu-shortcut">Shift+Tab</span>
+                </button>
+                <button mat-menu-item [disabled]="!list.canMoveUp" (click)="svc.moveListItem('up')">
+                  <span class="menu-item-glyph">↑</span>
+                  <span class="menu-item-text">Move up</span>
+                  <span class="menu-shortcut">Alt+Shift+↑</span>
+                </button>
+                <button
+                  mat-menu-item
+                  [disabled]="!list.canMoveDown"
+                  (click)="svc.moveListItem('down')"
+                >
+                  <span class="menu-item-glyph">↓</span>
+                  <span class="menu-item-text">Move down</span>
+                  <span class="menu-shortcut">Alt+Shift+↓</span>
+                </button>
+              }
+            </mat-menu>
           </div>
           <div class="tb-divider"></div>
         }
@@ -816,19 +932,23 @@ import {
               <mat-menu #calloutMenu="matMenu" class="ink-toolbar-mat-menu">
                 <button mat-menu-item (click)="svc.insertCallout('info')">
                   <mat-icon style="color: #60a5fa;">info</mat-icon>
-                  <span class="menu-item-text">Info callout</span>
+                  <span class="menu-item-text">Info</span>
+                </button>
+                <button mat-menu-item (click)="svc.insertCallout('note')">
+                  <mat-icon style="color: #c084fc;">sticky_note_2</mat-icon>
+                  <span class="menu-item-text">Note</span>
                 </button>
                 <button mat-menu-item (click)="svc.insertCallout('warning')">
                   <mat-icon style="color: #fbbf24;">warning</mat-icon>
-                  <span class="menu-item-text">Warning callout</span>
+                  <span class="menu-item-text">Warning</span>
                 </button>
                 <button mat-menu-item (click)="svc.insertCallout('success')">
                   <mat-icon style="color: #34d399;">check_circle</mat-icon>
-                  <span class="menu-item-text">Success callout</span>
+                  <span class="menu-item-text">Success</span>
                 </button>
                 <button mat-menu-item (click)="svc.insertCallout('danger')">
                   <mat-icon style="color: #f87171;">error</mat-icon>
-                  <span class="menu-item-text">Danger callout</span>
+                  <span class="menu-item-text">Danger</span>
                 </button>
               </mat-menu>
             }
@@ -902,8 +1022,8 @@ import {
           <button
             type="button"
             class="ink-tb-icon-btn"
-            aria-label="Revision history"
-            matTooltip="Revision history"
+            aria-label="Version history"
+            matTooltip="Version history"
             (click)="openHistory()"
           >
             <mat-icon>history</mat-icon>
@@ -1222,8 +1342,9 @@ import {
       }
     }
 
-    /* Alignment dropdown: current alignment icon plus a caret */
-    .ink-tb-align-btn {
+    /* Alignment and list dropdowns: an icon plus a caret */
+    .ink-tb-align-btn,
+    .ink-tb-list-btn {
       width: auto;
       padding: 0 2px 0 6px;
       gap: 0;
@@ -1273,6 +1394,29 @@ export class Toolbar implements OnDestroy {
   protected readonly alignOptions = TEXT_ALIGN_OPTIONS;
   protected readonly alignIcon = textAlignIcon;
   protected readonly emojis: string[] = COMMON_EMOJIS;
+  protected readonly bulletStyles = BULLET_STYLES;
+  protected readonly numberStyles = NUMBER_STYLES;
+
+  /** The bullet a list shows at `level` when it has no style of its own. */
+  protected levelBullet(level: number): string {
+    return ['•', '◦', '▪'][(Math.max(level, 1) - 1) % 3];
+  }
+
+  /** The number a list shows at `level` when it has no style of its own. */
+  protected levelNumber(level: number): string {
+    return NUMBER_STYLES.find((s) => s.value === defaultNumberStyle(level))!.glyph;
+  }
+
+  /** Asks for the number the item at the cursor should have; the list restarts there. */
+  protected promptListStart(current: number): void {
+    if (typeof window === 'undefined') return;
+    const value = window.prompt(`Number this item (0 to ${MAX_LIST_START}):`, String(current));
+    if (value === null) return;
+    const number = Number(value.trim());
+    if (Number.isInteger(number) && number >= 0 && number <= MAX_LIST_START) {
+      this.svc.setListStart(number);
+    }
+  }
 
   protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');
   private readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');

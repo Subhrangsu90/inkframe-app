@@ -67,7 +67,14 @@ export type InkIconName =
   | 'eye'
   | 'chevron-down'
   | 'chevron-right'
-  | 'chevron-left';
+  | 'chevron-left'
+  | 'upload'
+  | 'printer'
+  | 'history'
+  | 'alert-triangle'
+  | 'rotate-ccw'
+  | 'bookmark'
+  | 'file-code';
 
 @Component({
   selector: 'ink-icon',
@@ -231,6 +238,39 @@ export type InkIconName =
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <path d="m7 10 5 5 5-5" />
           <path d="M12 15V3" />
+        }
+        @case ('upload') {
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <path d="m17 8-5-5-5 5" />
+          <path d="M12 3v12" />
+        }
+        @case ('printer') {
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+          <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+          <rect x="6" y="14" width="12" height="8" rx="1" />
+        }
+        @case ('history') {
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M12 7v5l4 2" />
+        }
+        @case ('alert-triangle') {
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+        }
+        @case ('rotate-ccw') {
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+        }
+        @case ('bookmark') {
+          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+        }
+        @case ('file-code') {
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="m10 12-2 2 2 2" />
+          <path d="m14 16 2-2-2-2" />
         }
         @case ('menu') {
           <path d="M4 6h16" />

@@ -222,55 +222,9 @@ ink-reader {
 /* ═════════════════════════════════════════════ */
 /*
  * The document uses the editor's own content styles (.ProseMirror), so readers
- * see it as it was written. Only what the editor draws through node views
- * needs a stand-in here.
+ * see it as it was written, plus the global .ink-static-doc stand-ins for what
+ * the editor draws with node views (src/static-doc.scss).
  */
-.reader-a4-sheet .reader-content {
-  outline: none;
-  overflow-wrap: break-word;
-
-  /* The editor gives its writing area a minimum height; a page has its own. */
-  &.ProseMirror {
-    min-height: 0;
-  }
-
-  /* Images follow their paragraph's alignment, as in the editor. */
-  img {
-    display: inline-block;
-    vertical-align: top;
-  }
-
-  /* Task lists: the editor draws checkboxes with a node view; here a box. */
-  ul.ink-task-list li.ink-task-item {
-    display: block;
-    position: relative;
-    padding-left: 1.75rem;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: calc((var(--ink-editor-font-size, 14px) * 1.6 - 17px) / 2); /* as in the editor */
-      width: 17px;
-      height: 17px;
-      box-sizing: border-box;
-      border: 1.5px solid var(--ink-text-muted);
-      border-radius: 4px;
-    }
-
-    &.checked::before {
-      border-color: var(--ink-accent-primary, #7c3aed);
-      background: var(--ink-accent-primary, #7c3aed)
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E")
-        center / 11px no-repeat;
-    }
-
-    &.checked > :first-child {
-      text-decoration: line-through;
-      opacity: 0.65;
-    }
-  }
-}
 
 /* ═════════════════════════════════════════════ */
 /* PRINT                                         */

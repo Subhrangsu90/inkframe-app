@@ -20,6 +20,10 @@ import { InkIcon, InkIconName } from '../../shared/ui/icons/icon';
 import { ToastService } from '../../shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
 import { buildShareableUrl } from '../../core/share-codec';
+import { IMPORT_ACCEPT, ImportError, readImportFile } from '../../core/doc-import';
+import { BACKUP_EXTENSION } from '../../core/backup';
+
+const hasFiles = (event: DragEvent) => !!event.dataTransfer?.types.includes('Files');
 
 type ViewMode = 'grid' | 'list';
 const VIEW_MODE_KEY = 'inkframe-docs-view';
@@ -51,6 +55,10 @@ export interface TemplateStarter {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown)': 'onDocumentKeydown($event)',
+    '(dragenter)': 'onDragEnter($event)',
+    '(dragover)': 'onDragOver($event)',
+    '(dragleave)': 'onDragLeave($event)',
+    '(drop)': 'onDrop($event)',
   },
 })
 export class Docs implements OnInit {
@@ -84,6 +92,13 @@ export class Docs implements OnInit {
 
   readonly searchQuery = signal<string>('');
   readonly viewMode = signal<ViewMode>(savedViewMode());
+
+  readonly importAccept = IMPORT_ACCEPT;
+  readonly importing = signal(false);
+  /** Files are being dragged over the page. */
+  readonly dropActive = signal(false);
+  /** dragenter/dragleave also fire for every child element crossed; count them. */
+  private dragDepth = 0;
 
   readonly templates: TemplateStarter[] = [
     {
@@ -256,6 +271,81 @@ export class Docs implements OnInit {
 
   async createNewDoc(): Promise<void> {
     await this.layout.createNewDoc();
+  }
+
+  // ── Import (button and drag and drop) ───────────────────────────
+  protected onDragEnter(event: DragEvent): void {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    this.dragDepth++;
+    this.dropActive.set(true);
+  }
+
+  protected onDragOver(event: DragEvent): void {
+    if (!hasFiles(event)) return;
+    event.preventDefault(); // allows the drop
+    event.dataTransfer!.dropEffect = 'copy';
+  }
+
+  protected onDragLeave(event: DragEvent): void {
+    if (!hasFiles(event)) return;
+    this.dragDepth = Math.max(0, this.dragDepth - 1);
+    if (this.dragDepth === 0) this.dropActive.set(false);
+  }
+
+  protected onDrop(event: DragEvent): void {
+    if (!hasFiles(event)) return;
+    event.preventDefault(); // otherwise the browser opens the file
+    this.dragDepth = 0;
+    this.dropActive.set(false);
+    void this.importFiles(Array.from(event.dataTransfer!.files));
+  }
+
+  protected onImportChosen(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = ''; // so choosing the same file again fires (change) again
+    void this.importFiles(files);
+  }
+
+  /** Creates one document per Markdown or HTML file; opens it when there is one. */
+  async importFiles(files: File[]): Promise<void> {
+    if (files.length === 0 || this.importing()) return;
+    this.importing.set(true);
+    const created: string[] = [];
+    const problems: string[] = [];
+    try {
+      for (const file of files) {
+        if (file.name.toLowerCase().endsWith(BACKUP_EXTENSION)) {
+          problems.push(`"${file.name}" is a backup: restore it in Settings.`);
+          continue;
+        }
+        try {
+          const { title, doc } = await readImportFile(file);
+          created.push((await this.docManager.createDoc(title, doc)).meta.id);
+        } catch (e) {
+          problems.push(
+            e instanceof ImportError ? e.message : `"${file.name}" could not be imported.`,
+          );
+        }
+      }
+      await this.layout.refreshDocs();
+    } finally {
+      this.importing.set(false);
+    }
+
+    if (problems.length > 0) {
+      const more = problems.length > 1 ? ` (and ${problems.length - 1} more)` : '';
+      this.toast.error(problems[0] + more, 6000);
+    }
+    if (created.length === 1 && problems.length === 0) {
+      this.toast.success('Document imported');
+      await this.router.navigate(['/doc', created[0]]);
+    } else if (created.length > 0) {
+      this.toast.success(
+        `Imported ${created.length} ${created.length === 1 ? 'document' : 'documents'}`,
+      );
+    }
   }
 
   async createFromTemplate(tpl: TemplateStarter): Promise<void> {

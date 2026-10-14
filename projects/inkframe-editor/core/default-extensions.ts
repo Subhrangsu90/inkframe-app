@@ -19,18 +19,22 @@ import {
   code,
   task_list,
   task_item,
+  bullet_list,
+  ordered_list,
+  list_item,
   image,
   code_block,
   tableNodeSpecs,
 } from './schema';
-import { markRule, taskItemRule } from './input-rules';
+import { markRule } from './input-rules';
+import { bulletListRule, orderedListRule, taskItemRule } from './lists/list-input-rules';
+import { toggleListCommand } from './lists/list-commands';
 import {
   clearFormattingCommand,
   setBlockTypeKeepingAlign,
   setTextAlignCommand,
   splitAlignedBlockCommand,
   toggleHighlightCommand,
-  toggleListCommand,
 } from './plugins';
 import {
   searchPlugin,
@@ -442,13 +446,15 @@ export const CodeBlockExtension = createExtension({
 });
 
 // ── Lists (Bullet, Numbered, Task list) ───────────────────────────
+// Each list extension brings its list node; bullet and numbered lists share
+// list_item. Any of them also brings the list keys (Enter, Tab, Backspace,
+// Delete, Mod-Enter, Alt+Shift+Up/Down), the merging of adjacent lists and
+// drag-to-move (see ExtensionManager).
 
 export const BulletListExtension = createExtension({
   name: 'bullet_list',
-  inputRules: (ctx) =>
-    ctx.schema.nodes['bullet_list']
-      ? [wrappingInputRule(/^\s*([-+*])\s$/, ctx.schema.nodes['bullet_list'])]
-      : [],
+  nodes: { bullet_list, list_item },
+  inputRules: (ctx) => [bulletListRule(ctx.schema.nodes['bullet_list'])],
   keymaps: () => ({
     'Shift-Mod-8': toggleListCommand('bullet_list'),
   }),
@@ -466,17 +472,8 @@ export const BulletListExtension = createExtension({
 
 export const OrderedListExtension = createExtension({
   name: 'ordered_list',
-  inputRules: (ctx) =>
-    ctx.schema.nodes['ordered_list']
-      ? [
-          wrappingInputRule(
-            /^(\d+)\.\s$/,
-            ctx.schema.nodes['ordered_list'],
-            (m) => ({ order: +m[1] }),
-            (m, node) => node.childCount + node.attrs['order'] === +m[1],
-          ),
-        ]
-      : [],
+  nodes: { ordered_list, list_item },
+  inputRules: (ctx) => [orderedListRule(ctx.schema.nodes['ordered_list'])],
   keymaps: () => ({
     'Shift-Mod-7': toggleListCommand('ordered_list'),
   }),

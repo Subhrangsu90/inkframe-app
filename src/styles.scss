@@ -7,6 +7,7 @@
 /* ── Centralized Inkframe Editor Library Styles & Phase 1 Tokens ── */
 @use '../projects/inkframe-editor/src/styles/index.scss' as editor-styles;
 @use './tokens.scss';
+@use './static-doc.scss';
 
 /* ── Tailwind v4 Theme Configuration (Mapping Inkframe Design Tokens) ── */
 @theme {
@@ -63,12 +64,16 @@
 html {
   height: 100%;
   scroll-behavior: smooth;
-  @include mat.theme((color: (primary: mat.$azure-palette,
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
       typography: 'Inter Variable',
       density: 0,
-    ));
+    )
+  );
 }
 
 /* ── Host Application Base Styles & Resets ── */
@@ -139,7 +144,6 @@ select {
 .is-preview,
 .ProseMirror-preview,
 .ProseMirror[contenteditable='false'] {
-
   .ink-table-row-handle,
   .ink-table-col-corner-dot,
   .ink-table-col-header-handle,
@@ -167,5 +171,82 @@ select {
   .ink-image {
     cursor: zoom-in !important;
     pointer-events: auto !important;
+  }
+}
+
+/*
+ * Printing from the browser's menu. The Export menu and Ctrl+P print a clean
+ * copy of the document instead; this keeps the browser's own Print usable:
+ * the app's interface is hidden and the page is no longer clipped to the
+ * screen. The App switches to the light theme while printing.
+ */
+@media print {
+  .app-sidebar,
+  .app-header,
+  .mobile-backdrop,
+  ink-storage-banner,
+  ink-toast-container,
+  ink-confirm-dialog,
+  ink-toolbar,
+  ink-status-bar,
+  ink-find-replace,
+  ink-floating-menu,
+  ink-slash-menu,
+  ink-table-toolbar,
+  ink-version-panel,
+  .version-preview-bar,
+  .ink-code-toolbar,
+  .ink-code-lang-menu,
+  .ink-list-drag-handle,
+  .ink-table-row-handle,
+  .ink-table-col-header-handle,
+  .ink-table-add-row-btn,
+  .ink-table-add-col-btn,
+  .ink-image-toolbar,
+  .ink-image-resize-handle {
+    display: none !important;
+  }
+
+  html,
+  body,
+  .app-layout-root,
+  .app-workspace-container,
+  .app-main-content,
+  .editor-workspace-body,
+  .view-panel,
+  .editor-scroll-container:not([hidden]),
+  .version-preview,
+  ink-editor,
+  .ink-editor-wrapper,
+  .ink-editor-body,
+  .ink-editor-viewport {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .ink-doc-page,
+  .version-sheet {
+    max-width: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .ProseMirror pre,
+  .ProseMirror blockquote,
+  .ProseMirror tr,
+  .ProseMirror img,
+  .ink-code-block-wrapper,
+  .callout {
+    break-inside: avoid;
+  }
+
+  .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
+    break-after: avoid;
   }
 }

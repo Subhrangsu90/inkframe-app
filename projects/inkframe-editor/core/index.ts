@@ -1,5 +1,6 @@
 // Secondary entry point: @inkframe-ui/editor/core
 export * from './schema';
+export * from './lists';
 export * from './plugins';
 export * from './migrations';
 export * from './image-storage';
@@ -20,6 +21,7 @@ export * from './keep-menu-open.directive';
 export * from './slash-items';
 export * from './editor-service';
 export * from './io/html';
+export * from './io/html-document';
 export * from './io/markdown';
 export * from './node-views/callout-icon';
 export * from './node-views/callout.node-view';

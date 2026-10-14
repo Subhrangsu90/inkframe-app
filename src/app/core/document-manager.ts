@@ -7,6 +7,7 @@ import {
   imageStorage,
 } from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
+import { deleteVersions, VERSION_KEY_PREFIX } from './version-store';
 
 export type { StoredDoc };
 
@@ -98,6 +99,15 @@ export function extractDocWordCount(stored: StoredDoc): number {
   }
 }
 
+/** The document's text without formatting, blocks separated by spaces. */
+export function extractDocText(stored: StoredDoc): string {
+  try {
+    return plainText(stored?.doc as DocJSON | undefined);
+  } catch {
+    return '';
+  }
+}
+
 export function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
   if (diffSec < 45) return 'Just now';
@@ -158,13 +168,10 @@ export class DocumentManager {
     void imageStorage.deleteDocument(LEGACY_SAVED_KEY);
   }
 
+  /** Throws a StorageError when storage refuses the write. */
   async saveIndex(index: DocMeta[]): Promise<void> {
     if (typeof window === 'undefined') return;
-    try {
-      await imageStorage.saveDocument(INDEX_KEY, index);
-    } catch (e) {
-      console.warn('Failed to save docs index:', e);
-    }
+    await imageStorage.saveDocument(INDEX_KEY, index);
   }
 
   getActiveDocId(): string {
@@ -200,6 +207,7 @@ export class DocumentManager {
     return null;
   }
 
+  /** Throws a StorageError when storage refuses the write. */
   async saveDoc(id: string, doc: StoredDoc, explicitTitle?: string): Promise<DocMeta> {
     const title = explicitTitle || extractDocTitle(doc);
     const wordCount = extractDocWordCount(doc);
@@ -261,7 +269,7 @@ export class DocumentManager {
     title?: string,
     initialDoc?: StoredDoc,
   ): Promise<{ meta: DocMeta; doc: StoredDoc }> {
-    const id = 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const id = this.newDocId();
     const docTitle = title || 'Untitled Document';
     const doc: StoredDoc = initialDoc || {
       schemaVersion: SCHEMA_VERSION,
@@ -292,6 +300,7 @@ export class DocumentManager {
 
     // Documents live in IndexedDB (localStorage is only a fallback), so remove both.
     await imageStorage.deleteDocument(docKey(id));
+    await deleteVersions(id);
 
     if (index.length === 0) {
       const created = await this.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
@@ -318,7 +327,10 @@ export class DocumentManager {
         for (const key of keys) {
           if (
             key &&
-            (key.startsWith('inkframe_doc') || key === ACTIVE_ID_KEY || key === LEGACY_SAVED_KEY)
+            (key.startsWith('inkframe_doc') ||
+              key.startsWith(VERSION_KEY_PREFIX) ||
+              key === ACTIVE_ID_KEY ||
+              key === LEGACY_SAVED_KEY)
           ) {
             localStorage.removeItem(key);
           }
@@ -328,6 +340,28 @@ export class DocumentManager {
       // Storage unavailable: there are no fallback copies to remove.
     }
     this.legacyDropped = false;
+  }
+
+  /**
+   * Writes documents with their existing ids and metadata (edit times
+   * included), adding them to the index or replacing entries with the same
+   * id. Used to restore backups.
+   */
+  async putDocs(entries: { meta: DocMeta; doc: StoredDoc }[]): Promise<void> {
+    if (entries.length === 0) return;
+    for (const { meta, doc } of entries) {
+      await imageStorage.saveDocument(docKey(meta.id), doc);
+    }
+    const ids = new Set(entries.map((e) => e.meta.id));
+    const index = (await this.getIndex()).filter((d) => !ids.has(d.id));
+    index.push(...entries.map((e) => e.meta));
+    index.sort((a, b) => b.updatedAt - a.updatedAt);
+    await this.saveIndex(index);
+  }
+
+  /** A fresh, unused document id. */
+  newDocId(): string {
+    return 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
   }
 
   async duplicateDoc(id: string): Promise<{ meta: DocMeta; doc: StoredDoc }> {

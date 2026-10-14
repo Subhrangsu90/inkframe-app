@@ -6,7 +6,7 @@
 | **Deliverables** | The web app (`inkframe-app`) and the embeddable Angular editor library (`@inkframe-ui/editor`) |
 | **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer in M6: backend, database, object storage, AI, Yjs. |
 | **Plan version** | 4.2 (adds M7: Block mode). 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
-| **Last updated** | 2026-10-12 |
+| **Last updated** | 2026-10-14 |
 | **Status** | Pre-launch. The core editor is built; the work below takes it to a production release. |
 
 ---
@@ -119,8 +119,6 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | Claim | Why not | Unblocked by |
 | --- | --- | --- |
 | "Zero network requests" / "zero tracking" | Fonts and Material Symbols load from Google servers. | Self-host fonts and icons (M0). |
-| "Version history" | The toolbar button exists but nothing handles it. | Version history (M2). |
-| "Export to PDF / HTML" | Only Markdown export exists. | Export suite (M2). |
 | "Split view" / "Raw Markdown" | Not built. | Optional Markdown source view (P2) or remove the copy. |
 | "Works offline" (after first visit, on a fresh device) | No service worker yet. | PWA (M3). |
 | "Sync across devices", "Collaborate in real time", "AI writing assistant" | Not built. | M6.2, M6.5, M6.4. Always paired with "optional, no account needed to write". |
@@ -186,16 +184,16 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Multiple documents, `/docs` library, search, templates | ✅ | P0 | |
 | Autosave with "Saving… / Saved" status | ✅ | P0 | Pending edits are flushed when switching or leaving documents. |
 | Inline title rename, duplicate, delete | ✅ | P0 | Delete now removes the stored content. |
-| **Version history** (local snapshots, restore) | ⬜ | P0 | The toolbar button already emits `historyRequested`. |
-| **Backup and restore** (all documents and images in one file) | ⬜ | P0 | Users' only protection against a cleared browser. |
-| **"Clear all data" that clears IndexedDB** | 🟡 | P0 | Currently clears localStorage only; also replace the native `confirm()` with the confirm dialog. |
-| Storage-full or blocked banner with "Export backup" | ⬜ | P0 | |
+| **Version history** (local snapshots, restore) | ✅ | P0 | Panel beside the page: automatic versions (every 10 minutes while editing, sooner after 2,000 changed characters, before large deletions and restores), named versions, preview, restore. Kept: everything from the last day, then one a day for 30 days; named versions until deleted. |
+| **Backup and restore** (all documents and images in one file) | ✅ | P0 | Settings → Backup. One `.inkframe.json` with documents, version history and images. Restore merges (never overwrites; a changed document comes back as "… (restored)") or replaces all. |
+| **"Clear all data" that clears IndexedDB** | ✅ | P0 | Done in M0 (B3); version history is deleted too. |
+| Storage-full or blocked banner with "Export backup" | ✅ | P0 | The editor shows "Not saved"; the backup includes the refused edits. Also shown when the browser blocks IndexedDB (limited) or all storage. |
 | Share links in the URL fragment (`/s#…`) | ✅ | P0 | Older `/s/<hash>` links still open. |
 | Share dialog: size warning, native share sheet | ⬜ | P1 | Warn when images make links very long. |
 | Export: Markdown | ✅ | P0 | |
-| **Export: HTML, print / PDF** | ⬜ | P0 | PDF via a print stylesheet and `window.print()`. |
+| **Export: HTML, print / PDF** | ✅ | P0 | Export menu: Markdown, Web page (.html, styled, images embedded, no network requests), Print or save as PDF (`Mod-P`), Copy as Markdown. Printing uses the HTML page in a hidden frame. |
 | Export: JSON (lossless), DOCX | ⬜ | P1 / P2 | |
-| Import: Markdown and HTML files | 🟡 | P0 | Parsers exist (`loadMarkdown`, `loadHtml`); no UI. |
+| Import: Markdown and HTML files | ✅ | P0 | Import button and drag and drop on `/docs`; one document per file; embedded images move to image storage. |
 | Image garbage collection | ⬜ | P1 | Images of deleted documents stay in IndexedDB. |
 
 ### 3.5 Platform
@@ -246,10 +244,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ### 4.1 Baseline (2026-10-12)
 
-- **Tests:** 185 tests pass through the Angular CLI test runner (`npm test`; 149 library, 36 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec and document storage.
+- **Tests:** 289 tests pass through the Angular CLI test runner (`npm test`; 216 library, 73 app): schema, commands, input rules, Markdown and HTML I/O, sanitization, table UI, find and replace, paste cleanup, document statistics, the editor service against the extension-built schema, `<ink-editor>` component behavior, share codec, document storage, storage errors, version history, backup round trips, import and the storage banner.
 - **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs the Prettier format check, ESLint (angular-eslint, including the template accessibility rules), the icon-subset check, all tests, both production builds and a check that the built app loads nothing from third-party origins.
-- **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 542 kB raw, 127 kB transferred.
-- **Schema:** version 3. M1 added the `highlight` mark and the `align` attribute (version 2); version 3 dropped fixed table row heights so rows fit their text. Older documents migrate on load.
+- **Builds:** library (`npm run build:lib`) and app (`npm run build:app`) build cleanly. Initial app bundle: 563 kB raw, 132 kB transferred (M2 added 4 kB transferred; backups load on demand).
+- **Schema:** version 4. M1 added the `highlight` mark and the `align` attribute (version 2); version 3 dropped fixed table row heights so rows fit their text; version 4 added list attributes shared by all list types. Older documents migrate on load.
 - **Recently fixed:**
   - **Keyboard:** Tab and Shift+Tab indent list items again (the table extension's Tab binding had replaced them). Extensions that bind the same key now run in order until one handles it.
   - **Floating menu:** Bold, italic, underline, strikethrough, code and link no longer appear twice.
@@ -266,10 +264,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | B1 | ~~Fonts and icons load from Google~~ | `src/index.html` | ✅ Done in M0. Inter and JetBrains Mono are self-hosted (Fontsource); Material Symbols is a 6.7 kB subset of the 69 icons in use (`npm run icons:build`). |
 | B2 | ~~Landing page promises features that don't exist~~ | `src/app/pages/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
 | B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/pages/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
-| B4 | History button does nothing | `toolbar.ts` → `historyRequested` | Build version history (M2) or hide the button until then. |
+| B4 | ~~History button does nothing~~ | `toolbar.ts` → `historyRequested` | ✅ Done in M2: the button opens the version history panel. |
 | B5 | ~~`Ctrl+K` advertised but unbound~~ | `default-extensions.ts` (LinkExtension) | ✅ Done in M0. Opens the floating menu's link popover when text is selected, otherwise the toolbar's; the URL field is focused. |
 | B6 | SSR server rejects every host | `angular.json` → `security.allowedHosts: []` | Set production hosts, or `NG_ALLOWED_HOSTS` at deploy time. |
-| B7 | No backup and restore | Settings | Build it (M2). Local-only storage without a backup is a data-loss risk. |
+| B7 | ~~No backup and restore~~ | Settings | ✅ Done in M2: Settings → Backup, and the storage banner. |
 | B8 | README is the Angular CLI placeholder | `README.md` | Product README plus library README ([section 8](#8-library-productization-inkframe-uieditor)). |
 
 ### 4.3 Technical debt (fix during M0–M2)
@@ -279,7 +277,9 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 - ~~**Component tests can't run.**~~ Resolved in M0: tests run through `ng test` (AOT, type-checked). The first component test found that `<ink-editor>` cannot emit edits while being destroyed; edits are now flushed by a `canDeactivate` guard and on `visibilitychange` / `pagehide`.
 - ~~**No linter.**~~ Resolved: angular-eslint (`npm run lint`) runs in CI. Specs may use `any`; template accessibility exceptions are commented where they are made.
 - ~~**Formatting isn't enforced.**~~ Resolved: the codebase was formatted in one commit (listed in `.git-blame-ignore-revs`) and `format:check` runs in CI. `.gitattributes` keeps checkouts on LF so the check passes on Windows too.
-- **Failed saves are silent:** when IndexedDB and the localStorage fallback both refuse a document (quota, blocked storage), `imageStorage.saveDocument` drops the error and the editor still shows "Saved". Surface it with the storage-full banner (M2).
+- ~~**Failed saves are silent.**~~ Resolved in M2: writes throw a `StorageError` and report to `imageStorage.onWrite` listeners; the editor shows "Not saved" and the storage banner offers a backup. A related bug was fixed too: after an IndexedDB quota error, the edit used to go to localStorage, where the older IndexedDB copy hid it on reload.
+- **Image saves on a full disk:** inserting an image when storage is full now shows the banner, but the image is silently not inserted. Show a message at the insertion point.
+- **Unknown document ids:** opening `/doc/<unknown id>` creates a document but the sidebar only lists it after its first save.
 - **Reader images are mouse-only:** a click opens the lightbox, but images cannot be focused. Fix in the M4 accessibility pass.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
 - **Long share links:** images are inlined, so share links can reach hundreds of kilobytes. Some chat apps truncate long URLs; document the limit and warn in the share dialog.
@@ -323,13 +323,15 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 
 ### M2: Data safety and export
 
+**Status (2026-10-14):** done. Unit tests cover every exit criterion; an end-to-end run against the production build in Chrome checked history, export, print, backup and restore, import, and a simulated full disk (IndexedDB transactions aborted with `QuotaExceededError`; Chrome's quota override had no effect in headless mode).
+
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Version history | L | Automatic snapshots (time- and size-based), list with previews, restore creates a new snapshot, retention limit. |
-| Backup and restore | M | One `.inkframe.json` file with documents and images; restore merges or replaces; round-trip test. |
-| Export HTML and print / PDF | M | Print stylesheet hides UI; page breaks avoid splitting code blocks and table rows. |
-| Import Markdown and HTML files | S | Import creates a new document; drag a file onto `/docs` to import. |
-| Storage-full and blocked banners | S | Simulated quota errors show the banner with "Export backup". |
+| ✅ Version history | L | Automatic snapshots (time- and size-based), list with previews, restore creates a new snapshot, retention limit. |
+| ✅ Backup and restore | M | One `.inkframe.json` file with documents and images; restore merges or replaces; round-trip test. |
+| ✅ Export HTML and print / PDF | M | Print stylesheet hides UI; page breaks avoid splitting code blocks and table rows. |
+| ✅ Import Markdown and HTML files | S | Import creates a new document; drag a file onto `/docs` to import. |
+| ✅ Storage-full and blocked banners | S | Simulated quota errors show the banner with "Export backup". |
 
 ### M3: Mobile and PWA
 
@@ -536,10 +538,13 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | Store | Contents | Key |
 | --- | --- | --- |
 | IndexedDB `inkframe_storage` → `documents` | Document envelopes and the documents index | `inkframe_doc_<id>`, `inkframe_docs_index` |
+| IndexedDB `inkframe_storage` → `documents` (M2) | Version history: a list of version metadata per document, and one record per version's content | `inkframe_versions_<docId>`, `inkframe_version_<versionId>` |
 | IndexedDB `inkframe_storage` → `images` | Image blobs with metadata | `img_<timestamp>_<random>`, referenced as `ink-idb:<id>` |
 | localStorage | Theme, sidebar state, active document id; fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
 
-**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 3 to 4; versions 2 and 3 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 4 to 5; versions 2 to 4 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+
+**Backup format (`.inkframe.json`):** `{ format: "inkframe-backup", version: 1, createdAt, documents: [{ meta, doc, versions: [{ meta, doc }] }], images: [{ id, name, type, size, createdAt, data }] }`. `doc` is the stored envelope (migrated on load); `data` is a `data:` URL. Only images that documents or versions show are included.
 
 **Share payload format:** `c_` + base64url(deflate-raw(JSON)) when `CompressionStream` is available, otherwise `u_` + base64url(JSON). The JSON is `{ t: title, v: schemaVersion, d: doc }`; images are inlined as compressed JPEG data URLs.
 
@@ -612,7 +617,7 @@ Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surf
 | Toolbar | Sticky 44px strip, no enclosing card. Groups: history · block type · inline marks · lists · insert. Active state uses `--ink-accent-soft`. |
 | Canvas | `--ink-bg` background; one `--ink-surface` sheet, max width 760px (wide 980px, full width as options), never wrapped in another bordered box. |
 | Status bar | 28px, muted: words, characters, reading time; width toggle. |
-| Panels | History, documents and outline as 360px drawers with a soft scrim; bottom sheets on mobile. |
+| Panels | Documents and outline as 360px drawers with a soft scrim; bottom sheets on mobile. Version history is a 340px panel beside the page with no scrim, because the page shows the version being previewed; under 768px it covers the page and gives way to the preview. |
 | Block mode (M7) | No toolbar strip. Optional cover (200px desktop, 120px mobile) and a 64px page icon above the title. Canvas width 900px by default, full width as an option. Block handles sit in the left margin (outside the text column) at 24px, muted until hovered. The sidebar shows the page tree instead of a flat document list. |
 
 ### 7.3 States every screen must cover
@@ -797,6 +802,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Next / previous table cell | `Tab` / `Shift-Tab` | |
 | Link | `Mod-K` | |
 | Find / replace | `Mod-F` / `Mod-H` (macOS: `Mod-Shift-H`) | |
+| Print or save as PDF | `Mod-P` (app) | |
 | Next / previous match | `Enter` / `Shift-Enter` in the find field, or `Mod-G` / `Mod-Shift-G` | |
 
 ### 12.2 Built-in extensions (`DEFAULT_EXTENSIONS`)

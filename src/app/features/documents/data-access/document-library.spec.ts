@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { LayoutService } from './layout.service';
-import { DocMeta, DocumentManager } from '@app/features/documents/data-access/document-manager';
+import { DocumentLibrary } from './document-library';
+import { DocMeta, DocumentManager } from './document-manager';
 import { ConfirmDialogService } from '@app/shared/ui';
 
-describe('LayoutService.deleteDoc', () => {
+describe('DocumentLibrary.deleteDoc', () => {
   const docs: DocMeta[] = [
     { id: 'a', title: 'Launch plan', wordCount: 3, createdAt: 0, updatedAt: 0 },
   ];
@@ -14,7 +14,7 @@ describe('LayoutService.deleteDoc', () => {
     deleteDoc: ReturnType<typeof vi.fn>;
     setActiveDocId: ReturnType<typeof vi.fn>;
   };
-  let layout: LayoutService;
+  let library: DocumentLibrary;
   let dialog: ConfirmDialogService;
 
   beforeEach(async () => {
@@ -26,14 +26,14 @@ describe('LayoutService.deleteDoc', () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: DocumentManager, useValue: docManager }],
     });
-    layout = TestBed.inject(LayoutService);
+    library = TestBed.inject(DocumentLibrary);
     dialog = TestBed.inject(ConfirmDialogService);
-    await layout.refreshDocs();
+    await library.refreshDocs();
   });
 
   it('asks first, naming the document, and keeps it when cancelled', async () => {
     const click = new Event('click', { cancelable: true });
-    const pending = layout.deleteDoc('a', click);
+    const pending = library.deleteDoc('a', click);
 
     // The click is stopped at once, before the question is answered.
     expect(click.defaultPrevented).toBe(true);
@@ -47,7 +47,7 @@ describe('LayoutService.deleteDoc', () => {
   });
 
   it('deletes once confirmed', async () => {
-    const pending = layout.deleteDoc('a');
+    const pending = library.deleteDoc('a');
     dialog.close(true);
     await pending;
     expect(docManager.deleteDoc).toHaveBeenCalledWith('a');

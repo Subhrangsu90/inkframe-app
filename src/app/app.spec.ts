@@ -2,7 +2,7 @@ import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { LayoutService } from './layout/layout.service';
+import { DocumentLibrary } from './features/documents/data-access/document-library';
 import {
   DocumentManager,
   extractDocTitle,
@@ -193,7 +193,7 @@ describe('Application Route Definitions', () => {
       TestBed.configureTestingModule({
         providers: [
           provideRouter([]),
-          { provide: LayoutService, useValue: { createDocWithoutOpening: vi.fn(createDoc) } },
+          { provide: DocumentLibrary, useValue: { createDocWithoutOpening: vi.fn(createDoc) } },
         ],
       });
       const guard = routes.find((r) => r.path === 'new')!.canActivate![0] as () => Promise<UrlTree>;

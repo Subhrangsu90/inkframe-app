@@ -13,6 +13,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
 import { DocumentManager } from '@app/features/documents/data-access/document-manager';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import {
   BACKUP_EXTENSION,
@@ -40,6 +41,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export class Settings implements OnInit {
   readonly themeService = inject(ThemeService);
   private readonly docManager = inject(DocumentManager);
+  private readonly library = inject(DocumentLibrary);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly backup = inject(BackupService);
@@ -107,7 +109,7 @@ export class Settings implements OnInit {
   async restoreSampleDoc(): Promise<void> {
     try {
       await this.docManager.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
       await this.updateStats();
       this.toast.success('Sample document restored');
     } catch {
@@ -176,7 +178,7 @@ export class Settings implements OnInit {
             : 'The backup could not be restored',
       );
     } finally {
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
       await this.updateStats();
       this.backupBusy.set(null);
     }
@@ -196,7 +198,7 @@ export class Settings implements OnInit {
     try {
       await this.docManager.clearAll();
       await this.docManager.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
       await this.updateStats();
       this.toast.warning('All documents deleted. A fresh welcome document was created.');
     } catch {

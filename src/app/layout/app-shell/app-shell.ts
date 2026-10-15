@@ -12,6 +12,7 @@ import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ThemeService, VisualViewportTracker } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../layout.service';
 import { formatRelativeTime } from '@app/features/documents/data-access/document-manager';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { StorageBanner } from '../storage-banner/storage-banner';
 import { PwaService } from '@app/core/pwa';
 
@@ -25,6 +26,7 @@ import { PwaService } from '@app/core/pwa';
 })
 export class AppShellComponent {
   readonly layout = inject(LayoutService);
+  readonly library = inject(DocumentLibrary);
   readonly themeService = inject(ThemeService);
   readonly pwa = inject(PwaService);
 
@@ -46,7 +48,8 @@ export class AppShellComponent {
   }
 
   onCreateNewDoc(): void {
-    this.layout.createNewDoc();
+    this.layout.closeMobile();
+    this.library.createNewDoc();
   }
 
   async installApp(): Promise<void> {

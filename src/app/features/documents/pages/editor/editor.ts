@@ -45,6 +45,7 @@ import {
   DocumentManager,
   extractDocTitle,
 } from '@app/features/documents/data-access/document-manager';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ConfirmDialogService, ToastService } from '@app/shared/ui';
@@ -118,6 +119,7 @@ export class EditorView implements OnInit {
   private readonly router = inject(Router);
   private readonly docManager = inject(DocumentManager);
   private readonly layout = inject(LayoutService);
+  private readonly library = inject(DocumentLibrary);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly versionHistory = inject(VersionHistory);
@@ -246,7 +248,7 @@ export class EditorView implements OnInit {
     this.route.paramMap.subscribe(async (params) => {
       const idParam = params.get('id');
       const docId = idParam || this.docManager.getActiveDocId() || 'doc_default';
-      this.layout.setActiveDocId(docId);
+      this.library.setActiveDocId(docId);
       await this.loadDocument(docId);
     });
   }
@@ -278,7 +280,7 @@ export class EditorView implements OnInit {
 
       if (docId !== this.currentDocId()) this.closeHistory();
       this.currentDocId.set(docId);
-      this.layout.setActiveDocId(docId);
+      this.library.setActiveDocId(docId);
       this.currentStoredDoc.set(doc);
       this.docTitle.set(extractDocTitle(doc));
       this.saveStatus.set('saved');
@@ -358,7 +360,7 @@ export class EditorView implements OnInit {
         }
       }
       if (saved) {
-        await this.layout.refreshDocs();
+        await this.library.refreshDocs();
         if (previous !== undefined) {
           await this.versionHistory
             .recordEdit(id, previous, doc)

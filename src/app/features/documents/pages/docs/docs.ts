@@ -20,6 +20,7 @@ import {
   DocMeta,
   formatRelativeTime,
 } from '@app/features/documents/data-access/document-manager';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { InkIcon, InkIconName } from '@app/shared/ui/icons/icon';
 import { ToastService } from '@app/shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
@@ -71,6 +72,7 @@ export interface TemplateStarter {
 })
 export class Docs implements OnInit {
   readonly layout = inject(LayoutService);
+  readonly library = inject(DocumentLibrary);
   private readonly docManager = inject(DocumentManager);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -242,16 +244,16 @@ export class Docs implements OnInit {
   ];
 
   readonly filteredDocs = computed<DocMeta[]>(() => {
-    const list = this.layout.documents();
+    const list = this.library.documents();
     const q = this.searchQuery().toLowerCase().trim();
     if (!q) return list;
     return list.filter((d) => d.title.toLowerCase().includes(q));
   });
 
   async ngOnInit(): Promise<void> {
-    await this.layout.refreshDocs();
+    await this.library.refreshDocs();
     if (await this.docManager.backfillExcerpts()) {
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
     }
   }
 
@@ -278,7 +280,7 @@ export class Docs implements OnInit {
   }
 
   async createNewDoc(): Promise<void> {
-    await this.layout.createNewDoc();
+    await this.library.createNewDoc();
   }
 
   // ── Import (button and drag and drop) ───────────────────────────
@@ -337,7 +339,7 @@ export class Docs implements OnInit {
           );
         }
       }
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
     } finally {
       this.importing.set(false);
     }
@@ -359,7 +361,7 @@ export class Docs implements OnInit {
   async createFromTemplate(tpl: TemplateStarter): Promise<void> {
     try {
       const created = await this.docManager.createDoc(tpl.title, tpl.doc);
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
       this.toast.success(`Created "${tpl.title}" from template`);
       await this.router.navigate(['/doc', created.meta.id]);
     } catch {
@@ -372,7 +374,7 @@ export class Docs implements OnInit {
     event.preventDefault();
     try {
       const dup = await this.docManager.duplicateDoc(id);
-      await this.layout.refreshDocs();
+      await this.library.refreshDocs();
       this.toast.success('Document duplicated');
       await this.router.navigate(['/doc', dup.meta.id]);
     } catch {
@@ -383,7 +385,7 @@ export class Docs implements OnInit {
   async deleteDoc(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     event.preventDefault();
-    await this.layout.deleteDoc(id, event);
+    await this.library.deleteDoc(id, event);
   }
 
   async shareDocLink(id: string, event: Event): Promise<void> {
@@ -392,7 +394,7 @@ export class Docs implements OnInit {
     try {
       const doc = await this.docManager.getDoc(id);
       if (doc) {
-        const meta = this.layout.documents().find((d: DocMeta) => d.id === id);
+        const meta = this.library.documents().find((d: DocMeta) => d.id === id);
         const url = await buildShareableUrl(doc, meta?.title);
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
           await navigator.clipboard.writeText(url);

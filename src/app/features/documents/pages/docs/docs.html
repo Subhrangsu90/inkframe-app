@@ -5,7 +5,7 @@
   <div class="page-heading">
     <span class="page-icon"><ink-icon name="folder" [size]="14" /></span>
     <span class="page-title">Documents</span>
-    <span class="count-pill">{{ layout.documents().length }}</span>
+    <span class="count-pill">{{ library.documents().length }}</span>
   </div>
 </ng-template>
 
@@ -161,7 +161,7 @@
       } @else if (viewMode() === 'grid') {
         <div class="docs-grid">
           @for (doc of filteredDocs(); track doc.id) {
-            <article class="doc-card" [class.is-active]="layout.activeDocId() === doc.id">
+            <article class="doc-card" [class.is-active]="library.activeDocId() === doc.id">
               <div class="doc-card-preview" aria-hidden="true">
                 <p class="doc-card-excerpt" [class.is-empty]="!doc.excerpt">
                   {{ doc.excerpt || 'Empty document' }}
@@ -212,7 +212,7 @@
       } @else {
         <div class="docs-list">
           @for (doc of filteredDocs(); track doc.id) {
-            <article class="doc-row" [class.is-active]="layout.activeDocId() === doc.id">
+            <article class="doc-row" [class.is-active]="library.activeDocId() === doc.id">
               <span class="doc-row-icon" aria-hidden="true"
                 ><ink-icon name="file-text" [size]="15"
               /></span>

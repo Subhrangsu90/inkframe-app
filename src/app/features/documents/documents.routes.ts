@@ -1,14 +1,14 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
-import { LayoutService } from '@app/layout/layout.service';
+import { DocumentLibrary } from './data-access/document-library';
 import type { EditorView } from './pages/editor/editor';
 
 /** Creates an empty document and opens it; storage errors lead to the library. */
 async function openNewDocument() {
   const router = inject(Router);
-  const layout = inject(LayoutService);
+  const library = inject(DocumentLibrary);
   try {
-    const id = await layout.createDocWithoutOpening();
+    const id = await library.createDocWithoutOpening();
     return router.createUrlTree(['/doc', id]);
   } catch {
     return router.createUrlTree(['/docs']);

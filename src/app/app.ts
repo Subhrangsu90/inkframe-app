@@ -9,7 +9,7 @@ import {
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
-import { AppShellComponent } from './shared/layout/app-shell/app-shell';
+import { AppShellComponent } from './layout/app-shell/app-shell';
 import { PwaService } from './core/pwa';
 
 /**

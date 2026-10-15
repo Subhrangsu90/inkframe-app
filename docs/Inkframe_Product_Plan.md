@@ -262,8 +262,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | # | Blocker | Where | Fix |
 | --- | --- | --- | --- |
 | B1 | ~~Fonts and icons load from Google~~ | `src/index.html` | ✅ Done in M0. Inter and JetBrains Mono are self-hosted (Fontsource); Material Symbols is a 6.7 kB subset of the 69 icons in use (`npm run icons:build`). |
-| B2 | ~~Landing page promises features that don't exist~~ | `src/app/pages/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
-| B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/pages/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
+| B2 | ~~Landing page promises features that don't exist~~ | `src/app/features/landing/landing.html` | ✅ Done in M0. WYSIWYG positioning; Split View, PDF and HTML export, "encrypted" and offline claims removed; fabricated testimonials and the Pricing section removed; shortcut table corrected; dead links replaced. |
+| B3 | ~~"Clear all data" leaves documents in IndexedDB~~ | `src/app/features/settings/settings.ts` | ✅ Done in M0. Deletes the database (other tabs release it), keeps preferences, uses the confirm dialog; storage usage now reported from `navigator.storage`. |
 | B4 | ~~History button does nothing~~ | `toolbar.ts` → `historyRequested` | ✅ Done in M2: the button opens the version history panel. |
 | B5 | ~~`Ctrl+K` advertised but unbound~~ | `extensions/link/link-extension.ts` | ✅ Done in M0. Opens the floating menu's link popover when text is selected, otherwise the toolbar's; the URL field is focused. |
 | B6 | SSR server rejects every host | `angular.json` → `security.allowedHosts: []` | Set production hosts, or `NG_ALLOWED_HOSTS` at deploy time. |
@@ -575,7 +575,7 @@ Browser (Inkframe app)                          Backend (signed-in users only)
 
 | Interface | Implementations | Lives in |
 | --- | --- | --- |
-| `DocumentStore` | `LocalDocumentStore` (today's code), `CloudDocumentStore` | App (`src/app/documents`) |
+| `DocumentStore` | `LocalDocumentStore` (today's code), `CloudDocumentStore` | App (`src/app/features/documents`) |
 | `ImageStore` | IndexedDB; cloud with a local cache | Library `/core` (`imageStorage` gains a cloud resolver) |
 | `AuthService` | The chosen provider's SDK | App |
 | `AiProvider` | Server proxy client in the app; library consumers bring their own | Library `/core` (interface), app (implementation) |

@@ -2,14 +2,14 @@ import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { LayoutService } from './shared/layout/layout.service';
+import { LayoutService } from './layout/layout.service';
 import {
   DocumentManager,
   extractDocTitle,
   extractDocWordCount,
   formatRelativeTime,
-} from './documents/document-manager';
-import { WELCOME_DOC } from './documents/welcome-doc';
+} from './features/documents/data-access/document-manager';
+import { WELCOME_DOC } from './features/documents/data-access/welcome-doc';
 import { routes } from './app.routes';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 

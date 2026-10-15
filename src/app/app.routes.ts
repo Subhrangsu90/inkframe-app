@@ -1,71 +1,22 @@
-import { inject } from '@angular/core';
-import { Router, Routes } from '@angular/router';
-import type { EditorView } from './pages/editor/editor';
-import { LayoutService } from './shared/layout/layout.service';
-
-/** Creates an empty document and opens it; storage errors lead to the library. */
-async function openNewDocument() {
-  const router = inject(Router);
-  const layout = inject(LayoutService);
-  try {
-    const id = await layout.createDocWithoutOpening();
-    return router.createUrlTree(['/doc', id]);
-  } catch {
-    return router.createUrlTree(['/docs']);
-  }
-}
+import { Routes } from '@angular/router';
+import { documentsRoutes } from './features/documents/documents.routes';
 
 export const routes: Routes = [
   // Landing Page
   {
     path: '',
-    loadComponent: () => import('./pages/landing/landing').then((m) => m.Landing),
+    loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
     pathMatch: 'full',
   },
-  // All docs list page
-  {
-    path: 'docs',
-    loadComponent: () => import('./pages/docs/docs').then((m) => m.Docs),
-  },
-  // A single doc/editor page
-  {
-    path: 'doc/:id',
-    loadComponent: () => import('./pages/editor/editor').then((m) => m.EditorView),
-    // Save debounced edits before the editor is destroyed: once destruction
-    // starts, the editor can no longer emit them.
-    canDeactivate: [(page: EditorView) => (page.flushPendingEdits(), true)],
-  },
-  // A new document: the installed app's "New document" shortcut (manifest.webmanifest)
-  {
-    path: 'new',
-    canActivate: [openNewDocument],
-    children: [],
-  },
-  // Redirect editor/ to docs
-  {
-    path: 'editor',
-    redirectTo: 'docs',
-    pathMatch: 'full',
-  },
-  // Document reader page (view mode, no edit). Share links carry the
-  // document in the fragment (/s#<payload>); /s/:hash serves older links
-  // and local document ids.
-  {
-    path: 's',
-    loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
-  },
-  {
-    path: 's/:hash',
-    loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
-  },
+  ...documentsRoutes,
   // Settings page
   {
     path: 'settings',
-    loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),
+    loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
   },
   // 404 - Not Found
   {
     path: '**',
-    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
+    loadComponent: () => import('./features/not-found/not-found').then((m) => m.NotFound),
   },
 ];

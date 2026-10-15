@@ -28,11 +28,17 @@ Then open <http://localhost:4200>. The app imports the library from source, so l
 ```text
 src/                     The Inkframe app
   app/core/              App-wide services (PWA install and updates)
-  app/documents/         Saving and loading documents, storage health, the welcome document
-    versions/            Version history
-    transfer/            Backup and restore, import, export, share links
-  app/pages/             Routed pages: landing, docs list, editor, reader, settings
-  app/shared/            App shell layout and UI components
+  app/layout/            App shell: sidebar, header, storage banner
+  app/shared/ui/         Reusable UI components: buttons, dialogs, toasts, icons
+  app/features/          Product areas, each loaded by the router
+    documents/           The docs list, editor and reader (documents.routes.ts)
+      data-access/       Saving and loading documents, storage health, the welcome document
+      versions/          Version history
+      transfer/          Backup and restore, import, export, share links
+      pages/             Routed pages: docs list, editor, reader
+    landing/             Landing page
+    settings/            Settings page
+    not-found/           404 page
   styles/                Global styles and design tokens
   server.ts              Express server for SSR
 projects/inkframe-editor/
@@ -78,7 +84,15 @@ The path is relative to `projects/inkframe-editor/src`.
 
 ## Things to know
 
-**Imports in the app.** Within one top-level folder of `src/app` (`core`, `documents`, `pages`, `shared`), import with relative paths. To reach another top-level folder, use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`.
+**Folders and imports.** Code in `src/app` imports only in these directions, and `npm run lint` fails otherwise:
+
+- `shared/` imports nothing else from the app.
+- `core/` imports only `shared/`.
+- A feature's logic (`data-access/`, `transfer/`, `versions/`) may import `core/`, `shared/` and other features' logic, but not `layout/` or pages.
+- `layout/` and pages may import all of the above and `layout/`.
+- Pages and route files are loaded only by the router: `app.routes.ts` and the feature's own `*.routes.ts`.
+
+Relative imports go up at most one folder (`../`). Farther imports use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`, so the lint rules can check them.
 
 **Editor features.** Each feature has a folder in `projects/inkframe-editor/core/extensions/`, with the same files: `<feature>-schema.ts` (node and mark specs), `<feature>-commands.ts` (ProseMirror commands), `<feature>-extension.ts` (the `EditorExtension`), plugins and node views, a spec, and an `index.ts` that exports them. Its styles are mixins in `src/styles/blocks/_<feature>.scss`, which `_editor-content.scss` includes where the rules belong in its order. `EditorService` methods check what the editor allows (editable, the node exists, not inside inline code) and run the feature's command. A new feature is added to `starter-kit.ts`, its specs to `schema/schema.ts`, and its folder to `core/index.ts`.
 

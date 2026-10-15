@@ -21,6 +21,7 @@ import {
   formatRelativeTime,
 } from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
+import { docPath } from '@app/features/documents/documents.paths';
 import { InkIcon, InkIconName } from '@app/shared/ui/icons/icon';
 import { ToastService } from '@app/shared/ui';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
@@ -76,6 +77,7 @@ export class Docs implements OnInit {
   private readonly docManager = inject(DocumentManager);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  readonly docPath = docPath;
 
   // Dynamic header templates
   readonly headerLeftTpl = viewChild<TemplateRef<unknown>>('headerLeft');
@@ -350,7 +352,7 @@ export class Docs implements OnInit {
     }
     if (created.length === 1 && problems.length === 0) {
       this.toast.success('Document imported');
-      await this.router.navigate(['/doc', created[0]]);
+      await this.router.navigateByUrl(docPath(created[0]));
     } else if (created.length > 0) {
       this.toast.success(
         `Imported ${created.length} ${created.length === 1 ? 'document' : 'documents'}`,
@@ -363,7 +365,7 @@ export class Docs implements OnInit {
       const created = await this.docManager.createDoc(tpl.title, tpl.doc);
       await this.library.refreshDocs();
       this.toast.success(`Created "${tpl.title}" from template`);
-      await this.router.navigate(['/doc', created.meta.id]);
+      await this.router.navigateByUrl(docPath(created.meta.id));
     } catch {
       this.toast.error('Failed to create template');
     }
@@ -376,7 +378,7 @@ export class Docs implements OnInit {
       const dup = await this.docManager.duplicateDoc(id);
       await this.library.refreshDocs();
       this.toast.success('Document duplicated');
-      await this.router.navigate(['/doc', dup.meta.id]);
+      await this.router.navigateByUrl(docPath(dup.meta.id));
     } catch {
       this.toast.error('Failed to duplicate document');
     }

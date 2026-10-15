@@ -10,6 +10,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
 import { AppShellComponent } from './layout/app-shell/app-shell';
+import { isStandalonePage } from './layout/standalone-page';
 import { PwaService } from './core/pwa';
 
 /**
@@ -68,24 +69,16 @@ export class App {
       });
     });
 
-    this.updateStandalone(this.router.url);
+    // Pages without the shell are marked in their routes (STANDALONE_PAGE).
+    // Until the first navigation ends there is no route yet: keep the default.
+    if (this.router.navigated) this.updateStandalone();
 
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        this.updateStandalone(event.urlAfterRedirects);
-      });
+      .subscribe(() => this.updateStandalone());
   }
 
-  private updateStandalone(rawUrl: string): void {
-    const url = this.normalizeUrl(rawUrl);
-    // Standalone routes: Landing page ('/' or '') and Reader page ('/s', '/s#...', '/s/...').
-    // Not a bare startsWith('/s'): that also matches '/settings'.
-    const standalone = url === '' || url === '/' || url === '/s' || url.startsWith('/s/');
-    this.isStandalone.set(standalone);
-  }
-
-  private normalizeUrl(url: string): string {
-    return url.split('?')[0].split('#')[0];
+  private updateStandalone(): void {
+    this.isStandalone.set(isStandalonePage(this.router.routerState.snapshot.root));
   }
 }

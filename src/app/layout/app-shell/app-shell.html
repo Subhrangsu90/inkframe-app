@@ -92,7 +92,7 @@
         @for (doc of library.documents(); track doc.id) {
           <div class="doc-item" [class.active]="library.activeDocId() === doc.id">
             <a
-              [routerLink]="['/doc', doc.id]"
+              [routerLink]="docPath(doc.id)"
               (click)="library.setActiveDocId(doc.id); layout.closeMobile()"
               class="doc-item-link"
               [title]="doc.title"

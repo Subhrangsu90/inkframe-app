@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { docPath } from '../documents.paths';
 import { DocMeta, DocumentManager } from './document-manager';
 
 /** The document list shown in the sidebar and the docs page, and the actions that change it. */
@@ -44,7 +45,7 @@ export class DocumentLibrary {
     try {
       const id = await this.createDocWithoutOpening(title || undefined);
       this.setActiveDocId(id);
-      await this.router.navigate(['/doc', id]);
+      await this.router.navigateByUrl(docPath(id));
       this.toast.success('New document created');
       return id;
     } catch (e) {
@@ -81,7 +82,7 @@ export class DocumentLibrary {
       if (this.activeDocId() === id) {
         if (nextId) {
           this.setActiveDocId(nextId);
-          await this.router.navigate(['/doc', nextId]);
+          await this.router.navigateByUrl(docPath(nextId));
         } else {
           await this.router.navigate(['/docs']);
         }

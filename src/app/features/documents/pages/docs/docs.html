@@ -169,7 +169,7 @@
               </div>
               <div class="doc-card-body">
                 <h3 class="doc-card-title">
-                  <a [routerLink]="['/doc', doc.id]" class="stretched-link">{{ doc.title }}</a>
+                  <a [routerLink]="docPath(doc.id)" class="stretched-link">{{ doc.title }}</a>
                 </h3>
                 <p class="doc-card-meta">
                   <span>{{ formatTime(doc.updatedAt) }}</span>
@@ -218,7 +218,7 @@
               /></span>
               <div class="doc-row-main">
                 <h3 class="doc-row-title">
-                  <a [routerLink]="['/doc', doc.id]" class="stretched-link">{{ doc.title }}</a>
+                  <a [routerLink]="docPath(doc.id)" class="stretched-link">{{ doc.title }}</a>
                 </h3>
                 @if (doc.excerpt) {
                   <p class="doc-row-excerpt">{{ doc.excerpt }}</p>

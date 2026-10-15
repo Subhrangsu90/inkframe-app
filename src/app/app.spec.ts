@@ -2,7 +2,9 @@ import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
+import { Component } from '@angular/core';
 import { DocumentLibrary } from './features/documents/data-access/document-library';
+import { isStandalonePage } from './layout/standalone-page';
 import {
   DocumentManager,
   extractDocTitle,
@@ -162,6 +164,9 @@ describe('DocumentManager Service', () => {
   });
 });
 
+@Component({ template: '' })
+class EmptyPage {}
+
 describe('Application Route Definitions', () => {
   it('defines all required lazy-loaded routes with modern chunks', () => {
     const paths = routes.map((r) => r.path);
@@ -186,6 +191,37 @@ describe('Application Route Definitions', () => {
     expect(typeof editorRoute?.loadComponent).toBe('function');
     expect(typeof readerRoute?.loadComponent).toBe('function');
     expect(typeof settingsRoute?.loadComponent).toBe('function');
+  });
+
+  it('shows only the landing page and the reader without the app shell', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(
+          // Empty pages, so that navigating loads none of the real ones.
+          routes.map((route) =>
+            route.loadComponent
+              ? { ...route, loadComponent: undefined, canDeactivate: [], component: EmptyPage }
+              : route,
+          ),
+        ),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const standalone: Record<string, boolean> = {};
+    for (const url of ['/', '/s', '/s/abc', '/docs', '/doc/x', '/settings', '/missing']) {
+      await router.navigateByUrl(url);
+      standalone[url] = isStandalonePage(router.routerState.snapshot.root);
+    }
+    expect(standalone).toEqual({
+      '/': true,
+      '/s': true,
+      '/s/abc': true,
+      '/docs': false,
+      '/doc/x': false,
+      // Starts with "/s" but is not the reader.
+      '/settings': false,
+      '/missing': false,
+    });
   });
 
   describe('/new, the "New document" shortcut of the installed app', () => {

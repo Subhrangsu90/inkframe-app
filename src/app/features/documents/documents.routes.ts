@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
+import { STANDALONE_PAGE } from '@app/layout/standalone-page';
 import { DocumentLibrary } from './data-access/document-library';
+import { docPath } from './documents.paths';
 import type { EditorView } from './pages/editor/editor';
 
 /** Creates an empty document and opens it; storage errors lead to the library. */
@@ -9,7 +11,7 @@ async function openNewDocument() {
   const library = inject(DocumentLibrary);
   try {
     const id = await library.createDocWithoutOpening();
-    return router.createUrlTree(['/doc', id]);
+    return router.parseUrl(docPath(id));
   } catch {
     return router.createUrlTree(['/docs']);
   }
@@ -48,9 +50,11 @@ export const documentsRoutes: Routes = [
   {
     path: 's',
     loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
+    data: STANDALONE_PAGE,
   },
   {
     path: 's/:hash',
     loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
+    data: STANDALONE_PAGE,
   },
 ];

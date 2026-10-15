@@ -90,9 +90,11 @@ The path is relative to `projects/inkframe-editor/src`.
 - `core/` imports only `shared/`.
 - A feature's logic (`data-access/`, `transfer/`, `versions/`) may import `core/`, `shared/` and other features' logic, but not `layout/` or pages.
 - `layout/` and pages may import all of the above and `layout/`.
-- Pages and route files are loaded only by the router: `app.routes.ts` and the feature's own `*.routes.ts`.
+- Pages and route files are loaded only by the router: `app.routes.ts` and the feature's own `*.routes.ts`. A feature's `*.paths.ts` (link builders such as `docPath(id)`) may be imported from anywhere except `shared/` and `core/`.
 
 Relative imports go up at most one folder (`../`). Farther imports use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`, so the lint rules can check them.
+
+**Routes and links.** Link to a document with `docPath(id)` from `documents.paths.ts`, not a hand-written `['/doc', id]`. Fixed links such as `routerLink="/docs"` stay plain strings. A page shown without the app shell (sidebar and header) sets `data: STANDALONE_PAGE` on its route.
 
 **Editor features.** Each feature has a folder in `projects/inkframe-editor/core/extensions/`, with the same files: `<feature>-schema.ts` (node and mark specs), `<feature>-commands.ts` (ProseMirror commands), `<feature>-extension.ts` (the `EditorExtension`), plugins and node views, a spec, and an `index.ts` that exports them. Its styles are mixins in `src/styles/blocks/_<feature>.scss`, which `_editor-content.scss` includes where the rules belong in its order. `EditorService` methods check what the editor allows (editable, the node exists, not inside inline code) and run the feature's command. A new feature is added to `starter-kit.ts`, its specs to `schema/schema.ts`, and its folder to `core/index.ts`.
 

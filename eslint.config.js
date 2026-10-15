@@ -10,10 +10,11 @@ const noDeepRelative = {
   regex: '^\\.\\./\\.\\./',
   message: 'Import from outside the parent folder with the @app/ alias.',
 };
+// Files at a feature's top level are entry points for the router, except its link builders (*.paths.ts).
 const noFeatureEntryPoints = {
-  regex: '^@app/features/[^/]+/(pages/|[^/]+$)',
+  regex: '^@app/features/[^/]+/(pages/|(?![^/]+\\.paths$)[^/]+$)',
   message:
-    "Only the router loads pages and route files. Share a feature's code from its other folders (data-access/, transfer/, versions/).",
+    "Only the router loads pages and route files. Share a feature's code from its *.paths.ts file or its other folders (data-access/, transfer/, versions/).",
 };
 const importBoundaries = (...patterns) => ['error', { patterns: [noDeepRelative, ...patterns] }];
 

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { documentsRoutes } from './features/documents/documents.routes';
+import { STANDALONE_PAGE } from './layout/standalone-page';
 
 export const routes: Routes = [
   // Landing Page
@@ -7,6 +8,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
     pathMatch: 'full',
+    data: STANDALONE_PAGE,
   },
   ...documentsRoutes,
   // Settings page

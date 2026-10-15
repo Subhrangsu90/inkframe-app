@@ -16,6 +16,7 @@ import {
   extractDocTitle,
 } from '@app/features/documents/data-access/document-manager';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
+import { docPath } from '@app/features/documents/documents.paths';
 import {
   docToHtml,
   migrate,
@@ -183,9 +184,9 @@ export class Reader implements OnInit {
         return;
       }
       this.toast.success('Saved to your notes! Opening editor...');
-      await this.router.navigate(['/doc', id]);
+      await this.router.navigateByUrl(docPath(id));
     } else {
-      await this.router.navigate(['/doc', this.docId()]);
+      await this.router.navigateByUrl(docPath(this.docId()));
     }
   }
 }

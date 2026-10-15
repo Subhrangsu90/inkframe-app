@@ -13,6 +13,7 @@ import { ThemeService, VisualViewportTracker } from '@inkframe-ui/editor/core';
 import { LayoutService } from '../layout.service';
 import { formatRelativeTime } from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
+import { docPath } from '@app/features/documents/documents.paths';
 import { StorageBanner } from '../storage-banner/storage-banner';
 import { PwaService } from '@app/core/pwa';
 
@@ -29,6 +30,7 @@ export class AppShellComponent {
   readonly library = inject(DocumentLibrary);
   readonly themeService = inject(ThemeService);
   readonly pwa = inject(PwaService);
+  readonly docPath = docPath;
 
   constructor() {
     // The layout fits the area above an on-screen keyboard (see the styles).

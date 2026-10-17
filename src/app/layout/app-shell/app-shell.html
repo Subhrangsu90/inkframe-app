@@ -72,14 +72,6 @@
         <ink-icon name="settings" [size]="16" class="nav-icon" />
         <span>Settings</span>
       </a>
-
-      <!-- Shown when the browser offers to install the app -->
-      @if (pwa.canInstall()) {
-        <button type="button" class="sidebar-nav-item" (click)="installApp()">
-          <ink-icon name="install" [size]="16" class="nav-icon" />
-          <span>Install app</span>
-        </button>
-      }
     </nav>
 
     <div class="sidebar-divider"></div>
@@ -118,24 +110,13 @@
         } @empty {
           <div class="empty-docs-hint">
             <span>No documents yet.</span>
-            <button type="button" (click)="onCreateNewDoc()" class="empty-create-link">
-              Create your first note
-            </button>
           </div>
         }
       </div>
     </div>
 
-    <!-- Bottom User Status & Profile Bar -->
+    <!-- Sidebar footer: theme (phones only) and settings -->
     <div class="sidebar-user-footer">
-      <div class="user-profile-badge">
-        <div class="user-avatar">S</div>
-        <div class="user-meta">
-          <span class="user-name">Subhrangsu</span>
-          <span class="user-plan">Local-First · Free</span>
-        </div>
-      </div>
-
       <div class="footer-actions">
         <!-- Phones: the header has no room for the theme toggle, so it is here. -->
         <button

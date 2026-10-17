@@ -35,21 +35,6 @@
   color: var(--ink-text-heading);
 }
 
-.count-pill {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  border-radius: var(--ink-radius-pill);
-  background: var(--ink-surface-2);
-  color: var(--ink-text-muted);
-}
-
 .docs-search-bar {
   display: flex;
   align-items: center;
@@ -235,10 +220,14 @@
 /* ═══════════════════════════════════════════════ */
 /* BODY                                            */
 /* ═══════════════════════════════════════════════ */
+/* Positioned so absolutely placed content stays in this scroll area (see settings-body). */
 .docs-body {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
+  /* Keeps cards reached with Tab from scrolling under the sticky Recent heading. */
+  scroll-padding-top: 72px;
 }
 
 .docs-container {
@@ -257,10 +246,45 @@
 
 .section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+/*
+ * The Recent heading stays at the top of the scrolling area while the
+ * documents pass under it. Its padding replaces the heading's margin so the
+ * background covers the cards; the negative margin keeps the gap above it as
+ * before. Once stuck, a hairline marks the edge (browsers with scroll-state
+ * queries; others show the heading without it).
+ */
+.sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: -10px 0 4px;
+  background: var(--ink-bg);
+  container-type: scroll-state;
+
+  .section-head {
+    margin-bottom: 0;
+    padding-block: 10px;
+    transition: box-shadow var(--ink-transition-base);
+  }
+}
+
+@container scroll-state(stuck: top) {
+  .sticky-head .section-head {
+    box-shadow: 0 1px 0 var(--ink-border);
+  }
+}
+
+/* Right side of a section heading: the layout switch and the sort note. */
+.section-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .section-title {
@@ -278,7 +302,7 @@
 /* Templates */
 .templates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 12px;
 }
 
@@ -473,13 +497,11 @@
   }
 }
 
-/* A miniature page showing the start of the document. */
+/* The start of the document, shown directly on the card and faded out at the bottom. */
 .doc-card-preview {
   position: relative;
-  height: 128px;
-  padding: 16px 18px 0;
-  background: var(--ink-surface-2);
-  border-bottom: 1px solid var(--ink-border);
+  height: 96px;
+  padding: 16px 16px 0;
   overflow: hidden;
 
   &::after {
@@ -488,28 +510,20 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 40px;
-    background: linear-gradient(to bottom, transparent, var(--ink-surface-2));
+    height: 32px;
+    background: linear-gradient(to bottom, transparent, var(--ink-surface));
   }
 }
 
 .doc-card-excerpt {
   margin: 0;
-  padding: 12px 14px;
-  height: 100%;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--ink-text-muted);
-  background: var(--ink-surface);
-  border: 1px solid var(--ink-border);
-  border-bottom: none;
-  border-radius: 6px 6px 0 0;
-  overflow: hidden;
   overflow-wrap: anywhere;
 
   &.is-empty {
     font-style: italic;
-    opacity: 0.7;
   }
 }
 
@@ -749,8 +763,7 @@
 
 /* Phones: the header keeps only the sidebar button, search, Import and New. */
 @media (max-width: 639px) {
-  .page-heading,
-  .view-switch {
+  .page-heading {
     display: none;
   }
 

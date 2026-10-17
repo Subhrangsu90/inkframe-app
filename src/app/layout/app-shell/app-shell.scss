@@ -409,69 +409,15 @@
   gap: 6px;
 }
 
-.empty-create-link {
-  background: none;
-  border: none;
-  color: var(--ink-accent-text);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-
-/* Sidebar Bottom User Status & Profile */
+/* Sidebar footer: settings, plus the theme toggle on phones */
 .sidebar-user-footer {
   height: calc(52px + env(safe-area-inset-bottom));
   padding: 0 14px env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   border-top: 1px solid var(--ink-border);
-  background: var(--ink-surface);
+  background: var(--ink-sidebar);
   flex-shrink: 0;
-}
-
-.user-profile-badge {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  overflow: hidden;
-}
-
-.user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--ink-surface-2);
-  border: 1px solid var(--ink-border-strong);
-  color: var(--ink-text);
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.user-name {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.user-plan {
-  font-size: 10px;
-  color: var(--ink-text-muted);
 }
 
 .footer-actions {
@@ -681,8 +627,7 @@
     border-color: transparent;
   }
 
-  .sidebar-brand-link,
-  .empty-create-link {
+  .sidebar-brand-link {
     min-height: 44px;
   }
 

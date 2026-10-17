@@ -82,9 +82,6 @@ html {
 /* ── Host Application Base Styles & Resets ── */
 body {
   background-color: var(--ink-bg);
-  background-image: radial-gradient(circle at 1px 1px, var(--ink-canvas-dot) 1px, transparent 0);
-  background-size: 32px 32px;
-  background-attachment: fixed;
   color: var(--ink-text-primary);
   font-family:
     'Inter Variable',
@@ -122,12 +119,6 @@ body {
 }
 
 /* ── Reusable Premium Backdrop Utilities ── */
-.ink-canvas-texture {
-  background-color: var(--ink-bg);
-  background-image: radial-gradient(circle at 1px 1px, var(--ink-canvas-dot) 1px, transparent 0);
-  background-size: 28px 28px;
-}
-
 .ink-beam-divider {
   height: 1px;
   width: 100%;

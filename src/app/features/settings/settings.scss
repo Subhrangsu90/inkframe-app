@@ -35,7 +35,13 @@
 /* ═══════════════════════════════════════════════ */
 /* BODY                                            */
 /* ═══════════════════════════════════════════════ */
+/*
+ * Positioned, so absolutely placed content (the hidden backup file input) is
+ * laid out and clipped here. Otherwise it sizes the app's main area instead
+ * and gives the page a second scrollbar.
+ */
 .settings-body {
+  position: relative;
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;

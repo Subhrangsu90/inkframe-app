@@ -17,7 +17,6 @@ import { formatRelativeTime } from '@app/features/documents/data-access/document
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { docPath } from '@app/features/documents/documents.paths';
 import { StorageBanner } from '../storage-banner/storage-banner';
-import { PwaService } from '@app/core/pwa';
 
 @Component({
   selector: 'ink-app-shell',
@@ -31,7 +30,6 @@ export class AppShellComponent {
   readonly layout = inject(LayoutService);
   readonly library = inject(DocumentLibrary);
   readonly themeService = inject(ThemeService);
-  readonly pwa = inject(PwaService);
   readonly docPath = docPath;
 
   private readonly mainContent = viewChild.required<ElementRef<HTMLElement>>('mainContent');
@@ -62,10 +60,5 @@ export class AppShellComponent {
   onCreateNewDoc(): void {
     this.layout.closeMobile();
     this.library.createNewDoc();
-  }
-
-  async installApp(): Promise<void> {
-    this.layout.closeMobile();
-    await this.pwa.install();
   }
 }

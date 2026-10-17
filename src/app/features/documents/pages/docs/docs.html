@@ -5,7 +5,6 @@
   <div class="page-heading">
     <span class="page-icon"><ink-icon name="folder" [size]="14" /></span>
     <h1 class="page-title">Documents</h1>
-    <span class="count-pill">{{ library.documents().length }}</span>
   </div>
 </ng-template>
 
@@ -41,33 +40,10 @@
 </ng-template>
 
 <!-- ═════════════════════════════════════════════ -->
-<!-- HEADER RIGHT: View Switch & New Document      -->
+<!-- HEADER RIGHT: Import & New Document           -->
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerRight>
   <div class="header-actions">
-    <div class="view-switch" role="group" aria-label="Layout">
-      <button
-        type="button"
-        class="mode-btn"
-        [class.active]="viewMode() === 'grid'"
-        [attr.aria-pressed]="viewMode() === 'grid'"
-        (click)="setViewMode('grid')"
-        title="Grid"
-      >
-        <ink-icon name="grid" [size]="14" />
-      </button>
-      <button
-        type="button"
-        class="mode-btn"
-        [class.active]="viewMode() === 'list'"
-        [attr.aria-pressed]="viewMode() === 'list'"
-        (click)="setViewMode('list')"
-        title="List"
-      >
-        <ink-icon name="list" [size]="14" />
-      </button>
-    </div>
-
     <button
       type="button"
       class="secondary-btn"
@@ -122,15 +98,45 @@
     }
 
     <section class="docs-section" aria-labelledby="docs-heading">
-      <div class="section-head">
-        <h2 id="docs-heading" class="section-title">{{ searchQuery() ? 'Results' : 'Recent' }}</h2>
-        <span class="section-meta">
-          @if (searchQuery()) {
-            {{ filteredDocs().length }} {{ filteredDocs().length === 1 ? 'match' : 'matches' }}
-          } @else {
-            Last edited first
-          }
-        </span>
+      <!-- Stays at the top while the documents scroll under it -->
+      <div class="sticky-head">
+        <div class="section-head">
+          <h2 id="docs-heading" class="section-title">{{ searchQuery() ? 'Results' : 'Recent' }}</h2>
+          <div class="section-tools">
+            <!-- Next to the list it changes; hidden when there is nothing to lay out -->
+            @if (filteredDocs().length > 0) {
+              <div class="view-switch" role="group" aria-label="Layout">
+                <button
+                  type="button"
+                  class="mode-btn"
+                  [class.active]="viewMode() === 'grid'"
+                  [attr.aria-pressed]="viewMode() === 'grid'"
+                  (click)="setViewMode('grid')"
+                  title="Grid"
+                >
+                  <ink-icon name="grid" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="mode-btn"
+                  [class.active]="viewMode() === 'list'"
+                  [attr.aria-pressed]="viewMode() === 'list'"
+                  (click)="setViewMode('list')"
+                  title="List"
+                >
+                  <ink-icon name="list" [size]="14" />
+                </button>
+              </div>
+            }
+            <span class="section-meta">
+              @if (searchQuery()) {
+                {{ filteredDocs().length }} {{ filteredDocs().length === 1 ? 'match' : 'matches' }}
+              } @else {
+                Last edited first
+              }
+            </span>
+          </div>
+        </div>
       </div>
 
       @if (filteredDocs().length === 0) {

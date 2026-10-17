@@ -112,30 +112,8 @@ export class Docs implements OnInit {
   /** dragenter/dragleave also fire for every child element crossed; count them. */
   private dragDepth = 0;
 
+  /** A blank document is New document, so it is not repeated here. */
   readonly templates: TemplateStarter[] = [
-    {
-      id: 'blank',
-      title: 'Blank Document',
-      icon: 'file-text',
-      desc: 'Start writing with a clean slate',
-      doc: {
-        schemaVersion: SCHEMA_VERSION,
-        doc: {
-          type: 'doc',
-          content: [
-            {
-              type: 'heading',
-              attrs: { level: 1 },
-              content: [{ type: 'text', text: 'Untitled Document' }],
-            },
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: 'Start writing your thoughts here...' }],
-            },
-          ],
-        },
-      },
-    },
     {
       id: 'meeting',
       title: 'Meeting Notes',

@@ -80,16 +80,6 @@
   background: var(--ink-canvas-glow-warm);
 }
 
-/* ── Vignetted Precision Dot Grid ── */
-.canvas-dot-grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, var(--ink-canvas-dot) 1px, transparent 0);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 35%, black 40%, transparent 88%);
-}
-
 /* ── Hero Angled Grid Background with Vignette Mask ── */
 .hero-angled-grid-wrap {
   position: absolute;

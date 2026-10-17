@@ -34,6 +34,10 @@ export const image: NodeSpec = {
         alt: node.attrs['alt'],
         title: node.attrs['title'],
         class: 'ink-image',
+        // Long documents decode only the images near the screen. Printing
+        // loads them all first (doc-export.ts printDocument).
+        loading: 'lazy',
+        decoding: 'async',
         ...(width ? { width, style: `width: ${width}` } : {}),
       },
     ];

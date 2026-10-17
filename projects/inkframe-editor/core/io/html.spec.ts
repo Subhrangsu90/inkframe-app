@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { schema } from '../schema/schema';
-import { docToHtml, htmlToDoc } from './html';
+import { docToHtml, htmlToDoc, sanitizeHtml } from './html';
 
 describe('HTML IO & Sanitization', () => {
   it('converts document to HTML', () => {
@@ -20,5 +20,14 @@ describe('HTML IO & Sanitization', () => {
     expect(outputHtml).toContain('Normal text');
     expect(outputHtml).not.toContain('<script>');
     expect(outputHtml).not.toContain('onerror');
+  });
+
+  it('renders images to load lazily, which sanitizing keeps', () => {
+    const doc = schema.node('doc', null, [
+      schema.node('paragraph', null, [schema.node('image', { src: 'https://example.com/a.png' })]),
+    ]);
+    const html = sanitizeHtml(docToHtml(doc));
+    expect(html).toContain('loading="lazy"');
+    expect(html).toContain('decoding="async"');
   });
 });

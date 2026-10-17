@@ -38,6 +38,9 @@ export class ImageNodeView implements NodeView {
 
     this.img = document.createElement('img');
     this.img.className = 'ink-image';
+    // Set before the source: images far down a long document load when scrolled near.
+    this.img.loading = 'lazy';
+    this.img.decoding = 'async';
     this.img.alt = node.attrs['alt'] || '';
     this.img.title = node.attrs['title'] || 'Click to preview';
     this.img.setAttribute('referrerpolicy', 'no-referrer');

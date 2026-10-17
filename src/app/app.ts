@@ -62,6 +62,9 @@ export class App {
       let restore: (() => void) | null = null;
       doc.defaultView?.addEventListener('beforeprint', () => {
         restore ??= useLightThemeForPrint(doc);
+        // Images below the screen load lazily; start them now so the printout
+        // includes them (browsers that load lazy images for print already do).
+        for (const img of Array.from(doc.images)) img.loading = 'eager';
       });
       doc.defaultView?.addEventListener('afterprint', () => {
         restore?.();

@@ -42,6 +42,15 @@ export async function downloadHtml(stored: StoredDoc, title: string): Promise<st
 
 let printFrame: HTMLIFrameElement | null = null;
 
+/** Loads every image in a document now, waiting up to `timeoutMs` for all of them. */
+async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
+  const images = Array.from(doc.images);
+  for (const img of images) img.loading = 'eager';
+  // decode() settles once the image has loaded; a broken image must not block printing.
+  const loaded = Promise.all(images.map((img) => img.decode().catch(() => undefined)));
+  await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, timeoutMs))]);
+}
+
 /**
  * Opens the print dialog for the document, laid out by the HTML page's print
  * styles (no app interface). "Save as PDF" in that dialog makes the PDF.
@@ -68,6 +77,9 @@ export async function printDocument(stored: StoredDoc, title: string): Promise<v
 
   const win = frame.contentWindow;
   if (!win) return;
+  // Images load lazily, and the frame is 0×0 so none is ever near the screen:
+  // load them all before printing, or the printout has blank images.
+  await loadAllImages(win.document);
   const pageTitle = document.title;
   const cleanup = () => {
     document.title = pageTitle;

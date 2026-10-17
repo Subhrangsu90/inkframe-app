@@ -200,6 +200,10 @@
     outline: 2px solid var(--ink-border-focus);
     outline-offset: 1px;
   }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 }
 
 .new-doc-btn {
@@ -277,9 +281,10 @@
   gap: 12px;
 }
 
+/* Top-aligned so titles line up across cards whose descriptions wrap differently. */
 .template-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 14px;
   text-align: left;
@@ -302,6 +307,10 @@
       background: var(--ink-accent);
       color: #fff;
     }
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:focus-visible {

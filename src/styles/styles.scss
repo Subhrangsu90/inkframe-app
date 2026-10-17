@@ -105,6 +105,19 @@ body {
     color 0.15s ease;
 }
 
+/*
+ * Interface text: balanced headings and no single word left on a paragraph's
+ * last line. Document content (editor, previews, shared pages) keeps the
+ * browser's normal wrapping so lines do not reflow while typing.
+ */
+:where(h1, h2, h3, h4):not(.ProseMirror *, .ink-static-doc *) {
+  text-wrap: balance;
+}
+
+:where(p):not(.ProseMirror *, .ink-static-doc *) {
+  text-wrap: pretty;
+}
+
 /* ── Reusable Premium Backdrop Utilities ── */
 .ink-canvas-texture {
   background-color: var(--ink-bg);

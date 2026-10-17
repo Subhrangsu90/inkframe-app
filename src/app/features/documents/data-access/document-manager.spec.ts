@@ -1,6 +1,6 @@
 import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DocumentManager, extractDocExcerpt } from './document-manager';
+import { DocumentManager, EXCERPT_VERSION, extractDocExcerpt } from './document-manager';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 
 const docWith = (text: string): StoredDoc => ({
@@ -115,9 +115,31 @@ describe('document previews', () => {
     expect(extractDocExcerpt(stored, 'Plan')).toBe('Ship boldly. First');
   });
 
-  it('keeps a leading heading that is not the title', () => {
+  it('keeps a leading heading that is not the title, set apart from the text', () => {
     expect(extractDocExcerpt(doc(h1('Intro'), p({ type: 'text', text: 'Body' })), 'Other')).toBe(
-      'Intro Body',
+      'Intro · Body',
+    );
+  });
+
+  it('leaves out section headings and separates blocks that do not end a sentence', () => {
+    const h2 = (text: string) => ({ ...h1(text), attrs: { level: 2 } });
+    const item = (text: string) => ({ type: 'list_item', content: [p({ type: 'text', text })] });
+    const stored = doc(
+      h1('Team Sync'),
+      h2('Attendees'),
+      p({ type: 'text', text: 'Alex, Sarah' }),
+      h2('Decisions'),
+      { type: 'bullet_list', content: [item('Ship the sidebar.'), item('Keep it local')] },
+    );
+    expect(extractDocExcerpt(stored, 'Meeting Notes')).toBe(
+      'Team Sync · Alex, Sarah · Ship the sidebar. Keep it local',
+    );
+  });
+
+  it('uses the headings when the document has no other text', () => {
+    const h2 = (text: string) => ({ ...h1(text), attrs: { level: 2 } });
+    expect(extractDocExcerpt(doc(h1('Plan'), h2('Goals'), h2('Risks'), p()), 'Plan')).toBe(
+      'Goals · Risks',
     );
   });
 
@@ -131,9 +153,11 @@ describe('document previews', () => {
     const manager = new DocumentManager();
     const { meta } = await manager.createDoc('Notes', docWith('Remember the milk'));
     expect(meta.excerpt).toBe('Remember the milk');
+    expect(meta.excerptVersion).toBe(EXCERPT_VERSION);
 
     const index = await manager.getIndex();
     delete index[0].excerpt;
+    delete index[0].excerptVersion;
     await manager.saveIndex(index);
     const before = index[0].updatedAt;
 
@@ -142,5 +166,20 @@ describe('document previews', () => {
     expect(entry.excerpt).toBe('Remember the milk');
     expect(entry.updatedAt).toBe(before);
     expect(await manager.backfillExcerpts()).toBe(false);
+  });
+
+  it('rebuilds previews made by an older version of the format', async () => {
+    localStorage.clear();
+    const manager = new DocumentManager();
+    await manager.createDoc('Notes', docWith('Remember the milk'));
+    const index = await manager.getIndex();
+    index[0].excerpt = 'Notes Remember the milk';
+    index[0].excerptVersion = EXCERPT_VERSION - 1;
+    await manager.saveIndex(index);
+
+    expect(await manager.backfillExcerpts()).toBe(true);
+    const [entry] = await manager.getIndex();
+    expect(entry.excerpt).toBe('Remember the milk');
+    expect(entry.excerptVersion).toBe(EXCERPT_VERSION);
   });
 });

@@ -84,10 +84,12 @@ import {
      * Height: set --ink-editor-height on <ink-editor> to size the editor, for
      * example 100% to fill a flex or grid cell. Without it the editor sizes
      * itself to the viewport.
+     * Frame: set --ink-editor-border and --ink-editor-radius to change the
+     * outline, for example none and 0 when the host page is the frame.
      */
     .ink-editor-wrapper {
-      border: 1px solid var(--ink-border-default, #2e3036);
-      border-radius: 8px;
+      border: var(--ink-editor-border, 1px solid var(--ink-border-default, #2e3036));
+      border-radius: var(--ink-editor-radius, 8px);
       overflow: hidden;
       background: var(--ink-bg-wrapper, #141518);
       height: var(--ink-editor-height, calc(100dvh - 128px));
@@ -100,7 +102,7 @@ import {
         border-color 0.15s ease;
 
       @media (min-width: 768px) {
-        border-radius: 12px;
+        border-radius: var(--ink-editor-radius, 12px);
         height: var(--ink-editor-height, clamp(580px, 76vh, 900px));
       }
 
@@ -240,7 +242,6 @@ import {
       border: 1px solid var(--ink-border-subtle, #282a30);
       /* A sheet of paper: square corners, and it ends where the text ends. */
       border-radius: 0;
-      box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45));
       display: flex;
       flex-direction: column;
       overflow: hidden;

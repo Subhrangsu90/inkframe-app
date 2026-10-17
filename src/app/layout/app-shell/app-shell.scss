@@ -165,12 +165,19 @@
   padding: 0 12px;
   font-size: 13.5px;
   cursor: pointer;
-  transition: all var(--ink-transition-fast);
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast),
+    color var(--ink-transition-fast);
 
   &:hover:not(:disabled) {
     background: var(--ink-surface-subtle);
     border-color: var(--ink-border-strong);
     color: var(--ink-accent-text);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   &:disabled {

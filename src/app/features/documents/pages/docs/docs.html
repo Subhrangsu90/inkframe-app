@@ -152,7 +152,8 @@
               Create a blank document, start from a template above, or drop Markdown and HTML files
               here to import them.
             </p>
-            <button type="button" class="new-doc-btn" (click)="createNewDoc()">
+            <!-- Secondary: the header's New document is this screen's one accent button. -->
+            <button type="button" class="secondary-btn" (click)="createNewDoc()">
               <ink-icon name="plus" [size]="14" [strokeWidth]="2.25" />
               <span>New document</span>
             </button>

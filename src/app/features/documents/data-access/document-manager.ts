@@ -19,7 +19,15 @@ export interface DocMeta {
   updatedAt: number;
   /** Plain-text preview of the body. Missing on entries saved before previews existed. */
   excerpt?: string;
+  /** The EXCERPT_VERSION the preview was made with. Missing on older entries. */
+  excerptVersion?: number;
 }
+
+/**
+ * Raised when extractDocExcerpt changes what it produces, so previews saved
+ * by an older version are rebuilt (see backfillExcerpts).
+ */
+export const EXCERPT_VERSION = 2;
 
 const INDEX_KEY = 'inkframe_docs_index';
 const ACTIVE_ID_KEY = 'inkframe_active_doc_id';
@@ -71,18 +79,42 @@ function plainText(node: DocJSON | undefined): string {
 }
 
 /**
- * A short plain-text preview of a document for lists and cards. The leading
- * heading is skipped when it is the document's title.
+ * The text of each paragraph-like block inside a node (list items, quotes,
+ * table cells and code blocks included), in document order.
+ */
+function textBlocks(node: DocJSON): string[] {
+  const children = childrenOf(node);
+  // A block whose children carry no content of their own holds only inline text.
+  if (children.every((c) => !Array.isArray(c.content))) return [plainText(node)];
+  return children.flatMap(textBlocks);
+}
+
+/**
+ * A short plain-text preview of a document for lists and cards.
+ *
+ * Section headings are left out, since on one line they run into the text
+ * around them ("Overview This design doc…"). A leading heading stays when it
+ * is not the title, because it often says what the document is about.
+ * Headings are used only when the document has no other text. Blocks are
+ * separated by " · " unless the previous one ends a sentence.
  */
 export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180): string {
   try {
     const blocks = childrenOf(stored?.doc as DocJSON | undefined);
     const first = blocks[0];
-    const body =
-      first?.type === 'heading' && plainText(first).trim() === title.trim()
-        ? blocks.slice(1)
-        : blocks;
-    const text = body.map(plainText).join(' ').replace(/\s+/g, ' ').trim();
+    const titleHeading = first?.type === 'heading' && plainText(first).trim() === title.trim();
+    const headings = blocks.filter((b, i) => b.type === 'heading' && !(i === 0 && titleHeading));
+    const clean = (texts: string[]) =>
+      texts.map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+    const lead = clean(first?.type === 'heading' && !titleHeading ? [plainText(first)] : []);
+    const body = clean(blocks.filter((b) => b.type !== 'heading').flatMap(textBlocks));
+    const parts = body.length > 0 ? [...lead, ...body] : clean(headings.map(plainText));
+
+    const text = parts.reduce(
+      (out, part) => (!out ? part : out + (/[.!?:;…]$/.test(out) ? ' ' : ' · ') + part),
+      '',
+    );
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength).replace(/\s+\S*$/, '') + '…';
   } catch {
@@ -227,6 +259,7 @@ export class DocumentManager {
         title,
         wordCount,
         excerpt,
+        excerptVersion: EXCERPT_VERSION,
         updatedAt: now,
       };
       index[existingIdx] = meta;
@@ -236,6 +269,7 @@ export class DocumentManager {
         title,
         wordCount,
         excerpt,
+        excerptVersion: EXCERPT_VERSION,
         createdAt: now,
         updatedAt: now,
       };
@@ -250,16 +284,20 @@ export class DocumentManager {
   }
 
   /**
-   * Adds previews to index entries saved before previews existed. Returns
-   * whether anything changed. Edit times are left untouched.
+   * Adds previews to index entries saved before previews existed, and rebuilds
+   * those made by an older EXCERPT_VERSION. Returns whether anything changed.
+   * Edit times are left untouched.
    */
   async backfillExcerpts(): Promise<boolean> {
     const index = await this.getIndex();
-    const missing = index.filter((meta) => meta.excerpt === undefined);
-    if (missing.length === 0) return false;
-    for (const meta of missing) {
+    const stale = index.filter(
+      (meta) => meta.excerpt === undefined || meta.excerptVersion !== EXCERPT_VERSION,
+    );
+    if (stale.length === 0) return false;
+    for (const meta of stale) {
       const doc = await this.getDoc(meta.id);
       meta.excerpt = doc ? extractDocExcerpt(doc, meta.title) : '';
+      meta.excerptVersion = EXCERPT_VERSION;
     }
     await this.saveIndex(index);
     return true;

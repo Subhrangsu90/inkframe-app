@@ -239,6 +239,10 @@
     outline: 2px solid var(--ink-border-focus);
     outline-offset: 1px;
   }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
 }
 
 .share-btn {
@@ -490,7 +494,11 @@
   }
 }
 
-/* The editor fills whatever height the screen leaves below the header; edge to edge on phones. */
+/*
+ * The editor fills whatever height the screen leaves below the header, edge to
+ * edge: the toolbar is a strip under the header and the page sits on the
+ * canvas, with no frame around them (design plan 7.2).
+ */
 .editor-scroll-container {
   flex: 1 1 0;
   min-height: 0;
@@ -504,11 +512,9 @@
     display: none;
   }
 
-  @media (min-width: 768px) {
-    padding: 14px 18px 18px;
-  }
-
   ink-editor {
+    --ink-editor-border: none;
+    --ink-editor-radius: 0;
     --ink-editor-height: 100%;
     /* Small enough to fit above an on-screen keyboard on a small phone. */
     --ink-editor-min-height: 160px;

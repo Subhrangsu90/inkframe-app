@@ -181,8 +181,8 @@ export class ConfirmDialogService {
       width: 44px;
       height: 44px;
       border-radius: var(--ink-radius-md, 10px);
-      background: var(--ink-accent-soft, #f3eeff);
-      color: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent-soft, #e0f8f6);
+      color: var(--ink-accent-text, #017a78);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -253,11 +253,11 @@ export class ConfirmDialogService {
     }
 
     .ink-dialog-btn-confirm {
-      background: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent, #028380);
       color: #ffffff;
 
       &:hover {
-        background: var(--ink-accent-hover, #6d28d9);
+        background: var(--ink-accent-hover, #08726f);
       }
     }
 

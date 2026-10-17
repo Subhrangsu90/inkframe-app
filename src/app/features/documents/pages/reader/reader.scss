@@ -73,7 +73,7 @@ ink-reader {
   width: 28px;
   height: 28px;
   border-radius: var(--ink-radius-sm, 6px);
-  background: var(--ink-accent, #7c3aed);
+  background: var(--ink-accent, #028380);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -81,7 +81,7 @@ ink-reader {
   font-size: 14px;
   font-weight: 800;
   letter-spacing: -0.5px;
-  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 2px 6px rgba(2, 131, 128, 0.4);
 }
 
 .reader-brand-name {

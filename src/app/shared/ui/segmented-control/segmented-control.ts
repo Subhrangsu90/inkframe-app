@@ -70,7 +70,7 @@ export interface SegmentedControlOption<T = string> {
 
       &.active {
         background: var(--ink-surface, #ffffff);
-        color: var(--ink-accent, #7c3aed);
+        color: var(--ink-accent-text, #017a78);
         font-weight: 600;
         box-shadow: var(--ink-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
         border-color: rgba(0, 0, 0, 0.04);

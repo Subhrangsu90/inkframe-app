@@ -600,19 +600,21 @@ Every table is protected by per-owner (and per-member) access rules enforced in 
 
 ### 7.1 Direction
 
-Clean and soft: a warm off-white canvas (deep obsidian in dark mode), white surfaces, hairline borders, very light shadows, generous whitespace, one accent color (violet) reserved for the single primary action per screen. Motion is short (120–200 ms) and respects `prefers-reduced-motion`.
+Clean and soft: a warm off-white canvas (soft charcoal in dark mode, with a darker sidebar and warm off-white text), white surfaces, hairline borders, very light shadows, generous whitespace, one accent color (teal) reserved for the single primary action per screen. `--ink-accent` fills buttons; accent-colored text and icons use `--ink-accent-text`, because the fill is too dark for text on charcoal. Motion is short (120–200 ms) and respects `prefers-reduced-motion`.
 
 **Source of truth:** `src/styles/tokens.scss` (app) and `projects/inkframe-editor/src/styles/_variables.scss` (library). Tailwind v4 maps the `--ink-*` tokens to utilities in `src/styles/styles.scss`.
 
 | Token group | Light | Dark |
 | --- | --- | --- |
-| Canvas `--ink-bg` | `#f7f6f3` | `#0e0e10` |
-| Surface `--ink-surface` | `#ffffff` | `#17171a` |
-| Border `--ink-border` | `#e8e6e1` | `#26262b` |
-| Text `--ink-text` / muted | `#1b1b1f` / `#6b6b73` | `#ededef` / `#9a9aa3` |
-| Accent `--ink-accent` / soft | `#7c3aed` / `#f3eeff` | `#8b5cf6` / `#241b3d` |
+| Canvas `--ink-bg` | `#f7f6f3` | `#151515` |
+| Surface `--ink-surface` | `#ffffff` | `#1e1e1d` |
+| Sidebar `--ink-sidebar` | `#ffffff` | `#111111` |
+| Border `--ink-border` | `#e8e6e1` | `#2a2a29` |
+| Text `--ink-text` / muted | `#1b1b1f` / `#6b6b73` | `#f0efec` / `#9a9891` |
+| Accent `--ink-accent` / soft | `#028380` / `#e0f8f6` | `#028380` / `#0d302f` |
+| Accent text `--ink-accent-text` | `#017a78` | `#58aaa6` |
 
-**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px accent at 25% opacity, never removed.
+**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px teal (`--ink-border-focus`, 70% opacity in light, 60% in dark, for 3:1 contrast), never removed.
 
 ### 7.2 Editor layout
 

@@ -140,7 +140,7 @@
   background: radial-gradient(
     ellipse at center,
     color-mix(in srgb, var(--ink-accent) 24%, transparent) 0%,
-    color-mix(in srgb, #9333ea 14%, transparent) 45%,
+    color-mix(in srgb, #58aaa6 14%, transparent) 45%,
     transparent 72%
   );
   filter: blur(70px);
@@ -204,7 +204,7 @@
   box-shadow:
     0 30px 80px -15px rgba(0, 0, 0, 0.14),
     0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 10px 30px -4px rgba(124, 58, 237, 0.06);
+    0 10px 30px -4px rgba(2, 131, 128, 0.06);
 }
 
 /* ── Pulse ping for status dots ── */

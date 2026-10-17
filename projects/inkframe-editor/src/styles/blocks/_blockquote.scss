@@ -4,7 +4,7 @@
 /* Block quotes, inside `.ProseMirror`. */
 @mixin document {
   blockquote {
-    border-left: 3px solid var(--ink-accent-primary, #8b5cf6);
+    border-left: 3px solid var(--ink-accent-primary, #028380);
     margin: 1rem 0;
     padding: 0.45rem 1rem;
     color: var(--ink-text-secondary);

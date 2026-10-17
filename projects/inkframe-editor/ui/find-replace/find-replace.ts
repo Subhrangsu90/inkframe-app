@@ -187,8 +187,8 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
       outline: none;
 
       &:focus {
-        border-color: var(--ink-accent-primary, #8b5cf6);
-        box-shadow: 0 0 0 3px var(--ink-border-focus, rgba(139, 92, 246, 0.25));
+        border-color: var(--ink-accent-primary, #028380);
+        box-shadow: 0 0 0 3px var(--ink-border-focus, rgba(88, 170, 166, 0.25));
       }
     }
 
@@ -232,9 +232,9 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
       }
 
       &.active {
-        background: var(--ink-btn-active-bg, rgba(139, 92, 246, 0.16));
-        border-color: var(--ink-btn-active-border, rgba(139, 92, 246, 0.32));
-        color: var(--ink-btn-active-text, #c4b5fd);
+        background: var(--ink-btn-active-bg, rgba(88, 170, 166, 0.16));
+        border-color: var(--ink-btn-active-border, rgba(88, 170, 166, 0.32));
+        color: var(--ink-btn-active-text, #58aaa6);
       }
 
       &:disabled {
@@ -243,7 +243,7 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
       }
 
       &:focus-visible {
-        outline: 2px solid var(--ink-border-focus, rgba(139, 92, 246, 0.45));
+        outline: 2px solid var(--ink-border-focus, rgba(88, 170, 166, 0.45));
         outline-offset: 1px;
       }
     }
@@ -272,7 +272,7 @@ import { EditorService, MAX_SEARCH_MATCHES } from '@inkframe-ui/editor/core';
       }
 
       &:focus-visible {
-        outline: 2px solid var(--ink-border-focus, rgba(139, 92, 246, 0.45));
+        outline: 2px solid var(--ink-border-focus, rgba(88, 170, 166, 0.45));
         outline-offset: 1px;
       }
     }

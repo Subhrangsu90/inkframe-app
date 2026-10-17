@@ -27,7 +27,7 @@
   --color-ink-text-muted: var(--ink-text-muted);
   --color-ink-text-heading: var(--ink-text-heading);
 
-  /* Curated Violet Accent */
+  /* Teal Accent */
   --color-ink-accent: var(--ink-accent);
   --color-ink-accent-hover: var(--ink-accent-hover);
   --color-ink-accent-soft: var(--ink-accent-soft);
@@ -67,8 +67,8 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: mat.$cyan-palette,
+        tertiary: mat.$cyan-palette,
       ),
       typography: 'Inter Variable',
       density: 0,

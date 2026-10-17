@@ -405,7 +405,7 @@ const REASON_LABELS: Partial<Record<VersionMeta['reason'], string>> = {
       gap: 4px;
       font-size: 12.5px;
       font-weight: 600;
-      color: var(--ink-accent);
+      color: var(--ink-accent-text);
       overflow-wrap: anywhere;
     }
 

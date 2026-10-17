@@ -42,7 +42,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--ink-surface);
+  background-color: var(--ink-sidebar);
   border-right: 1px solid var(--ink-border);
   transition:
     width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -118,7 +118,7 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 800;
-  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 1px 3px rgba(2, 131, 128, 0.3);
 }
 
 .brand-name {
@@ -170,7 +170,7 @@
   &:hover:not(:disabled) {
     background: var(--ink-surface-subtle);
     border-color: var(--ink-border-strong);
-    color: var(--ink-accent);
+    color: var(--ink-accent-text);
   }
 
   &:disabled {
@@ -311,7 +311,7 @@
     }
 
     .doc-bullet {
-      color: var(--ink-accent);
+      color: var(--ink-accent-text);
     }
   }
 }
@@ -378,7 +378,7 @@
 .empty-create-link {
   background: none;
   border: none;
-  color: var(--ink-accent);
+  color: var(--ink-accent-text);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -528,7 +528,7 @@
   &:hover {
     background: var(--ink-surface-2);
     border-color: var(--ink-border-strong);
-    color: var(--ink-accent);
+    color: var(--ink-accent-text);
   }
 
   /* On desktop, only show when sidebar is collapsed */

@@ -4,7 +4,7 @@
 /* Links, inside `.ProseMirror`. */
 @mixin document {
   a {
-    color: var(--ink-accent-primary, #8b5cf6);
+    color: var(--ink-accent-light, #58aaa6);
     text-decoration: underline;
     text-underline-offset: 2px;
     cursor: pointer;

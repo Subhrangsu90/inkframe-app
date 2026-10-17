@@ -40,7 +40,7 @@
       cursor: ew-resize;
 
       .ink-image-wrapper {
-        outline: 2px dashed var(--ink-accent-light, #a78bfa) !important;
+        outline: 2px dashed var(--ink-accent-light, #58aaa6) !important;
       }
     }
 
@@ -167,7 +167,7 @@
         position: absolute;
         width: 10px;
         height: 10px;
-        background: var(--ink-accent-primary, #8b5cf6);
+        background: var(--ink-accent-primary, #028380);
         border: 2px solid #ffffff;
         border-radius: 50%;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -178,7 +178,7 @@
           background-color 0.12s ease;
 
         &:hover {
-          background: var(--ink-accent-hover, #7c3aed);
+          background: var(--ink-accent-hover, #08726f);
         }
 
         &.handle-se {
@@ -194,7 +194,7 @@
           cursor: ew-resize;
 
           &:hover {
-            background: var(--ink-accent-hover, #7c3aed);
+            background: var(--ink-accent-hover, #08726f);
           }
         }
 
@@ -211,7 +211,7 @@
           cursor: ew-resize;
 
           &:hover {
-            background: var(--ink-accent-hover, #7c3aed);
+            background: var(--ink-accent-hover, #08726f);
           }
         }
       }

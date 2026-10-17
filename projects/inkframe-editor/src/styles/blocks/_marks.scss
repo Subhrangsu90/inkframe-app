@@ -5,7 +5,7 @@
 @mixin document {
   code {
     background: var(--ink-badge-bg, rgba(255, 255, 255, 0.08));
-    color: var(--ink-accent-light, #a78bfa);
+    color: var(--ink-accent-light, #58aaa6);
     padding: 0.15rem 0.4rem;
     border-radius: 0;
     font-family: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;

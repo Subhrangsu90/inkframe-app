@@ -585,9 +585,9 @@ mat-divider.mat-divider,
     }
 
     &.active {
-      background: var(--ink-badge-active-bg, rgba(139, 92, 246, 0.24)) !important;
-      border-color: var(--ink-accent-primary, #8b5cf6) !important;
-      box-shadow: 0 0 0 1px var(--ink-accent-primary, #8b5cf6);
+      background: var(--ink-badge-active-bg, rgba(88, 170, 166, 0.24)) !important;
+      border-color: var(--ink-accent-primary, #028380) !important;
+      box-shadow: 0 0 0 1px var(--ink-accent-primary, #028380);
     }
   }
 
@@ -631,7 +631,7 @@ mat-divider.mat-divider,
 
     &:hover {
       background: var(--ink-btn-hover-bg, rgba(255, 255, 255, 0.08));
-      border-color: var(--ink-accent-primary, #8b5cf6);
+      border-color: var(--ink-accent-primary, #028380);
       transform: translateY(-1px);
     }
 

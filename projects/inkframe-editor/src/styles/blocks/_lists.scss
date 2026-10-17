@@ -81,7 +81,7 @@
         margin-top: calc((var(--ink-editor-font-size, 14px) * 1.6 - 17px) / 2);
         width: 17px;
         height: 17px;
-        accent-color: var(--mat-sys-primary, #005ac1);
+        accent-color: var(--ink-accent-primary, #028380);
         cursor: pointer;
         flex-shrink: 0;
       }
@@ -164,7 +164,7 @@
     z-index: 6;
     height: 2px;
     border-radius: 1px;
-    background: var(--ink-accent-primary, #8b5cf6);
+    background: var(--ink-accent-primary, #028380);
     pointer-events: none;
     /* Hidden with visibility, not display: a displayed element is needed to position it. */
     visibility: hidden;
@@ -176,7 +176,7 @@
 
   /* ProseMirror's drop cursor for other dragged content (dropCursor class option). */
   .ink-drop-cursor {
-    background: var(--ink-accent-primary, #8b5cf6);
+    background: var(--ink-accent-primary, #028380);
   }
 
   .ProseMirror-preview ~ .ink-list-drag-handle,

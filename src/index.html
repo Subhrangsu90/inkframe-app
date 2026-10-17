@@ -7,6 +7,21 @@
       name="description"
       content="A full WYSIWYG document editor that runs entirely in your browser. No account, no server: your documents stay on your device."
     />
+    <!--
+      Defaults. Pages rendered only in the browser (documents, shared links,
+      404) are seen by crawlers and link previews with exactly these, so they
+      stay generic and never describe a document. core/page-meta.ts sets each
+      page's own values, and removes noindex from the landing page.
+    -->
+    <meta name="robots" content="noindex" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Inkframe" />
+    <meta property="og:title" content="Inkframe — Private WYSIWYG Document Editor" />
+    <meta
+      property="og:description"
+      content="A full WYSIWYG document editor that runs entirely in your browser. No account, no server: your documents stay on your device."
+    />
+    <meta name="twitter:card" content="summary" />
     <base href="/" />
     <!-- Never tell third parties (e.g. hosts of images embedded in documents) which page or document is open. -->
     <meta name="referrer" content="no-referrer" />
@@ -23,7 +38,7 @@
     <meta name="apple-mobile-web-app-title" content="Inkframe" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   </head>

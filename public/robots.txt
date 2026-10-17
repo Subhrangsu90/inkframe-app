@@ -1,0 +1,4 @@
+# Crawling is allowed everywhere. App pages (documents, settings, shared
+# links) carry a noindex tag instead, which crawlers must be able to read.
+User-agent: *
+Allow: /

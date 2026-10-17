@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   signal,
   OnInit,
@@ -9,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PageMetaStrategy } from '@app/core/page-meta';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import {
   DocumentManager,
@@ -50,10 +52,13 @@ export class Reader implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly toast = inject(ToastService);
   readonly themeService = inject(ThemeService);
+  private readonly pageMeta = inject(PageMetaStrategy);
 
   readonly isDark = computed(() => this.themeService.theme() === 'dark');
   readonly docId = signal<string>('doc_default');
   readonly docTitle = signal<string>('Shared Document');
+  // The tab shows the shared document's title.
+  private readonly tabTitle = effect(() => this.pageMeta.setPageTitle(this.docTitle()));
   readonly activeDoc = signal<StoredDoc | null>(null);
   readonly isSharedPayload = signal<boolean>(false);
   readonly renderedHtml = signal<SafeHtml>('');

@@ -60,6 +60,7 @@ import { VersionHistory, VersionMeta } from '@app/features/documents/versions/ve
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
 import { VersionPanel } from './version-panel/version-panel';
 import { PwaService } from '@app/core/pwa';
+import { PageMetaStrategy } from '@app/core/page-meta';
 
 // Custom plugin demo
 const CustomPluginDemo: EditorExtension = createExtension({
@@ -135,6 +136,10 @@ export class EditorView implements OnInit {
   private readonly titleInput = viewChild<ElementRef<HTMLInputElement>>('titleInput');
 
   constructor() {
+    // The tab shows the document's title, as the header does, and follows renames.
+    const pageMeta = inject(PageMetaStrategy);
+    effect(() => pageMeta.setPageTitle(this.docTitle()));
+
     // Focus the title field when renaming starts. (The `autofocus` attribute
     // only works for the first element a page focuses, so not for later renames.)
     afterRenderEffect(() => {

@@ -5,16 +5,19 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 import { MatIconRegistry } from '@angular/material/icon';
 import { routes } from './app.routes';
+import { PageMetaStrategy } from './core/page-meta';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    // Titles, descriptions, robots and share tags for every page (core/page-meta.ts).
+    { provide: TitleStrategy, useExisting: PageMetaStrategy },
     provideClientHydration(),
     // Icons come from the self-hosted Material Symbols subset (styles/fonts/icons.css).
     // Set the class explicitly instead of letting mat-icon guess from loaded fonts.

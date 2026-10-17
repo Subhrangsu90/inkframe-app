@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   afterNextRender,
   computed,
   inject,
   input,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -32,10 +34,18 @@ export class AppShellComponent {
   readonly pwa = inject(PwaService);
   readonly docPath = docPath;
 
+  private readonly mainContent = viewChild.required<ElementRef<HTMLElement>>('mainContent');
+
   constructor() {
     // The layout fits the area above an on-screen keyboard (see the styles).
     const viewport = inject(VisualViewportTracker);
     afterNextRender(() => viewport.start());
+  }
+
+  /** The skip link: moves keyboard focus past the sidebar to the page. */
+  protected skipToContent(event: Event): void {
+    event.preventDefault();
+    this.mainContent().nativeElement.focus();
   }
 
   readonly isDark = computed(() => this.themeService.theme() === 'dark');

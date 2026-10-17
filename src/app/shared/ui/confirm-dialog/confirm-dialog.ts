@@ -261,8 +261,10 @@ export class ConfirmDialogService {
       }
     }
 
+    /* A fixed red in both themes: dark mode's --ink-danger is lighter, for text,
+       and gives white button text only 3.8:1. */
     .ink-dialog-btn-destructive {
-      background: var(--ink-danger, #dc2626);
+      background: #dc2626;
       color: #ffffff;
 
       &:hover {

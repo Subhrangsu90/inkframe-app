@@ -1,4 +1,7 @@
 <div class="app-layout-root" [class.sidebar-collapsed]="layout.sidebarCollapsed()">
+  <!-- First Tab stop: lets keyboard users jump past the sidebar -->
+  <a class="skip-link" href="#main-content" (click)="skipToContent($event)">Skip to content</a>
+
   <!-- Mobile Drawer Backdrop Overlay -->
   @if (layout.mobileOpen()) {
     <div class="mobile-backdrop" (click)="layout.closeMobile()" aria-hidden="true"></div>
@@ -40,7 +43,7 @@
         (click)="onCreateNewDoc()"
         [disabled]="library.isCreating()"
       >
-        <ink-icon name="plus" [size]="16" svgClass="text-ink-accent font-bold" />
+        <ink-icon name="plus" [size]="16" svgClass="text-ink-accent-text font-bold" />
         <span class="font-medium">New document</span>
         @if (library.isCreating()) {
           <span class="btn-spinner"></span>
@@ -220,7 +223,7 @@
     <ink-storage-banner />
 
     <!-- Main Workspace Content Area -->
-    <main class="app-main-content">
+    <main id="main-content" class="app-main-content" tabindex="-1" #mainContent>
       <ng-content />
     </main>
   </div>

@@ -9,6 +9,9 @@
 @use './tokens.scss';
 @use './static-doc.scss';
 
+/* `dark:` utilities follow the app's theme switch, not the system setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 /* ── Tailwind v4 Theme Configuration (Mapping Inkframe Design Tokens) ── */
 @theme {
   /* Surfaces & Canvas */

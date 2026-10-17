@@ -4,7 +4,7 @@
 <ng-template #headerLeft>
   <div class="page-heading">
     <span class="page-icon"><ink-icon name="folder" [size]="14" /></span>
-    <span class="page-title">Documents</span>
+    <h1 class="page-title">Documents</h1>
     <span class="count-pill">{{ library.documents().length }}</span>
   </div>
 </ng-template>
@@ -184,7 +184,7 @@
                   class="icon-btn"
                   (click)="shareDocLink(doc.id, $event)"
                   title="Copy share link"
-                  aria-label="Copy share link"
+                  [attr.aria-label]="'Copy share link for ' + doc.title"
                 >
                   <ink-icon name="share" [size]="13" />
                 </button>
@@ -193,7 +193,7 @@
                   class="icon-btn"
                   (click)="duplicateDoc(doc.id, $event)"
                   title="Duplicate"
-                  aria-label="Duplicate"
+                  [attr.aria-label]="'Duplicate ' + doc.title"
                 >
                   <ink-icon name="copy" [size]="13" />
                 </button>
@@ -202,7 +202,7 @@
                   class="icon-btn danger"
                   (click)="deleteDoc(doc.id, $event)"
                   title="Delete"
-                  aria-label="Delete"
+                  [attr.aria-label]="'Delete ' + doc.title"
                 >
                   <ink-icon name="trash" [size]="13" />
                 </button>
@@ -235,7 +235,7 @@
                   class="icon-btn"
                   (click)="shareDocLink(doc.id, $event)"
                   title="Copy share link"
-                  aria-label="Copy share link"
+                  [attr.aria-label]="'Copy share link for ' + doc.title"
                 >
                   <ink-icon name="share" [size]="13" />
                 </button>
@@ -244,7 +244,7 @@
                   class="icon-btn"
                   (click)="duplicateDoc(doc.id, $event)"
                   title="Duplicate"
-                  aria-label="Duplicate"
+                  [attr.aria-label]="'Duplicate ' + doc.title"
                 >
                   <ink-icon name="copy" [size]="13" />
                 </button>
@@ -253,7 +253,7 @@
                   class="icon-btn danger"
                   (click)="deleteDoc(doc.id, $event)"
                   title="Delete"
-                  aria-label="Delete"
+                  [attr.aria-label]="'Delete ' + doc.title"
                 >
                   <ink-icon name="trash" [size]="13" />
                 </button>

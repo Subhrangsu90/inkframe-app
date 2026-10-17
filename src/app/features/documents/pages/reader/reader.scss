@@ -6,6 +6,7 @@ ink-reader {
   display: block;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -133,7 +134,8 @@ ink-reader {
   color: var(--ink-text-muted, #94a3b8);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: 0.15s ease;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
 
   &:hover {
     background: var(--ink-surface-2, #1e2026);

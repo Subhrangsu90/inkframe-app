@@ -55,7 +55,7 @@ import { EditorService } from '@inkframe-ui/editor/core';
       box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.35),
         0 2px 6px rgba(0, 0, 0, 0.15);
-      max-height: min(21rem, calc(100vh - 120px));
+      max-height: min(21rem, calc(100dvh - 120px));
       min-width: min(260px, calc(100vw - 24px));
       max-width: min(320px, calc(100vw - 24px));
       overflow-y: auto;

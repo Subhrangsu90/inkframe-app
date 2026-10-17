@@ -144,7 +144,7 @@ export interface ImagePreviewPayload {
     :host {
       position: fixed;
       inset: 0;
-      z-index: 9999;
+      z-index: var(--ink-z-modal, 1100);
       display: block;
       user-select: none;
       animation: inkFadeIn 0.18s ease-out;
@@ -154,7 +154,10 @@ export interface ImagePreviewPayload {
       width: 100%;
       height: 100%;
       background: var(--ink-lightbox-backdrop, rgba(12, 13, 16, 0.88));
-      backdrop-filter: blur(12px);
+      /* Controls stay clear of the notch and home indicator. */
+      box-sizing: border-box;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
       display: flex;
       flex-direction: column;
       position: relative;
@@ -267,7 +270,8 @@ export interface ImagePreviewPayload {
         font-family: monospace;
         padding: 3px 8px;
         cursor: pointer;
-        transition: all 0.12s ease;
+        transition: 0.12s ease;
+        transition-property: background-color, border-color, color, box-shadow, opacity, transform;
 
         &:hover {
           background: var(--ink-active-bg, #172c47);

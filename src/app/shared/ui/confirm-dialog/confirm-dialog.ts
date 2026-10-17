@@ -145,14 +145,13 @@ export class ConfirmDialogService {
     .ink-dialog-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 10000;
+      z-index: var(--ink-z-modal, 1100);
       background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
       box-sizing: border-box;
       animation: ink-dialog-fade-in 150ms ease-out;
     }
@@ -235,7 +234,8 @@ export class ConfirmDialogService {
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: all var(--ink-transition-fast, 120ms ease-out);
+      transition: var(--ink-transition-fast, 120ms ease-out);
+      transition-property: background-color, border-color, color, box-shadow, opacity, transform;
 
       &:active {
         transform: scale(0.98);

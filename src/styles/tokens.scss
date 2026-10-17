@@ -63,6 +63,14 @@
   --ink-transition-fast: 120ms ease-out;
   --ink-transition-base: 180ms ease-out;
 
+  /*
+   * Stacking for app-wide layers. Angular CDK overlays (menus, popovers) sit
+   * at 1000; dialogs and the image lightbox go above them, toasts above those.
+   */
+  --ink-z-modal: 1100;
+  --ink-z-toast: 1200;
+  --ink-z-grain: 1300; /* decorative texture; never takes pointer events */
+
   /* Button heights */
   --ink-btn-height: 36px;
   --ink-btn-height-mobile: 44px;

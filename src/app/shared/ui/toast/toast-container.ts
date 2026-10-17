@@ -57,7 +57,7 @@ import { ToastMessage, ToastService } from './toast';
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 9999;
+      z-index: var(--ink-z-toast, 1200);
       display: flex;
       flex-direction: column;
       gap: 10px;

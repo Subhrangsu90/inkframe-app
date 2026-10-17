@@ -546,6 +546,7 @@
 }
 
 .doc-card-meta {
+  font-variant-numeric: tabular-nums;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -648,6 +649,7 @@
 
 .doc-row-words,
 .doc-row-time {
+  font-variant-numeric: tabular-nums;
   display: none;
   font-size: 12px;
   color: var(--ink-text-muted);

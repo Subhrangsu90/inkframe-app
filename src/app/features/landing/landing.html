@@ -86,7 +86,7 @@
         href="https://github.com/Subhrangsu90/inkframe-app"
         target="_blank"
         rel="noopener noreferrer"
-        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
+        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition duration-200 shrink-0"
         aria-label="View on GitHub"
       >
         <ink-icon name="github" [size]="18" />
@@ -96,7 +96,7 @@
       <button
         (click)="toggleTheme($event)"
         type="button"
-        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all duration-200 shrink-0"
+        class="w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition duration-200 shrink-0"
         [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
       >
         <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="18" />
@@ -111,7 +111,7 @@
       <button
         (click)="toggleMobileMenu()"
         type="button"
-        class="lg:hidden w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition-all shrink-0"
+        class="lg:hidden w-9 h-9 pointer-coarse:w-11 pointer-coarse:h-11 rounded-ink-md flex items-center justify-center text-ink-text-muted hover:text-ink-text hover:bg-ink-surface-2 border border-transparent hover:border-ink-border transition shrink-0"
         aria-label="Toggle navigation menu"
       >
         <ink-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" [size]="18" />
@@ -123,7 +123,7 @@
   @if (mobileMenuOpen()) {
     <!-- Backdrop to close mobile menu on click outside -->
     <div
-      class="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px] lg:hidden pointer-events-auto"
+      class="fixed inset-0 z-40 bg-black/25 lg:hidden pointer-events-auto"
       (click)="closeMobileMenu()"
       aria-hidden="true"
     ></div>
@@ -248,7 +248,7 @@
         id="editor-preview"
       >
         <div
-          class="mockup-3d-card rounded-[26px] sm:rounded-[34px] p-2 sm:p-3.5 bg-ink-surface/75 border border-ink-border/80 backdrop-blur-xl transition-all duration-300 ease-out"
+          class="mockup-3d-card rounded-[26px] sm:rounded-[34px] p-2 sm:p-3.5 bg-ink-surface/75 border border-ink-border/80 backdrop-blur-xl transition duration-300 ease-out"
           [style.transform]="mockupTransform()"
         >
           <!-- Inner Browser Chrome Mockup -->
@@ -273,7 +273,7 @@
                 <button
                   type="button"
                   (click)="setHeroTab('rich')"
-                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition flex items-center gap-1.5 cursor-pointer"
                   [class]="
                     heroTab() === 'rich'
                       ? 'bg-ink-surface text-ink-text font-semibold shadow-sm'
@@ -286,7 +286,7 @@
                 <button
                   type="button"
                   (click)="setHeroTab('markdown')"
-                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  class="px-2.5 py-1 pointer-coarse:min-h-11 rounded-md transition flex items-center gap-1.5 cursor-pointer"
                   [class]="
                     heroTab() === 'markdown'
                       ? 'bg-ink-surface text-ink-text font-semibold shadow-sm'
@@ -963,7 +963,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Bold text', isMac() ? '⌘ + B' : 'Ctrl + B')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition cursor-pointer"
               >
                 <span>{{ isMac() ? '⌘ + B' : 'Ctrl + B' }}</span>
                 <span class="text-[10px] text-ink-text-muted">(Bold)</span>
@@ -971,7 +971,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Slash command menu', '/')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition cursor-pointer"
               >
                 <span>/</span>
                 <span class="text-[10px] text-ink-text-muted">(Menu)</span>
@@ -979,7 +979,7 @@
               <button
                 type="button"
                 (click)="triggerShortcut('Insert link', isMac() ? '⌘ + K' : 'Ctrl + K')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition-all cursor-pointer"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 rounded-full text-xs font-mono bg-ink-surface-2 border border-ink-border text-ink-text hover:border-ink-accent/50 hover:bg-ink-accent-soft hover:text-ink-accent-text transition cursor-pointer"
               >
                 <span>{{ isMac() ? '⌘ + K' : 'Ctrl + K' }}</span>
                 <span class="text-[10px] text-ink-text-muted">(Link)</span>
@@ -1023,7 +1023,7 @@
           <!-- Dynamic Live Trigger Feedback Banner -->
           @if (activeShortcut()) {
             <div
-              class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-accent-soft border border-ink-accent/30 flex items-center justify-between text-xs text-ink-accent-text font-medium shadow-sm transition-all duration-200"
+              class="mb-3 px-3 py-2 rounded-ink-sm bg-ink-accent-soft border border-ink-accent/30 flex items-center justify-between text-xs text-ink-accent-text font-medium shadow-sm transition duration-200"
             >
               <div class="flex items-center gap-2 truncate">
                 <ink-icon name="check" [size]="14" svgClass="text-ink-accent-text shrink-0" />
@@ -1058,7 +1058,7 @@
                     isMac() ? shortcut.macKeys.join(' + ') : shortcut.keys.join(' + ')
                   )
                 "
-                class="w-full flex items-center justify-between py-2 px-3 rounded-ink-sm border transition-all duration-150 group cursor-pointer text-start select-none"
+                class="w-full flex items-center justify-between py-2 px-3 rounded-ink-sm border transition duration-150 group cursor-pointer text-start select-none"
                 [class.shortcut-active-row]="activeShortcut() === shortcut.action"
                 [class.bg-ink-surface-2]="activeShortcut() !== shortcut.action"
                 [class.border-transparent]="activeShortcut() !== shortcut.action"

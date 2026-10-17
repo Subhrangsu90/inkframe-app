@@ -175,7 +175,6 @@
 
 .mockup-3d-card {
   transform-style: preserve-3d;
-  will-change: transform, box-shadow;
   box-shadow:
     0 24px 80px -15px rgba(0, 0, 0, 0.14),
     0 0 0 1px color-mix(in srgb, var(--ink-border) 80%, transparent),
@@ -298,7 +297,8 @@
     0 1px 2px rgba(0, 0, 0, 0.04),
     inset 0 -1px 0 rgba(0, 0, 0, 0.06);
   color: var(--ink-text);
-  transition: all 0.15s ease;
+  transition: 0.15s ease;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
 }
 
 /* ── Aceternity UI Spotlight Glow on Cards ── */

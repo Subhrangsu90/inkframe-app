@@ -65,6 +65,34 @@ export interface MarginPreset {
   margins: PageMargins;
 }
 
+export interface PageColor {
+  /** What documents store (`PageSetup.color`). */
+  name: string;
+  label: string;
+  /** The page in the light theme, and in print and exports. */
+  light: string;
+  /** The page in the dark theme. */
+  dark: string;
+}
+
+/**
+ * Page colors. Each keeps WCAG AA contrast (4.5:1) for the editor's text,
+ * muted text and links in both themes (see page-setup.spec.ts).
+ */
+export const PAGE_COLORS: readonly PageColor[] = [
+  { name: 'cream', label: 'Cream', light: '#fbf6e8', dark: '#262219' },
+  { name: 'sage', label: 'Sage', light: '#edf4ec', dark: '#1b241e' },
+  { name: 'sky', label: 'Sky', light: '#ebf3fb', dark: '#19212b' },
+  { name: 'lavender', label: 'Lavender', light: '#f2effa', dark: '#221e2b' },
+  { name: 'rose', label: 'Rose', light: '#fbeef0', dark: '#2b1f23' },
+  { name: 'gray', label: 'Gray', light: '#f1f1ef', dark: '#2a2a28' },
+];
+
+/** The page color with this name; null for none or an unknown name. */
+export function findPageColor(name: string | null): PageColor | null {
+  return PAGE_COLORS.find((c) => c.name === name) ?? null;
+}
+
 export const MARGIN_PRESETS: readonly MarginPreset[] = [
   { id: 'narrow', label: 'Narrow', margins: { top: 12.7, right: 12.7, bottom: 12.7, left: 12.7 } },
   { id: 'normal', label: 'Normal', margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 } },
@@ -286,16 +314,21 @@ export function pageRuleCss(setup: PageSetup): string {
 
 /**
  * The custom properties that lay out a document on screen, for the element
- * with the `ink-canvas` class (with `data-ink-layout` set to the layout; see
- * the editor's page layout styles): the paper size and margins for Pages,
- * the side margins for Pageless.
+ * with the `ink-canvas` class (with `data-ink-layout` set to the layout and
+ * `data-ink-page-color` to the color's name; see the editor's page layout
+ * styles): the paper size and margins for Pages, the side margins for
+ * Pageless, and the page color's light and dark values.
  */
 export function pageLayoutStyle(setup: PageSetup): Record<string, string> {
   const { width, height } = pageDimensions(setup);
   const { top, right, bottom, left } = setup.margins;
   const sides = setup.sideMargins;
   const total = sides.left + sides.right;
+  const color = findPageColor(setup.color);
   return {
+    ...(color
+      ? { '--ink-page-color-light': color.light, '--ink-page-color-dark': color.dark }
+      : {}),
     '--ink-page-width': mm(width),
     '--ink-page-height': mm(height),
     '--ink-page-margin-top': mm(top),

@@ -24,6 +24,10 @@ import {
 } from '../extensions/lists/list-schema';
 import { tableNodeSpecs } from '../extensions/table/table-schema';
 import { callout } from '../extensions/callout/callout-schema';
+import {
+  DOC_CONTENT_WITH_PAGE_BREAKS,
+  page_break,
+} from '../extensions/page-setup/page-break-schema';
 
 /*
  * The schema with every node and mark of DEFAULT_EXTENSIONS, for working with
@@ -36,7 +40,7 @@ import { callout } from '../extensions/callout/callout-schema';
 const base = new Schema({ nodes: basicNodes, marks: basicMarks });
 
 const nodes = base.spec.nodes
-  .update('doc', doc)
+  .update('doc', { ...doc, content: DOC_CONTENT_WITH_PAGE_BREAKS })
   .update('paragraph', paragraph)
   .update('heading', heading)
   .update('image', image)
@@ -47,7 +51,8 @@ const nodes = base.spec.nodes
   .addToEnd('bullet_list', bullet_list)
   .addToEnd('list_item', list_item)
   .append(tableNodeSpecs)
-  .addToEnd('callout', callout);
+  .addToEnd('callout', callout)
+  .addToEnd('page_break', page_break);
 
 export { base, nodes };
 

@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_PAGE_SETUP,
   MARGIN_PRESETS,
+  PAGE_COLORS,
   PageSetup,
   defaultPaperForLocale,
+  findPageColor,
   fitMargins,
   marginPresetOf,
   mmToUnits,
@@ -175,5 +177,47 @@ describe('pageLayoutStyle', () => {
     const style = pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, sideMargins: { left: 0, right: 0 } });
     expect(style['--ink-side-share-left']).toBe('0.5');
     expect(style['--ink-side-share-right']).toBe('0.5');
+  });
+});
+
+describe('page colors', () => {
+  // WCAG 2.1 relative luminance and contrast ratio.
+  const luminance = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a: string, b: string) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  // The editor's text, muted text and link colors (projects/.../_variables.scss, src/styles/tokens.scss).
+  const LIGHT_TEXT = ['#0d0d0d', '#1b1b1f', '#6b6b73', '#017a78'];
+  const DARK_TEXT = ['#f0efec', '#c3c2b7', '#9a9891', '#58aaa6'];
+
+  it('keep WCAG AA contrast (4.5:1) for text, muted text and links in both themes', () => {
+    for (const color of PAGE_COLORS) {
+      for (const text of LIGHT_TEXT)
+        expect(contrast(text, color.light)).toBeGreaterThanOrEqual(4.5);
+      for (const text of DARK_TEXT) expect(contrast(text, color.dark)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('are found by name; anything else is no color', () => {
+    expect(findPageColor('sage')?.label).toBe('Sage');
+    expect(findPageColor(null)).toBeNull();
+    expect(findPageColor('neon')).toBeNull();
+  });
+
+  it('give the canvas their light and dark values; no color gives none', () => {
+    const style = pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, color: 'cream' });
+    expect(style['--ink-page-color-light']).toBe(findPageColor('cream')!.light);
+    expect(style['--ink-page-color-dark']).toBe(findPageColor('cream')!.dark);
+    expect(pageLayoutStyle(DEFAULT_PAGE_SETUP)).not.toHaveProperty('--ink-page-color-light');
+    expect(pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, color: 'neon' })).not.toHaveProperty(
+      '--ink-page-color-dark',
+    );
   });
 });

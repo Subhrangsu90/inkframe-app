@@ -536,6 +536,49 @@ describe('EditorService with the extension-built schema', () => {
       expect(svc.pageSetup()).toEqual({ ...DEFAULT_PAGE_SETUP, layout: 'pages' });
     });
 
+    it('Mod-Enter inserts a page break at the cursor, in one undo step', () => {
+      const view = mount(paragraphDoc('abcd'));
+      select(3, 3);
+      expect(press(view, 'Enter', { ctrl: true })).toBe(true);
+      expect(view.state.doc.toJSON().content.map((n: any) => n.type)).toEqual([
+        'paragraph',
+        'page_break',
+        'paragraph',
+      ]);
+      expect(view.state.selection.$from.parent.textContent).toBe('cd');
+      svc.undo();
+      expect(view.state.doc.childCount).toBe(1);
+      expect(view.state.doc.textContent).toBe('abcd');
+    });
+
+    it('Mod-Enter still leaves a code block', () => {
+      const view = mount({
+        schemaVersion: SCHEMA_VERSION,
+        doc: {
+          type: 'doc',
+          content: [{ type: 'code_block', content: [{ type: 'text', text: 'x' }] }],
+        },
+      });
+      select(2, 2);
+      press(view, 'Enter', { ctrl: true });
+      expect(view.state.doc.toJSON().content.map((n: any) => n.type)).toEqual([
+        'code_block',
+        'paragraph',
+      ]);
+    });
+
+    it('offers "Page break" in the slash menu', () => {
+      mount(paragraphDoc('x'));
+      const item = svc
+        .extensionManager()
+        .getSlashItems()
+        .find((i) => i.id === 'page_break');
+      expect(item?.label).toBe('Page break');
+      select(2, 2);
+      item!.run(svc);
+      expect(svc.view!.state.doc.child(1).type.name).toBe('page_break');
+    });
+
     it('is read-only in preview', () => {
       mount(paragraphDoc('text'));
       svc.setEditable(false);

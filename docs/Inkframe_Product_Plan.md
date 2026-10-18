@@ -220,8 +220,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Pageless layout: the full canvas | ✅ | M3.5, step 2 | No fixed width; 10% side margins until the ruler (step 3) sets them. Replaced the 820px sheet and the planned width toggle. |
 | Pages layout: a sheet at the paper's real width | 🟡 | M3.5, step 2 | Same text width, fonts, font size and text settings as the printout, so lines break in the same places (checked in Chrome; Firefox and Safari still to check). Phones reflow. |
 | Ruler with margin handles | ✅ | M3.5, step 3 | Both layouts, from 768px up. Keyboard-operable. Turned off in Settings → Editor. |
-| Page color | ⬜ | M3.5, step 4 | A fixed palette with a light and a dark value per color. |
-| Page break block | ⬜ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
+| Page color | ✅ | M3.5, step 4 | Six colors, each with a light and a dark value. Printing it is optional (checked in Chrome; Firefox and Safari still to check). |
+| Page break block | ✅ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
 | Zoom (fit width, 50–200%) | ⬜ | M3.5, step 5 | For A3 and landscape sheets wider than the screen. |
 | Page gaps on screen, page numbers, headers and footers | ⬜ | M5, only if users ask | See D19. |
 
@@ -377,6 +377,8 @@ Step 2 built (2026-10-18), with tests and a Chrome run against the production bu
 
 Step 3 built (2026-10-18), with tests and a Chrome run with real mouse and keyboard input against the production build. The handles sit exactly on the text column's edges (A4, Pageless, and A3 after scrolling sideways). Dragging previews the margin with a guide line and its size, and leaves the document unchanged until release; one undo step reverts it. Keys move a handle 1 mm (1 cm with Shift) on A-series paper. Two changes from the plan: "Show ruler" is a switch in Settings → Editor (there is no `⋯` menu), and on Letter and Legal the steps are 1/16 and 1/4 inch, so values stay in round inches. On touch screens the handles take touches 44px wide, reaching 20px below the ruler.
 
+Step 4 built (2026-10-18), with tests and a Chrome run against the production build. Six page colors (Cream, Sage, Sky, Lavender, Rose, Gray), each keeping WCAG AA contrast for text, muted text and links in both themes (a test computes it). Printing a color uses an `@page` background: Chrome's `html` background stops at the page margins, while `@page` fills the whole sheet; the printed PDF shows the color across the full sheet on every page. `Mod-Enter` splits a paragraph at the cursor rather than always going after the block, as in Word and Google Docs; in lists, tables and callouts it goes after the top-level block, since page breaks are top-level only. Still open in step 4: the print checks in Firefox and Safari.
+
 Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens from the Export menu, next to Print. On touch screens the status bar button is hidden, because the 28px bar has no room for a 44px target; the Export menu covers them.
 
 **Rules for every M3.5 feature:**
@@ -423,9 +425,9 @@ Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens fr
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Page color from a fixed palette (`PAGE_COLORS`), each color with a light and a dark value. The document stores the color's name, never a CSS value. | M | Text keeps WCAG AA contrast on every page color in both themes. Pageless colors the whole canvas; Pages colors the sheet. |
-| Page color in print and exports: "Print page color" in Page setup, off by default. HTML export always keeps the color (light value). | S | When printed, the color covers the whole sheet, margins included, in the Chrome, Firefox and Safari print previews. |
-| `page_break` block, top level only. Insert it from the slash menu ("Page break") or with `Mod-Enter`, after the top-level block that holds the cursor. In task lists `Mod-Enter` still checks the task, and in code blocks it still leaves the block. On screen it shows as a dashed line labeled "Page break". | S | Prints as `break-after: page`. HTML export writes `<div class="ink-page-break">`; Markdown writes the same div as inline HTML and reads it back (round-trip tests). |
+| ✅ Page color from a fixed palette (`PAGE_COLORS`), each color with a light and a dark value. The document stores the color's name, never a CSS value. | M | Text keeps WCAG AA contrast on every page color in both themes. Pageless colors the whole canvas; Pages colors the sheet. |
+| 🟡 Page color in print and exports: "Print page color" in Page setup, off by default. HTML export always keeps the color (light value). | S | When printed, the color covers the whole sheet, margins included, in the Chrome, Firefox and Safari print previews. Chrome: the whole sheet on every page (`@page` background). Firefox and Safari still to check. |
+| ✅ `page_break` block, top level only. Insert it from the slash menu ("Page break") or with `Mod-Enter`: at the cursor in a top-level paragraph or heading, otherwise after the top-level block that holds the cursor. In task lists `Mod-Enter` still checks the task, and in code blocks it still leaves the block. On screen it shows as a dashed line labeled "Page break". | S | Prints as `break-after: page`. HTML export writes `<div class="ink-page-break">`; Markdown writes the same div as inline HTML and reads it back (round-trip tests). |
 
 #### Step 5: Zoom
 
@@ -935,7 +937,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Link | `Mod-K` | |
 | Find / replace | `Mod-F` / `Mod-H` (macOS: `Mod-Shift-H`) | |
 | Print or save as PDF | `Mod-P` (app) | |
-| Page break (M3.5, planned) | `Mod-Enter` (in task lists it checks the task; in code blocks it leaves the block) | |
+| Page break | `Mod-Enter` (in task lists it checks the task; in code blocks it leaves the block) | |
 | Next / previous match | `Enter` / `Shift-Enter` in the find field, or `Mod-G` / `Mod-Shift-G` | |
 
 ### 12.2 Built-in extensions (`DEFAULT_EXTENSIONS`)
@@ -948,5 +950,5 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Lists | `bullet_list`, `ordered_list`, `task_list` |
 | Rich inserts | `table`, `callout`, `link`, `image` |
 | Editing aids | `search` (find and replace), `placeholder` (`createPlaceholderExtension(text)` for other text), `paste_cleanup` |
-| Page setup (M3.5, planned) | `page_setup` (commands, the `page_break` block, the ruler; the `page` attribute lives on `doc`) |
+| Page setup (M3.5) | `page_setup` (commands, the `page_break` block, `Mod-Enter`, the slash item; the `page` attribute lives on `doc`; the ruler and dialog are in `/ui`) |
 | Block mode (M7, planned) | `block_handles`, `toggle`, `page_link`, `columns` (preset `BLOCK_MODE_EXTENSIONS`) |

@@ -89,7 +89,10 @@ import {
   normalizePageSetup,
   samePageSetup,
 } from '../extensions/page-setup/page-setup';
-import { setPageSetupCommand } from '../extensions/page-setup/page-setup-commands';
+import {
+  insertPageBreakCommand,
+  setPageSetupCommand,
+} from '../extensions/page-setup/page-setup-commands';
 import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
@@ -276,6 +279,11 @@ export class EditorService implements EditorHooks {
     const v = this.view;
     if (!v || !this.editableFlag) return false;
     return setPageSetupCommand(setup)(v.state, v.dispatch, v);
+  }
+
+  /** Inserts a page break at the cursor (see `insertPageBreakCommand`). */
+  insertPageBreak(): void {
+    this.run(insertPageBreakCommand);
   }
 
   // ── Find and replace ─────────────────────────────────────────────

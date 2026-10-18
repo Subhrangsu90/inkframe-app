@@ -5,7 +5,8 @@
  * - 3: table cells lose the `height` attribute; rows fit their text.
  * - 4: list attributes (start number, bullet and number style, tight) shared
  *   by all list types; list items can start with a heading; `note` callouts.
- * - 5: `page` attribute on `doc`: the page setup (layout, paper, margins).
+ * - 5: `page` attribute on `doc`: the page setup (layout, paper, margins,
+ *   page color); `page_break` blocks at the top level.
  */
 export const SCHEMA_VERSION = 5;
 

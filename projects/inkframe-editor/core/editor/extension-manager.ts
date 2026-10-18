@@ -19,6 +19,7 @@ import { EditorService } from './editor-service';
 import { EditorHooks } from './editor-hooks';
 import { menusPlugin } from './menus.plugin';
 import { doc, paragraph } from '../extensions/document/document-schema';
+import { DOC_CONTENT_WITH_PAGE_BREAKS } from '../extensions/page-setup/page-break-schema';
 import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from '../extensions/lists/list-schema';
 import { listKeymap } from '../extensions/lists/list-commands';
 import { listJoinPlugin } from '../extensions/lists/list-join.plugin';
@@ -58,6 +59,12 @@ export class ExtensionManager {
           nodeMap[key] = spec;
         }
       }
+    }
+
+    // Page breaks are top-level blocks only: the document allows them, lists,
+    // tables and callouts (which hold `block`s) do not.
+    if (nodeMap['page_break']) {
+      nodeMap['doc'] = { ...nodeMap['doc'], content: DOC_CONTENT_WITH_PAGE_BREAKS };
     }
 
     // 2. Gather marks

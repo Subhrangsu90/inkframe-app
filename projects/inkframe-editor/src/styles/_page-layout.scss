@@ -18,13 +18,26 @@
  */
 .ink-canvas {
   box-sizing: border-box;
-  background: var(--ink-bg-page, #1e1e1d);
+  /*
+   * The page's color: the document's page color for this theme (from
+   * pageLayoutStyle()), otherwise the theme's page color.
+   */
+  --ink-sheet-bg: var(--ink-page-color-dark, var(--ink-bg-page, #1e1e1d));
+  background: var(--ink-sheet-bg);
+}
+
+:root[data-theme='light'] .ink-canvas,
+body[data-theme='light'] .ink-canvas,
+.theme-light .ink-canvas {
+  --ink-sheet-bg: var(--ink-page-color-light, var(--ink-bg-page, #ffffff));
 }
 
 .ink-sheet {
   box-sizing: border-box;
   min-height: 100%;
-  background: var(--ink-bg-page, #1e1e1d);
+  /* Anything drawn on the page in the page's color follows it. */
+  --ink-bg-page: var(--ink-sheet-bg);
+  background: var(--ink-sheet-bg);
 }
 
 .ink-sheet-body {

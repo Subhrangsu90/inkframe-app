@@ -24,6 +24,7 @@ import {
   DEFAULT_PAGE_SETUP,
   PageSetup,
   docToHtml,
+  findPageColor,
   migrate,
   pageLayoutStyle,
   pageRuleCss,
@@ -74,12 +75,22 @@ export class Reader implements OnInit {
   readonly pageSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
   readonly layoutStyle = computed(() => pageLayoutStyle(this.pageSetup()));
 
-  // Printing from the reader uses the document's paper and margins too.
+  // Printing from the reader uses the document's paper and margins too, and
+  // its page color when the document asks for it (over the whole sheet).
   private readonly printPageRule = effect((onCleanup) => {
-    const rule = pageRuleCss(this.pageSetup());
-    if (!rule) return;
+    const setup = this.pageSetup();
+    const color = setup.printColor ? findPageColor(setup.color)?.light : undefined;
+    const rules = [pageRuleCss(setup)];
+    if (color) {
+      rules.push(
+        `@page { background: ${color}; }`,
+        `html, body, .reader-layout, .reader-viewport, .reader-canvas, .reader-sheet { background: ${color} !important; }`,
+      );
+    }
+    const css = rules.filter(Boolean).join('\n');
+    if (!css) return;
     const style = this.document.createElement('style');
-    style.textContent = `@media print { ${rule} }`;
+    style.textContent = `@media print {\n${css}\n}`;
     this.document.head.appendChild(style);
     onCleanup(() => style.remove());
   });

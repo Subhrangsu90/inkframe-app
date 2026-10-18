@@ -73,6 +73,9 @@ function withTightness(list: PMNode): PMNode {
     : list.type.create({ ...list.attrs, tight }, list.content);
 }
 
+/** How a page break is written in Markdown, and the only form that reads back as one. */
+const PAGE_BREAK_HTML = '<div class="ink-page-break"></div>';
+
 // Extend serializer with callouts, task lists, and tables
 export const inkMarkdownSerializer = new MarkdownSerializer(
   {
@@ -143,6 +146,11 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
       state.text(node.textContent, false);
       state.ensureNewLine();
       state.write('```');
+      state.closeBlock(node);
+    },
+    // Markdown has no page breaks; this HTML line breaks pages wherever HTML is printed.
+    page_break(state, node) {
+      state.write(PAGE_BREAK_HTML);
       state.closeBlock(node);
     },
   },
@@ -513,6 +521,28 @@ tokenizer.core.ruler.push('ink_alignment', (state) => {
   }
 });
 
+/**
+ * Reads the page breaks written by the serializer. With raw HTML disabled the
+ * line arrives as a paragraph of its own; at the top level it becomes a page
+ * break (elsewhere it stays text: page breaks are top-level blocks).
+ */
+tokenizer.core.ruler.push('ink_page_break', (state) => {
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    if (
+      tokens[i].type === 'paragraph_open' &&
+      tokens[i].level === 0 &&
+      tokens[i + 1]?.type === 'inline' &&
+      tokens[i + 1].content.trim() === PAGE_BREAK_HTML &&
+      tokens[i + 2]?.type === 'paragraph_close'
+    ) {
+      const token = new state.Token('ink_page_break', 'div', 0);
+      token.block = true;
+      tokens.splice(i, 3, token);
+    }
+  }
+});
+
 const alignAttr = (tok: Token) => sanitizeTextAlign(tok.attrGet('align'));
 
 /** markdown-it hides the paragraphs of tight lists (as prosemirror-markdown reads them). */
@@ -562,6 +592,7 @@ export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
     block: 'callout',
     getAttrs: (tok) => ({ type: tok.attrGet('kind') }),
   },
+  ink_page_break: { node: 'page_break' },
   task_list: {
     block: 'task_list',
     getAttrs: (_tok, tokens, i) => ({ tight: listIsTight(tokens, i) }),

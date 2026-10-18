@@ -259,6 +259,27 @@ describe('<ink-editor> page setup', () => {
     expect(svc.canUndo()).toBe(false);
   });
 
+  it('sets a page color, and whether it prints, in either layout', async () => {
+    const { fixture, svc, dialog } = await open();
+    // Pageless here: the color does not need Pages.
+    expect(dialog.querySelector('.ink-ps-check')).toBeNull();
+    check(dialog, 'input[name="ink-ps-color"][value="sage"]');
+    await fixture.whenStable();
+    const print = q<HTMLInputElement>(dialog, '.ink-ps-check input');
+    expect(print.checked).toBe(false);
+    print.checked = true;
+    print.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    button(dialog, 'Apply').click();
+    await fixture.whenStable();
+
+    expect(svc.pageSetup()).toMatchObject({ layout: 'pageless', color: 'sage', printColor: true });
+    const canvas = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.ink-canvas',
+    )!;
+    expect(canvas.style.getPropertyValue('--ink-page-color-light')).toBe('#edf4ec');
+  });
+
   it('refuses margins that leave less than 5 cm for the text', async () => {
     const { fixture, svc, dialog } = await open();
     choosePages(dialog);

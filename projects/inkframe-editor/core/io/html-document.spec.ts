@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { schema } from '../schema/schema';
 import { docToHtmlDocument, HTML_DOCUMENT_CSS } from './html-document';
+import { findPageColor } from '../extensions/page-setup/page-setup';
 
 const doc = schema.nodeFromJSON({
   type: 'doc',
@@ -104,6 +105,46 @@ describe('docToHtmlDocument', () => {
     expect(html).toContain('body { font-size: 14px; letter-spacing: normal; }');
     expect(html).not.toContain('color: red');
     expect(html).not.toContain('tracker');
+  });
+
+  const withPage = (page: object) =>
+    schema.nodeFromJSON({ ...doc.toJSON(), attrs: { page: { layout: 'pages', ...page } } });
+
+  it('shows the page color on screen, and prints white paper unless asked to print it', () => {
+    const cream = findPageColor('cream')!.light;
+    const html = docToHtmlDocument(withPage({ color: 'cream' }));
+    expect(html).toContain(`.ink-document { background: ${cream}; }`);
+    const print = html.slice(html.lastIndexOf('@media print'));
+    expect(print).toContain('.ink-document { background: transparent; }');
+    expect(print).not.toContain(cream);
+  });
+
+  it('prints the page color over the whole sheet, margins included, when asked', () => {
+    const cream = findPageColor('cream')!.light;
+    const html = docToHtmlDocument(withPage({ color: 'cream', printColor: true }));
+    const print = html.slice(html.lastIndexOf('@media print'));
+    expect(print).toContain(`@page { background: ${cream}; }`);
+    expect(print).toContain(`html, body { background: ${cream}; }`);
+  });
+
+  it('ignores a page color name it does not know', () => {
+    const html = docToHtmlDocument(withPage({ color: 'neon', printColor: true }));
+    expect(html).not.toMatch(/@page \{ background/);
+  });
+
+  it('starts a new printed page at each page break', () => {
+    const breaks = schema.nodeFromJSON({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'one' }] },
+        { type: 'page_break' },
+        { type: 'paragraph', content: [{ type: 'text', text: 'two' }] },
+      ],
+    });
+    const html = docToHtmlDocument(breaks);
+    expect(html).toContain('<div class="ink-page-break"');
+    const print = HTML_DOCUMENT_CSS.slice(HTML_DOCUMENT_CSS.indexOf('@media print'));
+    expect(print).toMatch(/\.ink-page-break \{ break-after: page;/);
   });
 
   it('keeps code blocks and table rows on one printed page', () => {

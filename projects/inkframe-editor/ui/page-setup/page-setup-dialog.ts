@@ -4,6 +4,7 @@ import {
   MARGIN_PRESETS,
   MIN_TEXT_AREA_MM,
   MarginPreset,
+  PAGE_COLORS,
   PAPER_SIZES,
   PageLayout,
   PageMargins,
@@ -224,6 +225,56 @@ const paperOption = (paper: PaperSize) =>
         } @else {
           <p class="ink-ps-note">Printing uses the paper size you choose in the print dialog.</p>
         }
+
+        <fieldset class="ink-ps-group ink-ps-color-group">
+          <legend class="ink-ps-legend">
+            Page color
+            <span class="ink-ps-legend-note">· {{ colorLabel() }}</span>
+          </legend>
+          <div class="ink-ps-colors">
+            <label
+              class="ink-ps-swatch ink-ps-swatch-none"
+              [class.is-checked]="!color()"
+              title="None"
+            >
+              <input
+                type="radio"
+                name="ink-ps-color"
+                value=""
+                [checked]="!color()"
+                (change)="setColor(null)"
+              />
+              <span class="ink-ps-sr">None</span>
+            </label>
+            @for (option of colors; track option.name) {
+              <label
+                class="ink-ps-swatch"
+                [class.is-checked]="color() === option.name"
+                [style]="option.style"
+                [title]="option.label"
+              >
+                <input
+                  type="radio"
+                  name="ink-ps-color"
+                  [value]="option.name"
+                  [checked]="color() === option.name"
+                  (change)="setColor(option.name)"
+                />
+                <span class="ink-ps-sr">{{ option.label }}</span>
+              </label>
+            }
+          </div>
+          @if (color()) {
+            <label class="ink-ps-check">
+              <input
+                type="checkbox"
+                [checked]="printColor()"
+                (change)="setPrintColor($any($event.target).checked)"
+              />
+              <span>Print page color</span>
+            </label>
+          }
+        </fieldset>
       </div>
 
       <footer class="ink-ps-footer">
@@ -567,6 +618,90 @@ const paperOption = (paper: PaperSize) =>
       color: var(--ink-text-muted, #9a9891);
     }
 
+    .ink-ps-color-group {
+      margin-top: 18px;
+    }
+
+    .ink-ps-colors {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* A swatch shows the color as the page will look in the current theme. */
+    .ink-ps-swatch {
+      --ink-swatch: var(--ink-swatch-dark, var(--ink-bg-page, #1e1e1d));
+      position: relative;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--ink-swatch);
+      /* A ring that shows on the dialog in both themes (dark page colors are close to it). */
+      --ink-swatch-ring: inset 0 0 0 1px
+        color-mix(in srgb, var(--ink-text-muted, #9a9891) 55%, transparent);
+      box-shadow: var(--ink-swatch-ring);
+      cursor: pointer;
+
+      &.is-checked {
+        box-shadow:
+          var(--ink-swatch-ring),
+          0 0 0 2px var(--ink-bg-popover, #242423),
+          0 0 0 4px var(--ink-accent-primary, #028380);
+      }
+
+      &:has(input:focus-visible) {
+        outline: 3px solid var(--ink-border-focus, rgba(88, 170, 166, 0.6));
+        outline-offset: 4px;
+      }
+    }
+
+    :host-context(.theme-light) .ink-ps-swatch,
+    :host-context([data-theme='light']) .ink-ps-swatch {
+      --ink-swatch: var(--ink-swatch-light, var(--ink-bg-page, #ffffff));
+    }
+
+    /* No color: the theme's page, crossed out. */
+    .ink-ps-swatch-none {
+      background:
+        linear-gradient(
+            to top right,
+            transparent calc(50% - 1px),
+            var(--ink-text-muted, #9a9891) calc(50% - 1px) calc(50% + 1px),
+            transparent calc(50% + 1px)
+          )
+          center / 60% 60% no-repeat,
+        var(--ink-swatch);
+    }
+
+    .ink-ps-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+      cursor: pointer;
+
+      input {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--ink-accent-primary, #028380);
+        cursor: pointer;
+      }
+    }
+
+    .ink-ps-sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .ink-ps-preview {
       display: flex;
       align-items: center;
@@ -724,6 +859,10 @@ export class PageSetupDialog {
   protected readonly papers = PAPER_SIZES.map((p) => ({ id: p.id, text: paperOption(p) }));
   protected readonly presets = MARGIN_PRESETS;
   protected readonly sides = SIDES;
+  protected readonly colors = PAGE_COLORS.map((c) => ({
+    ...c,
+    style: { '--ink-swatch-light': c.light, '--ink-swatch-dark': c.dark },
+  }));
   protected readonly canSetDefault = !!this.data.setDefault;
 
   /** What the dialog starts from: a document without page setup keeps its Pageless layout. */
@@ -735,6 +874,11 @@ export class PageSetupDialog {
   protected readonly layout = signal<PageLayout>(this.initial.layout);
   protected readonly paper = signal(this.initial.paper);
   protected readonly orientation = signal<PageOrientation>(this.initial.orientation);
+  protected readonly color = signal(this.initial.color);
+  protected readonly printColor = signal(this.initial.printColor);
+  protected readonly colorLabel = computed(
+    () => this.colors.find((c) => c.name === this.color())?.label ?? 'None',
+  );
   protected readonly units = computed(() => findPaperSize(this.paper()).units);
   /** The margin fields' text, in the paper's units. */
   protected readonly drafts = signal(
@@ -805,11 +949,23 @@ export class PageSetupDialog {
       paper: this.paper(),
       orientation: this.orientation(),
       margins,
+      color: this.color(),
+      printColor: this.printColor(),
     });
   });
 
   protected setLayout(layout: PageLayout): void {
     this.layout.set(layout);
+    this.defaultSaved.set(false);
+  }
+
+  protected setColor(color: string | null): void {
+    this.color.set(color);
+    this.defaultSaved.set(false);
+  }
+
+  protected setPrintColor(print: boolean): void {
+    this.printColor.set(print);
     this.defaultSaved.set(false);
   }
 

@@ -1,6 +1,11 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { docToHtml, sanitizeHtml } from './html';
-import { pageRuleCss, pageSetupOf } from '../extensions/page-setup/page-setup';
+import {
+  PageSetup,
+  findPageColor,
+  pageRuleCss,
+  pageSetupOf,
+} from '../extensions/page-setup/page-setup';
 import { sanitizeCssLength } from '../schema/sanitize-css';
 
 export interface HtmlDocumentOptions {
@@ -129,8 +134,10 @@ td > :first-child, th > :first-child { margin-top: 0; }
 .token.atrule, .token.attr-value, .token.keyword { color: #8250df; }
 .token.function, .token.class-name { color: #6639ba; }
 .token.regex, .token.important, .token.variable { color: #953800; }
+.ink-page-break { height: 0; margin: 2rem 0; border-top: 1px dashed #c9c7c1; }
 @media print {
   @page { margin: 18mm 16mm; }
+  .ink-page-break { break-after: page; margin: 0; border: 0; }
   body { background: #ffffff; font-size: 11pt; }
   .ink-document { max-width: none; margin: 0; padding: 0; border: 0; }
   a { color: inherit; }
@@ -152,14 +159,33 @@ const styleText = (css: string) => css.replace(/<\/style/gi, '<\\/style');
  * no ligatures, and spaces at the end of a line taking up room (the editor's
  * `white-space: break-spaces`). Pageless keeps the defaults above.
  */
-function pageSetupCss(doc: PMNode, fontSize: string, letterSpacing: string): string {
-  const page = pageRuleCss(pageSetupOf(doc));
+function pageSetupCss(setup: PageSetup, fontSize: string, letterSpacing: string): string {
+  const page = pageRuleCss(setup);
   if (!page) return '';
   return `@media print {
   ${page}
   body { font-size: ${fontSize}; letter-spacing: ${letterSpacing}; }
   .ink-document { font-variant-ligatures: none; font-feature-settings: 'liga' 0; }
   .ink-document :is(p, h1, h2, h3, h4, h5, h6) { white-space: break-spaces; }
+}
+`;
+}
+
+/**
+ * The page color (its light value): the sheet's background on screen. In
+ * print only when the document asks for it (`printColor`), then across the
+ * whole sheet, margins included: an `@page` background, and `html` for
+ * browsers that paint only inside the margins. Otherwise paper stays white.
+ */
+function pageColorCss(setup: PageSetup): string {
+  const color = findPageColor(setup.color)?.light;
+  if (!color) return '';
+  const print = setup.printColor
+    ? `@page { background: ${color}; }\n  html, body { background: ${color}; }\n  `
+    : '';
+  return `.ink-document { background: ${color}; }
+@media print {
+  ${print}.ink-document { background: transparent; }
 }
 `;
 }
@@ -177,8 +203,12 @@ export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}
   const fontSize = sanitizeCssLength(options.editorFontSize) ?? '14px';
   const spacing = options.editorLetterSpacing?.trim() ?? '';
   const letterSpacing = LETTER_SPACING.test(spacing) ? spacing : 'normal';
+  const setup = pageSetupOf(doc);
   const css =
-    (options.fontFaceCss ?? '') + HTML_DOCUMENT_CSS + pageSetupCss(doc, fontSize, letterSpacing);
+    (options.fontFaceCss ?? '') +
+    HTML_DOCUMENT_CSS +
+    pageSetupCss(setup, fontSize, letterSpacing) +
+    pageColorCss(setup);
   return `<!doctype html>
 <html lang="${lang}">
 <head>

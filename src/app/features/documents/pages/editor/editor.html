@@ -282,6 +282,8 @@
         [showToolbar]="activeView() === 'rich' && showToolbar()"
         mobileToolbar="bottom"
         [showRuler]="editorPreferences.showRuler()"
+        [zoom]="editorPreferences.zoom()"
+        (zoomChange)="editorPreferences.setZoom($event)"
         [defaultPageSetup]="pageSetupDefaults.value()"
         (defaultPageSetupChange)="pageSetupDefaults.save($event)"
         (changed)="onDocChanged($event)"

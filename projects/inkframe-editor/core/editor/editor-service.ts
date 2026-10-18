@@ -85,8 +85,12 @@ import {
 import { insertImageCommand } from '../extensions/image/image-commands';
 import {
   DEFAULT_PAGE_SETUP,
+  PX_PER_MM,
   PageSetup,
+  PageZoom,
   normalizePageSetup,
+  pageDimensions,
+  resolveZoom,
   samePageSetup,
 } from '../extensions/page-setup/page-setup';
 import {
@@ -264,6 +268,16 @@ export class EditorService implements EditorHooks {
    * ruler handle is being dragged. Null otherwise.
    */
   readonly pageSetupPreview = signal<PageSetup | null>(null);
+  /** How big a Pages sheet is shown; a view setting (`<ink-editor [(zoom)]>`), not saved in the document. */
+  readonly zoom = signal<PageZoom>('auto');
+  /** The room the canvas has for the sheet, in CSS pixels (measured by `<ink-editor>`). */
+  readonly canvasWidth = signal(0);
+  /** The scale the sheet is shown at: the zoom worked out for Pages layout, 1 for Pageless. */
+  readonly effectiveZoom = computed(() => {
+    const setup = this.pageSetupPreview() ?? this.pageSetup();
+    if (setup.layout !== 'pages') return 1;
+    return resolveZoom(this.zoom(), pageDimensions(setup).width * PX_PER_MM, this.canvasWidth());
+  });
   /** Incremented to open the Page setup dialog (`<ink-editor>` reacts to it). */
   readonly pageSetupRequests = signal(0);
 

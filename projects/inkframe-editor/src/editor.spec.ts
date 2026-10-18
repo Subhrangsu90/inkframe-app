@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TextSelection } from 'prosemirror-state';
-import { PageSetup, SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
+import { PageSetup, PageZoom, SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 import { Editor } from './editor';
 
 const docWith = (text: string): StoredDoc => ({
@@ -416,5 +416,72 @@ describe('<ink-editor> ruler', () => {
     fixture.componentInstance.editable.set(false);
     await fixture.whenStable();
     expect(el.querySelector('ink-ruler')).toBeNull();
+  });
+});
+
+@Component({
+  imports: [Editor],
+  template: `<ink-editor #ed [initialDoc]="initial" [showToolbar]="false" [(zoom)]="zoom" />`,
+})
+class ZoomHost {
+  readonly editor = viewChild<Editor>('ed');
+  readonly zoom = signal<PageZoom>('auto');
+  initial: StoredDoc = {
+    schemaVersion: SCHEMA_VERSION,
+    doc: {
+      type: 'doc',
+      attrs: { page: { layout: 'pages', paper: 'a4' } },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'text' }] }],
+    },
+  };
+}
+
+describe('<ink-editor> zoom', () => {
+  afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => c.remove()));
+
+  it('zooms the Pages sheet from the bound zoom, and the status bar sets it', async () => {
+    const fixture = TestBed.createComponent(ZoomHost);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+    const canvas = el.querySelector<HTMLElement>('.ink-canvas')!;
+    const button = el.querySelector<HTMLButtonElement>('.ink-status-zoom')!;
+    expect(button.textContent!.trim()).toBe('100%');
+    expect(canvas.style.getPropertyValue('--ink-zoom')).toBe('1');
+
+    fixture.componentInstance.zoom.set(1.25);
+    await fixture.whenStable();
+    expect(canvas.style.getPropertyValue('--ink-zoom')).toBe('1.25');
+    expect(button.textContent!.trim()).toBe('125%');
+
+    button.click();
+    await fixture.whenStable();
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>('.ink-zoom-menu [role="menuitemradio"]'),
+    );
+    expect(items.map((i) => i.textContent!.trim())).toEqual([
+      'Fit width',
+      '50%',
+      '75%',
+      '100%',
+      '125%',
+      '150%',
+      '200%',
+    ]);
+    expect(items[4].getAttribute('aria-checked')).toBe('true');
+    items[1].click();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.zoom()).toBe(0.5);
+    expect(canvas.style.getPropertyValue('--ink-zoom')).toBe('0.5');
+  });
+
+  it('has no zoom in Pageless, which fills the editor', async () => {
+    const fixture = TestBed.createComponent(ZoomHost);
+    fixture.componentInstance.initial = docWith('pageless');
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.ink-status-zoom')).toBeNull();
+    expect(el.querySelector<HTMLElement>('.ink-canvas')!.style.getPropertyValue('--ink-zoom')).toBe(
+      '1',
+    );
   });
 });

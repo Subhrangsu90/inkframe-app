@@ -74,6 +74,8 @@ body[data-theme='light'] .ink-canvas,
       width: var(--ink-page-width, 210mm);
       min-height: var(--ink-page-height, 297mm);
       margin: 0 auto;
+      /* The editor's zoom (Fit width, 50–200%): the whole sheet, text and margins alike. */
+      zoom: var(--ink-zoom, 1);
       box-shadow:
         0 0 0 1px var(--ink-border-subtle, rgba(255, 255, 255, 0.05)),
         var(--ink-shadow-page, 0 1px 4px rgba(0, 0, 0, 0.2));

@@ -10,10 +10,12 @@ import {
   marginPresetOf,
   mmToUnits,
   normalizePageSetup,
+  normalizeZoom,
   pageDimensions,
   pageLayoutStyle,
   pageRuleCss,
   pageSetupLabel,
+  resolveZoom,
   unitsToMm,
 } from './page-setup';
 
@@ -219,5 +221,33 @@ describe('page colors', () => {
     expect(pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, color: 'neon' })).not.toHaveProperty(
       '--ink-page-color-dark',
     );
+  });
+});
+
+describe('zoom', () => {
+  const A4 = 210 * (96 / 25.4); // 793.7px
+
+  it('auto shows 100%, or fits a sheet wider than the canvas', () => {
+    expect(resolveZoom('auto', A4, 1200)).toBe(1);
+    expect(resolveZoom('auto', A4, 600)).toBeCloseTo(600 / A4, 3);
+    // Before the canvas is measured, nothing is fitted.
+    expect(resolveZoom('auto', A4, 0)).toBe(1);
+  });
+
+  it('fit fills the canvas width, up to 200%', () => {
+    expect(resolveZoom('fit', A4, 1200)).toBeCloseTo(1200 / A4, 3);
+    expect(resolveZoom('fit', A4, 5000)).toBe(2);
+  });
+
+  it('keeps a chosen level, within 25–200%', () => {
+    expect(resolveZoom(1.5, A4, 600)).toBe(1.5);
+    expect(resolveZoom(0.1, A4, 600)).toBe(0.25);
+  });
+
+  it('reads a stored zoom, and anything else as auto', () => {
+    expect(normalizeZoom('fit')).toBe('fit');
+    expect(normalizeZoom(0.75)).toBe(0.75);
+    for (const raw of [null, 'big', Number.NaN, 0, 9, '1.5'])
+      expect(normalizeZoom(raw)).toBe('auto');
   });
 });

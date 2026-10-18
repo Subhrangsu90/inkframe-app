@@ -165,6 +165,8 @@ export class ImageNodeView implements NodeView {
 
     const startX = e.clientX;
     const startWidth = this.dom.offsetWidth;
+    // On a zoomed page the pointer moves in viewport pixels; widths are CSS pixels.
+    const scale = this.dom.getBoundingClientRect().width / startWidth || 1;
     const parentWidth = this.dom.parentElement?.clientWidth || window.innerWidth;
     this.dom.classList.add('is-resizing');
 
@@ -175,7 +177,7 @@ export class ImageNodeView implements NodeView {
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();
-      const deltaX = moveEvent.clientX - startX;
+      const deltaX = (moveEvent.clientX - startX) / scale;
       let targetWidth: number;
       if (direction === 'e' || direction === 'se') {
         targetWidth = startWidth + deltaX;

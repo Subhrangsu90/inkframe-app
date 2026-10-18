@@ -4,6 +4,7 @@ import {
   DestroyRef,
   ElementRef,
   afterNextRender,
+  afterRenderEffect,
   computed,
   inject,
   input,
@@ -34,6 +35,8 @@ interface Geometry {
   padRight: number;
   /** How far the guide line reaches down the page while a handle is dragged. */
   canvasHeight: number;
+  /** Screen pixels per CSS pixel of the sheet: its zoom. */
+  scale: number;
 }
 
 const sameGeometry = (a: Geometry | null, b: Geometry | null) =>
@@ -44,7 +47,8 @@ const sameGeometry = (a: Geometry | null, b: Geometry | null) =>
     Math.abs(a.sheetWidth - b.sheetWidth) < 0.5 &&
     Math.abs(a.padLeft - b.padLeft) < 0.5 &&
     Math.abs(a.padRight - b.padRight) < 0.5 &&
-    a.canvasHeight === b.canvasHeight);
+    a.canvasHeight === b.canvasHeight &&
+    Math.abs(a.scale - b.scale) < 0.001);
 
 /** A margin handle: its position and its value as a slider. */
 interface Handle {
@@ -311,7 +315,9 @@ export class Ruler {
   });
 
   /** One whole unit (cm or in) in pixels; Pageless draws centimeters, without numbers. */
-  private readonly unitPx = computed(() => (this.units() === 'in' ? 96 : PX_PER_MM * 10));
+  private readonly unitPx = computed(
+    () => (this.units() === 'in' ? 96 : PX_PER_MM * 10) * (this.geometry()?.scale ?? 1),
+  );
 
   protected readonly ticksStyle = computed(() => {
     const g = this.geometry();
@@ -342,6 +348,11 @@ export class Ruler {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+    // A new zoom moves and resizes the sheet on screen without changing its CSS size.
+    afterRenderEffect(() => {
+      this.svc.effectiveZoom();
+      this.measure();
+    });
     // The sheet moves when the window resizes or the canvas scrolls sideways,
     // and its margins change with the page setup (the body's size changes).
     afterNextRender(() => {
@@ -370,12 +381,15 @@ export class Ruler {
     const ruler = this.host.nativeElement.getBoundingClientRect();
     const rect = sheet.getBoundingClientRect();
     const style = getComputedStyle(body);
+    // Computed sizes are CSS pixels; on a zoomed sheet the screen shows them bigger or smaller.
+    const scale = rect.width / (sheet as HTMLElement).offsetWidth || 1;
     this.geometry.set({
       sheetLeft: rect.left - ruler.left,
       sheetWidth: rect.width,
-      padLeft: parseFloat(style.paddingLeft) || 0,
-      padRight: parseFloat(style.paddingRight) || 0,
+      padLeft: (parseFloat(style.paddingLeft) || 0) * scale,
+      padRight: (parseFloat(style.paddingRight) || 0) * scale,
       canvasHeight: canvas.clientHeight,
+      scale,
     });
   }
 
@@ -457,7 +471,8 @@ export class Ruler {
     const x = event.clientX - this.host.nativeElement.getBoundingClientRect().left;
     const fromEdge = side === 'left' ? x - g.sheetLeft : g.sheetLeft + g.sheetWidth - x;
     const step = this.steps(setup).small;
-    const raw = setup.layout === 'pages' ? fromEdge / PX_PER_MM : fromEdge / g.sheetWidth;
+    const raw =
+      setup.layout === 'pages' ? fromEdge / (PX_PER_MM * g.scale) : fromEdge / g.sheetWidth;
     const value = clamp(Math.round(raw / step) * step, handle.min, handle.max);
     this.svc.pageSetupPreview.set(this.withMargin(this.shown(), side, value));
   }

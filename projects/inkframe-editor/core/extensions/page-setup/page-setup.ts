@@ -342,3 +342,34 @@ export function pageLayoutStyle(setup: PageSetup): Record<string, string> {
     '--ink-side-share-right': String(total ? sides.right / total : 0.5),
   };
 }
+
+/**
+ * How big a Pages sheet is shown: a view setting of the person, not part of
+ * the document. `auto` shows the sheet at 100%, or fits it to the canvas when
+ * it is wider; `fit` always fits it to the canvas width; a number is a scale.
+ */
+export type PageZoom = 'auto' | 'fit' | number;
+
+/** The zoom levels offered, besides fitting the width. */
+export const ZOOM_LEVELS: readonly number[] = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 2;
+
+/** A stored zoom, checked: anything else is `auto`. */
+export function normalizeZoom(raw: unknown): PageZoom {
+  if (raw === 'fit' || raw === 'auto') return raw;
+  return typeof raw === 'number' && Number.isFinite(raw) && raw >= MIN_ZOOM && raw <= MAX_ZOOM
+    ? raw
+    : 'auto';
+}
+
+/**
+ * The scale a zoom works out to, for a sheet `sheetPx` wide on a canvas with
+ * `canvasPx` of room (0 while unknown: then the sheet is not fitted).
+ */
+export function resolveZoom(zoom: PageZoom, sheetPx: number, canvasPx: number): number {
+  const fit = canvasPx > 0 && sheetPx > 0 ? canvasPx / sheetPx : 1;
+  const scale = zoom === 'fit' ? fit : zoom === 'auto' ? Math.min(1, fit) : zoom;
+  return round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale)), 3);
+}

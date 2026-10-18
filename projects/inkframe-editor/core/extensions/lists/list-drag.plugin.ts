@@ -179,13 +179,28 @@ function dropTargetAt(
   };
 }
 
-/** Places an absolutely positioned element at viewport coordinates. */
-function place(el: HTMLElement, left: number, top: number): boolean {
+/**
+ * How much bigger than its CSS size an element is drawn, when the page is
+ * zoomed (CSS `zoom` or a scale transform): viewport pixels per CSS pixel.
+ */
+function scaleOf(el: HTMLElement): number {
+  return el.getBoundingClientRect().width / el.offsetWidth || 1;
+}
+
+/**
+ * Places an absolutely positioned element at viewport coordinates. On a
+ * zoomed page its own offsets are scaled by `scale` (it sits in the page, next
+ * to the editor) while its offset parent may sit outside the page, unscaled.
+ */
+function place(el: HTMLElement, left: number, top: number, scale: number): boolean {
   const parent = el.offsetParent as HTMLElement | null;
   if (!parent) return false;
   const r = parent.getBoundingClientRect();
-  el.style.left = `${left - r.left - parent.clientLeft + parent.scrollLeft}px`;
-  el.style.top = `${top - r.top - parent.clientTop + parent.scrollTop}px`;
+  const parentScale = scaleOf(parent);
+  const x = r.left + (parent.clientLeft - parent.scrollLeft) * parentScale;
+  const y = r.top + (parent.clientTop - parent.scrollTop) * parentScale;
+  el.style.left = `${(left - x) / scale}px`;
+  el.style.top = `${(top - y) / scale}px`;
   return true;
 }
 
@@ -260,11 +275,15 @@ class ListDragView {
     this.hovered = { pos: ctx.itemPos, dom };
     const item = dom.getBoundingClientRect();
     const text = lead.getBoundingClientRect();
-    const lineHeight = parseFloat(getComputedStyle(lead).lineHeight) || text.height;
+    // Rects are in viewport pixels, sizes below in CSS pixels: on a zoomed page they differ.
+    const scale = scaleOf(this.view.dom);
+    const lineHeight =
+      (parseFloat(getComputedStyle(lead).lineHeight) || text.height / scale) * scale;
     // Task boxes sit inside the item; bullets and numbers hang outside it.
     const gutter = ctx.item.type.name === 'task_item' ? 4 : 22;
-    const top = text.top + Math.max(0, (Math.min(lineHeight, text.height) - HANDLE_HEIGHT) / 2);
-    if (place(this.handle, item.left - gutter - HANDLE_WIDTH, top)) {
+    const top =
+      text.top + Math.max(0, (Math.min(lineHeight, text.height) - HANDLE_HEIGHT * scale) / 2);
+    if (place(this.handle, item.left - (gutter + HANDLE_WIDTH) * scale, top, scale)) {
       this.handle.classList.add('is-visible');
     }
   }
@@ -294,8 +313,9 @@ class ListDragView {
     const result = source && dropTargetAt(this.view, x, y, source.pos, source.node);
     const valid = !!result && !!moveListItemTo(this.view.state, source!.pos, result.target);
     this.target = valid ? result!.target : null;
-    if (valid && place(this.line, result!.line.left, result!.line.top - 1)) {
-      this.line.style.width = `${Math.max(result!.line.width, 24)}px`;
+    const scale = scaleOf(this.view.dom);
+    if (valid && place(this.line, result!.line.left, result!.line.top - 1, scale)) {
+      this.line.style.width = `${Math.max(result!.line.width / scale, 24)}px`;
       this.line.classList.add('is-visible');
     } else {
       this.line.classList.remove('is-visible');

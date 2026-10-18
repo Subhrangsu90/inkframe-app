@@ -28,6 +28,7 @@ import {
   EditorExtension,
   DEFAULT_EXTENSIONS,
   PageSetup,
+  PageZoom,
   VisualViewportTracker,
   initialPageSetup,
   pageLayoutStyle,
@@ -241,6 +242,8 @@ import {
       -webkit-overflow-scrolling: touch;
       cursor: text;
       transition: background-color 0.15s ease;
+      /* The width stays the same with or without a scrollbar, so fitting the sheet to it cannot flip-flop. */
+      scrollbar-gutter: stable;
 
       scrollbar-width: thin;
       scrollbar-color: var(--ink-scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
@@ -269,6 +272,12 @@ import {
         background-color 0.15s ease;
     }
     .ink-host {
+      /*
+       * Positions the list drag handle and drop line, which it holds, within the
+       * page: on a zoomed page (CSS zoom) they then scale with it. Positioned
+       * against an unzoomed ancestor, Chrome offsets them vertically.
+       */
+      position: relative;
       flex: 1 0 auto;
       display: flex;
       flex-direction: column;
@@ -301,8 +310,11 @@ export class Editor {
   protected readonly shownSetup = computed(
     () => this.svc.pageSetupPreview() ?? this.svc.pageSetup(),
   );
-  /** The page layout, as custom properties for the canvas. */
-  protected readonly layoutStyle = computed(() => pageLayoutStyle(this.shownSetup()));
+  /** The page layout and zoom, as custom properties for the canvas. */
+  protected readonly layoutStyle = computed(() => ({
+    ...pageLayoutStyle(this.shownSetup()),
+    '--ink-zoom': String(this.svc.effectiveZoom()),
+  }));
   protected readonly rulerShown = computed(
     () => this.showRuler() && this.editable() && this.svc.hasExtension('page_setup'),
   );
@@ -330,6 +342,12 @@ export class Editor {
    * means Pageless, with Letter paper in the US and Canada and A4 elsewhere.
    */
   readonly defaultPageSetup = model<PageSetup | null>(null);
+  /**
+   * How big a Pages sheet is shown (Fit width or 50–200%, from the status
+   * bar): a view setting, not saved in the document. Bind with `[(zoom)]` to
+   * keep it. `auto` shows 100%, or fits sheets wider than the editor.
+   */
+  readonly zoom = model<PageZoom>('auto');
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 
@@ -344,8 +362,10 @@ export class Editor {
       });
       // Hides the status bar while the keyboard is open (see the styles).
       if (this.mobileToolbar() === 'bottom') this.viewportTracker.start();
-      if (this.viewport()?.nativeElement) {
-        this.viewport()!.nativeElement.scrollTop = 0;
+      const viewport = this.viewport()?.nativeElement;
+      if (viewport) {
+        viewport.scrollTop = 0;
+        this.measureCanvas(viewport);
       }
 
       // Emit pending edits when the tab is hidden or closed: browsers may
@@ -378,6 +398,18 @@ export class Editor {
       if (this.svc.pageSetupRequests() > 0) untracked(() => this.showPageSetupDialog());
     });
 
+    // The zoom: the input sets it, and the status bar's choice goes back out.
+    effect(() => {
+      const zoom = this.zoom();
+      untracked(() => this.svc.zoom.set(zoom));
+    });
+    effect(() => {
+      const zoom = this.svc.zoom();
+      untracked(() => {
+        if (zoom !== this.zoom()) this.zoom.set(zoom);
+      });
+    });
+
     // Note: `changed` cannot be emitted from here. By the time destroy hooks
     // run, Angular has already removed the parent's (changed) listener, so
     // hosts must call flush() before the editor is destroyed (for example in
@@ -387,6 +419,19 @@ export class Editor {
       this.pageSetupDialog?.close();
       this.svc.destroy();
     });
+  }
+
+  /** Keeps `EditorService.canvasWidth` (the room for the sheet) up to date, for fitting it. */
+  private measureCanvas(viewport: HTMLElement): void {
+    if (typeof ResizeObserver === 'undefined') return; // some test environments
+    const measure = () => {
+      const style = getComputedStyle(viewport);
+      const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+      this.svc.canvasWidth.set(Math.max(0, viewport.clientWidth - padding));
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   /** Opens the Page setup dialog; the chosen setup is applied as one undo step. */

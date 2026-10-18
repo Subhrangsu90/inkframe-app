@@ -19,4 +19,19 @@ describe('EditorPreferences', () => {
     TestBed.inject(EditorPreferences).setShowRuler(true);
     expect(localStorage.getItem('inkframe-show-ruler')).toBeNull();
   });
+
+  it('remembers the zoom, and reads anything unexpected as auto', () => {
+    expect(TestBed.inject(EditorPreferences).zoom()).toBe('auto');
+    TestBed.inject(EditorPreferences).setZoom(1.5);
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(EditorPreferences).zoom()).toBe(1.5);
+
+    TestBed.inject(EditorPreferences).setZoom('fit');
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(EditorPreferences).zoom()).toBe('fit');
+
+    localStorage.setItem('inkframe-zoom', 'huge');
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(EditorPreferences).zoom()).toBe('auto');
+  });
 });

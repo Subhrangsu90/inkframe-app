@@ -222,7 +222,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Ruler with margin handles | ✅ | M3.5, step 3 | Both layouts, from 768px up. Keyboard-operable. Turned off in Settings → Editor. |
 | Page color | ✅ | M3.5, step 4 | Six colors, each with a light and a dark value. Printing it is optional (checked in Chrome; Firefox and Safari still to check). |
 | Page break block | ✅ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
-| Zoom (fit width, 50–200%) | ⬜ | M3.5, step 5 | For A3 and landscape sheets wider than the screen. |
+| Zoom (fit width, 50–200%) | ✅ | M3.5, step 5 | In the status bar, Pages layout only. Sheets wider than the editor open fitted. Checked in Chrome; Firefox and Safari still to check. |
 | Page gaps on screen, page numbers, headers and footers | ⬜ | M5, only if users ask | See D19. |
 
 ### 3.7 Optional cloud features (signed-in only, M6)
@@ -371,13 +371,17 @@ M3.5 sits between M3 and M4, so page setup ships at launch, and the later milest
 
 A ruler at the top of the canvas sets the margins in both layouts, and a page color works in both.
 
-**Status (2026-10-18):** step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline.
+**Status (2026-10-18):** all five steps built and checked in Chrome; the browser checks in Firefox and Safari (printing, line breaks, page color and zoom) are what is left. Details per step follow.
+
+Step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline.
 
 Step 2 built (2026-10-18), with tests and a Chrome run against the production build: Pageless fills the canvas with 10% margins; Pages shows the sheet at paper size (A4 794 × 1123px, A3 landscape scrolling sideways on a 1280px window); phones reflow an A3 landscape document with no sideways scrolling; the reader and version previews show each document in its own layout. On a long test document (17 blocks, 82 lines: headings, paragraphs with bold and inline code, nested and numbered lists, a quote), every line breaks in the same place in the editor and on the print page. That needed the print page to copy three text settings the editor has: the app's letter spacing (−0.011em on `body`), no ligatures and `white-space: break-spaces` (both from ProseMirror's stylesheet). Still open in step 2: the same check in Firefox and Safari, and tables, code blocks and callouts, where the editor draws extra controls (table handles, line numbers, icons) that the printout does not have. Printing from the reader also uses the document's paper and margins now.
 
 Step 3 built (2026-10-18), with tests and a Chrome run with real mouse and keyboard input against the production build. The handles sit exactly on the text column's edges (A4, Pageless, and A3 after scrolling sideways). Dragging previews the margin with a guide line and its size, and leaves the document unchanged until release; one undo step reverts it. Keys move a handle 1 mm (1 cm with Shift) on A-series paper. Two changes from the plan: "Show ruler" is a switch in Settings → Editor (there is no `⋯` menu), and on Letter and Legal the steps are 1/16 and 1/4 inch, so values stay in round inches. On touch screens the handles take touches 44px wide, reaching 20px below the ruler.
 
 Step 4 built (2026-10-18), with tests and a Chrome run against the production build. Six page colors (Cream, Sage, Sky, Lavender, Rose, Gray), each keeping WCAG AA contrast for text, muted text and links in both themes (a test computes it). Printing a color uses an `@page` background: Chrome's `html` background stops at the page margins, while `@page` fills the whole sheet; the printed PDF shows the color across the full sheet on every page. `Mod-Enter` splits a paragraph at the cursor rather than always going after the block, as in Word and Google Docs; in lists, tables and callouts it goes after the top-level block, since page breaks are top-level only. Still open in step 4: the print checks in Firefox and Safari.
+
+Step 5 built (2026-10-18). Zoom is CSS `zoom` on the Pages sheet, which scales its layout box, so sideways scrolling and centering keep working. A run with real mouse and keyboard input against the production build in Chrome, at 50, 75, 100, 125 and 150% and Fit width, checked: the sheet size, the ruler on the text column, a click placing the caret inside a word, a drag selecting it, the floating menu above the selection, the slash menu below the caret, table row handles, the list drag handle, image resizing and table column resizing (the border under the pointer). Three things needed fixing for it: the list drag handle and image resizing measured in screen pixels and positioned in CSS pixels; the drag handle was positioned against an unzoomed ancestor, where Chrome offsets it vertically (it is now positioned inside the page); and prosemirror-tables' column resizing moved the border at zoom × the pointer's speed (a small plugin passes its mouse events on with the distance scaled back). The editor keeps a stable scrollbar gutter, so Fit width cannot flip between two widths. Still open in step 5: the same run in Firefox and Safari.
 
 Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens from the Export menu, next to Print. On touch screens the status bar button is hidden, because the 28px bar has no room for a 44px target; the Export menu covers them.
 
@@ -433,7 +437,7 @@ Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens fr
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Zoom for Pages layout: Fit width and 50–200%, in the status bar. A preference per device, not stored in the document. Sheets wider than the canvas open at Fit width. | M | Caret placement, selection, the floating and slash menus, table handles, image resizing and the ruler all work at 50, 75, 125 and 150% in Chrome, Firefox and Safari (tests). |
+| 🟡 Zoom for Pages layout: Fit width and 50–200%, in the status bar. A preference per device, not stored in the document. Sheets wider than the canvas open at Fit width. | M | Caret placement, selection, the floating and slash menus, table handles, image resizing and the ruler all work at 50, 75, 125 and 150% in Chrome, Firefox and Safari (tests). Chrome: all of them, and table column resizing, at every level. Firefox and Safari still to check. |
 
 **Out of scope for M3.5:**
 
@@ -909,7 +913,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Screen and printout drift apart in Pages layout (font loading, differences between browsers' print engines) | Medium | The same font files and font size on screen and in the print frame; explicit `@page` sizes; a print-preview check in Chrome, Firefox and Safari before each release. |
 | "Pages" makes people expect page gaps, page numbers, headers and footers | Medium | The page break block; the landing page describes print layout, not pagination; markers only with demand (D19). |
 | Full-width lines are hard to read on wide screens | Low | Pageless starts with 10% margins on each side; the ruler changes them. |
-| Zoom breaks caret placement, selection or menu positions | Medium | Zoom ships last (M3.5 step 5), with tests at 50, 75, 125 and 150% in all three browsers. |
+| Zoom breaks caret placement, selection or menu positions | Medium | Zoom ships last (M3.5 step 5), with tests at 50, 75, 125 and 150% in all three browsers. Chrome passes. Safari's `zoom` is WebKit's older implementation and may report positions differently; check it before launch. |
 
 ---
 

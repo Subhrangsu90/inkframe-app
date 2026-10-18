@@ -3,15 +3,19 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   NgZone,
   afterNextRender,
   effect,
   inject,
   input,
+  model,
   output,
+  untracked,
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { Dialog, DialogRef } from '@angular/cdk/dialog';
 import {
   EditorService,
   StoredDoc,
@@ -22,7 +26,9 @@ import {
   markdownToDoc,
   EditorExtension,
   DEFAULT_EXTENSIONS,
+  PageSetup,
   VisualViewportTracker,
+  initialPageSetup,
 } from '@inkframe-ui/editor/core';
 import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
@@ -32,6 +38,8 @@ import {
   TableToolbar,
   FindReplace,
   StatusBar,
+  PageSetupDialog,
+  PageSetupDialogData,
 } from '@inkframe-ui/editor/ui';
 
 @Component({
@@ -286,6 +294,9 @@ export class Editor {
   private readonly viewport = viewChild<ElementRef<HTMLElement>>('viewport');
   private readonly destroyRef = inject(DestroyRef);
   private readonly viewportTracker = inject(VisualViewportTracker);
+  private readonly dialog = inject(Dialog);
+  private readonly injector = inject(Injector);
+  private pageSetupDialog?: DialogRef<PageSetup, PageSetupDialog>;
   private timer?: ReturnType<typeof setTimeout>;
 
   /** Read once at mount. Use loadDoc() to replace the document later. */
@@ -302,6 +313,13 @@ export class Editor {
    * when the page is sized with `calc(100dvh - var(--ink-keyboard-inset, 0px))`.
    */
   readonly mobileToolbar = input<'top' | 'bottom'>('top');
+  /**
+   * The page setup for new documents. A document without page setup opens
+   * the Page setup dialog with these values, and the dialog's "Set as
+   * default" replaces it. Bind with `[(defaultPageSetup)]` to keep it; null
+   * means Pageless, with Letter paper in the US and Canada and A4 elsewhere.
+   */
+  readonly defaultPageSetup = model<PageSetup | null>(null);
   readonly changed = output<StoredDoc>();
   readonly historyRequested = output<void>();
 
@@ -346,13 +364,44 @@ export class Editor {
       }
     });
 
+    effect(() => {
+      if (this.svc.pageSetupRequests() > 0) untracked(() => this.showPageSetupDialog());
+    });
+
     // Note: `changed` cannot be emitted from here. By the time destroy hooks
     // run, Angular has already removed the parent's (changed) listener, so
     // hosts must call flush() before the editor is destroyed (for example in
     // a canDeactivate guard). Pending edits are discarded otherwise.
     this.destroyRef.onDestroy(() => {
       clearTimeout(this.timer);
+      this.pageSetupDialog?.close();
       this.svc.destroy();
+    });
+  }
+
+  /** Opens the Page setup dialog; the chosen setup is applied as one undo step. */
+  private showPageSetupDialog(): void {
+    if (this.pageSetupDialog || !this.svc.isEditable() || !this.svc.view) return;
+    const data: PageSetupDialogData = {
+      current: this.svc.storedPageSetup(),
+      defaultSetup: this.defaultPageSetup() ?? initialPageSetup(),
+      setDefault: (setup) => this.defaultPageSetup.set(setup),
+    };
+    const ref = this.dialog.open<PageSetup, PageSetupDialogData, PageSetupDialog>(PageSetupDialog, {
+      data,
+      injector: this.injector,
+      ariaLabelledBy: 'ink-page-setup-title',
+      autoFocus: '.ink-ps-layout input:checked',
+      width: '600px',
+      maxWidth: 'calc(100vw - 32px)',
+      maxHeight: 'calc(100dvh - 48px)',
+      panelClass: 'ink-page-setup-pane',
+      backdropClass: 'ink-page-setup-backdrop',
+    });
+    this.pageSetupDialog = ref;
+    ref.closed.subscribe((setup) => {
+      this.pageSetupDialog = undefined;
+      if (setup) this.svc.setPageSetup(setup);
     });
   }
 
@@ -379,6 +428,10 @@ export class Editor {
   }
   focus() {
     this.svc.focus();
+  }
+  /** Opens the Page setup dialog (when the editor is editable). */
+  openPageSetup() {
+    this.svc.requestPageSetup();
   }
   blur() {
     this.svc.onFloatingMenu(null);

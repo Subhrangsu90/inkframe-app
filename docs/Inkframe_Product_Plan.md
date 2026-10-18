@@ -5,8 +5,8 @@
 | **Product** | Inkframe: a private, full WYSIWYG document editor that runs entirely on your device |
 | **Deliverables** | The web app (`inkframe-app`) and the embeddable Angular editor library (`@inkframe-ui/editor`) |
 | **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer in M6: backend, database, object storage, AI, Yjs. |
-| **Plan version** | 4.2 (adds M7: Block mode). 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
-| **Last updated** | 2026-10-14 |
+| **Plan version** | 4.3 (adds M3.5: page setup). 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
+| **Last updated** | 2026-10-18 |
 | **Status** | Pre-launch. The core editor is built; the work below takes it to a production release. |
 
 ---
@@ -43,6 +43,8 @@ The core editor is built and tested (110 unit tests; library and app builds pass
 - **Data safety:** version history, backup and restore, real "clear all data".
 - **Claim integrity:** self-hosted fonts, and a landing page that only promises what ships.
 - **Launch work:** PWA, deployment, publishing the library.
+
+Before launch, **M3.5 adds page setup**. Each document is either **Pages**, a sheet the size of real paper (A4, Letter, A3, A5 or Legal, portrait or landscape) that prints the way it looks, or **Pageless**, the full canvas. A ruler sets the margins in both, and a page color works in both. This strengthens U2: in Pages layout, the screen and the printout break lines in the same places.
 
 After launch, **M6 adds an optional cloud layer**: accounts, sync across devices, server-side storage, an AI writing assistant and real-time collaboration. It is strictly opt-in. Inkframe keeps working fully without an account, so the privacy promise stays true for everyone who never signs in.
 
@@ -123,6 +125,8 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | ~~"Works offline" (after first visit)~~ | ✅ Unblocked by M3. The landing page now says it, with "you can install it as an app". | |
 | "Sync across devices", "Collaborate in real time", "AI writing assistant" | Not built. | M6.2, M6.5, M6.4. Always paired with "optional, no account needed to write". |
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
+| "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Not built. | M3.5. |
+| "Page numbers", "Headers and footers", "See your pages as they print" | Not planned: Pages layout shows one continuous sheet at the paper's width, and only printing splits it into pages. | Only with clear demand (D19). |
 
 ---
 
@@ -141,7 +145,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Links with safe-protocol allow-list | ✅ | P0 | **Bind `Mod-k`**: the tooltip advertises Ctrl+K but nothing handles it. |
 | Clear formatting | ✅ | P0 | |
 | Paragraph alignment (left, center, right, justify) | ✅ | P0 | Paragraphs and headings; `Mod-Shift-L/E/R/J`. Kept when a block changes type or Enter starts a new line. Markdown export wraps aligned blocks in `<div align>`. |
-| Indent / outdent for paragraphs | ⬜ | P1 | Lists already support Tab and Shift+Tab. |
+| Indent / outdent for paragraphs | ⬜ | P1 | Lists already support Tab and Shift+Tab. Indent handles on the ruler could come later; M3.5's ruler sets margins only. |
 | Font family per document (sans, serif, mono) | ⬜ | P1 | A document-level setting, not per character. |
 | Line spacing, font size per selection | ⬜ | P2 | Only if users ask; it complicates Markdown export. |
 
@@ -207,7 +211,21 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Accessibility: WCAG 2.1 AA | 🟡 | P0 | Needs an axe audit and `aria-activedescendant` on the slash menu. |
 | Internationalization | ⬜ | P2 | |
 
-### 3.6 Optional cloud features (signed-in only, M6)
+### 3.6 Page setup (M3.5)
+
+| Feature | Status | Milestone | Notes |
+| --- | --- | --- | --- |
+| Page setup per document: layout, paper size (A3, A4, A5, Letter, Legal), orientation, margins | ✅ | M3.5, step 1 | Stored in the document, so share links, backups and version history carry it. Opens from the Export menu and a layout button in the status bar (not on touch screens). |
+| Print and PDF on the document's paper size and margins | 🟡 | M3.5, step 1 | `@page` sizes written in millimeters; the print frame uses the app's fonts. Checked in Chrome; Firefox and Safari still to check. |
+| Pageless layout: the full canvas | ⬜ | M3.5, step 2 | No fixed width; the ruler sets the margins. Replaces today's 820px sheet and the planned width toggle. |
+| Pages layout: a sheet at the paper's real width | ⬜ | M3.5, step 2 | Same text width, fonts and font size as the printout, so lines break in the same places. Phones reflow. |
+| Ruler with margin handles | ⬜ | M3.5, step 3 | Both layouts, from 768px up. Keyboard-operable. |
+| Page color | ⬜ | M3.5, step 4 | A fixed palette with a light and a dark value per color. |
+| Page break block | ⬜ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
+| Zoom (fit width, 50–200%) | ⬜ | M3.5, step 5 | For A3 and landscape sheets wider than the screen. |
+| Page gaps on screen, page numbers, headers and footers | ⬜ | M5, only if users ask | See D19. |
+
+### 3.7 Optional cloud features (signed-in only, M6)
 
 | Feature | Status | Milestone | Notes |
 | --- | --- | --- | --- |
@@ -221,7 +239,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Real-time collaboration: live cursors, presence, roles | ⬜ | M6.5 | Yjs; undo affects only your own edits. |
 | Comments and suggestions (track changes) | ⬜ | After M6.5 | Builds on collaboration roles. |
 
-### 3.7 Block mode (M7)
+### 3.8 Block mode (M7)
 
 | Feature | Status | Milestone | Notes |
 | --- | --- | --- | --- |
@@ -292,12 +310,12 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 Milestones are sequential; work inside a milestone can run in parallel. Sizes: **S** ≤ 2 days, **M** ≤ 1 week, **L** > 1 week.
 
 ```
-M0 Stabilize ─► M1 WYSIWYG completeness ─► M2 Data safety & export ─► M3 Mobile & PWA ─► M4 Launch ─┬─► M5 Growth
-                                                                                                     ├─► M6 Optional cloud
-                                                                                                     └─► M7 Block mode
+M0 Stabilize ─► M1 WYSIWYG completeness ─► M2 Data safety & export ─► M3 Mobile & PWA ─► M3.5 Page setup ─► M4 Launch ─┬─► M5 Growth
+                                                                                                                       ├─► M6 Optional cloud
+                                                                                                                       └─► M7 Block mode
 ```
 
-M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: the local-first product ships first and keeps working on its own. M7 does not depend on M6; once both exist, sub-pages sync like any other document.
+M3.5 sits between M3 and M4, so page setup ships at launch, and the later milestones keep their numbers. M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: the local-first product ships first and keeps working on its own. M7 does not depend on M6; once both exist, sub-pages sync like any other document.
 
 ### M0: Stabilize and make the claims true
 
@@ -344,6 +362,80 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 | 🟡 Keyboard-pinned mobile toolbar (`visualViewport`), bottom-sheet drawers | M | On phones the toolbar sits below the page. `VisualViewportTracker` keeps the layout above a keyboard that covers the page (iOS); `interactive-widget=resizes-content` makes Chrome on Android resize the page instead. Menus, Export and Share open as bottom sheets. Toolbar presses keep focus, and so the keyboard, in the document. Still to test on iOS Safari and Android Chrome devices. |
 | ✅ Touch targets ≥ 44px, safe-area insets | S | Every control on touch screens is at least 44px (checked across pages, menus, panels and dialogs; task checkboxes get a 44px-wide label). Header, sidebar, toolbar, sheets and page ends respect `env(safe-area-inset-*)`. |
 
+### M3.5: Page setup
+
+**Goal:** each document chooses its layout:
+
+- **Pages:** a sheet the size of real paper (A4, Letter, A3, A5 or Legal, portrait or landscape) that prints the way it looks.
+- **Pageless:** the full canvas, edge to edge.
+
+A ruler at the top of the canvas sets the margins in both layouts, and a page color works in both.
+
+**Status (2026-10-18):** step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline. Until step 2, Pages layout changes the printout but not the screen, which still shows the 820px sheet.
+
+Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens from the Export menu, next to Print. On touch screens the status bar button is hidden, because the 28px bar has no room for a 44px target; the Export menu covers them.
+
+**Rules for every M3.5 feature:**
+
+1. **Page setup belongs to the document.** It is stored as a `page` attribute on the `doc` node (see [6.4](#64-data-and-storage)). Share links, backups and version history carry it, and every change is one undo step (D17).
+2. **Two layouts, no live pagination.** Pages layout shows one continuous sheet at the paper's width; only printing splits it into pages. Page break blocks give exact control where it matters (D19).
+3. **In Pages layout, the screen matches the printout.** Screen and paper use the same text width, font files and font size, so lines break in the same places.
+4. **Pageless means the full canvas.** There are no fixed-width presets; the ruler sets the margins (D18).
+5. **Phones reflow.** Under 768px, both layouts show today's full-bleed sheet with 16px margins and no ruler. Printing still uses the document's paper and margins.
+6. **Library first, keyboard complete.** Built as `PageSetupExtension` and an `ink-ruler` component in `@inkframe-ui/editor`. Everything the ruler does can also be done from the keyboard in the Page setup dialog.
+
+**Sequence:** step 1 → step 2 → step 3. Step 4 can run alongside step 3, and step 5 comes last. Schema version 5 covers both the `page` attribute and the `page_break` block. If they ship in separate releases, each one bumps the version.
+
+#### Step 1: Page setup settings and print
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| ✅ `page` attribute on the `doc` node in the core `DocExtension`, so a document never fails to load when `PageSetupExtension` is off. It is defined in full now (layout, paper, orientation, margins, Pageless side margins, page color, print color), so later steps need no further schema change. `SCHEMA_VERSION` goes from 4 to 5 with a no-op migration. | S | Documents saved before M3.5 load as Pageless (fixture test). Malformed values from share links fall back to the defaults (tests). Older app versions refuse version 5 documents with the existing "newer schema" error. |
+| ✅ `EditorService.pageSetup` signal and a `setPageSetup()` command (`tr.setDocAttribute`) | S | Each change is one transaction: one undo step, one autosave. |
+| ✅ Page setup dialog: layout, paper size, orientation, margins and Set as default. Margin presets are Narrow (12.7 mm), Normal (25.4 mm) and Wide (25.4 mm top and bottom, 50.8 mm left and right), or custom values in cm for A-series paper and inches for Letter and Legal. Opens from the Export menu and from a layout button in the status bar ("Pageless", "A4 · Portrait"). | M | Works with the keyboard only. Switching layouts keeps the other layout's settings. New documents use the default. The first default is Pageless, with Letter paper in the US and Canada and A4 elsewhere. Margins always leave at least 50 mm of text width and height. |
+| 🟡 Print and PDF: `docToHtmlDocument` writes `@page` rules with the paper size in millimeters and the document's margins | S | Save as PDF produces the chosen size and orientation in Chrome, Firefox and Safari 18.2+ without any change in the print dialog. Sizes are always explicit (`size: 297mm 210mm`), because Safari supports `size` but not the `landscape` keyword. Pageless documents print as today. Checked in Chrome; Firefox and Safari still to check. |
+| 🟡 Print frame fonts: copy the app's `@font-face` rules for Inter and JetBrains Mono into the print frame. It is same-origin, so the service worker serves the files offline. | S | Printouts use Inter, offline too. In Pages layout, print uses the editor's font size instead of a fixed 11pt. Checked online in Chrome; printing offline still to check. |
+| ✅ Exports and round trips | S | HTML export keeps the layout; HTML import doesn't read it back. Markdown export drops it, and the library README says so. Share links, backup and restore, and version restore keep it (tests). |
+
+#### Step 2: Layouts on screen
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| Pageless: the full canvas in the page surface color, with no sheet border. Side margins are stored as a share of the canvas width (10% each side by default). | M | From 768px up, margins never go under 32px, so table and list handles stay visible, and the text column is never narrower than 320px. A document set up on a wide monitor keeps its proportions on a laptop. |
+| Pages: one sheet at the paper's width in CSS millimeters (A4 portrait 794px, Letter 816px, A3 landscape 1587px), with the margins as padding. The canvas scrolls sideways when the sheet is wider than the window. | M | Lines break in the same places on screen and in the print preview. Check a long test document in Chrome, Firefox and Safari. |
+| The reader, the version preview and the loading skeleton follow the document's layout | S | None of them keeps a fixed 760–820px width any more. |
+| Phones (under 768px) | S | Both layouts show the full-bleed sheet. An A3 landscape document reads on a phone without sideways scrolling. |
+
+#### Step 3: Ruler
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| `ink-ruler` in `/ui`: a 24px strip between the toolbar and the canvas. It stays in place while the page scrolls down and moves with the page when it scrolls sideways. | M | Lines up with the text column at every window width and scroll position. The find panel moves down below it. |
+| Margin handles over shaded margins: cm for A-series paper, inches for Letter and Legal. Pageless shows the same handles. | M | Dragging previews the new margins without changing the document; releasing commits one transaction (one undo step, one autosave). Hit areas are 44px on touch screens. |
+| Keyboard and screen readers: each handle is a `role="slider"`. Arrow keys move it 1 mm (1% in Pageless), and Shift+arrow moves it 10 mm (5%). | S | Screen readers announce each handle with its value, for example "Left margin, 2.5 cm". |
+| Show ruler: a preference in the `⋯` menu, not stored in the document. On by default from 768px up; always hidden on phones. | S | |
+
+#### Step 4: Page color and page break
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| Page color from a fixed palette (`PAGE_COLORS`), each color with a light and a dark value. The document stores the color's name, never a CSS value. | M | Text keeps WCAG AA contrast on every page color in both themes. Pageless colors the whole canvas; Pages colors the sheet. |
+| Page color in print and exports: "Print page color" in Page setup, off by default. HTML export always keeps the color (light value). | S | When printed, the color covers the whole sheet, margins included, in the Chrome, Firefox and Safari print previews. |
+| `page_break` block, top level only. Insert it from the slash menu ("Page break") or with `Mod-Enter`, after the top-level block that holds the cursor. In task lists `Mod-Enter` still checks the task, and in code blocks it still leaves the block. On screen it shows as a dashed line labeled "Page break". | S | Prints as `break-after: page`. HTML export writes `<div class="ink-page-break">`; Markdown writes the same div as inline HTML and reads it back (round-trip tests). |
+
+#### Step 5: Zoom
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| Zoom for Pages layout: Fit width and 50–200%, in the status bar. A preference per device, not stored in the document. Sheets wider than the canvas open at Fit width. | M | Caret placement, selection, the floating and slash menus, table handles, image resizing and the ruler all work at 50, 75, 125 and 150% in Chrome, Firefox and Safari (tests). |
+
+**Out of scope for M3.5:**
+
+- Page gaps on screen, page numbers, headers and footers. They go to M5, and only if users ask (D19).
+- Indent handles and tab stops on the ruler.
+- Different page sizes within one document, such as a landscape page in a portrait document.
+- Custom paper sizes in the UI. Host apps can still add sizes to `PAPER_SIZES`.
+
 ### M4: Launch
 
 | Work | Size | Exit criteria |
@@ -359,6 +451,7 @@ M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: 
 2. Share dialog with size warning and native share sheet; JSON and DOCX export (P1)
 3. Image garbage collection, table merge UI (P1)
 4. Math and diagrams for technical writers (P2)
+5. Only if users ask: page numbers and headers and footers in print, then approximate page markers in the editor, labeled as approximate (D19)
 
 Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-accounts-sync-ai-and-collaboration).
 
@@ -434,6 +527,7 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | Sharing with roles (viewer, editor; commenter later), invite by email or link, revoke access | M | Revoking access disconnects that user's live session. |
 | Presence: avatars in the top bar, live cursors and selections | M | |
 | Schema-change policy for shared documents: additive changes only, or a server-side transform | S | Documented with the versioning rules in [section 8](#8-library-productization-inkframe-uieditor). |
+| Page setup (M3.5) in shared documents | S | A layout change on one client reaches every client. y-prosemirror syncs the document's content; if it doesn't sync attributes of the `doc` node, page setup syncs through a `Y.Map` next to the document (verify first). |
 | Concurrency test suite: two or more clients, concurrent edits in text, lists, tables and code blocks, offline merge | L | All clients converge; node views (callout, code block, table) stay correct under remote changes. |
 
 ### M7: Block mode (Notion-style writing)
@@ -456,7 +550,7 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | --- | --- | --- |
 | `mode: 'document' \| 'block'` stored per document (`StoredDoc.meta.mode`, default `document`) and a default in Settings | S | Switching modes back and forth leaves the document JSON unchanged (test). |
 | Mode toggle in the top bar `⋯` menu and the status bar | S | |
-| Block canvas: no toolbar, wider default width, "Type / for commands" on the active empty line | S | Floating menu and slash menu cover all formatting the toolbar offers. |
+| Block canvas: no toolbar, Pageless layout (M3.5), "Type / for commands" on the active empty line | S | Floating menu and slash menu cover all formatting the toolbar offers. |
 | "Turn into" items in the slash menu (paragraph, headings, lists, quote, callout, code, toggle) | S | Turning a block into another type keeps its text. |
 
 #### M7.2: Block handles, block menu and drag and drop
@@ -544,10 +638,26 @@ Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever opti
 | IndexedDB `inkframe_storage` → `documents` | Document envelopes and the documents index | `inkframe_doc_<id>`, `inkframe_docs_index` |
 | IndexedDB `inkframe_storage` → `documents` (M2) | Version history: a list of version metadata per document, and one record per version's content | `inkframe_versions_<docId>`, `inkframe_version_<versionId>` |
 | IndexedDB `inkframe_storage` → `images` | Image blobs with metadata | `img_<timestamp>_<random>`, referenced as `ink-idb:<id>` |
-| localStorage | Theme, sidebar state, active document id; fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
+| localStorage | Theme, sidebar state, active document id, default page setup, ruler and zoom preferences (M3.5); fallback store when IndexedDB is unavailable | `inkframe-theme`, `inkframe_active_doc_id`, … |
 | Cache Storage (M3) | The app itself, cached by the service worker. No documents. | `ngsw:/:…` |
 
-**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 4 to 5; versions 2 to 4 are taken) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+**Planned document change (M3.5):** the `doc` node gains a `page` attribute. It is `null` for every document saved before M3.5, which means Pageless with the default margins:
+
+```ts
+page: {
+  layout: 'pages' | 'pageless';
+  paper: 'a3' | 'a4' | 'a5' | 'letter' | 'legal'; // or a size the host app adds; unknown sizes use A4
+  orientation: 'portrait' | 'landscape';
+  margins: { top: number; right: number; bottom: number; left: number }; // mm, Pages layout
+  sideMargins: { left: number; right: number }; // share of the canvas width (0–0.4), Pageless layout
+  color: string | null; // a PAGE_COLORS name, never a CSS value
+  printColor: boolean;
+} | null
+```
+
+Together with the new `page_break` block, this takes `SCHEMA_VERSION` from 4 to 5 with a no-op migration. The writing mode (M7) stays in `StoredDoc.meta` because it is a view setting; page setup changes what prints and exports, so it lives in the document (D17).
+
+**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 5 to 6; versions 2 to 5 are taken, 5 by M3.5) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
 
 **Backup format (`.inkframe.json`):** `{ format: "inkframe-backup", version: 1, createdAt, documents: [{ meta, doc, versions: [{ meta, doc }] }], images: [{ id, name, type, size, createdAt, data }] }`. `doc` is the stored envelope (migrated on load); `data` is a `data:` URL. Only images that documents or versions show are included.
 
@@ -622,10 +732,11 @@ Clean and soft: a warm off-white canvas (soft charcoal in dark mode, with a dark
 | --- | --- |
 | Top bar | One row, 56px (48px on mobile): back/logo, inline-editable title, save status, view switch, Share (primary), `⋯` menu. |
 | Toolbar | Sticky 44px strip, no enclosing card. Groups: history · block type · inline marks · lists · insert. Active state uses `--ink-accent-soft`. Under 768px it sits below the page, above the on-screen keyboard; the status bar hides while typing, and the selection menu is not shown (the toolbar has the same formatting, and phones show their own menu over a selection). |
-| Canvas | `--ink-bg` background; one `--ink-surface` sheet, max width 760px (wide 980px, full width as options), never wrapped in another bordered box. |
-| Status bar | 28px, muted: words, characters, reading time; width toggle. |
+| Canvas (M3.5) | **Pageless** (the default): the whole canvas takes the page surface color (`--ink-surface`), with no sheet border. Side margins come from the ruler, 10% each side by default and never under 32px. **Pages:** an `--ink-bg` canvas holding one `--ink-surface` sheet at the paper's real width, with the page margins as padding; it scrolls sideways when the sheet is wider than the canvas. Never wrapped in another bordered box. A page color replaces the surface color. Until M3.5 ships: one 820px sheet. |
+| Ruler (M3.5) | A 24px strip between the toolbar and the canvas. It stays in place while the page scrolls down and moves with it sideways. Shaded margins with drag handles (44px hit areas on touch screens); cm for A-series paper, inches for Letter and Legal. Hidden under 768px; Show ruler in the `⋯` menu. |
+| Status bar | 28px, muted: words, characters, reading time; a layout button ("Pageless", "A4 · Portrait") that opens Page setup, hidden on touch screens because the bar has no room for a 44px target; zoom for Pages layout (M3.5). |
 | Panels | Documents and outline as 360px drawers with a soft scrim. Under 640px, menus (toolbar, Export) and the Share popover open as bottom sheets above the keyboard; the documents drawer stays a side drawer, since it is the app's navigation. Version history is a 340px panel beside the page with no scrim, because the page shows the version being previewed; under 768px it covers the page and gives way to the preview. |
-| Block mode (M7) | No toolbar strip. Optional cover (200px desktop, 120px mobile) and a 64px page icon above the title. Canvas width 900px by default, full width as an option. Block handles sit in the left margin (outside the text column) at 24px, muted until hovered. The sidebar shows the page tree instead of a flat document list. |
+| Block mode (M7) | No toolbar strip. Optional cover (200px desktop, 120px mobile) and a 64px page icon above the title. Pageless layout (M3.5); M7.1 sets its default margins and whether the ruler shows. Block handles sit in the left margin (outside the text column) at 24px, muted until hovered. The sidebar shows the page tree instead of a flat document list. |
 
 ### 7.3 States every screen must cover
 
@@ -639,7 +750,7 @@ Clean and soft: a warm off-white canvas (soft charcoal in dark mode, with a dark
 
 ### 7.4 Mobile (< 768px)
 
-Full-bleed sheet with 16–20px padding and a 16px minimum input font size (prevents iOS zoom). One horizontally scrolling toolbar row pinned above the keyboard via `visualViewport`. `100dvh` and `env(safe-area-inset-*)`. Landing collapses to one column with full-width buttons and a sheet menu. The header keeps the sidebar button, the title and the main actions; the theme toggle moves into the sidebar. On touch screens (`pointer: coarse`) every control is at least 44px.
+Full-bleed sheet with 16–20px padding and a 16px minimum input font size (prevents iOS zoom). One horizontally scrolling toolbar row pinned above the keyboard via `visualViewport`. `100dvh` and `env(safe-area-inset-*)`. Landing collapses to one column with full-width buttons and a sheet menu. The header keeps the sidebar button, the title and the main actions; the theme toggle moves into the sidebar. On touch screens (`pointer: coarse`) every control is at least 44px. Page setup (M3.5): no ruler, and Pages documents reflow to the screen width like Pageless ones; printing still uses the document's paper size and margins.
 
 ### 7.5 Accessibility
 
@@ -655,6 +766,7 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 | Dependencies | Angular, CDK and Material as peer dependencies; ProseMirror packages, `markdown-it`, DOMPurify and Prism as dependencies. |
 | Public API for 1.0 | `<ink-editor>` inputs (`initialDoc`, `editable`, `extensions`, `showToolbar`, `showStatusBar`, `mobileToolbar`, `debounceMs`) and outputs (`changed`, `historyRequested`); methods `loadDoc`, `flush`, `getJSON`, `getHtml`, `getMarkdown`, `loadMarkdown`, `loadHtml`; `EditorService` commands and signals; `createExtension`, `DEFAULT_EXTENSIONS`, individual extensions; I/O helpers and `sanitizeHtml`; `VisualViewportTracker` for layouts that stay above the on-screen keyboard. |
 | Deprecations before 1.0 | `buildPlugins`, `SLASH_ITEMS` and direct use of the static `schema` in commands. Mark `@deprecated`; remove in 2.0. |
+| Page setup (M3.5) | Part of 1.0. `PageSetupExtension` (commands, the `page_break` block, sheet and canvas styles); `<ink-ruler>` in `/ui`; `PAPER_SIZES` and `PAGE_COLORS` as data that host apps can extend; the `EditorService.pageSetup` signal and `setPageSetup()`; `PageSetupDialog` in `/ui`; on `<ink-editor>`, a two-way `defaultPageSetup` input, an `openPageSetup()` method and a `showRuler` input. `docToHtmlDocument` writes the document's `@page` rules. The `page` attribute itself lives on `doc`, so documents load with or without the extension. |
 | Block mode (M7) | Ships as a minor release: `BlockHandlesExtension`, `ToggleExtension`, `PageLinkExtension`, `ColumnsExtension`, the `BLOCK_MODE_EXTENSIONS` preset and a `mode` input on `<ink-editor>`. `PageLinkExtension` takes a resolver for titles, icons and navigation, so host apps plug in their own page model. |
 | Versioning | Semver. Schema changes are minor releases with migrations; removing a node or mark is a major release. Keep a `CHANGELOG.md`. |
 | Documentation | README with a 5-minute setup (install, styles, `<ink-editor>`), an extension authoring guide, the shortcut and extension reference, and a live playground page in the app (reuse the existing preset demo). |
@@ -691,6 +803,7 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 | Scripts in pasted or imported HTML | DOMPurify, then ProseMirror schema parsing keeps only known nodes and marks. |
 | Malicious shared documents | Rendered through the schema serializer, then DOMPurify; no raw HTML from the payload is trusted. |
 | CSS injection through attributes (tracking pixels) | `sanitizeCssColor` / `sanitizeCssLength` on colors, widths and heights. |
+| Page setup values in shared documents (M3.5) | Layout, paper and orientation are checked against fixed lists; margins are clamped numbers; page color is a palette name, never a CSS value. Anything else falls back to the default. |
 | `javascript:` links, tab-nabbing | `sanitizeHref` allow-list; links get `rel="noopener noreferrer nofollow"`. |
 | Server exposure of shared content | Share payload lives in the URL fragment, which browsers never send. |
 | Third-party requests | Self-hosted fonts and icons (B1). External images in documents are user-chosen; the editor loads them with `referrerpolicy="no-referrer"`, and the reader should too (add in M0). |
@@ -760,6 +873,10 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D14 | Block mode and Document mode edit the same document format; the mode is a per-document view setting | Final |
 | D15 | The feature is called **Block mode** in the product, docs and marketing, never "Notion mode" | Final |
 | D16 | No databases (table, board or calendar views with properties) | Final; revisit only with strong demand |
+| D17 | Page setup (layout, paper, orientation, margins, page color) is stored in the document, as a `page` attribute on the `doc` node, so share links, backups and version history carry it. The writing mode (D14) stays a view setting in `StoredDoc.meta`. | Final (this plan) |
+| D18 | Pageless means the full canvas; the ruler sets its margins. No fixed-width presets. | Final |
+| D19 | No live pagination in the editor: Pages layout shows one sheet at the paper's width, and only printing splits pages. Page markers, page numbers, headers and footers only with clear demand. | Final; revisit only with strong demand |
+| D20 | Page colors come from a fixed palette with a light and a dark value each; print and exports use the light value. | Final |
 
 ### 11.2 Risks
 
@@ -783,6 +900,10 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Touch screens have no hover | Medium | Tap shows handles, long-press drags, every action also in the block menu and the keyboard. |
 | Markdown cannot express toggles, page links or columns | Medium | Inline HTML for toggles, links for page links, stacked columns with a note; documented export mapping. |
 | Two modes confuse new users | Low | One default (Document mode); Block mode introduced by a template and an onboarding tip, not forced. |
+| Screen and printout drift apart in Pages layout (font loading, differences between browsers' print engines) | Medium | The same font files and font size on screen and in the print frame; explicit `@page` sizes; a print-preview check in Chrome, Firefox and Safari before each release. |
+| "Pages" makes people expect page gaps, page numbers, headers and footers | Medium | The page break block; the landing page describes print layout, not pagination; markers only with demand (D19). |
+| Full-width lines are hard to read on wide screens | Low | Pageless starts with 10% margins on each side; the ruler changes them. |
+| Zoom breaks caret placement, selection or menu positions | Medium | Zoom ships last (M3.5 step 5), with tests at 50, 75, 125 and 150% in all three browsers. |
 
 ---
 
@@ -810,6 +931,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Link | `Mod-K` | |
 | Find / replace | `Mod-F` / `Mod-H` (macOS: `Mod-Shift-H`) | |
 | Print or save as PDF | `Mod-P` (app) | |
+| Page break (M3.5, planned) | `Mod-Enter` (in task lists it checks the task; in code blocks it leaves the block) | |
 | Next / previous match | `Enter` / `Shift-Enter` in the find field, or `Mod-G` / `Mod-Shift-G` | |
 
 ### 12.2 Built-in extensions (`DEFAULT_EXTENSIONS`)
@@ -822,4 +944,5 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Lists | `bullet_list`, `ordered_list`, `task_list` |
 | Rich inserts | `table`, `callout`, `link`, `image` |
 | Editing aids | `search` (find and replace), `placeholder` (`createPlaceholderExtension(text)` for other text), `paste_cleanup` |
+| Page setup (M3.5, planned) | `page_setup` (commands, the `page_break` block, the ruler; the `page` attribute lives on `doc`) |
 | Block mode (M7, planned) | `block_handles`, `toggle`, `page_link`, `columns` (preset `BLOCK_MODE_EXTENSIONS`) |

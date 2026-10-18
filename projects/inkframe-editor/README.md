@@ -116,6 +116,7 @@ export class Page {
 | `showToolbar` | `boolean` | `true` | Shows the toolbar. |
 | `showStatusBar` | `boolean` | `true` | Shows words, characters and reading time below the document. |
 | `mobileToolbar` | `'top' \| 'bottom'` | `'top'` | Where the toolbar goes on screens narrower than 768px. `'bottom'` keeps it within thumb reach. |
+| `defaultPageSetup` | `PageSetup \| null` | `null` | The page setup for new documents; bind it two-way, `[(defaultPageSetup)]`, to keep it. A document without page setup opens the Page setup dialog with these values, and the dialog's "Set as default" replaces it. `null` means Pageless, with Letter paper in the US and Canada and A4 elsewhere. See [Page setup](#page-setup). |
 
 ### Outputs
 
@@ -134,6 +135,7 @@ export class Page {
 | `getHtml(): string` / `loadHtml(html)` | HTML export and import. Imported HTML is sanitized. |
 | `flush()` | Emits pending (debounced) changes now. |
 | `focus()` / `blur()` | Moves focus into the document, or closes the editor's menus. |
+| `openPageSetup()` | Opens the Page setup dialog (when the editor is editable). The status bar opens it too. |
 
 ### Saving: call `flush()` before the editor is destroyed
 
@@ -161,6 +163,16 @@ interface StoredDoc {
 ```
 
 Save it as it is. When the schema changes in a later version, the editor migrates older documents when it opens them.
+
+### Page setup
+
+Each document has a layout: **Pageless** (the default) or **Pages**, with a paper size (A4, Letter, Legal, A3 or A5), an orientation and margins. Users change it in the Page setup dialog, which opens from the status bar (on screens with a mouse) or with `openPageSetup()`. Each change is one undo step.
+
+The setup is stored in the document, as the `page` attribute of the `doc` node, so it travels wherever the `StoredDoc` goes. Read it with `pageSetupOf(doc)`, or `EditorService.pageSetup()` in the editor; values from untrusted documents are checked by `normalizePageSetup()`.
+
+- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. Pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono) and `editorFontSize` so a printout matches the screen.
+- **Markdown** has no page setup: `docToMarkdown()` leaves it out, and imported Markdown is Pageless.
+- **HTML import** does not read it back from an exported page.
 
 ## Extensions
 
@@ -274,7 +286,7 @@ Colors, spacing and the document font size are CSS custom properties prefixed `-
 | `@inkframe-ui/editor` | `Editor` (`<ink-editor>`) |
 | `@inkframe-ui/editor/core` | `EditorService`, the schema, extensions, converters, `ThemeService` and types |
 | `@inkframe-ui/editor/toolbar` | `Toolbar` (`<ink-toolbar>`) |
-| `@inkframe-ui/editor/ui` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar |
+| `@inkframe-ui/editor/ui` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar, Page setup dialog |
 | `@inkframe-ui/editor/styles` | The editor stylesheet (Sass) |
 
 Most apps only need `<ink-editor>`. The other entry points are for building your own editor layout around `EditorService`.

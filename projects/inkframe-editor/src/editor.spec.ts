@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TextSelection } from 'prosemirror-state';
-import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
+import { PageSetup, SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 import { Editor } from './editor';
 
 const docWith = (text: string): StoredDoc => ({
@@ -148,5 +148,157 @@ describe('<ink-editor> status bar and find panel', () => {
     expect(svc.searchOpen()).toBe(false);
     expect(el.querySelector('.ink-find')).toBeNull();
     expect(el.querySelectorAll('.ink-search-match')).toHaveLength(0);
+  });
+});
+
+@Component({
+  imports: [Editor],
+  template: `
+    <ink-editor
+      #ed
+      [initialDoc]="initial"
+      [showToolbar]="false"
+      [(defaultPageSetup)]="defaultSetup"
+    />
+  `,
+})
+class PageSetupHost {
+  readonly editor = viewChild<Editor>('ed');
+  readonly defaultSetup = signal<PageSetup | null>(null);
+  initial = docWith('text');
+}
+
+describe('<ink-editor> page setup', () => {
+  async function open() {
+    const fixture = TestBed.createComponent(PageSetupHost);
+    await fixture.whenStable();
+    const host = fixture.componentInstance;
+    const editor = host.editor()!;
+    const svc = (editor as any).svc;
+    const statusButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.ink-status-layout',
+    )!;
+    expect(statusButton.textContent!.trim()).toBe('Pageless');
+    statusButton.click();
+    await fixture.whenStable();
+    const dialog = document.querySelector<HTMLElement>('.ink-ps')!;
+    expect(dialog).toBeTruthy();
+    return { fixture, host, svc, dialog, statusButton };
+  }
+
+  const q = <T extends HTMLElement>(root: HTMLElement, selector: string) =>
+    root.querySelector<T>(selector)!;
+
+  function check(root: HTMLElement, selector: string) {
+    const input = q<HTMLInputElement>(root, selector);
+    input.checked = true;
+    input.dispatchEvent(new Event('change'));
+  }
+
+  function choosePages(dialog: HTMLElement) {
+    check(dialog, 'input[name="ink-ps-layout"][value="pages"]');
+  }
+
+  const button = (dialog: HTMLElement, text: string) =>
+    Array.from(dialog.querySelectorAll('button')).find((b) => b.textContent!.trim() === text)!;
+
+  afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => c.remove()));
+
+  it('applies Pages, paper and orientation as one undo step', async () => {
+    const { fixture, svc, dialog, statusButton } = await open();
+    expect(dialog.closest('[role="dialog"]')!.getAttribute('aria-labelledby')).toBe(
+      'ink-page-setup-title',
+    );
+
+    choosePages(dialog);
+    await fixture.whenStable();
+    const paper = q<HTMLSelectElement>(dialog, '#ink-ps-paper');
+    paper.value = 'letter';
+    paper.dispatchEvent(new Event('change'));
+    check(dialog, 'input[name="ink-ps-orientation"][value="landscape"]');
+    await fixture.whenStable();
+    // Letter shows its margins in inches.
+    expect(q(dialog, '.ink-ps-unit').textContent).toBe('in');
+
+    button(dialog, 'Apply').click();
+    await fixture.whenStable();
+
+    expect(document.querySelector('.ink-ps')).toBeNull();
+    expect(svc.pageSetup()).toMatchObject({
+      layout: 'pages',
+      paper: 'letter',
+      orientation: 'landscape',
+    });
+    expect(statusButton.textContent!.trim()).toBe('Letter · Landscape');
+    svc.undo();
+    expect(svc.storedPageSetup()).toBeNull();
+  });
+
+  it('Cancel, and Apply without changes, leave the document as it is', async () => {
+    const { fixture, svc, dialog } = await open();
+    choosePages(dialog);
+    button(dialog, 'Cancel').click();
+    await fixture.whenStable();
+    expect(svc.storedPageSetup()).toBeNull();
+
+    q<HTMLButtonElement>(fixture.nativeElement, '.ink-status-layout').click();
+    await fixture.whenStable();
+    button(document.querySelector('.ink-ps')!, 'Apply').click();
+    await fixture.whenStable();
+    expect(svc.storedPageSetup()).toBeNull();
+    expect(svc.canUndo()).toBe(false);
+  });
+
+  it('refuses margins that leave less than 5 cm for the text', async () => {
+    const { fixture, svc, dialog } = await open();
+    choosePages(dialog);
+    await fixture.whenStable();
+    const paper = q<HTMLSelectElement>(dialog, '#ink-ps-paper');
+    paper.value = 'a4';
+    paper.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    const left = dialog.querySelectorAll<HTMLInputElement>('.ink-ps-margin input')[2];
+    left.value = '17';
+    left.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(q(dialog, '.ink-ps-error').textContent).toContain('5 cm');
+    expect(left.getAttribute('aria-invalid')).toBe('true');
+    expect(button(dialog, 'Apply').disabled).toBe(true);
+
+    left.value = '2';
+    left.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(dialog.querySelector('.ink-ps-error')).toBeNull();
+    button(dialog, 'Apply').click();
+    await fixture.whenStable();
+    expect(svc.pageSetup().margins.left).toBe(20);
+  });
+
+  it('Set as default updates the bound default, which a document without setup starts from', async () => {
+    const { fixture, host, dialog } = await open();
+    choosePages(dialog);
+    await fixture.whenStable();
+    check(dialog, 'input[name="ink-ps-margins"][value="narrow"]');
+    await fixture.whenStable();
+    button(dialog, 'Set as default').click();
+    await fixture.whenStable();
+
+    expect(q(dialog, '[role="status"]').textContent).toContain('default for new documents');
+    expect(host.defaultSetup()).toMatchObject({
+      layout: 'pages',
+      margins: { top: 12.7, right: 12.7, bottom: 12.7, left: 12.7 },
+    });
+    button(dialog, 'Cancel').click();
+    await fixture.whenStable();
+
+    // The document is still Pageless; the dialog keeps that, with the default's margins.
+    q<HTMLButtonElement>(fixture.nativeElement, '.ink-status-layout').click();
+    await fixture.whenStable();
+    const again = document.querySelector<HTMLElement>('.ink-ps')!;
+    expect(q<HTMLInputElement>(again, 'input[value="pageless"]').checked).toBe(true);
+    choosePages(again);
+    await fixture.whenStable();
+    expect(q<HTMLInputElement>(again, 'input[value="narrow"]').checked).toBe(true);
   });
 });

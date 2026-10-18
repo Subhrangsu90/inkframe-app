@@ -54,6 +54,16 @@ describe('share-codec', () => {
     expect(decoded!.doc.doc).toEqual(mockDoc.doc);
   });
 
+  it('keeps the page setup in a share link', async () => {
+    const page = { layout: 'pages', paper: 'a4', orientation: 'landscape' };
+    const stored: StoredDoc = {
+      schemaVersion: 5,
+      doc: { type: 'doc', attrs: { page }, content: [{ type: 'paragraph' }] },
+    };
+    const decoded = await decompressSharedDoc(await compressDocForSharing(stored, 'Wide'));
+    expect((decoded!.doc.doc as any).attrs.page).toEqual(page);
+  });
+
   it('returns null for empty or invalid hash', async () => {
     expect(await decompressSharedDoc('')).toBeNull();
     expect(await decompressSharedDoc('doc_default')).toBeNull();

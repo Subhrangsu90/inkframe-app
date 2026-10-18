@@ -117,6 +117,13 @@ describe('VersionHistory', () => {
     expect(await history.get(named.id)).toEqual(docWith('kept'));
   });
 
+  it('keeps the page setup in versions, so restoring brings it back', async () => {
+    const stored = docWith('landscape');
+    (stored.doc as any).attrs = { page: { layout: 'pages', orientation: 'landscape' } };
+    const version = await history.snapshot('d', stored, 'named', 'Landscape');
+    expect(await history.get(version.id)).toEqual(stored);
+  });
+
   it('remove() deletes one version and its content', async () => {
     const a = await history.snapshot('d', docWith('a'), 'auto');
     const b = await history.snapshot('d', docWith('b'), 'auto');

@@ -7,6 +7,7 @@ import {
   imageStorage,
 } from '@inkframe-ui/editor/core';
 import { WELCOME_DOC } from './welcome-doc';
+import { withDefaultPageSetup } from './page-setup-default';
 import { deleteVersions, VERSION_KEY_PREFIX } from '../versions/version-store';
 
 export type { StoredDoc };
@@ -303,13 +304,19 @@ export class DocumentManager {
     return true;
   }
 
+  /**
+   * Creates and saves a document. Blank documents get the default page
+   * setup ("Set as default" in Page setup); pass `defaultPageSetup: true`
+   * for other new documents (templates, imports), not for copies.
+   */
   async createDoc(
     title?: string,
     initialDoc?: StoredDoc,
+    options: { defaultPageSetup?: boolean } = {},
   ): Promise<{ meta: DocMeta; doc: StoredDoc }> {
     const id = this.newDocId();
     const docTitle = title || 'Untitled Document';
-    const doc: StoredDoc = initialDoc || {
+    let doc: StoredDoc = initialDoc || {
       schemaVersion: SCHEMA_VERSION,
       doc: {
         type: 'doc',
@@ -326,6 +333,7 @@ export class DocumentManager {
         ],
       },
     };
+    if (options.defaultPageSetup ?? !initialDoc) doc = withDefaultPageSetup(doc);
 
     const meta = await this.saveDoc(id, doc, docTitle);
     this.setActiveDocId(id);

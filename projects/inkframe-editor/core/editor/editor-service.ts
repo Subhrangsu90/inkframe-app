@@ -83,6 +83,13 @@ import {
   toggleCodeBlockWrapCommand,
 } from '../extensions/code-block/code-block-commands';
 import { insertImageCommand } from '../extensions/image/image-commands';
+import {
+  DEFAULT_PAGE_SETUP,
+  PageSetup,
+  normalizePageSetup,
+  samePageSetup,
+} from '../extensions/page-setup/page-setup';
+import { setPageSetupCommand } from '../extensions/page-setup/page-setup-commands';
 import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
@@ -125,6 +132,8 @@ export class EditorService implements EditorHooks {
   view?: EditorView;
   private onChange?: () => void;
   private editableFlag = true;
+  /** Whether the document can be edited (false in preview). */
+  readonly isEditable = signal(true);
 
   // ── Modular Extension System ─────────────────────────────────────
   readonly extensions = signal<EditorExtension[]>(DEFAULT_EXTENSIONS);
@@ -236,6 +245,34 @@ export class EditorService implements EditorHooks {
     return doc && from !== to ? countWords(docText(doc, from, to)) : null;
   });
 
+  // ── Page setup ───────────────────────────────────────────────────
+  /** The page setup the document stores, or null when it has none. */
+  readonly storedPageSetup = computed(
+    () => {
+      const doc = this.doc();
+      return doc ? normalizePageSetup(doc.attrs['page']) : null;
+    },
+    { equal: samePageSetup },
+  );
+  /** The document's page setup; the default (Pageless) when it has none. */
+  readonly pageSetup = computed(() => this.storedPageSetup() ?? DEFAULT_PAGE_SETUP);
+  /** Incremented to open the Page setup dialog (`<ink-editor>` reacts to it). */
+  readonly pageSetupRequests = signal(0);
+
+  requestPageSetup(): void {
+    this.pageSetupRequests.update((n) => n + 1);
+  }
+
+  /**
+   * Changes the page setup in one undo step; null removes it. Returns whether
+   * anything changed. Focus stays where it is (the dialog restores it).
+   */
+  setPageSetup(setup: PageSetup | null): boolean {
+    const v = this.view;
+    if (!v || !this.editableFlag) return false;
+    return setPageSetupCommand(setup)(v.state, v.dispatch, v);
+  }
+
   // ── Find and replace ─────────────────────────────────────────────
   readonly searchOpen = signal(false);
   readonly searchReplaceVisible = signal(false);
@@ -313,6 +350,7 @@ export class EditorService implements EditorHooks {
     }
     this.onChange = opts.onChange;
     this.editableFlag = opts.editable ?? true;
+    this.isEditable.set(this.editableFlag);
     const afterUpdate = (state: EditorState, docChanged: boolean) =>
       this.afterUpdate(state, docChanged);
 
@@ -394,6 +432,7 @@ export class EditorService implements EditorHooks {
 
   setEditable(editable: boolean): void {
     this.editableFlag = editable;
+    this.isEditable.set(editable);
     if (this.view) {
       this.view.setProps({ editable: () => this.editableFlag });
       this.view.dom.classList.toggle('ProseMirror-preview', !editable);

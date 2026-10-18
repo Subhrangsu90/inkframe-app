@@ -45,6 +45,49 @@ describe('docToHtmlDocument', () => {
     expect(HTML_DOCUMENT_CSS).not.toMatch(/@import|url\(\s*['"]?(https?:)?\/\//i);
   });
 
+  it('prints Pages documents on their paper size and margins, at the editor font size', () => {
+    const pages = schema.nodeFromJSON({
+      ...doc.toJSON(),
+      attrs: {
+        page: {
+          layout: 'pages',
+          paper: 'letter',
+          orientation: 'landscape',
+          margins: { top: 12.7, right: 12.7, bottom: 12.7, left: 12.7 },
+        },
+      },
+    });
+    const html = docToHtmlDocument(pages, { editorFontSize: '15px' });
+    expect(html).toContain('@page { size: 279.4mm 215.9mm; margin: 12.7mm 12.7mm 12.7mm 12.7mm; }');
+    // After the default print rules, so it wins over them.
+    expect(html.lastIndexOf('@page')).toBeGreaterThan(html.indexOf('margin: 18mm 16mm'));
+    expect(html).toMatch(/@media print \{\s*@page[^}]+\}\s*body \{ font-size: 15px; \}/);
+  });
+
+  it('keeps the default print rules for Pageless documents', () => {
+    const html = docToHtmlDocument(doc);
+    expect(html.match(/@page/g)).toHaveLength(1);
+    expect(html).not.toMatch(/@page\s*\{\s*size/);
+  });
+
+  it('includes the given font faces, and nothing can close the style element', () => {
+    const fontFaceCss = '@font-face { font-family: "Inter Variable"; src: url("/inter.woff2"); }';
+    const html = docToHtmlDocument(doc, {
+      fontFaceCss: fontFaceCss + '</style><script>x</script>',
+    });
+    expect(html).toContain(fontFaceCss);
+    expect(html.match(/<\/style>/g)).toHaveLength(1);
+    // Inert text inside the style element, not an element of its own.
+    expect(html.indexOf('<script')).toBeLessThan(html.indexOf('</style>'));
+  });
+
+  it('ignores an editor font size that is not a plain CSS length', () => {
+    const pages = schema.nodeFromJSON({ ...doc.toJSON(), attrs: { page: { layout: 'pages' } } });
+    const html = docToHtmlDocument(pages, { editorFontSize: '1px; color: red' });
+    expect(html).toContain('body { font-size: 14px; }');
+    expect(html).not.toContain('color: red');
+  });
+
   it('keeps code blocks and table rows on one printed page', () => {
     const print = HTML_DOCUMENT_CSS.slice(HTML_DOCUMENT_CSS.indexOf('@media print'));
     const rule = print.match(/([^{}]+)\{[^}]*break-inside:\s*avoid/);

@@ -22,6 +22,7 @@ export * from './extensions/image';
 export * from './extensions/link';
 export * from './extensions/lists';
 export * from './extensions/marks';
+export * from './extensions/page-setup';
 export * from './extensions/paste-cleanup';
 export * from './extensions/placeholder';
 export * from './extensions/search';

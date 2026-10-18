@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { schema } from './schema';
 import { SCHEMA_VERSION, StoredDoc, migrate } from './migrations';
 import { docToHtml, htmlToDoc } from '../io/html';
+import {
+  DEFAULT_PAGE_SETUP,
+  pageSetupOf,
+  storedPageSetupOf,
+} from '../extensions/page-setup/page-setup';
 
 describe('Migrations', () => {
   it('passes through documents matching current schemaVersion', () => {
@@ -46,7 +51,7 @@ describe('Schema migrations', () => {
         ],
       },
     };
-    expect(SCHEMA_VERSION).toBe(4);
+    expect(SCHEMA_VERSION).toBe(5);
     const migrated = migrate(v1);
     expect(migrated).toEqual(v1.doc);
     const node = schema.nodeFromJSON(migrated);
@@ -120,6 +125,24 @@ describe('Schema migrations', () => {
       tight: true,
     });
     expect(node.child(1).attrs['bulletStyle']).toBeNull();
+  });
+
+  it('loads version 4 documents unchanged, as Pageless', () => {
+    const v4: StoredDoc = {
+      schemaVersion: 4,
+      doc: {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Before page setup' }] }],
+      },
+    };
+    const migrated = migrate(v4);
+    expect(migrated).toEqual(v4.doc);
+    const node = schema.nodeFromJSON(migrated);
+    node.check();
+    expect(node.attrs).toEqual({ page: null });
+    expect(storedPageSetupOf(node)).toBeNull();
+    expect(pageSetupOf(node)).toEqual(DEFAULT_PAGE_SETUP);
+    expect(pageSetupOf(node).layout).toBe('pageless');
   });
 
   it('ignores row heights in pasted or imported HTML', () => {

@@ -18,7 +18,7 @@ import {
 import { EditorService } from './editor-service';
 import { EditorHooks } from './editor-hooks';
 import { menusPlugin } from './menus.plugin';
-import { paragraph } from '../extensions/document/document-schema';
+import { doc, paragraph } from '../extensions/document/document-schema';
 import { LIST_ITEM_CONTENT, LIST_LEAD_GROUP } from '../extensions/lists/list-schema';
 import { listKeymap } from '../extensions/lists/list-commands';
 import { listJoinPlugin } from '../extensions/lists/list-join.plugin';
@@ -46,7 +46,7 @@ export class ExtensionManager {
   private buildSchema(): Schema {
     // 1. Gather nodes
     const nodeMap: Record<string, NodeSpec> = {
-      doc: basicNodes.doc,
+      doc,
       paragraph,
       text: basicNodes.text,
       hard_break: basicNodes.hard_break,

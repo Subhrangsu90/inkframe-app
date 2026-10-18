@@ -1,25 +1,42 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { EditorService } from '@inkframe-ui/editor/core';
+import { EditorService, pageSetupLabel } from '@inkframe-ui/editor/core';
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 /**
  * Words, characters and reading time of the document, below the editor. With
  * text selected, the word count shows the selection too ("12 of 1,204 words").
+ * With page setup, a button on the right shows the layout ("A4 · Portrait")
+ * and opens the Page setup dialog.
  */
 @Component({
   selector: 'ink-status-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- The visible dots are hidden from screen readers, which get a comma instead. -->
-    <div class="ink-status-bar" role="group" aria-label="Document statistics">
-      <span class="ink-status-item">{{ words() }}</span>
-      <span class="ink-status-optional">
+    <div class="ink-status-bar">
+      <!-- The visible dots are hidden from screen readers, which get a comma instead. -->
+      <div class="ink-status-stats" role="group" aria-label="Document statistics">
+        <span class="ink-status-item">{{ words() }}</span>
+        <span class="ink-status-optional">
+          <span class="ink-status-sep" aria-hidden="true">·</span
+          ><span class="ink-sr-only">, </span>
+          <span class="ink-status-item">{{ characters() }}</span>
+        </span>
         <span class="ink-status-sep" aria-hidden="true">·</span><span class="ink-sr-only">, </span>
-        <span class="ink-status-item">{{ characters() }}</span>
-      </span>
-      <span class="ink-status-sep" aria-hidden="true">·</span><span class="ink-sr-only">, </span>
-      <span class="ink-status-item">{{ readingTime() }}</span>
+        <span class="ink-status-item">{{ readingTime() }}</span>
+      </div>
+      @if (showLayout()) {
+        <button
+          type="button"
+          class="ink-status-layout"
+          aria-haspopup="dialog"
+          [attr.aria-label]="'Page setup: ' + layoutLabel()"
+          title="Page setup"
+          (click)="openPageSetup()"
+        >
+          {{ layoutLabel() }}
+        </button>
+      }
     </div>
   `,
   styles: `
@@ -43,6 +60,47 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
       white-space: nowrap;
       overflow: hidden;
       user-select: none;
+    }
+
+    .ink-status-stats {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .ink-status-layout {
+      flex-shrink: 0;
+      margin: 0 -8px 0 auto;
+      height: 22px;
+      padding: 0 8px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--ink-bg-hover, rgba(255, 255, 255, 0.06));
+        color: var(--ink-text-primary, #f0efec);
+      }
+
+      &:focus-visible {
+        outline: 3px solid var(--ink-border-focus, rgba(88, 170, 166, 0.6));
+        outline-offset: -1px;
+      }
+    }
+
+    /*
+     * The 28px bar has no room for a 44px touch target; on touch screens
+     * Page setup is reached through the host app's menus instead.
+     */
+    @media (pointer: coarse) {
+      .ink-status-layout {
+        display: none;
+      }
     }
 
     .ink-status-optional {
@@ -93,6 +151,16 @@ export class StatusBar {
   protected readonly readingTime = computed(
     () => `${this.number.format(this.svc.stats().readingMinutes)} min read`,
   );
+
+  protected readonly showLayout = computed(
+    () => this.svc.isEditable() && this.svc.hasExtension('page_setup'),
+  );
+
+  protected readonly layoutLabel = computed(() => pageSetupLabel(this.svc.pageSetup()));
+
+  protected openPageSetup(): void {
+    this.svc.requestPageSetup();
+  }
 }
 
 // Backward compatibility alias, matching the other components

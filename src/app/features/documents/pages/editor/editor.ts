@@ -58,6 +58,7 @@ import {
 } from '@app/features/documents/transfer/doc-export';
 import { VersionHistory, VersionMeta } from '@app/features/documents/versions/version-history';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
+import { PageSetupDefaults } from '@app/features/documents/data-access/page-setup-default';
 import { VersionPanel } from './version-panel/version-panel';
 import { PwaService } from '@app/core/pwa';
 import { PageMetaStrategy } from '@app/core/page-meta';
@@ -126,6 +127,7 @@ export class EditorView implements OnInit {
   private readonly versionHistory = inject(VersionHistory);
   private readonly storageHealth = inject(StorageHealth);
   private readonly sanitizer = inject(DomSanitizer);
+  protected readonly pageSetupDefaults = inject(PageSetupDefaults);
 
   readonly editorRef = viewChild<Editor>('editorComp');
 
@@ -446,6 +448,23 @@ export class EditorView implements OnInit {
     } finally {
       this.exporting.set(false);
     }
+  }
+
+  /**
+   * "Page setup…" in the Export menu. The dialog opens once the menu has
+   * closed and given focus back to the Export button, so closing the dialog
+   * returns focus there.
+   */
+  private pageSetupAfterMenu = false;
+
+  protected openPageSetup(): void {
+    this.pageSetupAfterMenu = true;
+  }
+
+  protected onExportMenuClosed(): void {
+    if (!this.pageSetupAfterMenu) return;
+    this.pageSetupAfterMenu = false;
+    this.editorRef()?.openPageSetup();
   }
 
   async copyMarkdown(): Promise<void> {

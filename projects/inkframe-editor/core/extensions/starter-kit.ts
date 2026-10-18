@@ -36,6 +36,7 @@ import { ClearFormattingExtension } from './clear-formatting/clear-formatting-ex
 import { SearchExtension } from './search/search-extension';
 import { PlaceholderExtension } from './placeholder/placeholder-extension';
 import { PasteCleanupExtension } from './paste-cleanup/paste-cleanup-extension';
+import { PageSetupExtension } from './page-setup/page-setup-extension';
 
 /** Every built-in extension: what `<ink-editor>` uses unless given a list. */
 export const DEFAULT_EXTENSIONS: EditorExtension[] = [
@@ -83,6 +84,9 @@ export const DEFAULT_EXTENSIONS: EditorExtension[] = [
   SearchExtension,
   PlaceholderExtension,
   PasteCleanupExtension,
+
+  // Layout
+  PageSetupExtension,
 ];
 
 export const StarterKit = DEFAULT_EXTENSIONS;

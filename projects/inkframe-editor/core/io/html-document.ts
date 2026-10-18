@@ -1,11 +1,25 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { docToHtml, sanitizeHtml } from './html';
+import { pageRuleCss, pageSetupOf } from '../extensions/page-setup/page-setup';
+import { sanitizeCssLength } from '../schema/sanitize-css';
 
 export interface HtmlDocumentOptions {
   /** The page title (`<title>`); also the PDF name when the page is printed. */
   title?: string;
   /** The `lang` attribute of the page. Default `en`. */
   lang?: string;
+  /**
+   * `@font-face` rules to include, so the page uses the same fonts as the
+   * editor (Inter and JetBrains Mono). Leave out for a file that makes no
+   * network requests; it then uses the system's fonts.
+   */
+  fontFaceCss?: string;
+  /**
+   * The document's font size in the editor (`--ink-editor-font-size`).
+   * Pages layout prints at this size, so lines break as they do on screen.
+   * Default `14px`.
+   */
+  editorFontSize?: string;
 }
 
 const escapeHtml = (text: string) =>
@@ -23,7 +37,7 @@ body {
   margin: 0;
   background: #f7f6f3;
   color: #1b1b1f;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   line-height: 1.65;
 }
@@ -79,7 +93,7 @@ li.ink-task-item.indeterminate::before {
 li.ink-task-item.checked > :first-child { text-decoration: line-through; color: #6b6b73; }
 blockquote { border-left: 3px solid #028380; margin: 1rem 0; padding: 0.45rem 1rem; color: #4b4b55; font-style: italic; }
 hr { border: 0; border-top: 1px solid #e8e6e1; margin: 1.75rem 0; }
-code, pre { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code, pre { font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 code { background: #f1f1f4; color: #017a78; padding: 0.15rem 0.4rem; font-size: 0.86em; border: 1px solid #ececf0; }
 pre { background: #f8f8fa; color: #1b1b1f; border: 1px solid #e8e6e1; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 0.88em; line-height: 1.6; overflow-x: auto; }
 pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
@@ -121,6 +135,20 @@ td > :first-child, th > :first-child { margin-top: 0; }
 }
 `;
 
+/** Keeps text placed inside a `<style>` element from closing it. */
+const styleText = (css: string) => css.replace(/<\/style/gi, '<\\/style');
+
+/**
+ * Print rules for the document's page setup. Pages layout prints on its
+ * paper size and margins, at the editor's font size; Pageless keeps the
+ * defaults above.
+ */
+function pageSetupCss(doc: PMNode, editorFontSize: string): string {
+  const page = pageRuleCss(pageSetupOf(doc));
+  if (!page) return '';
+  return `@media print {\n  ${page}\n  body { font-size: ${editorFontSize}; }\n}\n`;
+}
+
 /**
  * A complete HTML page for a document: the content (sanitized, with
  * highlighted code) and the styles it needs, with no external resources.
@@ -131,6 +159,8 @@ export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}
   const title = escapeHtml(options.title?.trim() || 'Untitled document');
   const lang = escapeHtml(options.lang || 'en');
   const body = sanitizeHtml(docToHtml(doc));
+  const fontSize = sanitizeCssLength(options.editorFontSize) ?? '14px';
+  const css = (options.fontFaceCss ?? '') + HTML_DOCUMENT_CSS + pageSetupCss(doc, fontSize);
   return `<!doctype html>
 <html lang="${lang}">
 <head>
@@ -138,7 +168,7 @@ export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="Inkframe">
 <title>${title}</title>
-<style>${HTML_DOCUMENT_CSS}</style>
+<style>${styleText(css)}</style>
 </head>
 <body>
 <main class="ink-document">

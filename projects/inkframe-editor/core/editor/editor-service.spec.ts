@@ -15,6 +15,7 @@ import { BulletListExtension } from '../extensions/lists/list-extensions';
 import { createExtension } from './extension-types';
 import { taskItemRule } from '../extensions/lists/list-input-rules';
 import { SCHEMA_VERSION, StoredDoc } from '../schema/migrations';
+import { DEFAULT_PAGE_SETUP, PageSetup } from '../extensions/page-setup/page-setup';
 import {
   GOOGLE_DOCS_CLIPBOARD,
   IMAGE_ONLY_CLIPBOARD,
@@ -486,6 +487,62 @@ describe('EditorService with the extension-built schema', () => {
     expect(types.has('task_list')).toBe(true);
     expect(types.has('highlight')).toBe(true);
     expect(types.has('textColor')).toBe(false); // Google Docs' default black was dropped
+  });
+
+  describe('page setup', () => {
+    const letterPages: PageSetup = {
+      ...DEFAULT_PAGE_SETUP,
+      layout: 'pages',
+      paper: 'letter',
+      orientation: 'landscape',
+    };
+
+    it('starts Pageless, and a change is one undo step that is saved with the document', () => {
+      const onChange = vi.fn();
+      svc = createService();
+      svc.mount(document.createElement('div'), {
+        doc: paragraphDoc('text'),
+        extensions: DEFAULT_EXTENSIONS,
+        onChange,
+      });
+      expect(svc.storedPageSetup()).toBeNull();
+      expect(svc.pageSetup().layout).toBe('pageless');
+
+      expect(svc.setPageSetup(letterPages)).toBe(true);
+      expect(svc.pageSetup()).toEqual(letterPages);
+      expect((svc.getJSON().doc as any).attrs.page).toEqual(letterPages);
+      expect(svc.view!.state.doc.textContent).toBe('text');
+      expect(onChange).toHaveBeenCalledTimes(1);
+
+      // The same setup again changes nothing.
+      expect(svc.setPageSetup({ ...letterPages })).toBe(false);
+      expect(onChange).toHaveBeenCalledTimes(1);
+
+      svc.undo();
+      expect(svc.storedPageSetup()).toBeNull();
+      svc.redo();
+      expect(svc.pageSetup()).toEqual(letterPages);
+    });
+
+    it('reads a malformed page setup as the defaults', () => {
+      mount({
+        schemaVersion: SCHEMA_VERSION,
+        doc: {
+          type: 'doc',
+          attrs: { page: { layout: 'pages', paper: 'huge', margins: 'none' } },
+          content: [{ type: 'paragraph' }],
+        },
+      });
+      expect(svc.pageSetup()).toEqual({ ...DEFAULT_PAGE_SETUP, layout: 'pages' });
+    });
+
+    it('is read-only in preview', () => {
+      mount(paragraphDoc('text'));
+      svc.setEditable(false);
+      expect(svc.isEditable()).toBe(false);
+      expect(svc.setPageSetup(letterPages)).toBe(false);
+      expect(svc.storedPageSetup()).toBeNull();
+    });
   });
 
   it('setDoc throws on an unparseable document and leaves the current one in place', () => {

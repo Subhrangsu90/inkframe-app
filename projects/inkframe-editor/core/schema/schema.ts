@@ -1,6 +1,6 @@
 import { Schema } from 'prosemirror-model';
 import { nodes as basicNodes, marks as basicMarks } from 'prosemirror-schema-basic';
-import { paragraph } from '../extensions/document/document-schema';
+import { doc, paragraph } from '../extensions/document/document-schema';
 import { heading } from '../extensions/heading/heading-schema';
 import {
   code,
@@ -36,6 +36,7 @@ import { callout } from '../extensions/callout/callout-schema';
 const base = new Schema({ nodes: basicNodes, marks: basicMarks });
 
 const nodes = base.spec.nodes
+  .update('doc', doc)
   .update('paragraph', paragraph)
   .update('heading', heading)
   .update('image', image)

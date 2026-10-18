@@ -47,6 +47,16 @@ describe('BackupService', () => {
     versions = TestBed.inject(VersionHistory);
   });
 
+  it('keeps the page setup of each document', async () => {
+    const stored = docWith('Pages');
+    (stored.doc as any).attrs = { page: { layout: 'pages', paper: 'letter' } };
+    const { meta } = await docs.createDoc('Pages', stored);
+    const backup = await backups.create();
+    await docs.clearAll();
+    await backups.restore(throughFile(backups, backup), 'replace');
+    expect(await docs.getDoc(meta.id)).toEqual(stored);
+  });
+
   it('restores documents, version history and images exactly (replace)', async () => {
     const png = new Blob([new Uint8Array([137, 80, 78, 71, 1, 2, 3])], { type: 'image/png' });
     await imageStorage.putImage(

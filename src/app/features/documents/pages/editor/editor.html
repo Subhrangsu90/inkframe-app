@@ -188,6 +188,7 @@
       type="button"
       class="export-btn"
       [matMenuTriggerFor]="exportMenu"
+      (menuClosed)="onExportMenuClosed()"
       [disabled]="exporting()"
       aria-label="Export, print or copy"
       title="Export, print or copy"
@@ -204,6 +205,11 @@
       <button mat-menu-item (click)="exportHtml()">
         <span class="menu-item-glyph"><ink-icon name="file-code" [size]="16" /></span>
         <span class="menu-item-text">Web page (.html)</span>
+      </button>
+      <mat-divider />
+      <button mat-menu-item (click)="openPageSetup()" [disabled]="activeView() !== 'rich'">
+        <span class="menu-item-glyph"><ink-icon name="ruler" [size]="16" /></span>
+        <span class="menu-item-text">Page setup…</span>
       </button>
       <button mat-menu-item (click)="printDoc()">
         <span class="menu-item-glyph"><ink-icon name="printer" [size]="16" /></span>
@@ -271,6 +277,8 @@
         [editable]="activeView() === 'rich'"
         [showToolbar]="activeView() === 'rich' && showToolbar()"
         mobileToolbar="bottom"
+        [defaultPageSetup]="pageSetupDefaults.value()"
+        (defaultPageSetupChange)="pageSetupDefaults.save($event)"
         (changed)="onDocChanged($event)"
         (historyRequested)="toggleHistory()"
       />

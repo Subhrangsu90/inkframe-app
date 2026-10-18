@@ -1,4 +1,5 @@
 import {
+  HtmlDocumentOptions,
   StoredDoc,
   docToHtmlDocument,
   docToMarkdown,
@@ -19,9 +20,13 @@ export function docToMarkdownText(stored: StoredDoc): string {
  * file works anywhere and makes no network requests (except for images the
  * document links from the web).
  */
-export async function buildHtmlPage(stored: StoredDoc, title: string): Promise<string> {
+export async function buildHtmlPage(
+  stored: StoredDoc,
+  title: string,
+  options: HtmlDocumentOptions = {},
+): Promise<string> {
   const inlined = await imageStorage.inlineDocImages(stored);
-  return docToHtmlDocument(toNode(inlined), { title });
+  return docToHtmlDocument(toNode(inlined), { ...options, title });
 }
 
 /** Downloads the document as Markdown. Returns the file name. */
@@ -42,6 +47,59 @@ export async function downloadHtml(stored: StoredDoc, title: string): Promise<st
 
 let printFrame: HTMLIFrameElement | null = null;
 
+const EDITOR_FONTS = /Inter Variable|JetBrains Mono Variable/;
+
+// By its text rather than `instanceof CSSFontFaceRule`, which not every DOM implements.
+const isFontFace = (rule: CSSRule): rule is CSSFontFaceRule =>
+  rule.cssText.startsWith('@font-face');
+
+/**
+ * The app's `@font-face` rules for the editor's fonts, with absolute URLs, so
+ * a printout uses the same fonts as the screen. The print frame has the
+ * app's origin, so the service worker serves the files offline too.
+ */
+export function editorFontFaceCss(doc: Document = document): string {
+  const rules: string[] = [];
+  for (const sheet of Array.from(doc.styleSheets)) {
+    let cssRules: CSSRuleList;
+    try {
+      cssRules = sheet.cssRules;
+    } catch {
+      continue; // another origin's stylesheet
+    }
+    const base = sheet.href ?? doc.baseURI;
+    for (const rule of Array.from(cssRules)) {
+      if (!isFontFace(rule)) continue;
+      if (!EDITOR_FONTS.test(rule.style.getPropertyValue('font-family'))) continue;
+      rules.push(absoluteCssUrls(rule.cssText, base));
+    }
+  }
+  return rules.join('\n');
+}
+
+/** The CSS with every `url(…)` resolved against `base`, the stylesheet's address. */
+export function absoluteCssUrls(css: string, base: string): string {
+  return css.replace(
+    /url\((["']?)([^"')]+)\1\)/g,
+    (_match, _quote, url: string) => `url("${new URL(url.trim(), base).href}")`,
+  );
+}
+
+/** Loads the fonts the document's text needs, waiting up to `timeoutMs`. */
+async function loadFonts(doc: Document, timeoutMs = 3000): Promise<void> {
+  const fonts = doc.fonts;
+  if (!fonts) return;
+  const text = doc.body.textContent || ' ';
+  const loaded = Promise.all([
+    fonts.load('16px "Inter Variable"', text),
+    fonts.load('16px "JetBrains Mono Variable"', text),
+  ]).then(
+    () => fonts.ready,
+    () => undefined,
+  );
+  await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, timeoutMs))]);
+}
+
 /** Loads every image in a document now, waiting up to `timeoutMs` for all of them. */
 async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
   const images = Array.from(doc.images);
@@ -58,7 +116,13 @@ async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
  * use to name the PDF.
  */
 export async function printDocument(stored: StoredDoc, title: string): Promise<void> {
-  const html = await buildHtmlPage(stored, title);
+  const editorFontSize = getComputedStyle(document.documentElement)
+    .getPropertyValue('--ink-editor-font-size')
+    .trim();
+  const html = await buildHtmlPage(stored, title, {
+    fontFaceCss: editorFontFaceCss(),
+    editorFontSize: editorFontSize || undefined,
+  });
   printFrame?.remove();
 
   const frame = document.createElement('iframe');
@@ -78,8 +142,9 @@ export async function printDocument(stored: StoredDoc, title: string): Promise<v
   const win = frame.contentWindow;
   if (!win) return;
   // Images load lazily, and the frame is 0×0 so none is ever near the screen:
-  // load them all before printing, or the printout has blank images.
-  await loadAllImages(win.document);
+  // load them all before printing, or the printout has blank images. The
+  // same goes for fonts, or the printout uses the fallback fonts.
+  await Promise.all([loadAllImages(win.document), loadFonts(win.document)]);
   const pageTitle = document.title;
   const cleanup = () => {
     document.title = pageTitle;

@@ -1,11 +1,11 @@
 import { nodes as basicNodes } from 'prosemirror-schema-basic';
 import { createExtension } from '../../editor/extension-types';
 import { setBlockTypeKeepingAlign } from '../text-align/text-align-commands';
-import { paragraph } from './document-schema';
+import { doc, paragraph } from './document-schema';
 
 export const DocExtension = createExtension({
   name: 'doc',
-  nodes: { doc: basicNodes.doc },
+  nodes: { doc },
 });
 
 export const ParagraphExtension = createExtension({

@@ -312,7 +312,8 @@ export class Docs implements OnInit {
         }
         try {
           const { title, doc } = await readImportFile(file);
-          created.push((await this.docManager.createDoc(title, doc)).meta.id);
+          const { meta } = await this.docManager.createDoc(title, doc, { defaultPageSetup: true });
+          created.push(meta.id);
         } catch (e) {
           problems.push(
             e instanceof ImportError ? e.message : `"${file.name}" could not be imported.`,
@@ -340,7 +341,9 @@ export class Docs implements OnInit {
 
   async createFromTemplate(tpl: TemplateStarter): Promise<void> {
     try {
-      const created = await this.docManager.createDoc(tpl.title, tpl.doc);
+      const created = await this.docManager.createDoc(tpl.title, tpl.doc, {
+        defaultPageSetup: true,
+      });
       await this.library.refreshDocs();
       this.toast.success(`Created "${tpl.title}" from template`);
       await this.router.navigateByUrl(docPath(created.meta.id));

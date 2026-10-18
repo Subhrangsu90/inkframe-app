@@ -5,8 +5,9 @@
  * - 3: table cells lose the `height` attribute; rows fit their text.
  * - 4: list attributes (start number, bullet and number style, tight) shared
  *   by all list types; list items can start with a heading; `note` callouts.
+ * - 5: `page` attribute on `doc`: the page setup (layout, paper, margins).
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 /** The envelope that is saved to your database. */
 export interface StoredDoc {
@@ -38,6 +39,8 @@ const migrations: Record<number, Migration> = {
   2: dropCellHeights,
   // Only additions again: every version 3 document is a valid version 4 document.
   3: (doc) => doc,
+  // A version 4 document has no page setup, which means Pageless.
+  4: (doc) => doc,
 };
 
 /** Removes the fixed row height from table cells (version 2 to 3). */

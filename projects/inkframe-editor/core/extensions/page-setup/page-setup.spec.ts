@@ -9,6 +9,7 @@ import {
   mmToUnits,
   normalizePageSetup,
   pageDimensions,
+  pageLayoutStyle,
   pageRuleCss,
   pageSetupLabel,
   unitsToMm,
@@ -144,5 +145,35 @@ describe('pageRuleCss', () => {
 
   it('writes nothing for Pageless documents', () => {
     expect(pageRuleCss(DEFAULT_PAGE_SETUP)).toBe('');
+  });
+});
+
+describe('pageLayoutStyle', () => {
+  it('gives the canvas the turned page size and the margins in millimeters', () => {
+    expect(pageLayoutStyle(a4Pages)).toMatchObject({
+      '--ink-page-width': '297mm',
+      '--ink-page-height': '210mm',
+      '--ink-page-margin-top': '20mm',
+      '--ink-page-margin-right': '15mm',
+      '--ink-page-margin-bottom': '20mm',
+      '--ink-page-margin-left': '15mm',
+    });
+  });
+
+  it('gives Pageless side margins as shares of the canvas, split by their sizes', () => {
+    const style = pageLayoutStyle({
+      ...DEFAULT_PAGE_SETUP,
+      sideMargins: { left: 0.3, right: 0.1 },
+    });
+    expect(style['--ink-side-margin-left']).toBe('0.3');
+    expect(style['--ink-side-margin-right']).toBe('0.1');
+    expect(Number(style['--ink-side-share-left'])).toBeCloseTo(0.75);
+    expect(Number(style['--ink-side-share-right'])).toBeCloseTo(0.25);
+  });
+
+  it('splits evenly when there are no side margins', () => {
+    const style = pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, sideMargins: { left: 0, right: 0 } });
+    expect(style['--ink-side-share-left']).toBe('0.5');
+    expect(style['--ink-side-share-right']).toBe('0.5');
   });
 });

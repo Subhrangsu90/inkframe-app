@@ -57,11 +57,25 @@ describe('docToHtmlDocument', () => {
         },
       },
     });
-    const html = docToHtmlDocument(pages, { editorFontSize: '15px' });
+    const html = docToHtmlDocument(pages, {
+      editorFontSize: '15px',
+      editorLetterSpacing: '-0.165px',
+    });
     expect(html).toContain('@page { size: 279.4mm 215.9mm; margin: 12.7mm 12.7mm 12.7mm 12.7mm; }');
     // After the default print rules, so it wins over them.
     expect(html.lastIndexOf('@page')).toBeGreaterThan(html.indexOf('margin: 18mm 16mm'));
-    expect(html).toMatch(/@media print \{\s*@page[^}]+\}\s*body \{ font-size: 15px; \}/);
+    expect(html).toMatch(
+      /@media print \{\s*@page[^}]+\}\s*body \{ font-size: 15px; letter-spacing: -0.165px; \}/,
+    );
+  });
+
+  it('sets Pages text as the editor does, so lines break in the same places', () => {
+    const pages = schema.nodeFromJSON({ ...doc.toJSON(), attrs: { page: { layout: 'pages' } } });
+    const html = docToHtmlDocument(pages);
+    const print = html.slice(html.lastIndexOf('@media print'));
+    expect(print).toContain('font-variant-ligatures: none');
+    expect(print).toContain("font-feature-settings: 'liga' 0");
+    expect(print).toContain('white-space: break-spaces');
   });
 
   it('keeps the default print rules for Pageless documents', () => {
@@ -81,11 +95,15 @@ describe('docToHtmlDocument', () => {
     expect(html.indexOf('<script')).toBeLessThan(html.indexOf('</style>'));
   });
 
-  it('ignores an editor font size that is not a plain CSS length', () => {
+  it('ignores an editor font size or letter spacing that is not a plain CSS length', () => {
     const pages = schema.nodeFromJSON({ ...doc.toJSON(), attrs: { page: { layout: 'pages' } } });
-    const html = docToHtmlDocument(pages, { editorFontSize: '1px; color: red' });
-    expect(html).toContain('body { font-size: 14px; }');
+    const html = docToHtmlDocument(pages, {
+      editorFontSize: '1px; color: red',
+      editorLetterSpacing: '1px; background: url(https://tracker)',
+    });
+    expect(html).toContain('body { font-size: 14px; letter-spacing: normal; }');
     expect(html).not.toContain('color: red');
+    expect(html).not.toContain('tracker');
   });
 
   it('keeps code blocks and table rows on one printed page', () => {

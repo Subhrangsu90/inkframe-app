@@ -230,8 +230,18 @@ describe('<ink-editor> page setup', () => {
       orientation: 'landscape',
     });
     expect(statusButton.textContent!.trim()).toBe('Letter · Landscape');
+    // The canvas shows the sheet at the turned paper size.
+    const canvas = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.ink-canvas',
+    )!;
+    expect(canvas.dataset['inkLayout']).toBe('pages');
+    expect(canvas.style.getPropertyValue('--ink-page-width')).toBe('279.4mm');
+    expect(canvas.style.getPropertyValue('--ink-page-height')).toBe('215.9mm');
+
     svc.undo();
+    await fixture.whenStable();
     expect(svc.storedPageSetup()).toBeNull();
+    expect(canvas.dataset['inkLayout']).toBe('pageless');
   });
 
   it('Cancel, and Apply without changes, leave the document as it is', async () => {

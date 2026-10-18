@@ -271,3 +271,29 @@ export function pageRuleCss(setup: PageSetup): string {
   const { top, right, bottom, left } = setup.margins;
   return `@page { size: ${mm(width)} ${mm(height)}; margin: ${mm(top)} ${mm(right)} ${mm(bottom)} ${mm(left)}; }`;
 }
+
+/**
+ * The custom properties that lay out a document on screen, for the element
+ * with the `ink-canvas` class (with `data-ink-layout` set to the layout; see
+ * the editor's page layout styles): the paper size and margins for Pages,
+ * the side margins for Pageless.
+ */
+export function pageLayoutStyle(setup: PageSetup): Record<string, string> {
+  const { width, height } = pageDimensions(setup);
+  const { top, right, bottom, left } = setup.margins;
+  const sides = setup.sideMargins;
+  const total = sides.left + sides.right;
+  return {
+    '--ink-page-width': mm(width),
+    '--ink-page-height': mm(height),
+    '--ink-page-margin-top': mm(top),
+    '--ink-page-margin-right': mm(right),
+    '--ink-page-margin-bottom': mm(bottom),
+    '--ink-page-margin-left': mm(left),
+    '--ink-side-margin-left': String(sides.left),
+    '--ink-side-margin-right': String(sides.right),
+    // Each side's part of the room the margins may take, when the window is narrow.
+    '--ink-side-share-left': String(total ? sides.left / total : 0.5),
+    '--ink-side-share-right': String(total ? sides.right / total : 0.5),
+  };
+}

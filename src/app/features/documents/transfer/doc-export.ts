@@ -85,6 +85,23 @@ export function absoluteCssUrls(css: string, base: string): string {
   );
 }
 
+/**
+ * How the editor sets the document's text: its size, and the letter spacing
+ * the app's body style gives it. A Pages printout uses both, so its lines
+ * break where they do on screen.
+ */
+function editorTextStyle(): Pick<HtmlDocumentOptions, 'editorFontSize' | 'editorLetterSpacing'> {
+  const text = document.querySelector('.ink-host .ProseMirror');
+  if (text) {
+    const style = getComputedStyle(text);
+    return { editorFontSize: style.fontSize, editorLetterSpacing: style.letterSpacing };
+  }
+  const size = getComputedStyle(document.documentElement).getPropertyValue(
+    '--ink-editor-font-size',
+  );
+  return { editorFontSize: size.trim() || undefined };
+}
+
 /** Loads the fonts the document's text needs, waiting up to `timeoutMs`. */
 async function loadFonts(doc: Document, timeoutMs = 3000): Promise<void> {
   const fonts = doc.fonts;
@@ -116,12 +133,9 @@ async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
  * use to name the PDF.
  */
 export async function printDocument(stored: StoredDoc, title: string): Promise<void> {
-  const editorFontSize = getComputedStyle(document.documentElement)
-    .getPropertyValue('--ink-editor-font-size')
-    .trim();
   const html = await buildHtmlPage(stored, title, {
     fontFaceCss: editorFontFaceCss(),
-    editorFontSize: editorFontSize || undefined,
+    ...editorTextStyle(),
   });
   printFrame?.remove();
 

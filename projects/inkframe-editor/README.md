@@ -170,7 +170,9 @@ Each document has a layout: **Pageless** (the default) or **Pages**, with a pape
 
 The setup is stored in the document, as the `page` attribute of the `doc` node, so it travels wherever the `StoredDoc` goes. Read it with `pageSetupOf(doc)`, or `EditorService.pageSetup()` in the editor; values from untrusted documents are checked by `normalizePageSetup()`.
 
-- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. Pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono) and `editorFontSize` so a printout matches the screen.
+- **On screen:** Pageless fills the editor, with side margins of 10% of its width (at least 32px). Pages shows a sheet at the paper's real width and at least one page tall, with the page margins; the editor scrolls sideways when the sheet is wider. Under 768px both are one full-width sheet with 16px margins.
+- **Showing a document outside the editor** (a reader page, a preview): give the scrolling element the class `ink-canvas`, `data-ink-layout` set to the layout and the custom properties from `pageLayoutStyle(setup)`; put the page in an `ink-sheet` element and the content in an `ink-sheet-body` element. The editor's stylesheet lays them out as the editor does.
+- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`.
 - **Markdown** has no page setup: `docToMarkdown()` leaves it out, and imported Markdown is Pageless.
 - **HTML import** does not read it back from an exported page.
 

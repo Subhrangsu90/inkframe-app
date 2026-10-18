@@ -39,6 +39,10 @@ import {
   migrate,
   sanitizeHtml,
   schema,
+  DEFAULT_PAGE_SETUP,
+  PageSetup,
+  pageLayoutStyle,
+  pageSetupOf,
 } from '@inkframe-ui/editor/core';
 import { LayoutService } from '@app/layout/layout.service';
 import {
@@ -189,6 +193,9 @@ export class EditorView implements OnInit {
   readonly versions = signal<VersionMeta[]>([]);
   readonly previewVersion = signal<VersionMeta | null>(null);
   readonly previewHtml = signal<SafeHtml | null>(null);
+  /** The previewed version's page setup: the preview shows it in its own layout. */
+  readonly previewSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
+  readonly previewLayoutStyle = computed(() => pageLayoutStyle(this.previewSetup()));
   readonly historyBusy = signal(false);
   /** When the previewed version was saved. (Not the date pipe: it adds 12 kB to every page.) */
   readonly previewWhen = computed(() => {
@@ -540,14 +547,14 @@ export class EditorView implements OnInit {
     try {
       const stored = await this.versionHistory.get(meta.id);
       if (!stored) throw new Error(`Version ${meta.id} is missing`);
-      const html = await imageStorage.resolveHtmlImages(
-        docToHtml(schema.nodeFromJSON(migrate(stored))),
-      );
+      const node = schema.nodeFromJSON(migrate(stored));
+      const html = await imageStorage.resolveHtmlImages(docToHtml(node));
       if (token !== this.previewToken) return;
       // The content is the person's own document; it is sanitized all the
       // same, as the reader does, because Angular's sanitizer would strip the
       // editor's inline styles.
       this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(sanitizeHtml(html)));
+      this.previewSetup.set(pageSetupOf(node));
       this.previewVersion.set(meta);
     } catch (e) {
       if (token !== this.previewToken) return;

@@ -259,10 +259,14 @@
           </button>
         </div>
       </div>
-      <div class="version-preview ink-scrollbar">
-        <article class="version-sheet">
+      <div
+        class="version-preview ink-canvas ink-scrollbar"
+        [attr.data-ink-layout]="previewSetup().layout"
+        [style]="previewLayoutStyle()"
+      >
+        <article class="ink-sheet">
           <div
-            class="ink-static-doc ProseMirror ProseMirror-preview"
+            class="ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
             [innerHTML]="previewHtml()"
           ></div>
         </article>

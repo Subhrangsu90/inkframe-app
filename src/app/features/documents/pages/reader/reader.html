@@ -54,15 +54,19 @@
   </header>
 
   <!-- ═════════════════════════════════════════════ -->
-  <!-- A4 READING CANVAS (Centered & Clean)          -->
+  <!-- READING CANVAS: THE DOCUMENT'S PAGE LAYOUT    -->
   <!-- ═════════════════════════════════════════════ -->
   <main class="reader-viewport ink-scrollbar">
-    <div class="reader-canvas">
+    <div
+      class="reader-canvas ink-canvas"
+      [attr.data-ink-layout]="pageSetup().layout"
+      [style]="layoutStyle()"
+    >
       <!-- Clicking an image opens the lightbox. Mouse only for now: images are not focusable (accessibility gap, see the plan). -->
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-      <article class="reader-a4-sheet" (click)="onSheetClick($event)">
+      <article class="reader-sheet ink-sheet" (click)="onSheetClick($event)">
         <div
-          class="reader-content ink-static-doc ProseMirror ProseMirror-preview"
+          class="reader-content ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
           [innerHTML]="renderedHtml()"
         ></div>
       </article>

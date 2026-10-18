@@ -20,7 +20,14 @@ export interface HtmlDocumentOptions {
    * Default `14px`.
    */
   editorFontSize?: string;
+  /**
+   * The document's letter spacing in the editor, when the host page sets one
+   * (for example `-0.011em` on `body`). Pages layout prints with it.
+   */
+  editorLetterSpacing?: string;
 }
+
+const LETTER_SPACING = /^(normal|-?\d+(\.\d+)?(px|em|rem))$/;
 
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -140,13 +147,21 @@ const styleText = (css: string) => css.replace(/<\/style/gi, '<\\/style');
 
 /**
  * Print rules for the document's page setup. Pages layout prints on its
- * paper size and margins, at the editor's font size; Pageless keeps the
- * defaults above.
+ * paper size and margins, with the text set as the editor sets it, so lines
+ * break where they do on screen: the editor's font size and letter spacing,
+ * no ligatures, and spaces at the end of a line taking up room (the editor's
+ * `white-space: break-spaces`). Pageless keeps the defaults above.
  */
-function pageSetupCss(doc: PMNode, editorFontSize: string): string {
+function pageSetupCss(doc: PMNode, fontSize: string, letterSpacing: string): string {
   const page = pageRuleCss(pageSetupOf(doc));
   if (!page) return '';
-  return `@media print {\n  ${page}\n  body { font-size: ${editorFontSize}; }\n}\n`;
+  return `@media print {
+  ${page}
+  body { font-size: ${fontSize}; letter-spacing: ${letterSpacing}; }
+  .ink-document { font-variant-ligatures: none; font-feature-settings: 'liga' 0; }
+  .ink-document :is(p, h1, h2, h3, h4, h5, h6) { white-space: break-spaces; }
+}
+`;
 }
 
 /**
@@ -160,7 +175,10 @@ export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}
   const lang = escapeHtml(options.lang || 'en');
   const body = sanitizeHtml(docToHtml(doc));
   const fontSize = sanitizeCssLength(options.editorFontSize) ?? '14px';
-  const css = (options.fontFaceCss ?? '') + HTML_DOCUMENT_CSS + pageSetupCss(doc, fontSize);
+  const spacing = options.editorLetterSpacing?.trim() ?? '';
+  const letterSpacing = LETTER_SPACING.test(spacing) ? spacing : 'normal';
+  const css =
+    (options.fontFaceCss ?? '') + HTML_DOCUMENT_CSS + pageSetupCss(doc, fontSize, letterSpacing);
   return `<!doctype html>
 <html lang="${lang}">
 <head>

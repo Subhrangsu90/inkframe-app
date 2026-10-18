@@ -6,6 +6,7 @@ import {
   Injector,
   NgZone,
   afterNextRender,
+  computed,
   effect,
   inject,
   input,
@@ -29,6 +30,7 @@ import {
   PageSetup,
   VisualViewportTracker,
   initialPageSetup,
+  pageLayoutStyle,
 } from '@inkframe-ui/editor/core';
 import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
@@ -60,9 +62,19 @@ import {
       <div class="ink-editor-body">
         <!-- A click on the empty page around the text focuses the document; keyboard users reach it with Tab. -->
         <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-        <div #viewport class="ink-editor-viewport" (click)="onViewportClick($event)">
-          <div class="ink-doc-page">
-            <div #host class="ink-host" [class.ProseMirror-preview]="!editable()"></div>
+        <div
+          #viewport
+          class="ink-editor-viewport ink-canvas"
+          [attr.data-ink-layout]="svc.pageSetup().layout"
+          [style]="layoutStyle()"
+          (click)="onViewportClick($event)"
+        >
+          <div class="ink-doc-page ink-sheet">
+            <div
+              #host
+              class="ink-host ink-sheet-body"
+              [class.ProseMirror-preview]="!editable()"
+            ></div>
           </div>
         </div>
         @if (editable()) {
@@ -158,12 +170,6 @@ import {
           cursor: zoom-in !important;
           pointer-events: auto !important;
         }
-        .ink-doc-page {
-          &:focus-within {
-            /* box-shadow: var(--ink-shadow-page, 0 2px 12px -2px rgba(0, 0, 0, 0.45)); */
-            border-color: var(--ink-border-subtle, #282a30);
-          }
-        }
       }
     }
     /*
@@ -204,25 +210,18 @@ import {
       display: flex;
       flex-direction: column;
     }
+    /*
+     * The canvas, the sheet and its margins come from the layout styles
+     * (.ink-canvas, .ink-sheet, .ink-sheet-body; see _page-layout.scss).
+     */
     .ink-editor-viewport {
       flex: 1 1 0;
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      background: var(--ink-bg-app, #121316);
-      padding: 8px 4px 32px;
       cursor: text;
-      box-sizing: border-box;
       transition: background-color 0.15s ease;
-
-      @media (min-width: 640px) {
-        padding: 18px 14px 44px;
-      }
-
-      @media (min-width: 900px) {
-        padding: 28px 20px 60px;
-      }
 
       scrollbar-width: thin;
       scrollbar-color: var(--ink-scrollbar-thumb, rgba(255, 255, 255, 0.2)) transparent;
@@ -243,38 +242,19 @@ import {
       }
     }
     .ink-doc-page {
-      width: 100%;
-      max-width: 820px;
-      margin: 0 auto;
-      background: var(--ink-bg-page, #18191c);
-      border: 1px solid var(--ink-border-subtle, #282a30);
-      /* A sheet of paper: square corners, and it ends where the text ends. */
-      border-radius: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-sizing: border-box;
       transition:
         box-shadow 0.15s ease,
-        background-color 0.15s ease,
-        border-color 0.15s ease;
+        background-color 0.15s ease;
     }
     .ink-host {
       flex: 1 0 auto;
       display: flex;
       flex-direction: column;
-      padding: 1.25rem 0.85rem 2.5rem;
       outline: none;
-      box-sizing: border-box;
       cursor: text;
-
-      @media (min-width: 640px) {
-        padding: 2rem 1.75rem 3rem;
-      }
-
-      @media (min-width: 900px) {
-        padding: 3rem 3.5rem 4rem;
-      }
     }
     .ink-host :first-child {
       margin-top: 0;
@@ -298,6 +278,8 @@ export class Editor {
   private readonly injector = inject(Injector);
   private pageSetupDialog?: DialogRef<PageSetup, PageSetupDialog>;
   private timer?: ReturnType<typeof setTimeout>;
+  /** The document's page layout, as custom properties for the canvas. */
+  protected readonly layoutStyle = computed(() => pageLayoutStyle(this.svc.pageSetup()));
 
   /** Read once at mount. Use loadDoc() to replace the document later. */
   readonly initialDoc = input<StoredDoc | null>(null);

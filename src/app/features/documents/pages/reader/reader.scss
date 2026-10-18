@@ -174,49 +174,31 @@ ink-reader {
   transition: background-color 0.2s ease;
 }
 
+/* ═════════════════════════════════════════════ */
+/* THE PAGE: THE DOCUMENT'S OWN LAYOUT           */
+/* ═════════════════════════════════════════════ */
+/*
+ * The canvas, sheet and margins follow the document's page setup (the
+ * editor's layout styles: .ink-canvas, .ink-sheet, .ink-sheet-body). Pageless
+ * fills the window; Pages lies on the desk at the paper's size.
+ */
 .reader-canvas {
+  flex: 1 0 auto;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 32px 16px 64px;
-  box-sizing: border-box;
+}
 
-  @media (min-width: 860px) {
-    padding: 40px 24px 80px;
-  }
+.reader-canvas[data-ink-layout='pages'] {
+  background-color: var(--reader-desk);
 
-  /* Phones: the page spans the screen's width. */
-  @media (max-width: 639px) {
-    padding: 0;
+  > .reader-sheet {
+    box-shadow: var(--reader-page-shadow);
   }
 }
 
-/* ═════════════════════════════════════════════ */
-/* THE PAGE: A4 WIDTH                            */
-/* ═════════════════════════════════════════════ */
-/* As wide as A4 paper; as tall as the document (no forced height). */
-.reader-a4-sheet {
-  box-sizing: border-box;
-  width: 210mm;
-  max-width: 100%;
-  padding: 1in; /* the usual 2.54 cm page margins */
-  background-color: var(--ink-bg-page, #ffffff);
-  border-radius: 0; /* paper has square corners */
-  box-shadow: var(--reader-page-shadow);
+.reader-sheet {
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease;
-
-  /* Narrower than a page plus the desk: keep the page, with smaller margins. */
-  @media (max-width: 859px) {
-    padding: 56px 48px;
-  }
-
-  @media (max-width: 639px) {
-    padding: 28px 20px 48px;
-    box-shadow: none;
-  }
 }
 
 /* ═════════════════════════════════════════════ */
@@ -247,15 +229,15 @@ ink-reader {
   }
 
   /* The printer's page and margins replace the on-screen sheet. */
-  .reader-a4-sheet {
+  .reader-sheet {
     width: auto !important;
     min-height: 0 !important;
-    padding: 0 !important;
     box-shadow: none !important;
     background: #ffffff !important;
   }
 
-  .reader-a4-sheet .reader-content {
+  .reader-sheet .reader-content {
+    padding: 0 !important;
     color: #111827 !important;
 
     h1,

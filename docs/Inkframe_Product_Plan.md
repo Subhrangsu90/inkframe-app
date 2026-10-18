@@ -217,8 +217,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | --- | --- | --- | --- |
 | Page setup per document: layout, paper size (A3, A4, A5, Letter, Legal), orientation, margins | ✅ | M3.5, step 1 | Stored in the document, so share links, backups and version history carry it. Opens from the Export menu and a layout button in the status bar (not on touch screens). |
 | Print and PDF on the document's paper size and margins | 🟡 | M3.5, step 1 | `@page` sizes written in millimeters; the print frame uses the app's fonts. Checked in Chrome; Firefox and Safari still to check. |
-| Pageless layout: the full canvas | ⬜ | M3.5, step 2 | No fixed width; the ruler sets the margins. Replaces today's 820px sheet and the planned width toggle. |
-| Pages layout: a sheet at the paper's real width | ⬜ | M3.5, step 2 | Same text width, fonts and font size as the printout, so lines break in the same places. Phones reflow. |
+| Pageless layout: the full canvas | ✅ | M3.5, step 2 | No fixed width; 10% side margins until the ruler (step 3) sets them. Replaced the 820px sheet and the planned width toggle. |
+| Pages layout: a sheet at the paper's real width | 🟡 | M3.5, step 2 | Same text width, fonts, font size and text settings as the printout, so lines break in the same places (checked in Chrome; Firefox and Safari still to check). Phones reflow. |
 | Ruler with margin handles | ⬜ | M3.5, step 3 | Both layouts, from 768px up. Keyboard-operable. |
 | Page color | ⬜ | M3.5, step 4 | A fixed palette with a light and a dark value per color. |
 | Page break block | ⬜ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
@@ -371,7 +371,9 @@ M3.5 sits between M3 and M4, so page setup ships at launch, and the later milest
 
 A ruler at the top of the canvas sets the margins in both layouts, and a page color works in both.
 
-**Status (2026-10-18):** step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline. Until step 2, Pages layout changes the printout but not the screen, which still shows the 820px sheet.
+**Status (2026-10-18):** step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline.
+
+Step 2 built (2026-10-18), with tests and a Chrome run against the production build: Pageless fills the canvas with 10% margins; Pages shows the sheet at paper size (A4 794 × 1123px, A3 landscape scrolling sideways on a 1280px window); phones reflow an A3 landscape document with no sideways scrolling; the reader and version previews show each document in its own layout. On a long test document (17 blocks, 82 lines: headings, paragraphs with bold and inline code, nested and numbered lists, a quote), every line breaks in the same place in the editor and on the print page. That needed the print page to copy three text settings the editor has: the app's letter spacing (−0.011em on `body`), no ligatures and `white-space: break-spaces` (both from ProseMirror's stylesheet). Still open in step 2: the same check in Firefox and Safari, and tables, code blocks and callouts, where the editor draws extra controls (table handles, line numbers, icons) that the printout does not have. Printing from the reader also uses the document's paper and margins now.
 
 Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens from the Export menu, next to Print. On touch screens the status bar button is hidden, because the 28px bar has no room for a 44px target; the Export menu covers them.
 
@@ -401,10 +403,10 @@ Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens fr
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Pageless: the full canvas in the page surface color, with no sheet border. Side margins are stored as a share of the canvas width (10% each side by default). | M | From 768px up, margins never go under 32px, so table and list handles stay visible, and the text column is never narrower than 320px. A document set up on a wide monitor keeps its proportions on a laptop. |
-| Pages: one sheet at the paper's width in CSS millimeters (A4 portrait 794px, Letter 816px, A3 landscape 1587px), with the margins as padding. The canvas scrolls sideways when the sheet is wider than the window. | M | Lines break in the same places on screen and in the print preview. Check a long test document in Chrome, Firefox and Safari. |
-| The reader, the version preview and the loading skeleton follow the document's layout | S | None of them keeps a fixed 760–820px width any more. |
-| Phones (under 768px) | S | Both layouts show the full-bleed sheet. An A3 landscape document reads on a phone without sideways scrolling. |
+| ✅ Pageless: the full canvas in the page surface color, with no sheet border. Side margins are stored as a share of the canvas width (10% each side by default). | M | From 768px up, margins never go under 32px, so table and list handles stay visible, and the text column is never narrower than 320px. A document set up on a wide monitor keeps its proportions on a laptop. |
+| 🟡 Pages: one sheet at the paper's width in CSS millimeters (A4 portrait 794px, Letter 816px, A3 landscape 1587px), with the margins as padding. The canvas scrolls sideways when the sheet is wider than the window. | M | Lines break in the same places on screen and in the print preview. Check a long test document in Chrome, Firefox and Safari. Chrome: all 82 lines of the test document match. Firefox and Safari still to check. |
+| ✅ The reader, the version preview and the loading skeleton follow the document's layout | S | None of them keeps a fixed 760–820px width any more. |
+| ✅ Phones (under 768px) | S | Both layouts show the full-bleed sheet. An A3 landscape document reads on a phone without sideways scrolling. |
 
 #### Step 3: Ruler
 
@@ -732,7 +734,7 @@ Clean and soft: a warm off-white canvas (soft charcoal in dark mode, with a dark
 | --- | --- |
 | Top bar | One row, 56px (48px on mobile): back/logo, inline-editable title, save status, view switch, Share (primary), `⋯` menu. |
 | Toolbar | Sticky 44px strip, no enclosing card. Groups: history · block type · inline marks · lists · insert. Active state uses `--ink-accent-soft`. Under 768px it sits below the page, above the on-screen keyboard; the status bar hides while typing, and the selection menu is not shown (the toolbar has the same formatting, and phones show their own menu over a selection). |
-| Canvas (M3.5) | **Pageless** (the default): the whole canvas takes the page surface color (`--ink-surface`), with no sheet border. Side margins come from the ruler, 10% each side by default and never under 32px. **Pages:** an `--ink-bg` canvas holding one `--ink-surface` sheet at the paper's real width, with the page margins as padding; it scrolls sideways when the sheet is wider than the canvas. Never wrapped in another bordered box. A page color replaces the surface color. Until M3.5 ships: one 820px sheet. |
+| Canvas (M3.5) | **Pageless** (the default): the whole canvas takes the page surface color (`--ink-surface`), with no sheet border. Side margins come from the ruler, 10% each side by default and never under 32px. **Pages:** an `--ink-bg` canvas holding one `--ink-surface` sheet at the paper's real width, with the page margins as padding; it scrolls sideways when the sheet is wider than the canvas. The sheet's edge is a shadow, not a border, so the text column is exactly as wide as on paper. Never wrapped in another bordered box. A page color replaces the surface color. The editor, the reader and version previews share these styles (`.ink-canvas`, `.ink-sheet`, `.ink-sheet-body`). |
 | Ruler (M3.5) | A 24px strip between the toolbar and the canvas. It stays in place while the page scrolls down and moves with it sideways. Shaded margins with drag handles (44px hit areas on touch screens); cm for A-series paper, inches for Letter and Legal. Hidden under 768px; Show ruler in the `⋯` menu. |
 | Status bar | 28px, muted: words, characters, reading time; a layout button ("Pageless", "A4 · Portrait") that opens Page setup, hidden on touch screens because the bar has no room for a 44px target; zoom for Pages layout (M3.5). |
 | Panels | Documents and outline as 360px drawers with a soft scrim. Under 640px, menus (toolbar, Export) and the Share popover open as bottom sheets above the keyboard; the documents drawer stays a side drawer, since it is the app's navigation. Version history is a 340px panel beside the page with no scrim, because the page shows the version being previewed; under 768px it covers the page and gives way to the preview. |

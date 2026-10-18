@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DOCUMENT,
   computed,
   effect,
   inject,
@@ -20,8 +21,13 @@ import {
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import { docPath } from '@app/features/documents/documents.paths';
 import {
+  DEFAULT_PAGE_SETUP,
+  PageSetup,
   docToHtml,
   migrate,
+  pageLayoutStyle,
+  pageRuleCss,
+  pageSetupOf,
   sanitizeHtml,
   schema,
   ThemeService,
@@ -53,6 +59,7 @@ export class Reader implements OnInit {
   private readonly toast = inject(ToastService);
   readonly themeService = inject(ThemeService);
   private readonly pageMeta = inject(PageMetaStrategy);
+  private readonly document = inject(DOCUMENT);
 
   readonly isDark = computed(() => this.themeService.theme() === 'dark');
   readonly docId = signal<string>('doc_default');
@@ -63,6 +70,19 @@ export class Reader implements OnInit {
   readonly isSharedPayload = signal<boolean>(false);
   readonly renderedHtml = signal<SafeHtml>('');
   readonly previewImage = signal<ImagePreviewPayload | null>(null);
+  /** The document's page setup: the reader shows (and prints) it in its own layout. */
+  readonly pageSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
+  readonly layoutStyle = computed(() => pageLayoutStyle(this.pageSetup()));
+
+  // Printing from the reader uses the document's paper and margins too.
+  private readonly printPageRule = effect((onCleanup) => {
+    const rule = pageRuleCss(this.pageSetup());
+    if (!rule) return;
+    const style = this.document.createElement('style');
+    style.textContent = `@media print { ${rule} }`;
+    this.document.head.appendChild(style);
+    onCleanup(() => style.remove());
+  });
 
   /** Incremented per load so a slower, older load cannot overwrite a newer one. */
   private loadToken = 0;
@@ -127,6 +147,7 @@ export class Reader implements OnInit {
             const raw = docToHtml(pmNode);
             const resolved = await imageStorage.resolveHtmlImages(raw);
             if (token !== this.loadToken) return;
+            this.pageSetup.set(pageSetupOf(pmNode));
             // Shared documents come from the URL, i.e. from anyone. Angular's own
             // sanitizer would strip the editor's inline styles, so sanitize with
             // DOMPurify before marking the HTML as trusted.

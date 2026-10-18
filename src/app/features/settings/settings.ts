@@ -23,6 +23,7 @@ import {
   describeRestore,
 } from '@app/features/documents/transfer/backup';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
+import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { PwaService } from '@app/core/pwa';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ConfirmDialogService, ToastService } from '@app/shared/ui';
@@ -48,6 +49,7 @@ export class Settings implements OnInit {
   private readonly storageHealth = inject(StorageHealth);
   readonly layout = inject(LayoutService);
   readonly pwa = inject(PwaService);
+  readonly editorPreferences = inject(EditorPreferences);
 
   readonly backupAccept = `${BACKUP_EXTENSION},.json,application/json`;
   /** The backup action in progress, if any. */

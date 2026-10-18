@@ -74,7 +74,19 @@ export const MARGIN_PRESETS: readonly MarginPreset[] = [
 /** Margins always leave at least this much text width and height, in millimeters. */
 export const MIN_TEXT_AREA_MM = 50;
 
-const MAX_SIDE_MARGIN = 0.4;
+/** The largest Pageless side margin, as a share of the canvas width. */
+export const MAX_SIDE_MARGIN = 0.4;
+
+/**
+ * Pageless limits on screen, in CSS pixels (as in the page layout styles):
+ * side margins are at least PAGELESS_MIN_MARGIN_PX, and together leave at
+ * least PAGELESS_MIN_TEXT_PX of text.
+ */
+export const PAGELESS_MIN_MARGIN_PX = 32;
+export const PAGELESS_MIN_TEXT_PX = 320;
+
+/** CSS pixels per millimeter (96 per inch). */
+export const PX_PER_MM = 96 / 25.4;
 
 export const DEFAULT_PAGE_SETUP: PageSetup = {
   layout: 'pageless',

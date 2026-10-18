@@ -236,6 +236,59 @@
   }
 }
 
+/* An on/off switch (role="switch", aria-checked). */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--ink-border-strong);
+  border-radius: var(--ink-radius-pill);
+  background: var(--ink-surface-2);
+  cursor: pointer;
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast);
+
+  .switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ink-text-muted);
+    transition:
+      transform var(--ink-transition-fast),
+      background-color var(--ink-transition-fast);
+  }
+
+  &[aria-checked='true'] {
+    background: var(--ink-accent);
+    border-color: transparent;
+
+    .switch-thumb {
+      transform: translateX(16px);
+      background: #fff;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 2px;
+  }
+
+  /* A 44px target on touch screens, around the small switch. */
+  @media (pointer: coarse) {
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -12px -4px;
+    }
+  }
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;

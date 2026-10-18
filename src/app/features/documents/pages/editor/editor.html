@@ -281,6 +281,7 @@
         [editable]="activeView() === 'rich'"
         [showToolbar]="activeView() === 'rich' && showToolbar()"
         mobileToolbar="bottom"
+        [showRuler]="editorPreferences.showRuler()"
         [defaultPageSetup]="pageSetupDefaults.value()"
         (defaultPageSetupChange)="pageSetupDefaults.save($event)"
         (changed)="onDocChanged($event)"

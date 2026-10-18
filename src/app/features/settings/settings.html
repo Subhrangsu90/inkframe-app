@@ -63,6 +63,39 @@
       </div>
     </section>
 
+    <!-- EDITOR -->
+    <section class="settings-section" aria-labelledby="editor-heading">
+      <div class="section-label">
+        <h2 id="editor-heading" class="section-title">Editor</h2>
+        <p class="section-desc">
+          How documents look while you write. Saved in this browser, not in your documents.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span id="ruler-label" class="setting-label">Show ruler</span>
+            <span id="ruler-desc" class="setting-desc">
+              A ruler above the page, with handles to drag the left and right margins. Shown on
+              larger screens.
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            [attr.aria-checked]="editorPreferences.showRuler()"
+            aria-labelledby="ruler-label"
+            aria-describedby="ruler-desc"
+            (click)="editorPreferences.setShowRuler(!editorPreferences.showRuler())"
+          >
+            <span class="switch-thumb" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- APP: install, offline, updates -->
     <section class="settings-section" aria-labelledby="app-heading">
       <div class="section-label">

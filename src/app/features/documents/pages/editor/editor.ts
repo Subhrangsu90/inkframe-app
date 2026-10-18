@@ -63,6 +63,7 @@ import {
 import { VersionHistory, VersionMeta } from '@app/features/documents/versions/version-history';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
 import { PageSetupDefaults } from '@app/features/documents/data-access/page-setup-default';
+import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { VersionPanel } from './version-panel/version-panel';
 import { PwaService } from '@app/core/pwa';
 import { PageMetaStrategy } from '@app/core/page-meta';
@@ -132,6 +133,7 @@ export class EditorView implements OnInit {
   private readonly storageHealth = inject(StorageHealth);
   private readonly sanitizer = inject(DomSanitizer);
   protected readonly pageSetupDefaults = inject(PageSetupDefaults);
+  protected readonly editorPreferences = inject(EditorPreferences);
 
   readonly editorRef = viewChild<Editor>('editorComp');
 

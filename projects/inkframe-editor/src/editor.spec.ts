@@ -312,3 +312,88 @@ describe('<ink-editor> page setup', () => {
     expect(q<HTMLInputElement>(again, 'input[value="narrow"]').checked).toBe(true);
   });
 });
+
+@Component({
+  imports: [Editor],
+  template: `
+    <ink-editor
+      #ed
+      [initialDoc]="initial"
+      [showToolbar]="false"
+      [showRuler]="showRuler()"
+      [editable]="editable()"
+    />
+  `,
+})
+class RulerHost {
+  readonly editor = viewChild<Editor>('ed');
+  readonly showRuler = signal(true);
+  readonly editable = signal(true);
+  initial: StoredDoc = {
+    schemaVersion: SCHEMA_VERSION,
+    doc: {
+      type: 'doc',
+      attrs: { page: { layout: 'pages', paper: 'a4' } },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'text' }] }],
+    },
+  };
+}
+
+describe('<ink-editor> ruler', () => {
+  async function setup() {
+    const fixture = TestBed.createComponent(RulerHost);
+    await fixture.whenStable();
+    const el: HTMLElement = fixture.nativeElement;
+    const svc = (fixture.componentInstance.editor() as any).svc;
+    const handles = () => Array.from(el.querySelectorAll<HTMLElement>('ink-ruler [role="slider"]'));
+    return { fixture, el, svc, handles };
+  }
+
+  const press = (target: HTMLElement, key: string, shiftKey = false) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, bubbles: true }));
+
+  it('has a slider for each side margin, in the paper units', async () => {
+    const { handles } = await setup();
+    const [left, right] = handles();
+    expect(left.getAttribute('aria-label')).toBe('Left margin');
+    expect(right.getAttribute('aria-label')).toBe('Right margin');
+    expect(left.getAttribute('aria-valuetext')).toBe('2.54 cm');
+    expect(left.getAttribute('aria-valuemin')).toBe('0');
+    // 21 cm of paper, less the right margin and 5 cm of text.
+    expect(left.getAttribute('aria-valuemax')).toBe('13.46');
+    expect(left.tabIndex).toBe(0);
+  });
+
+  it('moves the margins from the keyboard, the way each handle looks', async () => {
+    const { fixture, svc, handles } = await setup();
+    const [left, right] = handles();
+
+    press(left, 'ArrowRight');
+    await fixture.whenStable();
+    expect(svc.pageSetup().margins.left).toBe(26.4);
+    press(left, 'ArrowRight', true);
+    await fixture.whenStable();
+    expect(svc.pageSetup().margins.left).toBe(36.4);
+    expect(handles()[0].getAttribute('aria-valuetext')).toBe('3.64 cm');
+
+    // Right moves the right handle right: a smaller right margin.
+    press(right, 'ArrowRight');
+    await fixture.whenStable();
+    expect(svc.pageSetup().margins.right).toBe(24.4);
+    press(right, 'Home');
+    await fixture.whenStable();
+    expect(svc.pageSetup().margins.right).toBe(0);
+  });
+
+  it('is hidden when turned off, and while previewing', async () => {
+    const { fixture, el } = await setup();
+    expect(el.querySelector('ink-ruler')).not.toBeNull();
+    fixture.componentInstance.showRuler.set(false);
+    await fixture.whenStable();
+    expect(el.querySelector('ink-ruler')).toBeNull();
+    fixture.componentInstance.showRuler.set(true);
+    fixture.componentInstance.editable.set(false);
+    await fixture.whenStable();
+    expect(el.querySelector('ink-ruler')).toBeNull();
+  });
+});

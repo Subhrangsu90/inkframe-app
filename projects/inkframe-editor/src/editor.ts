@@ -42,12 +42,22 @@ import {
   StatusBar,
   PageSetupDialog,
   PageSetupDialogData,
+  Ruler,
 } from '@inkframe-ui/editor/ui';
 
 @Component({
   selector: 'ink-editor',
   encapsulation: ViewEncapsulation.None,
-  imports: [Toolbar, FloatingMenu, SlashMenu, ImageLightbox, TableToolbar, FindReplace, StatusBar],
+  imports: [
+    Toolbar,
+    FloatingMenu,
+    SlashMenu,
+    ImageLightbox,
+    TableToolbar,
+    FindReplace,
+    StatusBar,
+    Ruler,
+  ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -60,12 +70,15 @@ import {
         <ink-toolbar />
       }
       <div class="ink-editor-body">
+        @if (rulerShown()) {
+          <ink-ruler [canvas]="viewport" />
+        }
         <!-- A click on the empty page around the text focuses the document; keyboard users reach it with Tab. -->
         <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
         <div
           #viewport
           class="ink-editor-viewport ink-canvas"
-          [attr.data-ink-layout]="svc.pageSetup().layout"
+          [attr.data-ink-layout]="shownSetup().layout"
           [style]="layoutStyle()"
           (click)="onViewportClick($event)"
         >
@@ -210,6 +223,12 @@ import {
       display: flex;
       flex-direction: column;
     }
+    /* Below the ruler, where it shows (768px up). */
+    @media (min-width: 768px) {
+      .ink-editor-body > ink-ruler ~ ink-find-replace {
+        top: 33px;
+      }
+    }
     /*
      * The canvas, the sheet and its margins come from the layout styles
      * (.ink-canvas, .ink-sheet, .ink-sheet-body; see _page-layout.scss).
@@ -278,8 +297,15 @@ export class Editor {
   private readonly injector = inject(Injector);
   private pageSetupDialog?: DialogRef<PageSetup, PageSetupDialog>;
   private timer?: ReturnType<typeof setTimeout>;
-  /** The document's page layout, as custom properties for the canvas. */
-  protected readonly layoutStyle = computed(() => pageLayoutStyle(this.svc.pageSetup()));
+  /** The page setup on screen: a ruler drag's preview, otherwise the document's. */
+  protected readonly shownSetup = computed(
+    () => this.svc.pageSetupPreview() ?? this.svc.pageSetup(),
+  );
+  /** The page layout, as custom properties for the canvas. */
+  protected readonly layoutStyle = computed(() => pageLayoutStyle(this.shownSetup()));
+  protected readonly rulerShown = computed(
+    () => this.showRuler() && this.editable() && this.svc.hasExtension('page_setup'),
+  );
 
   /** Read once at mount. Use loadDoc() to replace the document later. */
   readonly initialDoc = input<StoredDoc | null>(null);
@@ -289,6 +315,8 @@ export class Editor {
   readonly showToolbar = input(true);
   /** Words, characters and reading time below the document. */
   readonly showStatusBar = input(true);
+  /** The ruler above the page, with margin handles (from 768px up, while editing). */
+  readonly showRuler = input(true);
   /**
    * Where the toolbar goes on screens narrower than 768px. `'bottom'` puts it
    * below the page, within thumb reach. It stays above the on-screen keyboard

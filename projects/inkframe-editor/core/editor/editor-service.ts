@@ -256,6 +256,11 @@ export class EditorService implements EditorHooks {
   );
   /** The document's page setup; the default (Pageless) when it has none. */
   readonly pageSetup = computed(() => this.storedPageSetup() ?? DEFAULT_PAGE_SETUP);
+  /**
+   * A page setup shown on screen but not applied yet: the margins while a
+   * ruler handle is being dragged. Null otherwise.
+   */
+  readonly pageSetupPreview = signal<PageSetup | null>(null);
   /** Incremented to open the Page setup dialog (`<ink-editor>` reacts to it). */
   readonly pageSetupRequests = signal(0);
 

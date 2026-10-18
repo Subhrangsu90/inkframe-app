@@ -115,6 +115,7 @@ export class Page {
 | `debounceMs` | `number` | `300` | How long to wait after the last edit before emitting `changed`. |
 | `showToolbar` | `boolean` | `true` | Shows the toolbar. |
 | `showStatusBar` | `boolean` | `true` | Shows words, characters and reading time below the document. |
+| `showRuler` | `boolean` | `true` | Shows the ruler above the page, with handles for the left and right margins. Only while editing, and only from 768px up. |
 | `mobileToolbar` | `'top' \| 'bottom'` | `'top'` | Where the toolbar goes on screens narrower than 768px. `'bottom'` keeps it within thumb reach. |
 | `defaultPageSetup` | `PageSetup \| null` | `null` | The page setup for new documents; bind it two-way, `[(defaultPageSetup)]`, to keep it. A document without page setup opens the Page setup dialog with these values, and the dialog's "Set as default" replaces it. `null` means Pageless, with Letter paper in the US and Canada and A4 elsewhere. See [Page setup](#page-setup). |
 
@@ -171,6 +172,7 @@ Each document has a layout: **Pageless** (the default) or **Pages**, with a pape
 The setup is stored in the document, as the `page` attribute of the `doc` node, so it travels wherever the `StoredDoc` goes. Read it with `pageSetupOf(doc)`, or `EditorService.pageSetup()` in the editor; values from untrusted documents are checked by `normalizePageSetup()`.
 
 - **On screen:** Pageless fills the editor, with side margins of 10% of its width (at least 32px). Pages shows a sheet at the paper's real width and at least one page tall, with the page margins; the editor scrolls sideways when the sheet is wider. Under 768px both are one full-width sheet with 16px margins.
+- **Ruler:** above the page, a handle on each side margin. Dragging previews the margin and releasing applies it (one undo step). Each handle is a slider for the keyboard: Left and Right move it the way it looks, Up and Down change the margin's size, Shift takes bigger steps (Pages: 1 mm and 1 cm, or 1/16 and 1/4 inch on Letter and Legal; Pageless: 1% and 5% of the width).
 - **Showing a document outside the editor** (a reader page, a preview): give the scrolling element the class `ink-canvas`, `data-ink-layout` set to the layout and the custom properties from `pageLayoutStyle(setup)`; put the page in an `ink-sheet` element and the content in an `ink-sheet-body` element. The editor's stylesheet lays them out as the editor does.
 - **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`.
 - **Markdown** has no page setup: `docToMarkdown()` leaves it out, and imported Markdown is Pageless.

@@ -6,3 +6,4 @@ export * from './image-lightbox/image-lightbox';
 export * from './find-replace/find-replace';
 export * from './status-bar/status-bar';
 export * from './page-setup/page-setup-dialog';
+export * from './ruler/ruler';

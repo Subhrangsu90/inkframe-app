@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
   OnInit,
   ViewEncapsulation,
 } from '@angular/core';
@@ -27,6 +28,7 @@ import {
   findPageColor,
   migrate,
   pageLayoutStyle,
+  pageMarginBoxCss,
   pageRuleCss,
   pageSetupOf,
   pageViewStyle,
@@ -48,6 +50,10 @@ import {
   buildShareableUrl,
 } from '@app/features/documents/transfer/share-codec';
 import { combineLatest } from 'rxjs';
+import { printDocument } from '@app/features/documents/transfer/doc-export';
+
+/** Header and footer text when the browser prints the reader page (0.8 × the 14px text). */
+const MARGIN_TEXT_FONT = "11.2px 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif";
 
 @Component({
   selector: 'ink-reader',
@@ -57,6 +63,7 @@ import { combineLatest } from 'rxjs';
   styleUrl: './reader.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  host: { '(document:keydown)': 'onKeydown($event)' },
 })
 export class Reader implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -81,17 +88,20 @@ export class Reader implements OnInit {
   readonly pageSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
   /** Pages shown by page view (Pages layout, from 768px up); 0 when off. */
   readonly pageCount = signal(0);
+  private readonly pageView = viewChild(PageView);
   readonly layoutStyle = computed(() => ({
     ...pageLayoutStyle(this.pageSetup()),
     ...pageViewStyle(this.pageCount()),
   }));
 
-  // Printing from the reader uses the document's paper and margins too, and
-  // its page color when the document asks for it (over the whole sheet).
+  // The browser's own Print menu prints this page: on the document's paper
+  // and margins, its page color when the document asks for it (over the
+  // whole sheet), and its header, footer and page numbers in Chrome, which
+  // supports @page margin boxes. (Print and Ctrl+P go through printDoc.)
   private readonly printPageRule = effect((onCleanup) => {
     const setup = this.pageSetup();
     const color = setup.printColor ? findPageColor(setup.color)?.light : undefined;
-    const rules = [pageRuleCss(setup)];
+    const rules = [pageRuleCss(setup), pageMarginBoxCss(setup, MARGIN_TEXT_FONT)];
     if (color) {
       rules.push(
         `@page { background: ${color}; }`,
@@ -108,6 +118,7 @@ export class Reader implements OnInit {
 
   /** Incremented per load so a slower, older load cannot overwrite a newer one. */
   private loadToken = 0;
+  private printing = false;
 
   async ngOnInit(): Promise<void> {
     // Share links carry the payload in the fragment (/s#<payload>); older links
@@ -201,6 +212,34 @@ export class Reader implements OnInit {
 
   toggleTheme(event: Event): void {
     this.themeService.toggleTheme(event);
+  }
+
+  /**
+   * Prints the document as the editor does: through a print copy with its
+   * pages as shown here, their headers, footers and page numbers. Ctrl+P
+   * does the same; the browser's own Print menu prints this page instead.
+   */
+  async printDoc(): Promise<void> {
+    const active = this.activeDoc();
+    if (!active || this.printing) return;
+    this.printing = true;
+    try {
+      const doc = schema.nodeFromJSON(migrate(active));
+      const pageStarts = this.pageView()?.pageStarts(doc) ?? null;
+      await printDocument(active, this.docTitle(), pageStarts);
+    } catch (e) {
+      console.warn('Print failed:', e);
+      this.toast.error('The document could not be printed');
+    } finally {
+      this.printing = false;
+    }
+  }
+
+  protected onKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      void this.printDoc();
+    }
   }
 
   async copyShareLink(): Promise<void> {

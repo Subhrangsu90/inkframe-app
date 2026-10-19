@@ -127,7 +127,7 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
 | "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Built (M3.5 steps 1–5) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "See your pages as they print" | Built (M3.5 step 6) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
-| "Headers and footers", "Page numbers" (in print) | Not planned. | Only with clear demand (D19). |
+| "Headers and footers", "Page numbers" (in print) | Built (M3.5 step 7, Pages layout only) and checked in Chrome, not yet released. | Claim once released and checked in Chrome, Firefox and Safari. Never "formatted headers": they are one line of plain text (D19). |
 
 ---
 
@@ -225,7 +225,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Page break block | ✅ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
 | Zoom (fit width, 50–200%) | ✅ | M3.5, step 5 | In the status bar, Pages layout only. Sheets wider than the editor open fitted. Checked in Chrome; Firefox and Safari still to check. |
 | Page view: separate sheets on screen, text flowing across them, page numbers in the gap | ✅ | M3.5, step 6 | Split with the print rules. In the editor, the reader and version previews. Printouts have the pages shown on screen (checked in Chrome; Firefox and Safari still to check). |
-| Headers, footers and page numbers in print | ⬜ | M5, only if users ask | See D19. |
+| Page numbers, headers and footers (on screen and in print) | ✅ | M3.5, step 7 | Pages layout only. One line of plain text each; the number top or bottom, left, center or right; optionally not on the first page. See D19. |
 
 ### 3.7 Optional cloud features (signed-in only, M6)
 
@@ -373,7 +373,7 @@ M3.5 sits between M3 and M4, so page setup ships at launch, and the later milest
 
 A ruler at the top of the canvas sets the margins in both layouts, and a page color works in both.
 
-**Status (2026-10-19):** steps 1–6 built and checked in Chrome; the browser checks in Firefox and Safari (printing, line breaks, page color, zoom and page view) are what is left. Details per step follow.
+**Status (2026-10-19):** steps 1–7 built and checked in Chrome; the browser checks in Firefox and Safari (printing, line breaks, page color, zoom, page view, and headers and footers in print) are what is left. Details per step follow.
 
 Step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline.
 
@@ -397,6 +397,8 @@ Step 6 built (2026-10-19), with tests and a Chrome run against the production bu
 - **Pauses in typing:** 120 ms after typing stops, page view checks its pages. When every change since the last layout is inside one paragraph that kept its height and holds no page start, the pages stay as they are and nothing is measured; typing word by word with pauses, that was 8 of 9 pauses on the test machine and 9 of 9 with the CPU slowed 4×. Otherwise it lays them out in full. A full layout took 15 ms on the test machine and 92–187 ms with the CPU slowed 4×; finding where each line starts by binary search (it went letter by letter) brought it to about 10 ms and 80 ms. Of those 80 ms, about 18 are the reflow without spacers, 20 measuring the lines, 7 finding the page starts and 30 showing the new spacers, which costs what any change to the document does. The longest frame while typing with pauses is now 9 ms (24 ms slowed 4×, against 19 ms in Pageless).
 
 Known limits: a list item taller than a page splits, and in print its bullet or number shows again on the next page. Inside a nested list taller than a page, the printout starts that page before the outer list. A callout split across pages shows its icon on both. Still open in step 6: the checks in Firefox and Safari.
+
+Step 7 built (2026-10-19), with tests and a Chrome run against the production build, on a 6-page document with a header on the left, a centered footer, "Page N of 6" on the right and nothing on the first page. In the editor and the reader, each page shows them in its margins (the bands exactly the margins' height), and page 1 shows none. Printed from the editor, from the reader's new Print button and from the browser's own menu on the reader page: 6 pages each; in the print copies, every page box is one sheet (none grew onto a second) and carries the same header, footer and number as the screen. Double-clicking page 2's header opens Page setup with the Header field focused. (Page view in a background tab waits until the tab is shown, since it lays out in an animation frame.) Still open in step 7: the checks in Firefox and Safari, and whether a saved PDF's header and footer text is selectable (there is no PDF reader on the test machine).
 
 **Rules for every M3.5 feature:**
 
@@ -463,9 +465,38 @@ Added 2026-10-18 by request, changing D19: Pages layout shows real pages on scre
 | ✅ Reader and version previews: the same pages (`inkPageView` and `<ink-page-frames>`, built on `StaticPageView`) | M | Split by the same rules as the editor. Pages differ only where the editor's table handles and code toolbar take extra room. |
 | 🟡 Printouts match the screen: the editor's print copy breaks where its pages start (`withPageStarts`); the reader prints each spacer as a page break | S | On the test document, as many printed pages as on screen (Chrome: 12 and 12, in the editor and the reader), and the editor's print copy starts each page with the same words as the screen. Firefox and Safari still to check. |
 
+#### Step 7: Page numbers, headers and footers
+
+Added 2026-10-19 by request, changing D19. Pages layout only, as in Google Docs: Pageless has no pages to number.
+
+What users set, in a new "Header and footer" section of the Page setup dialog (shown for Pages):
+
+- **Page numbers:** none, or at the top or the bottom of each page, on the left, in the center or on the right, as "3" or "Page 3 of 12".
+- **Header and footer text:** one line of plain text each, on the left, in the center or on the right.
+- **Not on the first page:** hides the header, footer and number on page 1, for a title page. Numbering still counts it: page 2 shows "2".
+
+Why the printout draws its own pages: the standard way to print page numbers is `@page` margin boxes (`@bottom-center { content: counter(page) }`), but only Chrome supports them; Firefox and Safari ignore them. Page view already knows where each page starts, so the print copy can lay out every page itself. That works in every browser and numbers the pages exactly as the screen does.
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| ✅ The settings in the page setup (`header`, `footer`, `pageNumbers`, `firstPage`), checked by `normalizePageSetup`. The schema version stays 5, since M3.5 ships as one release. | S | Malformed or oversized values from share links fall back to the defaults (tests). The text is one line of at most 200 characters, without control characters, line separators or bidirectional overrides. Documents without the settings show nothing. |
+| ✅ Page setup dialog: the "Header and footer" section | M | Works with the keyboard only, every control labeled. Each change is one undo step, as in the rest of the dialog. |
+| ✅ On screen: page view draws the header, footer and number in each page's top and bottom margins, centered in the margin's height, in the document's font at 0.8 × its size, in the muted text color. They are not edited on the page: double-clicking one opens the dialog at that section. | S | In the editor, the reader and the version previews. The numbers match "Page 2 of 5" in the gap. |
+| 🟡 Printing from the editor: when page starts are given, the print copy lays out each page as a box the size of the paper (`@page { margin: 0 }`), with the page's margins, header, footer and number, and the page's part of the document (split by `withPageStarts`). | M | As many printed pages as on screen, each with the same header, footer and number as on screen, in Chrome, Firefox and Safari. The text in a saved PDF stays selectable. A printed page color still covers the whole sheet. Chrome: 6 pages on screen and printed, every box one sheet. Firefox and Safari still to check. |
+| 🟡 Printing from the reader: a Print button in the reader's header, and Ctrl+P, print through the same print copy. The reader's page starts become document positions by counting, in the same order in the page and in the document, one for each paragraph, heading and code block, one for each character of their text, and one for each image, line break, horizontal rule and page break. | M | The same as printing from the editor. The browser's own Print menu still prints the reader page itself: its pages, without headers and footers (except in Chrome, through `@page` margin boxes). Chrome: the same 6 pages through Print and the browser's menu. Firefox and Safari still to check. |
+| ✅ Without page starts (on phones, where page view is off, and in a downloaded HTML file): the printout flows as it does today, with the header, footer and number in `@page` margin boxes. | S | Chrome shows them; Firefox and Safari print without them (documented in the library README). |
+
+**Sequence:** settings → dialog → screen → printing from the editor → printing from the reader → the fallback.
+
+**Risks:**
+
+- A page whose content prints taller than its box (fonts that failed to load, an image taller than a page) grows onto a second sheet, so later printed numbers are one off. The box never cuts its content off.
+- Rounding in a box exactly the paper's height can add a blank sheet after each page in some browsers; the box is made slightly shorter than the paper.
+- On Narrow margins (12.7 mm) the header and footer sit about 6 mm from the paper's edge, where some printers cannot print. The dialog says so when the margins are under 15 mm.
+
 **Out of scope for M3.5:**
 
-- Headers, footers and page numbers in print. They go to M5, and only if users ask (D19).
+- Formatted headers and footers (bold, links, images and logos), different odd and even pages, editing them on the page, and date or title fields. M5, and only if users ask (D19).
 - Indent handles and tab stops on the ruler.
 - Different page sizes within one document, such as a landscape page in a portrait document.
 - Custom paper sizes in the UI. Host apps can still add sizes to `PAPER_SIZES`.
@@ -485,7 +516,7 @@ Added 2026-10-18 by request, changing D19: Pages layout shows real pages on scre
 2. Share dialog with size warning and native share sheet; JSON and DOCX export (P1)
 3. Image garbage collection, table merge UI (P1)
 4. Math and diagrams for technical writers (P2)
-5. Only if users ask: headers, footers and page numbers in print (D19)
+5. Only if users ask: formatted headers and footers (bold, links, logos), different odd and even pages (D19)
 
 Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-accounts-sync-ai-and-collaboration).
 
@@ -909,7 +940,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D16 | No databases (table, board or calendar views with properties) | Final; revisit only with strong demand |
 | D17 | Page setup (layout, paper, orientation, margins, page color) is stored in the document, as a `page` attribute on the `doc` node, so share links, backups and version history carry it. The writing mode (D14) stays a view setting in `StoredDoc.meta`. | Final (this plan) |
 | D18 | Pageless means the full canvas; the ruler sets its margins. No fixed-width presets. | Final |
-| D19 | Pages layout shows real pages on screen, split with the same rules as printing (M3.5 step 6). The document never stores where pages end; spacers on screen do. Headers, footers and printed page numbers only with clear demand. | Changed 2026-10-18 (was: one long sheet, pages only in print) |
+| D19 | Pages layout shows real pages on screen, split with the same rules as printing (M3.5 step 6). The document never stores where pages end; spacers on screen do. Page numbers and one line of plain-text header and footer, on screen and in print, Pages layout only (M3.5 step 7); formatted headers and footers only with clear demand. | Changed 2026-10-18 (was: one long sheet, pages only in print), and 2026-10-19 (was: no headers, footers or printed page numbers) |
 | D20 | Page colors come from a fixed palette with a light and a dark value each; print and exports use the light value. | Final |
 
 ### 11.2 Risks
@@ -937,7 +968,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Screen and printout drift apart in Pages layout (font loading, differences between browsers' print engines) | Medium | The same font files and font size on screen and in the print frame; explicit `@page` sizes; a print-preview check in Chrome, Firefox and Safari before each release. |
 | Pages on screen drift from the printed pages | Medium | One set of rules for both (the print CSS and the pagination function); a test that compares each printed page's first word with the screen. |
 | Pagination slows typing in long documents | Medium | Measure a frame after a change, and only around page ends; skip while composing text; check against the 16 ms typing budget. |
-| People expect headers, footers and printed page numbers | Low | Not planned (D19); the landing page does not promise them. |
+| People expect formatted headers and footers (logos, bold) | Low | Plain one-line text in M3.5 step 7; more only with demand (D19). Once released, the landing page may mention page numbers and simple headers, never formatted ones. |
 | Full-width lines are hard to read on wide screens | Low | Pageless starts with 10% margins on each side; the ruler changes them. |
 | Zoom breaks caret placement, selection or menu positions | Medium | Zoom ships last (M3.5 step 5), with tests at 50, 75, 125 and 150% in all three browsers. Chrome passes. Safari's `zoom` is WebKit's older implementation and may report positions differently; check it before launch. |
 

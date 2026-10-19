@@ -4,5 +4,6 @@ export * from './pagination';
 export * from './pagination.plugin';
 export * from './pagination-dom';
 export * from './static-page-view';
+export * from './html-page-starts';
 export * from './page-setup-commands';
 export * from './page-setup-extension';

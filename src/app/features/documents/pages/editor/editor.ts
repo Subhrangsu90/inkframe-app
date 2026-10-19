@@ -460,7 +460,7 @@ export class EditorView implements OnInit {
     this.exporting.set(true);
     try {
       // The pages as shown, when page view is on.
-      const pageStarts = this.editorRef()?.getPageStarts() ?? [];
+      const pageStarts = this.editorRef()?.getPageStarts() ?? null;
       await printDocument(this.liveDoc(), this.docTitle(), pageStarts);
     } catch (e) {
       console.warn('Print failed:', e);

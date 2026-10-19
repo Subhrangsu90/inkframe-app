@@ -288,12 +288,16 @@ export class EditorService implements EditorHooks {
     this.pageCount.set(pages);
   }
 
-  /** Where page view starts each page after the first (document positions); empty when it is off. */
-  pageStarts(): number[] {
-    return this.view && this.pageCount() > 0 ? pageStartsOf(this.view.state) : [];
+  /** Where page view starts each page after the first (document positions); null when it is off. */
+  pageStarts(): number[] | null {
+    return this.view && this.pageCount() > 0 ? pageStartsOf(this.view.state) : null;
   }
 
-  requestPageSetup(): void {
+  /** Where the next Page setup dialog opens: at its header or footer field, or at the top (null). */
+  pageSetupSection: 'header' | 'footer' | null = null;
+
+  requestPageSetup(section: 'header' | 'footer' | null = null): void {
+    this.pageSetupSection = section;
     this.pageSetupRequests.update((n) => n + 1);
   }
 

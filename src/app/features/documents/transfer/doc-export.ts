@@ -86,12 +86,13 @@ export function absoluteCssUrls(css: string, base: string): string {
 }
 
 /**
- * How the editor sets the document's text: its size, and the letter spacing
- * the app's body style gives it. A Pages printout uses both, so its lines
- * break where they do on screen.
+ * How the screen sets the document's text, in the editor or else the reader:
+ * its size, and the letter spacing the app's body style gives it. A Pages
+ * printout uses both, so its lines break where they do on screen.
  */
 function editorTextStyle(): Pick<HtmlDocumentOptions, 'editorFontSize' | 'editorLetterSpacing'> {
-  const text = document.querySelector('.ink-host .ProseMirror');
+  const text =
+    document.querySelector('.ink-host .ProseMirror') ?? document.querySelector('.reader-content');
   if (text) {
     const style = getComputedStyle(text);
     return { editorFontSize: style.fontSize, editorLetterSpacing: style.letterSpacing };
@@ -132,14 +133,15 @@ async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
  * The page title is the document's while the dialog is open, which browsers
  * use to name the PDF.
  *
- * `pageStarts` are where the editor's page view starts its pages
- * (`Editor.getPageStarts()`, read with the same `stored` document): the
- * printout then has the pages shown on screen.
+ * `pageStarts` are where page view starts its pages (`Editor.getPageStarts()`,
+ * read with the same `stored` document; null when page view is off): the
+ * printout then has the pages shown on screen, with their headers, footers
+ * and page numbers.
  */
 export async function printDocument(
   stored: StoredDoc,
   title: string,
-  pageStarts: readonly number[] = [],
+  pageStarts: readonly number[] | null = null,
 ): Promise<void> {
   const html = await buildHtmlPage(stored, title, {
     fontFaceCss: editorFontFaceCss(),

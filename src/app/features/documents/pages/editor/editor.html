@@ -267,7 +267,7 @@
       >
         <article class="ink-sheet">
           @if (previewPageCount() > 0) {
-            <ink-page-frames [pages]="previewPageCount()" />
+            <ink-page-frames [pages]="previewPageCount()" [setup]="previewSetup()" />
           }
           <div
             class="ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"

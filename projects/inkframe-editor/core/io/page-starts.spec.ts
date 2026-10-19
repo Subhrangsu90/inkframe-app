@@ -153,10 +153,14 @@ describe('withPageStarts', () => {
     ]);
   });
 
-  it('prints the pages through docToHtmlDocument', () => {
-    const doc = docOf(p('One'), p('Two'));
+  it('prints a Pages document page by page through docToHtmlDocument', () => {
+    const doc = schema.nodeFromJSON({
+      type: 'doc',
+      attrs: { page: { layout: 'pages' } },
+      content: [p('One'), p('Two')],
+    });
     const html = docToHtmlDocument(doc, { pageStarts: [posOf(doc, 'Two')] });
-    expect(html).toMatch(/<p>One<\/p>\s*<div class="ink-page-break"[^>]*><\/div>\s*<p>Two<\/p>/);
-    expect(docToHtmlDocument(doc)).not.toContain('<div class="ink-page-break"');
+    const bodies = [...html.matchAll(/<div class="ink-print-body">(.*?)<\/div>/g)].map((m) => m[1]);
+    expect(bodies).toEqual(['<p>One</p>', '<p>Two</p>']);
   });
 });

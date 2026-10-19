@@ -27,10 +27,13 @@ import {
   markdownToDoc,
   EditorExtension,
   DEFAULT_EXTENSIONS,
+  PAGE_GAP_PX,
+  PX_PER_MM,
   PageSetup,
   PageZoom,
   VisualViewportTracker,
   initialPageSetup,
+  pageDimensions,
   pageLayoutStyle,
   pageViewStyle,
 } from '@inkframe-ui/editor/core';
@@ -86,11 +89,12 @@ import {
           [attr.data-ink-page-view]="svc.pageCount() > 0 ? '' : null"
           [style]="layoutStyle()"
           (click)="onViewportClick($event)"
+          (dblclick)="onViewportDblClick($event)"
         >
           <div class="ink-doc-page ink-sheet">
             <!-- Page view: the pages, drawn behind the text (spacers keep it off the gaps). -->
             @if (svc.pageCount() > 0) {
-              <ink-page-frames [pages]="svc.pageCount()" />
+              <ink-page-frames [pages]="svc.pageCount()" [setup]="shownSetup()" />
             }
             <div
               #host
@@ -445,6 +449,8 @@ export class Editor {
 
   /** Opens the Page setup dialog; the chosen setup is applied as one undo step. */
   private showPageSetupDialog(): void {
+    const section = this.svc.pageSetupSection;
+    this.svc.pageSetupSection = null;
     if (this.pageSetupDialog || !this.svc.isEditable() || !this.svc.view) return;
     const data: PageSetupDialogData = {
       current: this.svc.storedPageSetup(),
@@ -455,7 +461,7 @@ export class Editor {
       data,
       injector: this.injector,
       ariaLabelledBy: 'ink-page-setup-title',
-      autoFocus: '.ink-ps-layout input:checked',
+      autoFocus: section ? `#ink-ps-${section}` : '.ink-ps-layout input:checked',
       width: '600px',
       maxWidth: 'calc(100vw - 32px)',
       maxHeight: 'calc(100dvh - 48px)',
@@ -481,6 +487,31 @@ export class Editor {
     }
   }
 
+  /** A double-click in a page's top or bottom margin opens Page setup at the header or footer. */
+  protected onViewportDblClick(event: MouseEvent): void {
+    const pages = this.svc.pageCount();
+    if (!this.editable() || pages === 0) return;
+    const sheet = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.ink-doc-page');
+    if (!sheet || !(event.target as HTMLElement).closest('.ink-host')) return;
+    const setup = this.svc.pageSetup();
+    const rect = sheet.getBoundingClientRect();
+    const scale = rect.width / sheet.offsetWidth || 1;
+    const height = pageDimensions(setup).height * PX_PER_MM;
+    const y = (event.clientY - rect.top) / scale;
+    const page = Math.floor(y / (height + PAGE_GAP_PX));
+    const inPage = y - page * (height + PAGE_GAP_PX);
+    if (page >= pages || inPage > height) return; // the gap between pages
+    const section =
+      inPage < setup.margins.top * PX_PER_MM
+        ? 'header'
+        : inPage > height - setup.margins.bottom * PX_PER_MM
+          ? 'footer'
+          : null;
+    if (!section) return;
+    event.preventDefault();
+    this.svc.requestPageSetup(section);
+  }
+
   // ── Public API ─────────────────────────────────────────────────
   /**
    * Replaces the document. Pending changes to the previous document are
@@ -493,16 +524,20 @@ export class Editor {
   focus() {
     this.svc.focus();
   }
-  /** Opens the Page setup dialog (when the editor is editable). */
-  openPageSetup() {
-    this.svc.requestPageSetup();
+  /**
+   * Opens the Page setup dialog (when the editor is editable), at its top,
+   * or at the header or footer field.
+   */
+  openPageSetup(section: 'header' | 'footer' | null = null) {
+    this.svc.requestPageSetup(section);
   }
   /**
    * Where page view starts each page after the first, as positions in
-   * `getJSON()`'s document; empty when page view is off. Pass them to
-   * `docToHtmlDocument` (`pageStarts`) to print the pages as shown.
+   * `getJSON()`'s document (empty for a single page); null when page view is
+   * off. Pass them to `docToHtmlDocument` (`pageStarts`) to print the pages
+   * as shown, with their headers, footers and page numbers.
    */
-  getPageStarts(): number[] {
+  getPageStarts(): number[] | null {
     return this.svc.pageStarts();
   }
   blur() {

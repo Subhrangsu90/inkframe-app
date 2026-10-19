@@ -137,8 +137,8 @@ export class Page {
 | `getHtml(): string` / `loadHtml(html)` | HTML export and import. Imported HTML is sanitized. |
 | `flush()` | Emits pending (debounced) changes now. |
 | `focus()` / `blur()` | Moves focus into the document, or closes the editor's menus. |
-| `openPageSetup()` | Opens the Page setup dialog (when the editor is editable). The status bar opens it too. |
-| `getPageStarts(): number[]` | Where page view starts each page after the first, as positions in `getJSON()`'s document; empty when page view is off. Pass them to `docToHtmlDocument()` (`pageStarts`) to print the pages shown. See [Page setup](#page-setup). |
+| `openPageSetup(section?)` | Opens the Page setup dialog (when the editor is editable), at its top or, with `'header'` or `'footer'`, at that field. The status bar opens it too, and so does double-clicking a page's top or bottom margin. |
+| `getPageStarts(): number[] \| null` | Where page view starts each page after the first, as positions in `getJSON()`'s document (empty for one page); null when page view is off. Pass them to `docToHtmlDocument()` (`pageStarts`) to print the pages shown, with their headers, footers and page numbers. See [Page setup](#page-setup). |
 
 ### Saving: call `flush()` before the editor is destroyed
 
@@ -169,7 +169,7 @@ Save it as it is. When the schema changes in a later version, the editor migrate
 
 ### Page setup
 
-Each document has a layout: **Pageless** (the default) or **Pages**, with a paper size (A4, Letter, Legal, A3 or A5), an orientation and margins. Users change it in the Page setup dialog, which opens from the status bar (on screens with a mouse) or with `openPageSetup()`. Each change is one undo step.
+Each document has a layout: **Pageless** (the default) or **Pages**, with a paper size (A4, Letter, Legal, A3 or A5), an orientation, margins, and an optional header, footer and page numbers. Users change it in the Page setup dialog, which opens from the status bar (on screens with a mouse) or with `openPageSetup()`. Each change is one undo step.
 
 The setup is stored in the document, as the `page` attribute of the `doc` node, so it travels wherever the `StoredDoc` goes. Read it with `pageSetupOf(doc)`, or `EditorService.pageSetup()` in the editor; values from untrusted documents are checked by `normalizePageSetup()`.
 
@@ -183,18 +183,19 @@ The setup is stored in the document, as the `page` attribute of the `doc` node, 
        [attr.data-ink-page-view]="pages() ? '' : null"
        [style]="{ ...pageLayoutStyle(setup), ...pageViewStyle(pages()) }">
     <article class="ink-sheet">
-      @if (pages()) { <ink-page-frames [pages]="pages()" /> }
+      @if (pages()) { <ink-page-frames [pages]="pages()" [setup]="setup" /> }
       <div class="ink-sheet-body ink-static-doc ProseMirror" [innerHTML]="html"
            [inkPageView]="setup" (pageCount)="pages.set($event)"></div>
     </article>
   </div>
   ```
 
-  Without Angular, `StaticPageView` does the same for any element holding `docToHtml()` output. Its spacers are `.ink-page-spacer` elements; to print those pages, give them `break-before: page` in your print styles.
+  To print those pages, pass the directive's `pageStarts(doc)` (positions in the document the HTML shows; null when page view is off) to `docToHtmlDocument()` as `pageStarts`. Without Angular, `StaticPageView` does the same for any element holding `docToHtml()` output, and `pageStartsInHtml(element, doc)` gives its page starts. Its spacers are `.ink-page-spacer` elements, so a page printing itself can also give them `break-before: page`.
+- **Header, footer and page numbers** (Pages layout): a line of plain text in each page's top margin and one in its bottom margin, each on the left, in the center or on the right, and page numbers ("3" or "Page 3 of 12") at the top or bottom of each page. They can be left off the first page, which still counts. Page view draws them on screen, and they print with the pages (see Printing). `pageMarginLines(setup, page, pages)` gives what a page shows. Header and footer text from untrusted documents is kept to one line of at most 200 characters, without control or bidirectional override characters.
 - **Zoom:** Pages layout can be shown at Fit width or 50–200% (the status bar, on screens with a mouse, from 768px up), with CSS `zoom` on the sheet. Everything drawn on the page follows it: the caret, selection, menus, the ruler, list and table handles, image and column resizing. Printing is not zoomed.
 - **Page color:** one of `PAGE_COLORS` (stored by name), each with a light and a dark value that keep WCAG AA contrast for the editor's text. It colors the sheet (Pages) or the whole canvas (Pageless). Printouts stay on white paper unless the document's "Print page color" is on; then the color covers the whole sheet, margins included. Exports use the light value.
 - **Page breaks:** a `page_break` block at the top level of a document, inserted with `Mod-Enter` (at the cursor in a paragraph or heading, after the list, table or callout elsewhere; task lists keep `Mod-Enter` for checking tasks, code blocks for leaving the block) or "Page break" in the slash menu. Printing starts a new page there. HTML writes it as `<div class="ink-page-break">`, and so does Markdown, which reads that line back.
-- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`. For the pages shown in the editor, pass `pageStarts: editor.getPageStarts()` with `getJSON()`'s document: the printout gets a page break at each, splitting a paragraph, list or table there (`withPageStarts()`). Without it the printer splits pages itself, by the same rules but without the room the editor's controls take around tables and code, so pages can end in different places.
+- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`. For the pages shown in the editor, pass `pageStarts: editor.getPageStarts()` with `getJSON()`'s document: the printout then draws each page itself, a box the size of the paper with the page's part of the document (split there by `withPageStarts()`, even inside a paragraph, list or table), its header, footer and number. That works in every browser, and numbers the pages as the screen does. Without page starts (null, as on phones, where page view is off), the printer splits pages itself, by the same rules but without the room the editor's controls take around tables and code, so pages can end in different places; the header, footer and numbers then print as `@page` margin boxes, which only Chrome supports.
 - **Markdown** has no page setup: `docToMarkdown()` leaves it out, and imported Markdown is Pageless.
 - **HTML import** does not read it back from an exported page.
 

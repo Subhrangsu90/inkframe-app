@@ -28,6 +28,23 @@ export interface SideMargins {
   right: number;
 }
 
+export type MarginTextAlign = 'left' | 'center' | 'right';
+
+/** A line of plain text in each page's top or bottom margin (Pages layout). */
+export interface MarginText {
+  /** One line, at most MAX_MARGIN_TEXT characters; empty for none. */
+  text: string;
+  align: MarginTextAlign;
+}
+
+/** Page numbers in each page's top or bottom margin (Pages layout). */
+export interface PageNumbers {
+  position: 'none' | 'top' | 'bottom';
+  align: MarginTextAlign;
+  /** `number`: "3". `page-of`: "Page 3 of 12". */
+  format: 'number' | 'page-of';
+}
+
 export interface PageSetup {
   layout: PageLayout;
   /** An id from PAPER_SIZES. */
@@ -39,6 +56,13 @@ export interface PageSetup {
   color: string | null;
   /** Whether the page color is printed. */
   printColor: boolean;
+  /** Text in each page's top margin. */
+  header: MarginText;
+  /** Text in each page's bottom margin. */
+  footer: MarginText;
+  pageNumbers: PageNumbers;
+  /** Whether the header, footer and number show on the first page too (false for a title page). */
+  firstPage: boolean;
 }
 
 export interface PaperSize {
@@ -116,6 +140,12 @@ export const PAGELESS_MIN_TEXT_PX = 320;
 /** CSS pixels per millimeter (96 per inch). */
 export const PX_PER_MM = 96 / 25.4;
 
+/** The longest header or footer text, in characters. */
+export const MAX_MARGIN_TEXT = 200;
+
+/** Margins under this many millimeters put a header or footer near the paper's edge, where some printers cannot print. */
+export const MIN_MARGIN_TEXT_MARGIN_MM = 15;
+
 export const DEFAULT_PAGE_SETUP: PageSetup = {
   layout: 'pageless',
   paper: 'a4',
@@ -124,6 +154,10 @@ export const DEFAULT_PAGE_SETUP: PageSetup = {
   sideMargins: { left: 0.1, right: 0.1 },
   color: null,
   printColor: false,
+  header: { text: '', align: 'left' },
+  footer: { text: '', align: 'left' },
+  pageNumbers: { position: 'none', align: 'right', format: 'number' },
+  firstPage: true,
 };
 
 /** Regions that use US paper sizes; everywhere else uses A4. */
@@ -211,6 +245,51 @@ export function fitMargins(
 
 const COLOR_NAME = /^[a-z][a-z0-9-]{0,31}$/;
 
+/** A character class from code point ranges (as numbers, so the source holds no such characters). */
+const charRanges = (ranges: [number, number][]) =>
+  ranges.map(([from, to]) => `${String.fromCodePoint(from)}-${String.fromCodePoint(to)}`).join('');
+
+// Control characters, line and paragraph separators, and bidirectional
+// overrides (which could make a shared document's header read differently).
+const NOT_ONE_LINE = new RegExp(
+  `[${charRanges([
+    [0x00, 0x1f],
+    [0x7f, 0x9f],
+    [0x2028, 0x2029],
+    [0x202a, 0x202e],
+    [0x2066, 0x2069],
+  ])}]`,
+  'g',
+);
+
+/** One line of plain text, at most MAX_MARGIN_TEXT characters. */
+function oneLine(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  const text = raw.replace(NOT_ONE_LINE, ' ').replace(/\s+/g, ' ').trim();
+  return Array.from(text).slice(0, MAX_MARGIN_TEXT).join('').trim();
+}
+
+const ALIGNS: readonly MarginTextAlign[] = ['left', 'center', 'right'];
+
+function oneOf<T extends string>(raw: unknown, values: readonly T[], fallback: T): T {
+  return values.includes(raw as T) ? (raw as T) : fallback;
+}
+
+function marginTextOf(raw: unknown, fallback: MarginText): MarginText {
+  const r = isRecord(raw) ? raw : {};
+  return { text: oneLine(r['text']), align: oneOf(r['align'], ALIGNS, fallback.align) };
+}
+
+function pageNumbersOf(raw: unknown): PageNumbers {
+  const r = isRecord(raw) ? raw : {};
+  const d = DEFAULT_PAGE_SETUP.pageNumbers;
+  return {
+    position: oneOf(r['position'], ['none', 'top', 'bottom'] as const, d.position),
+    align: oneOf(r['align'], ALIGNS, d.align),
+    format: oneOf(r['format'], ['number', 'page-of'] as const, d.format),
+  };
+}
+
 /**
  * Checks a stored page setup. Returns null when there is none (or it is not
  * an object at all); otherwise a complete, valid setup in which every field
@@ -249,6 +328,10 @@ export function normalizePageSetup(raw: unknown): PageSetup | null {
     sideMargins: { left: side('left'), right: side('right') },
     color,
     printColor: raw['printColor'] === true,
+    header: marginTextOf(raw['header'], d.header),
+    footer: marginTextOf(raw['footer'], d.footer),
+    pageNumbers: pageNumbersOf(raw['pageNumbers']),
+    firstPage: raw['firstPage'] !== false,
   };
 }
 
@@ -276,7 +359,64 @@ export function samePageSetup(a: PageSetup | null, b: PageSetup | null): boolean
     a.sideMargins.left === b.sideMargins.left &&
     a.sideMargins.right === b.sideMargins.right &&
     a.color === b.color &&
-    a.printColor === b.printColor
+    a.printColor === b.printColor &&
+    a.header.text === b.header.text &&
+    a.header.align === b.header.align &&
+    a.footer.text === b.footer.text &&
+    a.footer.align === b.footer.align &&
+    a.pageNumbers.position === b.pageNumbers.position &&
+    a.pageNumbers.align === b.pageNumbers.align &&
+    a.pageNumbers.format === b.pageNumbers.format &&
+    a.firstPage === b.firstPage
+  );
+}
+
+/** A page's number as shown: "3", or "Page 3 of 12". */
+export function pageNumberText(format: PageNumbers['format'], page: number, pages: number): string {
+  return format === 'page-of' ? `Page ${page} of ${pages}` : String(page);
+}
+
+/** What a page's top or bottom margin shows: text on the left, in the center and on the right. */
+export interface MarginLine {
+  left: string;
+  center: string;
+  right: string;
+}
+
+/**
+ * The header and footer of page `page` (from 1) of `pages`, with the page
+ * number where it goes; null for a margin with nothing to show. Text and a
+ * number on the same side share it ("Draft · 3"). Pages layout only.
+ */
+export function pageMarginLines(
+  setup: PageSetup,
+  page: number,
+  pages: number,
+): { top: MarginLine | null; bottom: MarginLine | null } {
+  if (setup.layout !== 'pages' || (page === 1 && !setup.firstPage)) {
+    return { top: null, bottom: null };
+  }
+  const numbers = setup.pageNumbers;
+  const line = (text: MarginText, withNumber: boolean): MarginLine | null => {
+    const out: MarginLine = { left: '', center: '', right: '' };
+    if (text.text) out[text.align] = text.text;
+    if (withNumber) {
+      const number = pageNumberText(numbers.format, page, pages);
+      out[numbers.align] = out[numbers.align] ? `${out[numbers.align]} · ${number}` : number;
+    }
+    return out.left || out.center || out.right ? out : null;
+  };
+  return {
+    top: line(setup.header, numbers.position === 'top'),
+    bottom: line(setup.footer, numbers.position === 'bottom'),
+  };
+}
+
+/** Whether a Pages document shows anything in its page margins: a header, footer or numbers. */
+export function hasMarginText(setup: PageSetup): boolean {
+  return (
+    setup.layout === 'pages' &&
+    (!!setup.header.text || !!setup.footer.text || setup.pageNumbers.position !== 'none')
   );
 }
 
@@ -310,6 +450,42 @@ export function pageRuleCss(setup: PageSetup): string {
   const { width, height } = pageDimensions(setup);
   const { top, right, bottom, left } = setup.margins;
   return `@page { size: ${mm(width)} ${mm(height)}; margin: ${mm(top)} ${mm(right)} ${mm(bottom)} ${mm(left)}; }`;
+}
+
+/** A CSS string literal of plain text. */
+const cssString = (text: string) => `"${text.replace(/[\\"]/g, '\\$&')}"`;
+
+/**
+ * `@page` margin boxes with the header, footer and page numbers, for a
+ * printout that flows onto pages by itself (without page view's page
+ * starts). Only Chrome supports margin boxes; other browsers print without
+ * them. `font` is the CSS `font` value for the text, such as
+ * `11px Inter, sans-serif`.
+ */
+export function pageMarginBoxCss(setup: PageSetup, font: string): string {
+  if (!hasMarginText(setup)) return '';
+  const numbers = setup.pageNumbers;
+  const number =
+    numbers.format === 'page-of' ? '"Page " counter(page) " of " counter(pages)' : 'counter(page)';
+  const edges = [
+    ['top', setup.header, numbers.position === 'top'],
+    ['bottom', setup.footer, numbers.position === 'bottom'],
+  ] as const;
+  const boxes: { name: string; content: string }[] = [];
+  for (const [edge, text, withNumber] of edges) {
+    for (const align of ALIGNS) {
+      const parts: string[] = [];
+      if (text.text && text.align === align) parts.push(cssString(text.text));
+      if (withNumber && numbers.align === align) parts.push(number);
+      if (parts.length) boxes.push({ name: `${edge}-${align}`, content: parts.join(' " · " ') });
+    }
+  }
+  const style = `font: ${font}; color: #6b6b6b;`;
+  const rule = (selector: string, content: (box: (typeof boxes)[number]) => string) =>
+    `${selector} { ${boxes.map((box) => `@${box.name} { ${content(box)} }`).join(' ')} }`;
+  let css = rule('@page', (box) => `content: ${box.content}; ${style}`);
+  if (!setup.firstPage) css += '\n' + rule('@page :first', () => 'content: none;');
+  return css;
 }
 
 /**

@@ -2,12 +2,17 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import {
   MARGIN_PRESETS,
+  MAX_MARGIN_TEXT,
+  MIN_MARGIN_TEXT_MARGIN_MM,
   MIN_TEXT_AREA_MM,
   MarginPreset,
+  MarginText,
+  MarginTextAlign,
   PAGE_COLORS,
   PAPER_SIZES,
   PageLayout,
   PageMargins,
+  PageNumbers,
   PageOrientation,
   PageSetup,
   PaperSize,
@@ -40,6 +45,25 @@ const SIDES: readonly { key: Side; label: string }[] = [
   { key: 'bottom', label: 'Bottom' },
   { key: 'left', label: 'Left' },
   { key: 'right', label: 'Right' },
+];
+
+type Band = 'header' | 'footer';
+
+const BANDS: readonly { key: Band; label: string }[] = [
+  { key: 'header', label: 'Header' },
+  { key: 'footer', label: 'Footer' },
+];
+
+const ALIGNS: readonly { value: MarginTextAlign; label: string }[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+  { value: 'right', label: 'Right' },
+];
+
+const NUMBER_POSITIONS: readonly { value: PageNumbers['position']; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'top', label: 'Top of each page' },
+  { value: 'bottom', label: 'Bottom of each page' },
 ];
 
 /** The preview's box, in pixels; the sheet is scaled to fit it. */
@@ -222,6 +246,107 @@ const paperOption = (paper: PaperSize) =>
               </div>
             </div>
           </div>
+
+          <fieldset class="ink-ps-group ink-ps-band-group">
+            <legend class="ink-ps-legend">Header and footer</legend>
+            @for (band of bands; track band.key) {
+              <div class="ink-ps-band">
+                <label class="ink-ps-margin-label" [for]="'ink-ps-' + band.key">{{
+                  band.label
+                }}</label>
+                <div class="ink-ps-band-row">
+                  <span class="ink-ps-input ink-ps-text-input">
+                    <input
+                      type="text"
+                      [id]="'ink-ps-' + band.key"
+                      [maxLength]="maxText"
+                      placeholder="None"
+                      autocomplete="off"
+                      [value]="marginText()[band.key].text"
+                      (input)="setMarginText(band.key, { text: $any($event.target).value })"
+                    />
+                  </span>
+                  <div
+                    class="ink-ps-segmented"
+                    role="radiogroup"
+                    [attr.aria-label]="band.label + ' alignment'"
+                  >
+                    @for (align of aligns; track align.value) {
+                      <label [class.is-checked]="marginText()[band.key].align === align.value">
+                        <input
+                          type="radio"
+                          [name]="'ink-ps-' + band.key + '-align'"
+                          [value]="align.value"
+                          [checked]="marginText()[band.key].align === align.value"
+                          (change)="setMarginText(band.key, { align: align.value })"
+                        />
+                        <span>{{ align.label }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+            <div class="ink-ps-band">
+              <label class="ink-ps-margin-label" for="ink-ps-numbers">Page numbers</label>
+              <div class="ink-ps-band-row">
+                <select
+                  id="ink-ps-numbers"
+                  class="ink-ps-select ink-ps-select-inline"
+                  (change)="setNumbers({ position: $any($event.target).value })"
+                >
+                  @for (option of numberPositions; track option.value) {
+                    <option [value]="option.value" [selected]="numbers().position === option.value">
+                      {{ option.label }}
+                    </option>
+                  }
+                </select>
+                @if (numbers().position !== 'none') {
+                  <select
+                    class="ink-ps-select ink-ps-select-inline"
+                    aria-label="Page number format"
+                    (change)="setNumbers({ format: $any($event.target).value })"
+                  >
+                    <option value="number" [selected]="numbers().format === 'number'">3</option>
+                    <option value="page-of" [selected]="numbers().format === 'page-of'">
+                      Page 3 of 12
+                    </option>
+                  </select>
+                  <div
+                    class="ink-ps-segmented"
+                    role="radiogroup"
+                    aria-label="Page number alignment"
+                  >
+                    @for (align of aligns; track align.value) {
+                      <label [class.is-checked]="numbers().align === align.value">
+                        <input
+                          type="radio"
+                          name="ink-ps-numbers-align"
+                          [value]="align.value"
+                          [checked]="numbers().align === align.value"
+                          (change)="setNumbers({ align: align.value })"
+                        />
+                        <span>{{ align.label }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+            @if (hasMarginText()) {
+              <label class="ink-ps-check ink-ps-first-page">
+                <input
+                  type="checkbox"
+                  [checked]="firstPage()"
+                  (change)="setFirstPage($any($event.target).checked)"
+                />
+                <span>Show on the first page</span>
+              </label>
+            }
+            @if (edgeWarning(); as warning) {
+              <p class="ink-ps-note ink-ps-band-note">{{ warning }}</p>
+            }
+          </fieldset>
         } @else {
           <p class="ink-ps-note">Printing uses the paper size you choose in the print dialog.</p>
         }
@@ -618,8 +743,34 @@ const paperOption = (paper: PaperSize) =>
       color: var(--ink-text-muted, #9a9891);
     }
 
-    .ink-ps-color-group {
+    .ink-ps-color-group,
+    .ink-ps-band-group {
       margin-top: 18px;
+    }
+
+    .ink-ps-band + .ink-ps-band {
+      margin-top: 10px;
+    }
+
+    .ink-ps-band-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .ink-ps-text-input {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+
+    .ink-ps-select-inline {
+      width: auto;
+    }
+
+    .ink-ps-band-note {
+      margin-top: 10px;
     }
 
     .ink-ps-colors {
@@ -864,6 +1015,10 @@ export class PageSetupDialog {
     style: { '--ink-swatch-light': c.light, '--ink-swatch-dark': c.dark },
   }));
   protected readonly canSetDefault = !!this.data.setDefault;
+  protected readonly maxText = MAX_MARGIN_TEXT;
+  protected readonly bands = BANDS;
+  protected readonly aligns = ALIGNS;
+  protected readonly numberPositions = NUMBER_POSITIONS;
 
   /** What the dialog starts from: a document without page setup keeps its Pageless layout. */
   private readonly initial: PageSetup = this.data.current ?? {
@@ -878,6 +1033,18 @@ export class PageSetupDialog {
   protected readonly printColor = signal(this.initial.printColor);
   protected readonly colorLabel = computed(
     () => this.colors.find((c) => c.name === this.color())?.label ?? 'None',
+  );
+  protected readonly marginText = signal<Record<Band, MarginText>>({
+    header: this.initial.header,
+    footer: this.initial.footer,
+  });
+  protected readonly numbers = signal<PageNumbers>(this.initial.pageNumbers);
+  protected readonly firstPage = signal(this.initial.firstPage);
+  protected readonly hasMarginText = computed(
+    () =>
+      !!this.marginText().header.text ||
+      !!this.marginText().footer.text ||
+      this.numbers().position !== 'none',
   );
   protected readonly units = computed(() => findPaperSize(this.paper()).units);
   /** The margin fields' text, in the paper's units. */
@@ -920,6 +1087,20 @@ export class PageSetupDialog {
     return margins ? marginPresetOf(margins) : null;
   });
 
+  /** Text in a margin this narrow sits where some printers cannot print. */
+  protected readonly edgeWarning = computed(() => {
+    const margins = this.margins();
+    if (!margins) return null;
+    const { header, footer } = this.marginText();
+    const position = this.numbers().position;
+    const top = (!!header.text || position === 'top') && margins.top < MIN_MARGIN_TEXT_MARGIN_MM;
+    const bottom =
+      (!!footer.text || position === 'bottom') && margins.bottom < MIN_MARGIN_TEXT_MARGIN_MM;
+    if (!top && !bottom) return null;
+    const min = this.units() === 'in' ? '0.6 in' : '1.5 cm';
+    return `Headers and footers sit in the margins. Under ${min}, some printers can't print that close to the paper's edge.`;
+  });
+
   /** The page, scaled into the preview box, and its text area as percentages. */
   protected readonly preview = computed(() => {
     const { width, height } = pageDimensions({
@@ -951,6 +1132,10 @@ export class PageSetupDialog {
       margins,
       color: this.color(),
       printColor: this.printColor(),
+      header: this.marginText().header,
+      footer: this.marginText().footer,
+      pageNumbers: this.numbers(),
+      firstPage: this.firstPage(),
     });
   });
 
@@ -966,6 +1151,21 @@ export class PageSetupDialog {
 
   protected setPrintColor(print: boolean): void {
     this.printColor.set(print);
+    this.defaultSaved.set(false);
+  }
+
+  protected setMarginText(band: Band, change: Partial<MarginText>): void {
+    this.marginText.update((all) => ({ ...all, [band]: { ...all[band], ...change } }));
+    this.defaultSaved.set(false);
+  }
+
+  protected setNumbers(change: Partial<PageNumbers>): void {
+    this.numbers.update((numbers) => ({ ...numbers, ...change }));
+    this.defaultSaved.set(false);
+  }
+
+  protected setFirstPage(show: boolean): void {
+    this.firstPage.set(show);
     this.defaultSaved.set(false);
   }
 

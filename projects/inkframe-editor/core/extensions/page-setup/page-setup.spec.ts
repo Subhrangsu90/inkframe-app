@@ -2,20 +2,25 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_PAGE_SETUP,
   MARGIN_PRESETS,
+  MAX_MARGIN_TEXT,
   PAGE_COLORS,
   PageSetup,
   defaultPaperForLocale,
   findPageColor,
   fitMargins,
+  hasMarginText,
   marginPresetOf,
   mmToUnits,
   normalizePageSetup,
   normalizeZoom,
   pageDimensions,
   pageLayoutStyle,
+  pageMarginBoxCss,
+  pageMarginLines,
   pageRuleCss,
   pageSetupLabel,
   resolveZoom,
+  samePageSetup,
   unitsToMm,
 } from './page-setup';
 
@@ -48,6 +53,10 @@ describe('normalizePageSetup', () => {
       sideMargins: { left: 2, right: '0.2' },
       color: 'red; background: url(https://tracker)',
       printColor: 'yes',
+      header: { text: 42, align: 'justify' },
+      footer: 'Footer',
+      pageNumbers: { position: 'middle', align: 'center', format: 'roman' },
+      firstPage: 'no',
       extra: { injected: true },
     });
     expect(setup).toEqual({
@@ -58,7 +67,28 @@ describe('normalizePageSetup', () => {
       sideMargins: { left: 0.4, right: 0.1 },
       color: null,
       printColor: false,
+      header: { text: '', align: 'left' },
+      footer: { text: '', align: 'left' },
+      pageNumbers: { position: 'none', align: 'center', format: 'number' },
+      firstPage: true,
     });
+  });
+
+  it('keeps header and footer text to one line of plain text', () => {
+    const setup = normalizePageSetup({
+      header: {
+        text: '  Quarterly\nreport\t\u0000draft' + String.fromCodePoint(0x202e) + '  ',
+        align: 'center',
+      },
+      footer: { text: 'x'.repeat(250), align: 'right' },
+      firstPage: false,
+    })!;
+    expect(setup.header).toEqual({ text: 'Quarterly report draft', align: 'center' });
+    expect(setup.footer.text).toHaveLength(MAX_MARGIN_TEXT);
+    expect(setup.firstPage).toBe(false);
+    // Characters outside the BMP count once and are never cut in half.
+    const emoji = normalizePageSetup({ header: { text: '📄'.repeat(MAX_MARGIN_TEXT + 5) } })!;
+    expect(Array.from(emoji.header.text)).toHaveLength(MAX_MARGIN_TEXT);
   });
 
   it('fills in missing fields', () => {
@@ -249,5 +279,74 @@ describe('zoom', () => {
     expect(normalizeZoom(0.75)).toBe(0.75);
     for (const raw of [null, 'big', Number.NaN, 0, 9, '1.5'])
       expect(normalizeZoom(raw)).toBe('auto');
+  });
+});
+
+describe('headers, footers and page numbers', () => {
+  const withText: PageSetup = {
+    ...a4Pages,
+    header: { text: 'Quarterly report', align: 'left' },
+    footer: { text: 'Draft', align: 'right' },
+    pageNumbers: { position: 'bottom', align: 'right', format: 'page-of' },
+  };
+
+  it('puts the text and the number where they are set, sharing a side', () => {
+    expect(pageMarginLines(withText, 2, 5)).toEqual({
+      top: { left: 'Quarterly report', center: '', right: '' },
+      bottom: { left: '', center: '', right: 'Draft · Page 2 of 5' },
+    });
+    const numberOnly: PageSetup = {
+      ...a4Pages,
+      pageNumbers: { position: 'top', align: 'center', format: 'number' },
+    };
+    expect(pageMarginLines(numberOnly, 3, 9)).toEqual({
+      top: { left: '', center: '3', right: '' },
+      bottom: null,
+    });
+  });
+
+  it('shows nothing on the first page when asked, and counts it', () => {
+    const titlePage = { ...withText, firstPage: false };
+    expect(pageMarginLines(titlePage, 1, 5)).toEqual({ top: null, bottom: null });
+    expect(pageMarginLines(titlePage, 2, 5).bottom?.right).toBe('Draft · Page 2 of 5');
+  });
+
+  it('shows nothing in Pageless, or when nothing is set', () => {
+    expect(pageMarginLines({ ...withText, layout: 'pageless' }, 1, 1)).toEqual({
+      top: null,
+      bottom: null,
+    });
+    expect(pageMarginLines(a4Pages, 1, 1)).toEqual({ top: null, bottom: null });
+    expect(hasMarginText(a4Pages)).toBe(false);
+    expect(hasMarginText(withText)).toBe(true);
+    expect(hasMarginText({ ...withText, layout: 'pageless' })).toBe(false);
+  });
+
+  it('tells setups apart by their headers and footers', () => {
+    expect(samePageSetup(withText, { ...withText })).toBe(true);
+    expect(samePageSetup(withText, { ...withText, firstPage: false })).toBe(false);
+    expect(
+      samePageSetup(withText, { ...withText, footer: { text: 'Draft', align: 'center' } }),
+    ).toBe(false);
+  });
+
+  it('writes @page margin boxes for printouts without page starts', () => {
+    const css = pageMarginBoxCss({ ...withText, firstPage: false }, '11px Inter');
+    expect(css).toContain('@top-left { content: "Quarterly report"; font: 11px Inter;');
+    expect(css).toContain(
+      '@bottom-right { content: "Draft" " · " "Page " counter(page) " of " counter(pages);',
+    );
+    expect(css).toContain('@page :first { @top-left { content: none; }');
+    expect(pageMarginBoxCss(a4Pages, '11px Inter')).toBe('');
+  });
+
+  it('keeps header text a CSS string, whatever it contains', () => {
+    const tricky: PageSetup = {
+      ...a4Pages,
+      header: { text: 'a"; } body { color: red } "\\', align: 'left' },
+    };
+    expect(pageMarginBoxCss(tricky, '11px Inter')).toContain(
+      'content: "a\\"; } body { color: red } \\"\\\\";',
+    );
   });
 });

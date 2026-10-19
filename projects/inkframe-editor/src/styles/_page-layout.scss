@@ -123,9 +123,6 @@ body[data-theme='light'] .ink-canvas,
   right: 0;
   height: var(--ink-page-height, 297mm);
   background: var(--ink-sheet-bg);
-  box-shadow:
-    0 0 0 1px var(--ink-border-subtle, rgba(255, 255, 255, 0.05)),
-    var(--ink-shadow-page, 0 1px 4px rgba(0, 0, 0, 0.2));
 }
 
 .ink-page-label {
@@ -138,4 +135,57 @@ body[data-theme='light'] .ink-canvas,
   font-variant-numeric: tabular-nums;
   color: var(--ink-text-muted, #9a9891);
   white-space: nowrap;
+}
+
+/*
+ * A page's header or footer: one line in its top or bottom margin, across
+ * the text column, centered in the margin's height. Its left, center and
+ * right parts take the room they need; with centered text beside other
+ * text, they share it in thirds so the center stays centered.
+ */
+.ink-page-band {
+  position: absolute;
+  left: var(--ink-page-margin-left, 25.4mm);
+  right: var(--ink-page-margin-right, 25.4mm);
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  font-size: calc(var(--ink-editor-font-size, 14px) * 0.8);
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-muted, #9a9891);
+}
+
+.ink-page-band-top {
+  top: 0;
+  height: var(--ink-page-margin-top, 25.4mm);
+}
+
+.ink-page-band-bottom {
+  bottom: 0;
+  height: var(--ink-page-margin-bottom, 25.4mm);
+}
+
+.ink-page-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.is-empty {
+    flex: 0 0 0;
+  }
+
+  .ink-page-band-balanced > &.is-empty {
+    flex: 1 1 0;
+  }
+}
+
+.ink-page-slot-center {
+  text-align: center;
+}
+
+.ink-page-slot-right {
+  text-align: right;
 }

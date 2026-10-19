@@ -280,6 +280,62 @@ describe('<ink-editor> page setup', () => {
     expect(canvas.style.getPropertyValue('--ink-page-color-light')).toBe('#edf4ec');
   });
 
+  it('sets the header, footer and page numbers', async () => {
+    const { fixture, svc, dialog } = await open();
+    choosePages(dialog);
+    await fixture.whenStable();
+    // With nothing set, there is no first page to leave out.
+    expect(dialog.querySelector('.ink-ps-first-page')).toBeNull();
+
+    const header = q<HTMLInputElement>(dialog, '#ink-ps-header');
+    expect(header.labels![0].textContent!.trim()).toBe('Header');
+    header.value = 'Quarterly report';
+    header.dispatchEvent(new Event('input'));
+    check(dialog, 'input[name="ink-ps-header-align"][value="center"]');
+    const numbers = q<HTMLSelectElement>(dialog, '#ink-ps-numbers');
+    numbers.value = 'bottom';
+    numbers.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    const format = q<HTMLSelectElement>(dialog, 'select[aria-label="Page number format"]');
+    format.value = 'page-of';
+    format.dispatchEvent(new Event('change'));
+    check(dialog, 'input[name="ink-ps-numbers-align"][value="center"]');
+    await fixture.whenStable();
+    const first = q<HTMLInputElement>(dialog, '.ink-ps-first-page input');
+    expect(first.checked).toBe(true);
+    first.checked = false;
+    first.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    button(dialog, 'Apply').click();
+    await fixture.whenStable();
+
+    expect(svc.pageSetup()).toMatchObject({
+      header: { text: 'Quarterly report', align: 'center' },
+      footer: { text: '', align: 'left' },
+      pageNumbers: { position: 'bottom', align: 'center', format: 'page-of' },
+      firstPage: false,
+    });
+  });
+
+  it('warns when a header sits in a margin too narrow for some printers', async () => {
+    const { fixture, dialog } = await open();
+    choosePages(dialog);
+    await fixture.whenStable();
+    check(dialog, 'input[name="ink-ps-margins"][value="narrow"]');
+    await fixture.whenStable();
+    expect(dialog.querySelector('.ink-ps-band-note')).toBeNull();
+
+    const header = q<HTMLInputElement>(dialog, '#ink-ps-header');
+    header.value = 'Draft';
+    header.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(q(dialog, '.ink-ps-band-note').textContent).toMatch(/Under (1\.5 cm|0\.6 in)/);
+
+    check(dialog, 'input[name="ink-ps-margins"][value="normal"]');
+    await fixture.whenStable();
+    expect(dialog.querySelector('.ink-ps-band-note')).toBeNull();
+  });
+
   it('refuses margins that leave less than 5 cm for the text', async () => {
     const { fixture, svc, dialog } = await open();
     choosePages(dialog);

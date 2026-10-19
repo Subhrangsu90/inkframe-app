@@ -28,6 +28,17 @@
           <ink-icon name="share" [size]="16" />
         </button>
 
+        <!-- Print: the pages as shown, with their headers, footers and page numbers -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="printDoc()"
+          title="Print or save as PDF"
+          aria-label="Print"
+        >
+          <ink-icon name="printer" [size]="16" />
+        </button>
+
         <!-- Theme Toggle Button -->
         <button
           type="button"
@@ -67,7 +78,7 @@
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <article class="reader-sheet ink-sheet" (click)="onSheetClick($event)">
         @if (pageCount() > 0) {
-          <ink-page-frames [pages]="pageCount()" />
+          <ink-page-frames [pages]="pageCount()" [setup]="pageSetup()" />
         }
         <div
           class="reader-content ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"

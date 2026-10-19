@@ -4,12 +4,13 @@ import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import { TableMap } from 'prosemirror-tables';
 import { EditorHooks } from '../../editor/editor-hooks';
 import { pageSetupOf } from './page-setup';
-import { BreakBefore, PageSlice, lineBreakBefore, planPages } from './pagination';
+import { BreakBefore, PageSlice, editScope, lineBreakBefore, planPages } from './pagination';
 import {
   Line,
   PAGE_VIEW_MEDIA,
   blockSpacerHeight,
   createPageSpacer,
+  lineStartIn,
   linesOf,
   measurePages,
 } from './pagination-dom';
@@ -135,7 +136,7 @@ class SliceCollector {
       const bottom = box && i === lines.length - 1 ? box.bottom : this.y(line.bottom);
       const anchor =
         i > 0
-          ? () => this.lineStart(node, pos, line)
+          ? () => this.lineStart(node, pos, content, line)
           : box
             ? box.whole
             : (): Anchor => ({ kind: 'inline', pos: pos + 1 });
@@ -144,11 +145,19 @@ class SliceCollector {
   }
 
   /** The position of a line's first character, from its place on screen. */
-  private lineStart(node: PMNode, pos: number, line: Line): Anchor | null {
-    const hit = this.view.posAtCoords({ left: line.left + 1, top: (line.top + line.bottom) / 2 });
-    if (!hit) return null;
-    const at = Math.min(Math.max(hit.pos, pos + 1), pos + node.nodeSize - 1);
-    return { kind: 'inline', pos: at };
+  private lineStart(node: PMNode, pos: number, content: Element, line: Line): Anchor | null {
+    let hit: number | null = null;
+    const at = lineStartIn(content, line);
+    try {
+      if (at) hit = this.view.posAtDOM(at.text, at.offset);
+    } catch {
+      // Text ProseMirror doesn't map (a widget's, for one): find it by coordinates below.
+    }
+    hit ??=
+      this.view.posAtCoords({ left: line.left + 1, top: (line.top + line.bottom) / 2 })?.pos ??
+      null;
+    if (hit === null) return null;
+    return { kind: 'inline', pos: Math.min(Math.max(hit, pos + 1), pos + node.nodeSize - 1) };
   }
 
   /**
@@ -176,20 +185,37 @@ interface Spacer {
   height: number;
 }
 
+/** The height of every textblock, in CSS pixels, keyed by its DOM element. */
+function textblockHeights(view: EditorView, scale: number): WeakMap<Element, number> {
+  const heights = new WeakMap<Element, number>();
+  view.state.doc.descendants((node, pos) => {
+    if (!node.isTextblock) return true;
+    const dom = view.nodeDOM(pos);
+    if (dom instanceof HTMLElement) heights.set(dom, dom.getBoundingClientRect().height / scale);
+    return false;
+  });
+  return heights;
+}
+
 const spacerHeight = (anchor: Anchor, space: number): number =>
   anchor.kind === 'block' ? blockSpacerHeight(anchor.dom, space) : space;
 
 const spacerDOM = ({ anchor, height }: Spacer): HTMLElement =>
   createPageSpacer(anchor.kind, height, anchor.kind === 'row' ? anchor.columns : 1);
 
-const keyOf = (s: Spacer) => `${s.anchor.kind}:${s.anchor.pos}:${s.height.toFixed(1)}`;
+const keyOf = (kind: string, pos: number, height: number) => `${kind}:${pos}:${height.toFixed(1)}`;
 
 class PaginationView {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private frame = 0;
-  private signature = '';
   private pages = -1;
   private width = 0;
+  /** The document when the pages were last laid out, or last found unchanged. */
+  private laidOut: PMNode | null = null;
+  /** Whether the next layout must measure everything: after anything but an edit. */
+  private full = true;
+  /** Each textblock's height at the last full layout, in CSS pixels. */
+  private heights = new WeakMap<Element, number>();
   private readonly wide = typeof matchMedia === 'function' ? matchMedia(PAGE_VIEW_MEDIA) : null;
   private readonly observer =
     typeof ResizeObserver === 'function'
@@ -198,11 +224,14 @@ class PaginationView {
           const width = this.view.dom.offsetWidth;
           if (width !== this.width) {
             this.width = width;
-            this.schedule(0);
+            this.onChange();
           }
         })
       : null;
-  private readonly onChange = () => this.schedule(0);
+  private readonly onChange = () => {
+    this.full = true;
+    this.schedule(0);
+  };
 
   constructor(
     private readonly view: EditorView,
@@ -242,9 +271,16 @@ class PaginationView {
     if (view.composing) return this.schedule(300); // not while text is being composed (IME)
     const sheet = view.dom.closest<HTMLElement>('.ink-sheet');
     const body = view.dom.closest<HTMLElement>('.ink-sheet-body');
-    const setup = pageSetupOf(view.state.doc);
+    const doc = view.state.doc;
+    const setup = pageSetupOf(doc);
     if (!sheet || !body || !this.wide?.matches || setup.layout !== 'pages') {
+      this.laidOut = null;
       return this.show([], 0);
+    }
+    // Most pauses in typing leave every page as it is: skip measuring then.
+    if (!this.full && this.laidOut && this.keepsPages(this.laidOut, doc, sheet)) {
+      this.laidOut = doc;
+      return;
     }
 
     // Measure the document as one long sheet: the spacers out of the way.
@@ -254,7 +290,7 @@ class PaginationView {
     try {
       const page = measurePages(sheet, body, setup);
       const collector = new SliceCollector(view, page.top, page.scale, page.room);
-      collector.blocks(view.state.doc, 0);
+      collector.blocks(doc, 0);
       const plan = planPages(collector.slices, page.frame);
       spacers = [];
       for (const { slice, space } of plan.breaks) {
@@ -262,21 +298,46 @@ class PaginationView {
         if (anchor) spacers.push({ anchor, height: spacerHeight(anchor, space) });
       }
       pages = plan.pages;
+      this.heights = textblockHeights(view, page.scale);
     } finally {
       body.classList.remove('ink-paginating');
     }
+    this.full = false;
+    this.laidOut = doc;
     this.show(spacers, pages);
   }
 
+  /**
+   * Whether the edits since the last layout leave every page as it is: all
+   * inside one textblock that holds no page start and kept its height.
+   */
+  private keepsPages(before: PMNode, doc: PMNode, sheet: HTMLElement): boolean {
+    const scope = editScope(before, doc);
+    if (scope === 'none') return true;
+    if (scope === 'other') return false;
+    const pos = scope.textblock;
+    const end = pos + doc.nodeAt(pos)!.nodeSize - 1;
+    if (paginationKey.getState(this.view.state)?.find(pos + 1, end).length) return false;
+    const dom = this.view.nodeDOM(pos);
+    const height = dom instanceof HTMLElement ? this.heights.get(dom) : undefined;
+    if (!(dom instanceof HTMLElement) || height === undefined) return false;
+    const scale = sheet.getBoundingClientRect().width / sheet.offsetWidth || 1;
+    return Math.abs(dom.getBoundingClientRect().height / scale - height) < 0.5;
+  }
+
   private show(spacers: Spacer[], pages: number): void {
-    const signature = spacers.map(keyOf).join(' ');
-    if (signature !== this.signature) {
-      this.signature = signature;
+    // Compared with the spacers shown, as moved by the edits since.
+    const shown = paginationKey.getState(this.view.state)?.find() ?? [];
+    const signature = spacers.map((s) => keyOf(s.anchor.kind, s.anchor.pos, s.height)).join(' ');
+    const current = shown.map((d) => keyOf(d.spec['kind'], d.from, d.spec['height'])).join(' ');
+    if (signature !== current) {
       const decorations = spacers.map((s) =>
         Decoration.widget(s.anchor.pos, () => spacerDOM(s), {
           side: -1,
-          key: keyOf(s),
+          key: keyOf(s.anchor.kind, s.anchor.pos, s.height),
           ignoreSelection: true,
+          kind: s.anchor.kind,
+          height: s.height,
         }),
       );
       const set = DecorationSet.create(this.view.state.doc, decorations);

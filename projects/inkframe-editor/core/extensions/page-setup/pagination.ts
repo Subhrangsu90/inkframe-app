@@ -4,14 +4,15 @@
  * the pages on screen are the printed pages:
  * - a page may start between any two lines of a paragraph, leaving at least
  *   two lines on each page (orphans and widows);
- * - code blocks, quotes, callouts, task items, table rows and images stay
- *   whole when they fit a page;
+ * - code blocks, quotes, callouts, list and task items, table rows and images
+ *   stay whole when they fit a page;
  * - a heading stays with what follows it;
  * - a page break starts a new page.
  *
  * Measuring the slices (DOM) and showing the pages (spacers) live elsewhere;
  * this is the pure decision, so the rules are unit-tested.
  */
+import { Node as PMNode } from 'prosemirror-model';
 
 /** Whether a page may start before a slice: freely, only if nothing better fits, or always. */
 export type BreakBefore = 'allowed' | 'avoid' | 'forced';
@@ -97,4 +98,27 @@ export function planPages(slices: readonly PageSlice[], frame: PageFrame): PageP
 export function lineBreakBefore(index: number, count: number): BreakBefore {
   if (index === 0) return 'allowed';
   return index >= 2 && count - index >= 2 ? 'allowed' : 'avoid';
+}
+
+/** Where a document changed: nowhere, only inside one textblock (its position), or elsewhere. */
+export type EditScope = 'none' | 'other' | { textblock: number };
+
+/**
+ * How `after` differs from `before`. Typing changes one paragraph; page view
+ * keeps its pages when that paragraph keeps its height.
+ */
+export function editScope(before: PMNode, after: PMNode): EditScope {
+  if (!before.sameMarkup(after)) return 'other'; // the page setup, for one
+  const start = after.content.findDiffStart(before.content);
+  if (start == null) return 'none';
+  const end = after.content.findDiffEnd(before.content);
+  if (!end) return 'none';
+  // With repeated text, the end can be found before the start.
+  const endAfter = Math.max(end.a, start);
+  const endBefore = Math.max(end.b, start);
+  const $after = after.resolve(start);
+  const $before = before.resolve(start);
+  if (!$after.parent.isTextblock || !$before.parent.isTextblock) return 'other';
+  if (endAfter > $after.end() || endBefore > $before.end()) return 'other';
+  return { textblock: $after.before() };
 }

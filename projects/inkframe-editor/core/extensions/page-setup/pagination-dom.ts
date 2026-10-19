@@ -47,6 +47,38 @@ export function linesOf(content: Element, scale: number): Line[] {
   return groupLines(Array.from(range.getClientRects()), lineHeight);
 }
 
+/**
+ * The first character of a line of `content`'s text: the text node and the
+ * offset in it. Found by binary search over the characters' places on
+ * screen, so a long paragraph costs a few measurements, not one per letter.
+ */
+export function lineStartIn(content: Element, line: Line): { text: Text; offset: number } | null {
+  const range = document.createRange();
+  // Whether the character at `offset` is on the line or below it.
+  const onOrBelow = (text: Text, offset: number) => {
+    range.setStart(text, offset);
+    range.setEnd(text, offset + 1);
+    const rects = range.getClientRects();
+    const r = rects[rects.length - 1];
+    return !!r && (r.top + r.bottom) / 2 >= line.top;
+  };
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node as Text;
+    const length = text.data.length;
+    if (!length || !onOrBelow(text, length - 1)) continue; // all of it above the line
+    let low = 0;
+    let high = length - 1;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if (onOrBelow(text, middle)) high = middle;
+      else low = middle + 1;
+    }
+    return { text, offset: low };
+  }
+  return null;
+}
+
 /** A sheet's pages, measured: where they sit on screen and their size. */
 export interface PageMeasure {
   frame: PageFrame;

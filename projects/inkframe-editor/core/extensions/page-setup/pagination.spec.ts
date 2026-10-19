@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { BreakBefore, PageFrame, PageSlice, lineBreakBefore, planPages } from './pagination';
+import { EditorState } from 'prosemirror-state';
+import { schema } from '../../schema/schema';
+import {
+  BreakBefore,
+  PageFrame,
+  PageSlice,
+  editScope,
+  lineBreakBefore,
+  planPages,
+} from './pagination';
 
 // A small page: 100px tall, 10px margins, so 80px of text; 20px between pages.
 const frame: PageFrame = { height: 100, marginTop: 10, marginBottom: 10, gap: 20 };
@@ -97,5 +106,68 @@ describe('lineBreakBefore', () => {
       'avoid',
     ]);
     expect([0, 1, 2].map((i) => lineBreakBefore(i, 3))).toEqual(['allowed', 'avoid', 'avoid']);
+  });
+});
+
+describe('editScope', () => {
+  const t = (text: string) => ({ type: 'text', text });
+  const p = (text: string) => ({ type: 'paragraph', content: [t(text)] });
+  const doc = schema.nodeFromJSON({
+    type: 'doc',
+    content: [
+      p('First paragraph'),
+      p('aa'),
+      { type: 'bullet_list', content: [{ type: 'list_item', content: [p('Item')] }] },
+    ],
+  });
+  const state = EditorState.create({ doc });
+  /** The position of `text`'s first letter. */
+  const at = (text: string) => {
+    let found = -1;
+    doc.descendants((node, pos) => {
+      const i = node.isText ? node.text!.indexOf(text) : -1;
+      if (found < 0 && i >= 0) found = pos + i;
+      return found < 0;
+    });
+    return found;
+  };
+  const textblockOf = (text: string) => doc.resolve(at(text)).before();
+
+  it('finds no change in the same document', () => {
+    expect(editScope(doc, doc)).toBe('none');
+    expect(editScope(doc, state.tr.insertText('x', 3).delete(3, 4).doc)).toBe('none');
+  });
+
+  it('finds typing and deleting inside one paragraph, also in a list', () => {
+    expect(editScope(doc, state.tr.insertText('new ', at('paragraph')).doc)).toEqual({
+      textblock: textblockOf('First'),
+    });
+    expect(editScope(doc, state.tr.delete(at('First'), at('First') + 6).doc)).toEqual({
+      textblock: textblockOf('First'),
+    });
+    // Repeated letters: the change can be found at either end of them.
+    expect(editScope(doc, state.tr.insertText('a', at('aa') + 1).doc)).toEqual({
+      textblock: textblockOf('aa'),
+    });
+    expect(editScope(doc, state.tr.insertText('s', at('Item') + 4).doc)).toEqual({
+      textblock: textblockOf('Item'),
+    });
+    const bold = schema.marks['strong'].create();
+    expect(editScope(doc, state.tr.addMark(at('First'), at('First') + 5, bold).doc)).toEqual({
+      textblock: textblockOf('First'),
+    });
+  });
+
+  it('finds changes that reach past one paragraph', () => {
+    // Enter splits a paragraph; Backspace at the start joins two.
+    expect(editScope(doc, state.tr.split(at('paragraph')).doc)).toBe('other');
+    expect(editScope(doc, state.tr.join(textblockOf('aa')).doc)).toBe('other');
+    // Two paragraphs, a paragraph's own attributes, the page setup.
+    const two = state.tr.insertText('x', at('First')).insertText('y', at('aa') + 1).doc;
+    expect(editScope(doc, two)).toBe('other');
+    const centered = state.tr.setNodeAttribute(textblockOf('aa'), 'align', 'center').doc;
+    expect(editScope(doc, centered)).toBe('other');
+    const pages = state.tr.setDocAttribute('page', { layout: 'pages' }).doc;
+    expect(editScope(doc, pages)).toBe('other');
   });
 });

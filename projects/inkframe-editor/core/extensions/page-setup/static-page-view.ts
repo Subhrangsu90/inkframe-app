@@ -5,6 +5,7 @@ import {
   PAGE_VIEW_MEDIA,
   blockSpacerHeight,
   createPageSpacer,
+  lineStartIn,
   linesOf,
   measurePages,
 } from './pagination-dom';
@@ -140,32 +141,9 @@ class SliceCollector {
   }
 }
 
-/** The first character of a line of `content`'s text, found from its place on screen. */
 function lineStart(content: Element, line: Line): Anchor | null {
-  const range = document.createRange();
-  // Whether the character at `offset` is on the line or below it.
-  const onOrBelow = (text: Text, offset: number) => {
-    range.setStart(text, offset);
-    range.setEnd(text, offset + 1);
-    const rects = range.getClientRects();
-    const r = rects[rects.length - 1];
-    return !!r && (r.top + r.bottom) / 2 >= line.top;
-  };
-  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const text = node as Text;
-    const length = text.data.length;
-    if (!length || !onOrBelow(text, length - 1)) continue; // all of it above the line
-    let low = 0;
-    let high = length - 1;
-    while (low < high) {
-      const middle = (low + high) >> 1;
-      if (onOrBelow(text, middle)) high = middle;
-      else low = middle + 1;
-    }
-    return { kind: 'text', text, offset: low };
-  }
-  return null;
+  const at = lineStartIn(content, line);
+  return at && { kind: 'text', ...at };
 }
 
 function insertSpacer(anchor: Anchor, height: number): void {

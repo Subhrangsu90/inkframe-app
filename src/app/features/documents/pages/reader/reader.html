@@ -60,14 +60,20 @@
     <div
       class="reader-canvas ink-canvas"
       [attr.data-ink-layout]="pageSetup().layout"
+      [attr.data-ink-page-view]="pageCount() > 0 ? '' : null"
       [style]="layoutStyle()"
     >
       <!-- Clicking an image opens the lightbox. Mouse only for now: images are not focusable (accessibility gap, see the plan). -->
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
       <article class="reader-sheet ink-sheet" (click)="onSheetClick($event)">
+        @if (pageCount() > 0) {
+          <ink-page-frames [pages]="pageCount()" />
+        }
         <div
           class="reader-content ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
           [innerHTML]="renderedHtml()"
+          [inkPageView]="pageSetup()"
+          (pageCount)="pageCount.set($event)"
         ></div>
       </article>
     </div>

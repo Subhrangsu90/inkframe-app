@@ -246,7 +246,7 @@
     font-size: 12px;
     line-height: 1;
     display: none;
-    align-items: center;
+    // align-items: center;
     justify-content: center;
     cursor: pointer;
     padding: 0;
@@ -257,7 +257,7 @@
     &:hover {
       background: var(--ink-accent-primary, #028380);
       color: #ffffff;
-      transform: scale(1.15);
+      // transform: scale(1.15);
     }
   }
 

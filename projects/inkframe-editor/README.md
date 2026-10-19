@@ -138,6 +138,7 @@ export class Page {
 | `flush()` | Emits pending (debounced) changes now. |
 | `focus()` / `blur()` | Moves focus into the document, or closes the editor's menus. |
 | `openPageSetup()` | Opens the Page setup dialog (when the editor is editable). The status bar opens it too. |
+| `getPageStarts(): number[]` | Where page view starts each page after the first, as positions in `getJSON()`'s document; empty when page view is off. Pass them to `docToHtmlDocument()` (`pageStarts`) to print the pages shown. See [Page setup](#page-setup). |
 
 ### Saving: call `flush()` before the editor is destroyed
 
@@ -172,13 +173,28 @@ Each document has a layout: **Pageless** (the default) or **Pages**, with a pape
 
 The setup is stored in the document, as the `page` attribute of the `doc` node, so it travels wherever the `StoredDoc` goes. Read it with `pageSetupOf(doc)`, or `EditorService.pageSetup()` in the editor; values from untrusted documents are checked by `normalizePageSetup()`.
 
-- **On screen:** Pageless fills the editor, with side margins of 10% of its width (at least 32px). Pages shows a sheet at the paper's real width and at least one page tall, with the page margins; the editor scrolls sideways when the sheet is wider. Under 768px both are one full-width sheet with 16px margins.
+- **On screen:** Pageless fills the editor, with side margins of 10% of its width (at least 32px). Pages shows the document as separate pages, each the size of the paper, with the page margins and "Page 2 of 5" in the gap below; the editor scrolls sideways when the pages are wider. Under 768px both are one full-width sheet with 16px margins.
+- **Page view** splits Pages documents the way printing does: paragraph lines move to the next page with at least two lines on each side, headings stay with what follows, table rows split between rows, and code blocks, quotes, callouts and list items stay whole when they fit a page. Page breaks start a new page. It changes nothing in the document: what moves to the next page is pushed down by spacers on screen, laid out again shortly after each edit.
 - **Ruler:** above the page, a handle on each side margin. Dragging previews the margin and releasing applies it (one undo step). Each handle is a slider for the keyboard: Left and Right move it the way it looks, Up and Down change the margin's size, Shift takes bigger steps (Pages: 1 mm and 1 cm, or 1/16 and 1/4 inch on Letter and Legal; Pageless: 1% and 5% of the width).
-- **Showing a document outside the editor** (a reader page, a preview): give the scrolling element the class `ink-canvas`, `data-ink-layout` set to the layout and the custom properties from `pageLayoutStyle(setup)`; put the page in an `ink-sheet` element and the content in an `ink-sheet-body` element. The editor's stylesheet lays them out as the editor does.
+- **Showing a document outside the editor** (a reader page, a preview): give the scrolling element the class `ink-canvas`, `data-ink-layout` set to the layout and the custom properties from `pageLayoutStyle(setup)`; put the page in an `ink-sheet` element and the content in an `ink-sheet-body` element. The editor's stylesheet lays them out as the editor does. For page view there too, add the `inkPageView` directive and `<ink-page-frames>` from `@inkframe-ui/editor/ui`:
+
+  ```html
+  <div class="ink-canvas" [attr.data-ink-layout]="setup.layout"
+       [attr.data-ink-page-view]="pages() ? '' : null"
+       [style]="{ ...pageLayoutStyle(setup), ...pageViewStyle(pages()) }">
+    <article class="ink-sheet">
+      @if (pages()) { <ink-page-frames [pages]="pages()" /> }
+      <div class="ink-sheet-body ink-static-doc ProseMirror" [innerHTML]="html"
+           [inkPageView]="setup" (pageCount)="pages.set($event)"></div>
+    </article>
+  </div>
+  ```
+
+  Without Angular, `StaticPageView` does the same for any element holding `docToHtml()` output. Its spacers are `.ink-page-spacer` elements; to print those pages, give them `break-before: page` in your print styles.
 - **Zoom:** Pages layout can be shown at Fit width or 50–200% (the status bar, on screens with a mouse, from 768px up), with CSS `zoom` on the sheet. Everything drawn on the page follows it: the caret, selection, menus, the ruler, list and table handles, image and column resizing. Printing is not zoomed.
 - **Page color:** one of `PAGE_COLORS` (stored by name), each with a light and a dark value that keep WCAG AA contrast for the editor's text. It colors the sheet (Pages) or the whole canvas (Pageless). Printouts stay on white paper unless the document's "Print page color" is on; then the color covers the whole sheet, margins included. Exports use the light value.
 - **Page breaks:** a `page_break` block at the top level of a document, inserted with `Mod-Enter` (at the cursor in a paragraph or heading, after the list, table or callout elsewhere; task lists keep `Mod-Enter` for checking tasks, code blocks for leaving the block) or "Page break" in the slash menu. Printing starts a new page there. HTML writes it as `<div class="ink-page-break">`, and so does Markdown, which reads that line back.
-- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`.
+- **Printing:** `docToHtmlDocument()` writes the paper size and margins as `@page` rules for Pages documents, so the print dialog starts on the right paper. For a printout whose lines break where they do on screen, pass `fontFaceCss` (your `@font-face` rules for Inter and JetBrains Mono), `editorFontSize` and, if your page sets one, `editorLetterSpacing`. For the pages shown in the editor, pass `pageStarts: editor.getPageStarts()` with `getJSON()`'s document: the printout gets a page break at each, splitting a paragraph, list or table there (`withPageStarts()`). Without it the printer splits pages itself, by the same rules but without the room the editor's controls take around tables and code, so pages can end in different places.
 - **Markdown** has no page setup: `docToMarkdown()` leaves it out, and imported Markdown is Pageless.
 - **HTML import** does not read it back from an exported page.
 
@@ -294,7 +310,7 @@ Colors, spacing and the document font size are CSS custom properties prefixed `-
 | `@inkframe-ui/editor` | `Editor` (`<ink-editor>`) |
 | `@inkframe-ui/editor/core` | `EditorService`, the schema, extensions, converters, `ThemeService` and types |
 | `@inkframe-ui/editor/toolbar` | `Toolbar` (`<ink-toolbar>`) |
-| `@inkframe-ui/editor/ui` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar, Page setup dialog |
+| `@inkframe-ui/editor/ui` | The editor's menus and panels: floating menu, slash menu, table toolbar, find and replace, image lightbox, status bar, Page setup dialog, ruler, page view for documents shown outside the editor (`inkPageView`, `<ink-page-frames>`) |
 | `@inkframe-ui/editor/styles` | The editor stylesheet (Sass) |
 
 Most apps only need `<ink-editor>`. The other entry points are for building your own editor layout around `EditorService`.

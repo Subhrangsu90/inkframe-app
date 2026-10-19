@@ -1,5 +1,6 @@
 import { Node as PMNode } from 'prosemirror-model';
 import { docToHtml, sanitizeHtml } from './html';
+import { withPageStarts } from './page-starts';
 import {
   PageSetup,
   findPageColor,
@@ -30,6 +31,12 @@ export interface HtmlDocumentOptions {
    * (for example `-0.011em` on `body`). Pages layout prints with it.
    */
   editorLetterSpacing?: string;
+  /**
+   * Where the editor's page view starts each page (`getPageStarts()` of
+   * `<ink-editor>`), for the same document. The page then prints with a page
+   * break at each, so the printed pages are the pages on screen.
+   */
+  pageStarts?: readonly number[];
 }
 
 const LETTER_SPACING = /^(normal|-?\d+(\.\d+)?(px|em|rem))$/;
@@ -199,7 +206,7 @@ function pageColorCss(setup: PageSetup): string {
 export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}): string {
   const title = escapeHtml(options.title?.trim() || 'Untitled document');
   const lang = escapeHtml(options.lang || 'en');
-  const body = sanitizeHtml(docToHtml(doc));
+  const body = sanitizeHtml(docToHtml(withPageStarts(doc, options.pageStarts ?? [])));
   const fontSize = sanitizeCssLength(options.editorFontSize) ?? '14px';
   const spacing = options.editorLetterSpacing?.trim() ?? '';
   const letterSpacing = LETTER_SPACING.test(spacing) ? spacing : 'normal';

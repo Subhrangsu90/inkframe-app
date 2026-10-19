@@ -218,9 +218,16 @@ ink-reader {
     display: none !important;
   }
 
+  /*
+   * The document flows onto as many pages as it needs: nothing keeps the
+   * screen's height (ink-reader is 100dvh and clips, and the viewport is a
+   * flex item that would shrink to nothing).
+   */
+  ink-reader,
   .reader-layout,
   .reader-viewport,
   .reader-canvas {
+    display: block !important;
     background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;

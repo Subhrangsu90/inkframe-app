@@ -32,6 +32,7 @@ import {
   VisualViewportTracker,
   initialPageSetup,
   pageLayoutStyle,
+  pageViewStyle,
 } from '@inkframe-ui/editor/core';
 import { Toolbar } from '@inkframe-ui/editor/toolbar';
 import {
@@ -43,6 +44,7 @@ import {
   StatusBar,
   PageSetupDialog,
   PageSetupDialogData,
+  PageFrames,
   Ruler,
 } from '@inkframe-ui/editor/ui';
 
@@ -58,6 +60,7 @@ import {
     FindReplace,
     StatusBar,
     Ruler,
+    PageFrames,
   ],
   providers: [EditorService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,10 +83,15 @@ import {
           #viewport
           class="ink-editor-viewport ink-canvas"
           [attr.data-ink-layout]="shownSetup().layout"
+          [attr.data-ink-page-view]="svc.pageCount() > 0 ? '' : null"
           [style]="layoutStyle()"
           (click)="onViewportClick($event)"
         >
           <div class="ink-doc-page ink-sheet">
+            <!-- Page view: the pages, drawn behind the text (spacers keep it off the gaps). -->
+            @if (svc.pageCount() > 0) {
+              <ink-page-frames [pages]="svc.pageCount()" />
+            }
             <div
               #host
               class="ink-host ink-sheet-body"
@@ -314,6 +322,7 @@ export class Editor {
   protected readonly layoutStyle = computed(() => ({
     ...pageLayoutStyle(this.shownSetup()),
     '--ink-zoom': String(this.svc.effectiveZoom()),
+    ...pageViewStyle(this.svc.pageCount()),
   }));
   protected readonly rulerShown = computed(
     () => this.showRuler() && this.editable() && this.svc.hasExtension('page_setup'),
@@ -487,6 +496,14 @@ export class Editor {
   /** Opens the Page setup dialog (when the editor is editable). */
   openPageSetup() {
     this.svc.requestPageSetup();
+  }
+  /**
+   * Where page view starts each page after the first, as positions in
+   * `getJSON()`'s document; empty when page view is off. Pass them to
+   * `docToHtmlDocument` (`pageStarts`) to print the pages as shown.
+   */
+  getPageStarts(): number[] {
+    return this.svc.pageStarts();
   }
   blur() {
     this.svc.onFloatingMenu(null);

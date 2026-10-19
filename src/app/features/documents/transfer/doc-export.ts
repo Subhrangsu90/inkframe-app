@@ -131,11 +131,20 @@ async function loadAllImages(doc: Document, timeoutMs = 5000): Promise<void> {
  * styles (no app interface). "Save as PDF" in that dialog makes the PDF.
  * The page title is the document's while the dialog is open, which browsers
  * use to name the PDF.
+ *
+ * `pageStarts` are where the editor's page view starts its pages
+ * (`Editor.getPageStarts()`, read with the same `stored` document): the
+ * printout then has the pages shown on screen.
  */
-export async function printDocument(stored: StoredDoc, title: string): Promise<void> {
+export async function printDocument(
+  stored: StoredDoc,
+  title: string,
+  pageStarts: readonly number[] = [],
+): Promise<void> {
   const html = await buildHtmlPage(stored, title, {
     fontFaceCss: editorFontFaceCss(),
     ...editorTextStyle(),
+    pageStarts,
   });
   printFrame?.remove();
 

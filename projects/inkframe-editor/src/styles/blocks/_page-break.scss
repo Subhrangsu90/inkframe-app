@@ -1,5 +1,26 @@
 /* ── Page break: printing starts a new page here. On screen, a dashed line labeled "Page break". ── */
 @mixin document {
+  /*
+   * Page view: the space before a page, which moves what follows to the next
+   * page (decorations of the pagination plugin, never part of the document).
+   * Hidden while the pages are measured.
+   */
+  .ink-page-spacer {
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  tr.ink-page-spacer > td {
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+  }
+
+  .ink-paginating & .ink-page-spacer {
+    display: none !important;
+  }
+
   .ink-page-break {
     position: relative;
     height: 24px;

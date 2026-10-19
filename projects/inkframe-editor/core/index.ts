@@ -38,6 +38,7 @@ export * from './schema/sanitize-css';
 export * from './io/html';
 export * from './io/html-document';
 export * from './io/markdown';
+export * from './io/page-starts';
 
 // Image storage and UI helpers
 export * from './storage/image-storage';

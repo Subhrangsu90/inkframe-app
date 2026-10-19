@@ -266,6 +266,30 @@ select {
     padding: 0 !important;
   }
 
+  /*
+   * Page view's pages are for the screen, and so are the editor's spacers:
+   * the editor prints through its own print copy, with the same page starts.
+   */
+  .ink-page-frames,
+  .ink-page-spacer {
+    display: none !important;
+  }
+
+  /* The reader prints on the document's paper and margins: each spacer starts a printed page. */
+  .reader-content .ink-page-spacer {
+    display: block !important;
+    height: 0 !important;
+    break-before: page;
+  }
+
+  .reader-content tr.ink-page-spacer {
+    display: table-row !important;
+
+    > td {
+      height: 0 !important;
+    }
+  }
+
   .ProseMirror .ink-page-break {
     break-after: page;
     height: 0;

@@ -7,3 +7,4 @@ export * from './find-replace/find-replace';
 export * from './status-bar/status-bar';
 export * from './page-setup/page-setup-dialog';
 export * from './ruler/ruler';
+export * from './page-view/page-view';

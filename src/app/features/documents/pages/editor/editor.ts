@@ -43,7 +43,9 @@ import {
   PageSetup,
   pageLayoutStyle,
   pageSetupOf,
+  pageViewStyle,
 } from '@inkframe-ui/editor/core';
+import { PageFrames, PageView } from '@inkframe-ui/editor/ui';
 import { LayoutService } from '@app/layout/layout.service';
 import {
   DocumentManager,
@@ -112,6 +114,8 @@ export type EditorViewTab = 'rich' | 'preview';
     Editor,
     InkIcon,
     VersionPanel,
+    PageFrames,
+    PageView,
   ],
   templateUrl: './editor.html',
   styleUrl: './editor.scss',
@@ -197,7 +201,12 @@ export class EditorView implements OnInit {
   readonly previewHtml = signal<SafeHtml | null>(null);
   /** The previewed version's page setup: the preview shows it in its own layout. */
   readonly previewSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
-  readonly previewLayoutStyle = computed(() => pageLayoutStyle(this.previewSetup()));
+  /** Pages shown by the preview's page view; 0 when off. */
+  readonly previewPageCount = signal(0);
+  readonly previewLayoutStyle = computed(() => ({
+    ...pageLayoutStyle(this.previewSetup()),
+    ...pageViewStyle(this.previewPageCount()),
+  }));
   readonly historyBusy = signal(false);
   /** When the previewed version was saved. (Not the date pipe: it adds 12 kB to every page.) */
   readonly previewWhen = computed(() => {
@@ -450,7 +459,9 @@ export class EditorView implements OnInit {
     if (this.exporting()) return;
     this.exporting.set(true);
     try {
-      await printDocument(this.liveDoc(), this.docTitle());
+      // The pages as shown, when page view is on.
+      const pageStarts = this.editorRef()?.getPageStarts() ?? [];
+      await printDocument(this.liveDoc(), this.docTitle(), pageStarts);
     } catch (e) {
       console.warn('Print failed:', e);
       this.toast.error('The document could not be printed');

@@ -125,8 +125,9 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | ~~"Works offline" (after first visit)~~ | ✅ Unblocked by M3. The landing page now says it, with "you can install it as an app". | |
 | "Sync across devices", "Collaborate in real time", "AI writing assistant" | Not built. | M6.2, M6.5, M6.4. Always paired with "optional, no account needed to write". |
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
-| "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Not built. | M3.5. |
-| "Page numbers", "Headers and footers", "See your pages as they print" | Not planned: Pages layout shows one continuous sheet at the paper's width, and only printing splits it into pages. | Only with clear demand (D19). |
+| "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Built (M3.5 steps 1–5) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
+| "See your pages as they print" | Built (M3.5 step 6) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
+| "Headers and footers", "Page numbers" (in print) | Not planned. | Only with clear demand (D19). |
 
 ---
 
@@ -223,7 +224,8 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Page color | ✅ | M3.5, step 4 | Six colors, each with a light and a dark value. Printing it is optional (checked in Chrome; Firefox and Safari still to check). |
 | Page break block | ✅ | M3.5, step 4 | `Mod-Enter` or the slash menu; HTML and Markdown round trip. |
 | Zoom (fit width, 50–200%) | ✅ | M3.5, step 5 | In the status bar, Pages layout only. Sheets wider than the editor open fitted. Checked in Chrome; Firefox and Safari still to check. |
-| Page gaps on screen, page numbers, headers and footers | ⬜ | M5, only if users ask | See D19. |
+| Page view: separate sheets on screen, text flowing across them, page numbers in the gap | ✅ | M3.5, step 6 | Split with the print rules. In the editor, the reader and version previews. Printouts have the pages shown on screen (checked in Chrome; Firefox and Safari still to check). |
+| Headers, footers and page numbers in print | ⬜ | M5, only if users ask | See D19. |
 
 ### 3.7 Optional cloud features (signed-in only, M6)
 
@@ -371,7 +373,7 @@ M3.5 sits between M3 and M4, so page setup ships at launch, and the later milest
 
 A ruler at the top of the canvas sets the margins in both layouts, and a page color works in both.
 
-**Status (2026-10-18):** all five steps built and checked in Chrome; the browser checks in Firefox and Safari (printing, line breaks, page color and zoom) are what is left. Details per step follow.
+**Status (2026-10-19):** steps 1–6 built and checked in Chrome; the browser checks in Firefox and Safari (printing, line breaks, page color, zoom and page view) are what is left. Details per step follow.
 
 Step 1 built. Unit and component tests cover it, and a run against the production build in Chrome checked the dialog in both themes and on a phone, real keyboard and mouse input, autosave, and a PDF printed at A4 landscape. Still open in step 1: print checks in Firefox and Safari, and printing offline.
 
@@ -385,10 +387,20 @@ Step 5 built (2026-10-18). Zoom is CSS `zoom` on the Pages sheet, which scales i
 
 Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens from the Export menu, next to Print. On touch screens the status bar button is hidden, because the 28px bar has no room for a 44px target; the Export menu covers them.
 
+Step 6 built (2026-10-19), with tests and a Chrome run against the production build. The test document has 12 pages: headings, paragraphs, a bullet, a numbered and a task list, a 20-row table, a code block, a callout, a page break and long paragraphs. On it, no line of text crosses a page's margins, in the editor or the reader, also after typing.
+
+- **Printing from the editor** gives the same pages. The editor passes the positions where its pages start, and the print copy gets a page break at each (`withPageStarts`), splitting a paragraph, list or table there. Both have 12 pages, and the print copy's pages start with the same words as the screen's. (The PDF's text itself was not read: there is no PDF reader on the test machine.)
+- **Printing from the reader** makes each spacer a page break: 12 pages on screen, 12 printed. This also fixed a bug from before M3.5: the reader printed only its first page, in both layouts, because the page kept the screen's height (`ink-reader` is `100dvh` with `overflow: hidden`).
+- **The reader and the editor** split the same way, except around tables and code blocks, where the editor's handles and toolbar take room. On the test document, pages 3–5 start one or two table rows apart, and the page break brings them back together.
+- **A page before a list item** starts before the whole item, so its bullet, number or checkbox moves with it. (Starting it at the item's first line left task checkboxes on the page before.)
+- **Typing** on a 5,700-word document (14 pages) costs the same with page view as without it: a median of 7.5 ms per keystroke against 8.5 ms in Pageless, both measured from the key press to the end of layout. The pages are laid out again 120 ms after typing stops. That takes one 15 ms frame on the test machine, and 92 ms with the CPU slowed 4×: about 20–30 ms of reflow (without the spacers to measure, then with the new ones), 10–15 ms of measuring, and the rest redrawing the spacers. Measuring only from the edited page on is the next improvement.
+
+Known limits: a list item taller than a page splits, and in print its bullet or number shows again on the next page. Inside a nested list taller than a page, the printout starts that page before the outer list. A callout split across pages shows its icon on both. Still open in step 6: the checks in Firefox and Safari, and laying out only from the edited page on.
+
 **Rules for every M3.5 feature:**
 
 1. **Page setup belongs to the document.** It is stored as a `page` attribute on the `doc` node (see [6.4](#64-data-and-storage)). Share links, backups and version history carry it, and every change is one undo step (D17).
-2. **Two layouts, no live pagination.** Pages layout shows one continuous sheet at the paper's width; only printing splits it into pages. Page break blocks give exact control where it matters (D19).
+2. **Pages on screen are the printed pages.** Pages layout shows each page as a sheet of the paper's size, split with the same rules as printing (step 6). Page break blocks give exact control where it matters (D19).
 3. **In Pages layout, the screen matches the printout.** Screen and paper use the same text width, font files and font size, so lines break in the same places.
 4. **Pageless means the full canvas.** There are no fixed-width presets; the ruler sets the margins (D18).
 5. **Phones reflow.** Under 768px, both layouts show today's full-bleed sheet with 16px margins and no ruler. Printing still uses the document's paper and margins.
@@ -439,9 +451,20 @@ Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens fr
 | --- | --- | --- |
 | 🟡 Zoom for Pages layout: Fit width and 50–200%, in the status bar. A preference per device, not stored in the document. Sheets wider than the canvas open at Fit width. | M | Caret placement, selection, the floating and slash menus, table handles, image resizing and the ruler all work at 50, 75, 125 and 150% in Chrome, Firefox and Safari (tests). Chrome: all of them, and table column resizing, at every level. Firefox and Safari still to check. |
 
+#### Step 6: Page view (real pages)
+
+Added 2026-10-18 by request, changing D19: Pages layout shows real pages on screen, each as wide and as tall as the paper, with the text flowing from one to the next.
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| ✅ Pagination rules: a pure function that takes the measured lines, rows and blocks and decides where each page starts, with the print rules. Paragraph lines split across pages, with at least 2 lines on each side (orphans and widows). Code blocks, quotes, callouts, list and task items, table rows and images stay whole when they fit a page, and split by line or row when taller than one. Headings stay with the next block. Page breaks start a new page. | M | A unit test for each rule. |
+| ✅ Editor: separate sheets with a gap between them, and "Page 2 of 5" in the gap. The text moves to the next sheet through spacers (decorations), never by changing the document. Recomputed 120 ms after the last change, not while text is being composed (IME). Off in Pageless and under 768px, where phones reflow. Follows the zoom. | L | The document JSON never contains spacers; undo, copy, paste, find, the ruler and the zoom are unaffected. Typing costs the same as in Pageless on a 5,700-word document (median 7.5 ms per keystroke). The relayout after a pause takes 15 ms (92 ms on a CPU slowed 4×). |
+| ✅ Reader and version previews: the same pages (`inkPageView` and `<ink-page-frames>`, built on `StaticPageView`) | M | Split by the same rules as the editor. Pages differ only where the editor's table handles and code toolbar take extra room. |
+| 🟡 Printouts match the screen: the editor's print copy breaks where its pages start (`withPageStarts`); the reader prints each spacer as a page break | S | On the test document, as many printed pages as on screen (Chrome: 12 and 12, in the editor and the reader), and the editor's print copy starts each page with the same words as the screen. Firefox and Safari still to check. |
+
 **Out of scope for M3.5:**
 
-- Page gaps on screen, page numbers, headers and footers. They go to M5, and only if users ask (D19).
+- Headers, footers and page numbers in print. They go to M5, and only if users ask (D19).
 - Indent handles and tab stops on the ruler.
 - Different page sizes within one document, such as a landscape page in a portrait document.
 - Custom paper sizes in the UI. Host apps can still add sizes to `PAPER_SIZES`.
@@ -461,7 +484,7 @@ Two changes from the plan: the top bar has no `⋯` menu, so Page setup opens fr
 2. Share dialog with size warning and native share sheet; JSON and DOCX export (P1)
 3. Image garbage collection, table merge UI (P1)
 4. Math and diagrams for technical writers (P2)
-5. Only if users ask: page numbers and headers and footers in print, then approximate page markers in the editor, labeled as approximate (D19)
+5. Only if users ask: headers, footers and page numbers in print (D19)
 
 Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-accounts-sync-ai-and-collaboration).
 
@@ -885,7 +908,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D16 | No databases (table, board or calendar views with properties) | Final; revisit only with strong demand |
 | D17 | Page setup (layout, paper, orientation, margins, page color) is stored in the document, as a `page` attribute on the `doc` node, so share links, backups and version history carry it. The writing mode (D14) stays a view setting in `StoredDoc.meta`. | Final (this plan) |
 | D18 | Pageless means the full canvas; the ruler sets its margins. No fixed-width presets. | Final |
-| D19 | No live pagination in the editor: Pages layout shows one sheet at the paper's width, and only printing splits pages. Page markers, page numbers, headers and footers only with clear demand. | Final; revisit only with strong demand |
+| D19 | Pages layout shows real pages on screen, split with the same rules as printing (M3.5 step 6). The document never stores where pages end; spacers on screen do. Headers, footers and printed page numbers only with clear demand. | Changed 2026-10-18 (was: one long sheet, pages only in print) |
 | D20 | Page colors come from a fixed palette with a light and a dark value each; print and exports use the light value. | Final |
 
 ### 11.2 Risks
@@ -911,7 +934,9 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Markdown cannot express toggles, page links or columns | Medium | Inline HTML for toggles, links for page links, stacked columns with a note; documented export mapping. |
 | Two modes confuse new users | Low | One default (Document mode); Block mode introduced by a template and an onboarding tip, not forced. |
 | Screen and printout drift apart in Pages layout (font loading, differences between browsers' print engines) | Medium | The same font files and font size on screen and in the print frame; explicit `@page` sizes; a print-preview check in Chrome, Firefox and Safari before each release. |
-| "Pages" makes people expect page gaps, page numbers, headers and footers | Medium | The page break block; the landing page describes print layout, not pagination; markers only with demand (D19). |
+| Pages on screen drift from the printed pages | Medium | One set of rules for both (the print CSS and the pagination function); a test that compares each printed page's first word with the screen. |
+| Pagination slows typing in long documents | Medium | Measure a frame after a change, and only around page ends; skip while composing text; check against the 16 ms typing budget. |
+| People expect headers, footers and printed page numbers | Low | Not planned (D19); the landing page does not promise them. |
 | Full-width lines are hard to read on wide screens | Low | Pageless starts with 10% margins on each side; the ruler changes them. |
 | Zoom breaks caret placement, selection or menu positions | Medium | Zoom ships last (M3.5 step 5), with tests at 50, 75, 125 and 150% in all three browsers. Chrome passes. Safari's `zoom` is WebKit's older implementation and may report positions differently; check it before launch. |
 

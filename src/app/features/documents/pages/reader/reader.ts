@@ -29,12 +29,18 @@ import {
   pageLayoutStyle,
   pageRuleCss,
   pageSetupOf,
+  pageViewStyle,
   sanitizeHtml,
   schema,
   ThemeService,
   imageStorage,
 } from '@inkframe-ui/editor/core';
-import { ImageLightbox, type ImagePreviewPayload } from '@inkframe-ui/editor/ui';
+import {
+  ImageLightbox,
+  PageFrames,
+  PageView,
+  type ImagePreviewPayload,
+} from '@inkframe-ui/editor/ui';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ToastService } from '@app/shared/ui';
 import {
@@ -46,7 +52,7 @@ import { combineLatest } from 'rxjs';
 @Component({
   selector: 'ink-reader',
   standalone: true,
-  imports: [CommonModule, RouterLink, InkIcon, ImageLightbox],
+  imports: [CommonModule, RouterLink, InkIcon, ImageLightbox, PageFrames, PageView],
   templateUrl: './reader.html',
   styleUrl: './reader.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -73,7 +79,12 @@ export class Reader implements OnInit {
   readonly previewImage = signal<ImagePreviewPayload | null>(null);
   /** The document's page setup: the reader shows (and prints) it in its own layout. */
   readonly pageSetup = signal<PageSetup>(DEFAULT_PAGE_SETUP);
-  readonly layoutStyle = computed(() => pageLayoutStyle(this.pageSetup()));
+  /** Pages shown by page view (Pages layout, from 768px up); 0 when off. */
+  readonly pageCount = signal(0);
+  readonly layoutStyle = computed(() => ({
+    ...pageLayoutStyle(this.pageSetup()),
+    ...pageViewStyle(this.pageCount()),
+  }));
 
   // Printing from the reader uses the document's paper and margins too, and
   // its page color when the document asks for it (over the whole sheet).

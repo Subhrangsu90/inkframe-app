@@ -262,12 +262,18 @@
       <div
         class="version-preview ink-canvas ink-scrollbar"
         [attr.data-ink-layout]="previewSetup().layout"
+        [attr.data-ink-page-view]="previewPageCount() > 0 ? '' : null"
         [style]="previewLayoutStyle()"
       >
         <article class="ink-sheet">
+          @if (previewPageCount() > 0) {
+            <ink-page-frames [pages]="previewPageCount()" />
+          }
           <div
             class="ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
             [innerHTML]="previewHtml()"
+            [inkPageView]="previewSetup()"
+            (pageCount)="previewPageCount.set($event)"
           ></div>
         </article>
       </div>

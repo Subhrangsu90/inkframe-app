@@ -1,6 +1,7 @@
 import { createExtension } from '../../editor/extension-types';
 import { page_break } from './page-break-schema';
 import { insertPageBreakCommand } from './page-setup-commands';
+import { paginationPlugin } from './pagination.plugin';
 
 /**
  * Page setup: Pages or Pageless layout, paper size, orientation, margins and
@@ -14,6 +15,7 @@ import { insertPageBreakCommand } from './page-setup-commands';
 export const PageSetupExtension = createExtension({
   name: 'page_setup',
   nodes: { page_break },
+  plugins: (ctx) => [paginationPlugin(ctx.hooks)],
   keymaps: () => ({
     'Mod-Enter': insertPageBreakCommand,
   }),

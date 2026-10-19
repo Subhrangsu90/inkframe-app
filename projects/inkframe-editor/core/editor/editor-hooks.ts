@@ -28,4 +28,6 @@ export interface EditorHooks {
   onTableMenu?(state: TableMenuState | null): void;
   /** Return true if the key was consumed by the slash menu. */
   onSlashKeyDown(event: KeyboardEvent): boolean;
+  /** Page view: how many pages the document fills on screen; 0 when page view is off. */
+  onPageCount?(pages: number): void;
 }

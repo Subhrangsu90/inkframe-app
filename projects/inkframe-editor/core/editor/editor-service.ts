@@ -97,6 +97,7 @@ import {
   insertPageBreakCommand,
   setPageSetupCommand,
 } from '../extensions/page-setup/page-setup-commands';
+import { pageStartsOf } from '../extensions/page-setup/pagination.plugin';
 import { imageStorage } from '../storage/image-storage';
 
 export interface BlockInfo {
@@ -280,6 +281,17 @@ export class EditorService implements EditorHooks {
   });
   /** Incremented to open the Page setup dialog (`<ink-editor>` reacts to it). */
   readonly pageSetupRequests = signal(0);
+  /** Page view: the pages the document fills on screen (Pages layout); 0 when it is off. */
+  readonly pageCount = signal(0);
+
+  onPageCount(pages: number): void {
+    this.pageCount.set(pages);
+  }
+
+  /** Where page view starts each page after the first (document positions); empty when it is off. */
+  pageStarts(): number[] {
+    return this.view && this.pageCount() > 0 ? pageStartsOf(this.view.state) : [];
+  }
 
   requestPageSetup(): void {
     this.pageSetupRequests.update((n) => n + 1);

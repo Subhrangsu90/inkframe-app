@@ -93,3 +93,49 @@ body[data-theme='light'] .ink-canvas,
     padding: 28px 20px 60px;
   }
 }
+
+/*
+ * Page view (the editor, Pages layout, 768px up; see the pagination plugin):
+ * the sheet becomes a stack of pages, each as tall as the paper, with a gap
+ * between them and its number below. The pages are drawn behind the text;
+ * spacers in the text keep it off the gaps.
+ */
+@media (min-width: 768px) {
+  .ink-canvas[data-ink-layout='pages'][data-ink-page-view] > .ink-sheet {
+    position: relative;
+    min-height: calc(
+      var(--ink-page-count, 1) * (var(--ink-page-height, 297mm) + var(--ink-page-gap, 28px))
+    );
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.ink-page-frames {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ink-page-frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--ink-page-height, 297mm);
+  background: var(--ink-sheet-bg);
+  box-shadow:
+    0 0 0 1px var(--ink-border-subtle, rgba(255, 255, 255, 0.05)),
+    var(--ink-shadow-page, 0 1px 4px rgba(0, 0, 0, 0.2));
+}
+
+.ink-page-label {
+  position: absolute;
+  right: 0;
+  height: var(--ink-page-gap, 28px);
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-muted, #9a9891);
+  white-space: nowrap;
+}

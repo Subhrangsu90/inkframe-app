@@ -115,8 +115,42 @@
       </div>
     </div>
 
-    <!-- Sidebar footer: theme (phones only) and settings -->
+    <!-- Sidebar footer: account, theme (phones only) and settings -->
     <div class="sidebar-user-footer">
+      <!-- Shown once the browser knows; nothing while it checks, so it never flashes the wrong state. -->
+      @if (auth.enabled) {
+        @switch (auth.status()) {
+          @case ('signed-in') {
+            <a
+              routerLink="/settings"
+              class="footer-account"
+              [title]="'Account: ' + (auth.user()?.email ?? '')"
+              (click)="layout.closeMobile()"
+            >
+              <ink-avatar
+                [name]="auth.user()?.name || auth.user()?.email || ''"
+                [src]="auth.user()?.image"
+                [size]="26"
+              />
+              <span class="account-text">
+                <span class="account-name">{{ auth.user()?.name }}</span>
+                <span class="account-email">{{ auth.user()?.email }}</span>
+              </span>
+            </a>
+          }
+          @case ('signed-out') {
+            <a
+              [routerLink]="signInPath"
+              [queryParams]="signInParams()"
+              class="footer-account footer-sign-in"
+              (click)="layout.closeMobile()"
+            >
+              <ink-icon name="log-in" [size]="15" />
+              <span>Sign in</span>
+            </a>
+          }
+        }
+      }
       <div class="footer-actions">
         <!-- Phones: the header has no room for the theme toggle, so it is here. -->
         <button

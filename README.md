@@ -23,6 +23,8 @@ npm start
 
 Then open <http://localhost:4200>. The app imports the library from source, so library changes reload in the app without a separate build.
 
+**Accounts (optional).** In development builds the app has sign-in pages (`/signin`, `/signup`), an account item in the sidebar and Settings → Account. They talk to [inkframe-server](../inkframe-server) on <http://localhost:3001>: start it there with `npm run db:up` and `npm run dev`. Everything else works without it. Production builds hide accounts until sync ships; `CLOUD` in [src/app/core/cloud.ts](src/app/core/cloud.ts) switches them.
+
 ## Repository layout
 
 ```text

@@ -429,6 +429,65 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Account: who is signed in (to Settings), or "Sign in". */
+.footer-account {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  height: 36px;
+  margin-left: -6px;
+  padding: 0 8px 0 6px;
+  border-radius: var(--ink-radius-sm);
+  color: var(--ink-text);
+  text-decoration: none;
+  transition: var(--ink-transition-fast);
+  transition-property: background-color, color;
+
+  &:hover {
+    background: var(--ink-surface-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+}
+
+.footer-sign-in {
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-accent-text);
+}
+
+.account-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.account-name,
+.account-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-text-heading);
+}
+
+.account-email {
+  font-size: 11.5px;
+  color: var(--ink-text-muted);
 }
 
 .footer-icon-btn {
@@ -635,7 +694,8 @@
     border-color: transparent;
   }
 
-  .sidebar-brand-link {
+  .sidebar-brand-link,
+  .footer-account {
     min-height: 44px;
   }
 

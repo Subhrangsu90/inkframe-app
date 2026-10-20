@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { accountRoutes } from './features/account/account.routes';
 import { documentsRoutes } from './features/documents/documents.routes';
 import { STANDALONE_PAGE } from './layout/standalone-page';
 import type { PageMetaData } from './core/page-meta';
@@ -13,6 +14,8 @@ export const routes: Routes = [
     data: { ...STANDALONE_PAGE, meta: { index: true } satisfies PageMetaData },
   },
   ...documentsRoutes,
+  // Sign in and create an account (only in builds with accounts; see core/cloud.ts)
+  ...accountRoutes,
   // Settings page
   {
     path: 'settings',

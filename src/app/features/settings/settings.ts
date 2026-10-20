@@ -11,7 +11,9 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
+import { AuthService } from '@app/features/account/data-access/auth.service';
 import { DocumentManager } from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
@@ -26,6 +28,7 @@ import { StorageHealth } from '@app/features/documents/data-access/storage-healt
 import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { PwaService } from '@app/core/pwa';
 import { InkIcon } from '@app/shared/ui/icons/icon';
+import { InkAvatar } from '@app/shared/ui/avatar/avatar';
 import { ConfirmDialogService, ToastService } from '@app/shared/ui';
 import { LayoutService } from '@app/layout/layout.service';
 
@@ -34,7 +37,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 @Component({
   selector: 'ink-settings',
   standalone: true,
-  imports: [CommonModule, InkIcon],
+  imports: [CommonModule, RouterLink, InkIcon, InkAvatar],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +53,11 @@ export class Settings implements OnInit {
   readonly layout = inject(LayoutService);
   readonly pwa = inject(PwaService);
   readonly editorPreferences = inject(EditorPreferences);
+  readonly auth = inject(AuthService);
+
+  /** Signing in from here comes back here. */
+  readonly settingsReturn = { returnTo: '/settings' };
+  readonly signingOut = signal(false);
 
   readonly backupAccept = `${BACKUP_EXTENSION},.json,application/json`;
   /** The backup action in progress, if any. */
@@ -184,6 +192,16 @@ export class Settings implements OnInit {
       await this.updateStats();
       this.backupBusy.set(null);
     }
+  }
+
+  /** Signs out of the account; documents in this browser stay as they are. */
+  async signOut(): Promise<void> {
+    if (this.signingOut()) return;
+    this.signingOut.set(true);
+    const outcome = await this.auth.signOut();
+    this.signingOut.set(false);
+    if (outcome.ok) this.toast.success('Signed out. Your documents are still here.');
+    else this.toast.error(outcome.message);
   }
 
   async clearStorage(): Promise<void> {

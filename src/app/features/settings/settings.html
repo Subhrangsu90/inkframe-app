@@ -13,9 +13,82 @@
     <header class="page-intro">
       <h1 class="intro-title">Settings</h1>
       <p class="intro-desc">
-        Preferences and data for this browser. Nothing here leaves your device.
+        @if (auth.enabled) {
+          Preferences and data for this browser. Nothing here leaves your device, apart from signing
+          in to an account.
+        } @else {
+          Preferences and data for this browser. Nothing here leaves your device.
+        }
       </p>
     </header>
+
+    <!-- ACCOUNT (builds with accounts only; see core/cloud.ts) -->
+    @if (auth.enabled) {
+      <section class="settings-section" aria-labelledby="account-heading">
+        <div class="section-label">
+          <h2 id="account-heading" class="section-title">Account</h2>
+          <p class="section-desc">
+            Optional. An account will sync your documents across your devices. Until sync arrives,
+            your documents stay in this browser either way.
+          </p>
+        </div>
+
+        <div class="settings-card">
+          @switch (auth.status()) {
+            @case ('signed-in') {
+              <div class="setting-row">
+                <div class="account-identity">
+                  <ink-avatar
+                    [name]="auth.user()?.name || auth.user()?.email || ''"
+                    [src]="auth.user()?.image"
+                    [size]="36"
+                  />
+                  <div class="setting-info">
+                    <span class="setting-label">{{ auth.user()?.name }}</span>
+                    <span class="setting-desc">{{ auth.user()?.email }}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="secondary-btn"
+                  (click)="signOut()"
+                  [disabled]="signingOut()"
+                >
+                  @if (signingOut()) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                  } @else {
+                    <ink-icon name="log-out" [size]="14" />
+                  }
+                  Sign out
+                </button>
+              </div>
+            }
+            @case ('signed-out') {
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Not signed in</span>
+                  <span class="setting-desc">You can use Inkframe fully without an account.</span>
+                </div>
+                <div class="row-actions">
+                  <a routerLink="/signup" [queryParams]="settingsReturn" class="secondary-btn">
+                    Create account
+                  </a>
+                  <a routerLink="/signin" [queryParams]="settingsReturn" class="primary-btn">
+                    <ink-icon name="log-in" [size]="14" />
+                    Sign in
+                  </a>
+                </div>
+              </div>
+            }
+            @default {
+              <div class="setting-row">
+                <span class="setting-desc" role="status">Checking your account…</span>
+              </div>
+            }
+          }
+        </div>
+      </section>
+    }
 
     <!-- APPEARANCE -->
     <section class="settings-section" aria-labelledby="appearance-heading">

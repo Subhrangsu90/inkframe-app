@@ -76,7 +76,10 @@ export type InkIconName =
   | 'alert-triangle'
   | 'rotate-ccw'
   | 'bookmark'
-  | 'file-code';
+  | 'file-code'
+  | 'eye-off'
+  | 'log-in'
+  | 'log-out';
 
 @Component({
   selector: 'ink-icon',
@@ -391,6 +394,26 @@ export type InkIconName =
             d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
           />
           <circle cx="12" cy="12" r="3" />
+        }
+        @case ('eye-off') {
+          <path
+            d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
+          />
+          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+          <path
+            d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
+          />
+          <path d="m2 2 20 20" />
+        }
+        @case ('log-in') {
+          <path d="m10 17 5-5-5-5" />
+          <path d="M15 12H3" />
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        }
+        @case ('log-out') {
+          <path d="m16 17 5-5-5-5" />
+          <path d="M21 12H9" />
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
         }
         @case ('chevron-down') {
           <path d="m6 9 6 6 6-6" />

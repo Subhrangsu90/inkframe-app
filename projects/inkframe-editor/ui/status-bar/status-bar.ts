@@ -143,7 +143,7 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
     /*
      * The 28px bar has no room for a 44px touch target; on touch screens
-     * Page setup is reached through the host app's menus instead, and the
+     * Page setup is reached through the host app's own controls instead, and the
      * page is zoomed with the fingers. Phones show every page at their width.
      */
     @media (pointer: coarse) {

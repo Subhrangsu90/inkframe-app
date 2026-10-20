@@ -470,20 +470,8 @@ export class EditorView implements OnInit {
     }
   }
 
-  /**
-   * "Page setup…" in the Export menu. The dialog opens once the menu has
-   * closed and given focus back to the Export button, so closing the dialog
-   * returns focus there.
-   */
-  private pageSetupAfterMenu = false;
-
+  /** The Page setup button in the header; closing the dialog returns focus to it. */
   protected openPageSetup(): void {
-    this.pageSetupAfterMenu = true;
-  }
-
-  protected onExportMenuClosed(): void {
-    if (!this.pageSetupAfterMenu) return;
-    this.pageSetupAfterMenu = false;
     this.editorRef()?.openPageSetup();
   }
 

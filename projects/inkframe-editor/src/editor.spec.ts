@@ -202,6 +202,14 @@ describe('<ink-editor> page setup', () => {
   const button = (dialog: HTMLElement, text: string) =>
     Array.from(dialog.querySelectorAll('button')).find((b) => b.textContent!.trim() === text)!;
 
+  /** Shows a tab of the Pages settings: Page, Margins, or Header & footer. */
+  function openTab(dialog: HTMLElement, label: string) {
+    const tab = Array.from(dialog.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+      (t) => t.textContent!.trim() === label,
+    )!;
+    tab.click();
+  }
+
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((c) => c.remove()));
 
   it('applies Pages, paper and orientation as one undo step', async () => {
@@ -217,7 +225,10 @@ describe('<ink-editor> page setup', () => {
     paper.dispatchEvent(new Event('change'));
     check(dialog, 'input[name="ink-ps-orientation"][value="landscape"]');
     await fixture.whenStable();
+    expect(q(dialog, '.ink-ps-caption').textContent).toContain('Letter · Landscape');
     // Letter shows its margins in inches.
+    openTab(dialog, 'Margins');
+    await fixture.whenStable();
     expect(q(dialog, '.ink-ps-unit').textContent).toBe('in');
 
     button(dialog, 'Apply').click();
@@ -284,6 +295,8 @@ describe('<ink-editor> page setup', () => {
     const { fixture, svc, dialog } = await open();
     choosePages(dialog);
     await fixture.whenStable();
+    openTab(dialog, 'Header & footer');
+    await fixture.whenStable();
     // With nothing set, there is no first page to leave out.
     expect(dialog.querySelector('.ink-ps-first-page')).toBeNull();
 
@@ -292,15 +305,19 @@ describe('<ink-editor> page setup', () => {
     header.value = 'Quarterly report';
     header.dispatchEvent(new Event('input'));
     check(dialog, 'input[name="ink-ps-header-align"][value="center"]');
-    const numbers = q<HTMLSelectElement>(dialog, '#ink-ps-numbers');
-    numbers.value = 'bottom';
-    numbers.dispatchEvent(new Event('change'));
+    check(dialog, 'input[name="ink-ps-numbers"][value="bottom"]');
     await fixture.whenStable();
     const format = q<HTMLSelectElement>(dialog, 'select[aria-label="Page number format"]');
     format.value = 'page-of';
     format.dispatchEvent(new Event('change'));
     check(dialog, 'input[name="ink-ps-numbers-align"][value="center"]');
     await fixture.whenStable();
+    // The preview draws them where they go.
+    const bands = dialog.querySelectorAll<HTMLElement>('.ink-ps-band');
+    expect(Array.from(bands, (b) => b.textContent!.replace(/\s+/g, ' ').trim())).toEqual([
+      'Quarterly report',
+      'Page 1 of 12',
+    ]);
     const first = q<HTMLInputElement>(dialog, '.ink-ps-first-page input');
     expect(first.checked).toBe(true);
     first.checked = false;
@@ -321,7 +338,11 @@ describe('<ink-editor> page setup', () => {
     const { fixture, dialog } = await open();
     choosePages(dialog);
     await fixture.whenStable();
+    openTab(dialog, 'Margins');
+    await fixture.whenStable();
     check(dialog, 'input[name="ink-ps-margins"][value="narrow"]');
+    await fixture.whenStable();
+    openTab(dialog, 'Header & footer');
     await fixture.whenStable();
     expect(dialog.querySelector('.ink-ps-band-note')).toBeNull();
 
@@ -331,7 +352,14 @@ describe('<ink-editor> page setup', () => {
     await fixture.whenStable();
     expect(q(dialog, '.ink-ps-band-note').textContent).toMatch(/Under (1\.5 cm|0\.6 in)/);
 
+    // The Margins tab warns too, where the margins are changed.
+    openTab(dialog, 'Margins');
+    await fixture.whenStable();
+    expect(q(dialog, '.ink-ps-margin-note').textContent).toMatch(/Under (1\.5 cm|0\.6 in)/);
     check(dialog, 'input[name="ink-ps-margins"][value="normal"]');
+    await fixture.whenStable();
+    expect(dialog.querySelector('.ink-ps-margin-note')).toBeNull();
+    openTab(dialog, 'Header & footer');
     await fixture.whenStable();
     expect(dialog.querySelector('.ink-ps-band-note')).toBeNull();
   });
@@ -344,6 +372,8 @@ describe('<ink-editor> page setup', () => {
     paper.value = 'a4';
     paper.dispatchEvent(new Event('change'));
     await fixture.whenStable();
+    openTab(dialog, 'Margins');
+    await fixture.whenStable();
     const left = dialog.querySelectorAll<HTMLInputElement>('.ink-ps-margin input')[2];
     left.value = '17';
     left.dispatchEvent(new Event('input'));
@@ -352,11 +382,14 @@ describe('<ink-editor> page setup', () => {
     expect(q(dialog, '.ink-ps-error').textContent).toContain('5 cm');
     expect(left.getAttribute('aria-invalid')).toBe('true');
     expect(button(dialog, 'Apply').disabled).toBe(true);
+    // The tab shows the problem from the other tabs too.
+    expect(dialog.querySelector('#ink-ps-tab-margins .ink-ps-tab-alert')).toBeTruthy();
 
     left.value = '2';
     left.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     expect(dialog.querySelector('.ink-ps-error')).toBeNull();
+    expect(dialog.querySelector('.ink-ps-tab-alert')).toBeNull();
     button(dialog, 'Apply').click();
     await fixture.whenStable();
     expect(svc.pageSetup().margins.left).toBe(20);
@@ -365,6 +398,8 @@ describe('<ink-editor> page setup', () => {
   it('Set as default updates the bound default, which a document without setup starts from', async () => {
     const { fixture, host, dialog } = await open();
     choosePages(dialog);
+    await fixture.whenStable();
+    openTab(dialog, 'Margins');
     await fixture.whenStable();
     check(dialog, 'input[name="ink-ps-margins"][value="narrow"]');
     await fixture.whenStable();
@@ -386,7 +421,38 @@ describe('<ink-editor> page setup', () => {
     expect(q<HTMLInputElement>(again, 'input[value="pageless"]').checked).toBe(true);
     choosePages(again);
     await fixture.whenStable();
+    openTab(again, 'Margins');
+    await fixture.whenStable();
     expect(q<HTMLInputElement>(again, 'input[value="narrow"]').checked).toBe(true);
+  });
+
+  it('opens at the header or footer, and moves between tabs with the arrow keys', async () => {
+    const fixture = TestBed.createComponent(PageSetupHost);
+    fixture.componentInstance.initial = {
+      ...docWith('text'),
+      doc: { ...(docWith('text').doc as object), attrs: { page: { layout: 'pages' } } },
+    };
+    await fixture.whenStable();
+    fixture.componentInstance.editor()!.openPageSetup('footer');
+    await fixture.whenStable();
+    const dialog = document.querySelector<HTMLElement>('.ink-ps')!;
+    const selected = () => dialog.querySelector('[role="tab"][aria-selected="true"]')!;
+
+    expect(selected().textContent!.trim()).toBe('Header & footer');
+    expect(dialog.querySelector('#ink-ps-footer')).toBeTruthy();
+    expect(q(dialog, '[role="tabpanel"]').getAttribute('aria-labelledby')).toBe(selected().id);
+
+    selected().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await fixture.whenStable();
+    expect(selected().textContent!.trim()).toBe('Page');
+    expect(document.activeElement).toBe(selected());
+    selected().dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await fixture.whenStable();
+    expect(selected().textContent!.trim()).toBe('Header & footer');
+    // Only the selected tab is in the tab order.
+    expect(
+      Array.from(dialog.querySelectorAll('[role="tab"]'), (t) => t.getAttribute('tabindex')),
+    ).toEqual(['-1', '-1', '0']);
   });
 });
 

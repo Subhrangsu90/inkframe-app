@@ -86,11 +86,26 @@
 </ng-template>
 
 <!-- ═════════════════════════════════════════════ -->
-<!-- HEADER RIGHT: Share & Export                  -->
+<!-- HEADER RIGHT: Page setup, Share & Export      -->
 <!-- (word count lives in the editor's status bar) -->
 <!-- ═════════════════════════════════════════════ -->
 <ng-template #headerRight>
   <div class="header-actions">
+    <!-- Page setup: only while editing the current document -->
+    @if (activeView() === 'rich' && !previewVersion()) {
+      <button
+        type="button"
+        class="page-setup-btn"
+        (click)="openPageSetup()"
+        aria-haspopup="dialog"
+        aria-label="Page setup"
+        title="Page setup: paper, margins, header and footer"
+      >
+        <ink-icon name="ruler" [size]="14" />
+        <span class="hidden md:inline">Page setup</span>
+      </button>
+    }
+
     <!-- Share Reader Page Link Popover / Button -->
     <button
       type="button"
@@ -188,7 +203,6 @@
       type="button"
       class="export-btn"
       [matMenuTriggerFor]="exportMenu"
-      (menuClosed)="onExportMenuClosed()"
       [disabled]="exporting()"
       aria-label="Export, print or copy"
       title="Export, print or copy"
@@ -207,10 +221,6 @@
         <span class="menu-item-text">Web page (.html)</span>
       </button>
       <mat-divider />
-      <button mat-menu-item (click)="openPageSetup()" [disabled]="activeView() !== 'rich'">
-        <span class="menu-item-glyph"><ink-icon name="ruler" [size]="16" /></span>
-        <span class="menu-item-text">Page setup…</span>
-      </button>
       <button mat-menu-item (click)="printDoc()">
         <span class="menu-item-glyph"><ink-icon name="printer" [size]="16" /></span>
         <span class="menu-item-text">Print or save as PDF</span>

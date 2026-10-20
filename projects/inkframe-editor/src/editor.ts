@@ -456,13 +456,14 @@ export class Editor {
       current: this.svc.storedPageSetup(),
       defaultSetup: this.defaultPageSetup() ?? initialPageSetup(),
       setDefault: (setup) => this.defaultPageSetup.set(setup),
+      section,
     };
     const ref = this.dialog.open<PageSetup, PageSetupDialogData, PageSetupDialog>(PageSetupDialog, {
       data,
       injector: this.injector,
       ariaLabelledBy: 'ink-page-setup-title',
-      autoFocus: section ? `#ink-ps-${section}` : '.ink-ps-layout input:checked',
-      width: '600px',
+      autoFocus: section ? `#ink-ps-${section}` : '.ink-ps-mode input:checked',
+      width: '760px',
       maxWidth: 'calc(100vw - 32px)',
       maxHeight: 'calc(100dvh - 48px)',
       panelClass: 'ink-page-setup-pane',

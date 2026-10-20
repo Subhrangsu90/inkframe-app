@@ -1,6 +1,8 @@
 import '@angular/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { DocumentManager, EXCERPT_VERSION, extractDocExcerpt } from './document-manager';
+import { DOCUMENT_STORE, DocMeta, DocumentStore } from './document-store';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 
 const docWith = (text: string): StoredDoc => ({
@@ -14,7 +16,7 @@ describe('DocumentManager persistence', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    manager = new DocumentManager();
+    manager = TestBed.inject(DocumentManager);
   });
 
   it('deleteDoc removes the stored content, not just the index entry', async () => {
@@ -74,7 +76,7 @@ describe('DocumentManager.clearAll', () => {
   beforeEach(() => localStorage.clear());
 
   it('removes every document but keeps preferences', async () => {
-    const manager = new DocumentManager();
+    const manager = TestBed.inject(DocumentManager);
     await manager.createDoc('A', docWith('A'));
     localStorage.setItem('inkframe-theme', 'light');
     localStorage.setItem('inkframe_sidebar_collapsed', 'true');
@@ -84,6 +86,52 @@ describe('DocumentManager.clearAll', () => {
     expect(await manager.getIndex()).toEqual([]);
     const remaining = Object.keys(localStorage);
     expect(remaining.sort()).toEqual(['inkframe-theme', 'inkframe_sidebar_collapsed']);
+  });
+});
+
+describe('DocumentManager with another store', () => {
+  /** A store in memory, standing in for the cloud store to come. */
+  function memoryStore() {
+    const docs = new Map<string, StoredDoc>();
+    let index: DocMeta[] = [];
+    const store: DocumentStore = {
+      list: async () => index.map((meta) => ({ ...meta })),
+      get: async (id) => docs.get(id) ?? null,
+      put: async (entries) => {
+        for (const { meta, doc } of entries) {
+          if (doc) docs.set(meta.id, doc);
+          index = [...index.filter((d) => d.id !== meta.id), meta];
+        }
+        index.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      remove: async (id) => {
+        docs.delete(id);
+        index = index.filter((d) => d.id !== id);
+      },
+      clear: async () => {
+        docs.clear();
+        index = [];
+      },
+    };
+    return { store, docs };
+  }
+
+  it('keeps documents wherever DOCUMENT_STORE keeps them, and nothing on the device', async () => {
+    localStorage.clear();
+    const { store, docs } = memoryStore();
+    TestBed.configureTestingModule({ providers: [{ provide: DOCUMENT_STORE, useValue: store }] });
+    const manager = TestBed.inject(DocumentManager);
+
+    const a = await manager.createDoc('A', docWith('first'));
+    await manager.saveDoc(a.meta.id, docWith('second'));
+    expect(docs.get(a.meta.id)).toEqual(docWith('second'));
+    expect((await manager.getIndex()).map((d) => d.title)).toEqual(['second']);
+    expect(Object.keys(localStorage).filter((k) => k.startsWith('inkframe_doc'))).toEqual([]);
+
+    // Deleting the last document still leaves the welcome document, in the same store.
+    const next = await manager.deleteDoc(a.meta.id);
+    expect(docs.has(a.meta.id)).toBe(false);
+    expect([...docs.keys()]).toEqual([next]);
   });
 });
 
@@ -150,7 +198,7 @@ describe('document previews', () => {
 
   it('is saved with the document and backfilled for older index entries', async () => {
     localStorage.clear();
-    const manager = new DocumentManager();
+    const manager = TestBed.inject(DocumentManager);
     const { meta } = await manager.createDoc('Notes', docWith('Remember the milk'));
     expect(meta.excerpt).toBe('Remember the milk');
     expect(meta.excerptVersion).toBe(EXCERPT_VERSION);
@@ -158,7 +206,7 @@ describe('document previews', () => {
     const index = await manager.getIndex();
     delete index[0].excerpt;
     delete index[0].excerptVersion;
-    await manager.saveIndex(index);
+    await TestBed.inject(DOCUMENT_STORE).put(index.map((meta) => ({ meta })));
     const before = index[0].updatedAt;
 
     expect(await manager.backfillExcerpts()).toBe(true);
@@ -170,12 +218,12 @@ describe('document previews', () => {
 
   it('rebuilds previews made by an older version of the format', async () => {
     localStorage.clear();
-    const manager = new DocumentManager();
+    const manager = TestBed.inject(DocumentManager);
     await manager.createDoc('Notes', docWith('Remember the milk'));
     const index = await manager.getIndex();
     index[0].excerpt = 'Notes Remember the milk';
     index[0].excerptVersion = EXCERPT_VERSION - 1;
-    await manager.saveIndex(index);
+    await TestBed.inject(DOCUMENT_STORE).put(index.map((meta) => ({ meta })));
 
     expect(await manager.backfillExcerpts()).toBe(true);
     const [entry] = await manager.getIndex();

@@ -1,5 +1,6 @@
 import '@angular/compiler';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 import {
   LARGE_CHANGE_CHARS,
@@ -142,7 +143,7 @@ describe('VersionHistory', () => {
   });
 
   it('is removed with its document', async () => {
-    const manager = new DocumentManager();
+    const manager = TestBed.inject(DocumentManager);
     const { meta: doc } = await manager.createDoc('A', docWith('a'));
     await manager.createDoc('B', docWith('b'));
     const version = await history.snapshot(doc.id, docWith('a'), 'named', 'Keep');

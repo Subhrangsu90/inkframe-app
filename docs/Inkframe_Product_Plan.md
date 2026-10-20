@@ -4,9 +4,9 @@
 | --- | --- |
 | **Product** | Inkframe: a private, full WYSIWYG document editor that runs entirely on your device |
 | **Deliverables** | The web app (`inkframe-app`) and the embeddable Angular editor library (`@inkframe-ui/editor`) |
-| **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer in M6: backend, database, object storage, AI, Yjs. |
-| **Plan version** | 4.3 (adds M3.5: page setup). 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
-| **Last updated** | 2026-10-18 |
+| **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer (M6), in a separate repository (`inkframe-server`): a Node.js server (Express, TypeScript, Zod) with Better Auth built in, Postgres (Docker on developer machines, Neon in production), Amazon S3 for images, hosted on Render; later AI and Yjs. |
+| **Plan version** | 4.4 (moves accounts, sync and cloud images, M6.1–M6.3, before launch, and decides the backend). 4.3 added M3.5: page setup. 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
+| **Last updated** | 2026-10-20 |
 | **Status** | Pre-launch. The core editor is built; the work below takes it to a production release. |
 
 ---
@@ -34,7 +34,7 @@ Inkframe started as an offline Markdown notes app. This plan repositions it as a
 
 Three things make Inkframe different, and every roadmap item below protects or extends one of them:
 
-1. **Private by default.** No account, no server, no telemetry. Documents and images live in the browser's IndexedDB.
+1. **Private by default.** No account needed, no telemetry. Documents and images live in the browser's IndexedDB, and reach a server only when a signed-in user chooses to sync them.
 2. **Share without a server.** A share link carries the whole document in the URL fragment, which browsers never send to a server.
 3. **One editor, two products.** The app is built on the same editor that Angular teams can embed through `@inkframe-ui/editor`.
 
@@ -46,7 +46,7 @@ The core editor is built and tested (110 unit tests; library and app builds pass
 
 Before launch, **M3.5 adds page setup**. Each document is either **Pages**, a sheet the size of real paper (A4, Letter, A3, A5 or Legal, portrait or landscape) that prints the way it looks, or **Pageless**, the full canvas. A ruler sets the margins in both, and a page color works in both. This strengthens U2: in Pages layout, the screen and the printout break lines in the same places.
 
-After launch, **M6 adds an optional cloud layer**: accounts, sync across devices, server-side storage, an AI writing assistant and real-time collaboration. It is strictly opt-in. Inkframe keeps working fully without an account, so the privacy promise stays true for everyone who never signs in.
+**M6 adds an optional cloud layer.** Its first three steps ship **at launch** (decided 2026-10-20): accounts, sync across devices with server-side storage in a database, and cloud images (M6.1–M6.3). The AI writing assistant (M6.4) and real-time collaboration (M6.5) follow after launch. All of it is strictly opt-in. Inkframe keeps working fully without an account, and the copy on the device stays the primary one, so the privacy promise stays true for everyone who never signs in.
 
 **M7 adds Block mode**, a second, Notion-style way of writing: no toolbar, every paragraph is a block you can drag, turn into something else or nest pages under. Users choose Document mode or Block mode per document and can switch at any time, because both modes edit the same document. M7 needs no backend, so it can ship before, after or alongside M6.
 
@@ -81,7 +81,7 @@ Each USP lists the proof in the product and what must be true before we claim it
 
 **Lead message:** U1 + U2 together ("a real document editor that keeps your words on your device"). U3 is the memorable hook; U4–U6 are supporting pillars for technical audiences.
 
-**After M6, a seventh pillar: U7, cloud when you want it.** Sign in to sync across devices, collaborate live and use the AI assistant; stay signed out and nothing changes. U7 must never weaken U1: every mention says the account is optional, and the app shows clearly which documents live only on the device and which are synced.
+**From launch, a seventh pillar: U7, cloud when you want it.** Sign in to sync across devices (at launch), then collaborate live and use the AI assistant (after launch); stay signed out and nothing changes. U7 must never weaken U1: every mention says the account is optional, and the app shows clearly which documents live only on the device and which are synced.
 
 **After M7, U2 widens to "WYSIWYG, your way."** Write on a classic page with a toolbar, or in blocks you can drag and rearrange. It is the same document either way, so switching is instant and lossless. This is also a library selling point: Angular teams get both styles from one editor.
 
@@ -95,7 +95,7 @@ Category-level comparison. Verify any specific competitor claim against current 
 | Markdown editors and note apps | Typora, Obsidian, StackEdit, Dillinger | Plain-text portability, power-user workflows | Formatted-page WYSIWYG without syntax, plus Markdown export when you need it. |
 | Embeddable editor libraries | Tiptap, CKEditor, TinyMCE, Quill, ngx-editor | Framework coverage, plugin ecosystems | Angular-native (signals, standalone), complete UI included, and a full reference app. |
 
-Inkframe does **not** compete on real-time collaboration or cloud sync at launch. Say so plainly in the FAQ instead of implying it. Both arrive in M6 as optional, signed-in features, positioned as "local-first, cloud when you want it" rather than "cloud first".
+Inkframe does **not** compete on real-time collaboration at launch. Say so plainly in the FAQ instead of implying it. Sync across devices ships at launch and collaboration after it (M6.5), both as optional, signed-in features, positioned as "local-first, cloud when you want it" rather than "cloud first".
 
 Block mode (M7) brings the block-editing style people know from Notion-like tools, but Inkframe does **not** compete on databases (table, board and calendar views with properties and filters). Keep that out of scope and say so if asked.
 
@@ -104,9 +104,9 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | Element | Copy |
 | --- | --- |
 | Tagline | **Write beautifully. Keep it yours.** |
-| Hero subhead | A full WYSIWYG document editor that lives on your device: no account, no server, no tracking. |
+| Hero subhead | A full WYSIWYG document editor that lives on your device: no account needed, no tracking. Sign in only if you want your documents on every device. |
 | Pillar 1 | **A real page, not syntax.** Headings, tables, code, callouts and checklists, formatted as you type. |
-| Pillar 2 | **Private by design.** Everything is stored in your browser. Nothing is uploaded. |
+| Pillar 2 | **Private by design.** Everything is stored in your browser. Nothing is uploaded unless you sign in and turn on sync for a document. |
 | Pillar 3 | **Share with one link.** The whole document travels inside the link; no server ever sees it. |
 | Writing styles line (after M7) | **Write your way.** A classic page with a toolbar, or blocks you can drag and rearrange. Switch any time; it's the same document. |
 | Developer line | The editor behind Inkframe is an open Angular library. Drop it into your app. |
@@ -115,6 +115,7 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 - Replace "Private, local-first markdown app" with WYSIWYG wording.
 - Remove "Raw Markdown", "Split View" and PDF claims until they ship.
 - Remove "without a single network request" until fonts are self-hosted, and change it to "nothing you write is ever uploaded", which stays true even with external image URLs.
+- **With sync at launch (M6.1–M6.3),** these become false for signed-in users and must change in the same release: "no account, no server" (landing hero), "no servers, no accounts" and "every word stays on your device" (landing feature cards), "No cloud. No account." (landing card 3), "No account and no server" (Settings), and "zero backend or account required" (editor share popover). Replace them with "on your device by default" wording, and keep "no account needed to write". Share links (`/s#…`) still never reach a server, so Pillar 3 stays.
 
 ### 2.6 Claims we must not make yet
 
@@ -123,7 +124,9 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | "Zero network requests" / "zero tracking" | Fonts and Material Symbols load from Google servers. | Self-host fonts and icons (M0). |
 | "Split view" / "Raw Markdown" | Not built. | Optional Markdown source view (P2) or remove the copy. |
 | ~~"Works offline" (after first visit)~~ | ✅ Unblocked by M3. The landing page now says it, with "you can install it as an app". | |
-| "Sync across devices", "Collaborate in real time", "AI writing assistant" | Not built. | M6.2, M6.5, M6.4. Always paired with "optional, no account needed to write". |
+| "Sync across devices" | Not built. | M6.2, before launch. Always paired with "optional, no account needed to write". |
+| "Collaborate in real time", "AI writing assistant" | Not built. | M6.5, M6.4, after launch. Always paired with "optional, no account needed to write". |
+| "End-to-end encrypted", "even we can't read your documents" | Synced documents use standard encryption (D21): the service could technically read them. | Never, unless end-to-end encryption is built. Say instead: "encrypted in transit and at rest; only you can open your documents in the app". |
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
 | "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Built (M3.5 steps 1–5) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "See your pages as they print" | Built (M3.5 step 6) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
@@ -229,12 +232,16 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 
 ### 3.7 Optional cloud features (signed-in only, M6)
 
+M6.1–M6.3 ship before launch; M6.4 and M6.5 after.
+
 | Feature | Status | Milestone | Notes |
 | --- | --- | --- | --- |
 | Accounts: email magic link, Google and GitHub sign-in | ⬜ | M6.1 | Never required to use the editor. |
 | Account deletion and full data export | ⬜ | M6.1 | Deletion removes all server-side data. |
-| Per-document sync ("Sync" / "Keep on this device") | ⬜ | M6.2 | Local copy stays primary; works offline. |
+| Sign-out on a shared computer: "Remove synced documents from this device" | ⬜ | M6.1 | Otherwise signing in at an office or library computer leaves copies behind. Documents kept "On this device only" are never removed silently. |
+| Per-document sync ("Sync" / "Keep on this device") | ⬜ | M6.2 | Local copy stays primary; works offline. Storage is behind a `DocumentStore` interface since 2026-10-20 ([6.6](#66-optional-cloud-architecture-m6)). |
 | Sync status and conflict copies | ⬜ | M6.2 | Concurrent edits never silently overwrite. |
+| Trash: deleted synced documents can be restored for 30 days | ⬜ | M6.2 | Then deleted for good, versions and images included. |
 | Cloud image storage | ⬜ | M6.3 | Synced documents' images move to private object storage. |
 | Revocable public links (`/p/<id>`) | ⬜ | M6.3 | Opt-in alternative to fragment links for large documents. |
 | AI assistant: continue, summarize, improve, shorten, fix grammar, translate, change tone | ⬜ | M6.4 | Suggestions need an explicit Accept; one undo step. |
@@ -312,12 +319,14 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 Milestones are sequential; work inside a milestone can run in parallel. Sizes: **S** ≤ 2 days, **M** ≤ 1 week, **L** > 1 week.
 
 ```
-M0 Stabilize ─► M1 WYSIWYG completeness ─► M2 Data safety & export ─► M3 Mobile & PWA ─► M3.5 Page setup ─► M4 Launch ─┬─► M5 Growth
-                                                                                                                       ├─► M6 Optional cloud
-                                                                                                                       └─► M7 Block mode
+M0 Stabilize ─► M1 WYSIWYG ─► M2 Data safety ─► M3 Mobile & PWA ─► M3.5 Page setup ─► M6.1–M6.3 Accounts, sync, images ─► M4 Launch ─┬─► M5 Growth
+                                                                                                                                       ├─► M6.4 AI, M6.5 Collaboration
+                                                                                                                                       └─► M7 Block mode
 ```
 
-M3.5 sits between M3 and M4, so page setup ships at launch, and the later milestones keep their numbers. M5, M6 and M7 run in parallel after launch. Neither M6 nor M7 starts before M4: the local-first product ships first and keeps working on its own. M7 does not depend on M6; once both exist, sub-pages sync like any other document.
+M3.5 sits between M3 and M4, so page setup ships at launch, and the later milestones keep their numbers. **Since 2026-10-20, M6.1–M6.3 (accounts, sync and cloud images) also come before M4**, so people can reach their documents from any device from day one. M6.4, M6.5, M5 and M7 run in parallel after launch. M7 does not depend on M6; once both exist, sub-pages sync like any other document.
+
+**Fallback:** if sync is not ready and safe on the launch date, launch local-only with sign-in hidden behind a feature flag. The local product works on its own, so this costs nothing but the sync claims.
 
 ### M0: Stabilize and make the claims true
 
@@ -506,7 +515,7 @@ Why the printout draws its own pages: the standard way to print page numbers is 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
 | Accessibility audit (axe and keyboard-only pass) | M | No critical or serious axe issues; WCAG 2.1 AA contrast in both themes. |
-| Production deployment | S | Allowed hosts configured; caching headers; error pages. |
+| Production deployment | S | On Render (Singapore, D22): the app and the API, each with a staging copy. Allowed hosts configured; caching headers; error pages. |
 | Publish `@inkframe-ui/editor` 1.0 | M | See [section 8](#8-library-productization-inkframe-uieditor). |
 | Landing SEO and social cards | S | Prerendered landing, Open Graph image, sitemap. |
 
@@ -526,38 +535,48 @@ Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-a
 
 **Rules for every M6 feature:**
 
-1. **The account is never required.** Signed out, Inkframe behaves exactly as it does after M4.
+1. **The account is never required.** Signed out, Inkframe behaves exactly as it does without the cloud layer.
 2. **The local copy stays primary.** Edits are written to IndexedDB first, then synced. Signed-in users can still work offline.
 3. **The user chooses per document.** Each document is either "Synced" or "On this device only". At sign-in, the user picks which existing documents to upload; nothing uploads silently.
 4. **Disclose whenever content leaves the device:** sync badges in the library, a label on every AI action.
 5. **Providers stay behind interfaces** (`DocumentStore`, `ImageStore`, `AuthService`, `AiProvider`, collaboration provider; see [section 6.6](#66-optional-cloud-architecture-m6)) so the backend can be swapped.
 
-**Backend choice (open decision D10):**
+**Backend (decided 2026-10-20, D10, D22):**
 
-| Option | Gives you | Trade-off |
+| Part | Choice | Notes |
 | --- | --- | --- |
-| **Supabase** (recommended) | Auth, Postgres with row-level security, object storage and edge functions in one service | Vendor coupling, reduced by the interfaces above. Fastest path. |
-| Firebase | Auth, Firestore, Cloud Storage, functions | NoSQL document model; less natural for version history and permission queries. |
-| Custom: Express (extend `src/server.ts` or a separate service) + Postgres + S3-compatible storage + an auth library | Full control, no vendor coupling | The most work: auth, migrations, storage signing and scaling are yours to build and run. |
+| Repositories | **Two**: `inkframe-app` (this one: the app and the editor library) and **`inkframe-server`** (the server, its migrations and its local database setup), side by side | They share no code. The server's HTTP routes are the contract between them: versioned under `/v1`, described by the server's Zod schemas and its README. The server repository has its own CI (type check, lint, tests against a real Postgres, build). Decided 2026-10-20 (D23); the first skeleton lived in `api/` in this repo for a few hours. |
+| Database (development and tests) | **Postgres 17 in Docker** (`docker compose up -d` in `inkframe-server`) | Works offline, with no cloud account. An init script creates the databases `inkframe` and `inkframe_test` and two roles: `inkframe_owner` owns the tables and runs migrations; `inkframe_app` is what the server connects as, owns nothing and cannot bypass row-level security. Tests run against `inkframe_test`. |
+| Database (production) | **Neon** serverless Postgres 17, region `aws-ap-southeast-1` (Singapore) | The server uses plain Postgres only, so Neon is replaceable by any Postgres 17. Neon creates new projects in AWS regions only, and has none in India; Singapore is the closest. **The region cannot be changed after the project is created**, so confirm where most users are first (Frankfurt or N. Virginia if they are mostly in Europe or the US). The same two roles are created with the same SQL as the Docker init script. Neon branches give a staging copy. |
+| Accounts | **Better Auth, running inside the server** at `/api/auth` | Users, sessions and sign-in methods are tables in the same Postgres, managed by the same migrations, so accounts work against the local Docker database too. Sessions are HTTP-only cookies (`Secure` and `SameSite=Lax` in production; the app at `inkframe.app` and the server at `api.inkframe.app` are the same site). Documents reference the `user` table, so deleting an account deletes its documents. Changed 2026-10-20 from Neon Managed Better Auth, which only works with a Neon database. Email and password work from the start; magic links need an email provider and Google and GitHub need OAuth apps (M6.1). |
+| Server | **Node.js 24, Express 5, TypeScript**, in `inkframe-server` | Every request body, query and route parameter is checked with **Zod** schemas; anything else gets 400. `/v1` routes require a Better Auth session (`auth.api.getSession`), and writes from origins other than the app are refused on top of CORS. Postgres through `pg` (node-postgres) with Drizzle ORM; drizzle-kit migrations, run as `inkframe_owner` before each deploy. S3 through the AWS SDK v3 and its presigner. `helmet` for security headers, a CORS allow-list with credentials, `express-rate-limit`. |
+| Images | **Amazon S3**, private bucket in `ap-southeast-1` | Block all public access; the server hands out short-lived presigned URLs for upload and download. Locally, MinIO in the same Docker Compose file can stand in for S3 (M6.3). Cloudflare R2 is an S3-compatible alternative with no download (egress) fees, if costs grow. |
+| Hosting | **Render**, Singapore region | Two web services on Render's Node runtime (no Docker needed): the Angular SSR server from `inkframe-app` and the server from `inkframe-server` (pre-deploy command: the migrations). Deploys from GitHub, HTTPS and custom domains included. Same region as the database and bucket, so queries stay fast. A staging copy of both services runs against a Neon staging branch. |
 
-Collaboration needs a Yjs sync server (Hocuspocus or y-websocket) whichever option is chosen.
+Collaboration (M6.5) will need a Yjs sync server (Hocuspocus, also Node and TypeScript), as a third Render service or inside the API service.
 
-**Sequence:** M6.1 → M6.2 → M6.3 → M6.5. M6.4 (AI) can start as soon as M6.1 is done.
+**Sequence:** M6.1 → M6.2 → M6.3, all before M4. After launch: M6.5, and M6.4 (AI) whenever there is capacity.
 
 #### M6.1: Backend foundation and accounts
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Provision dev, staging and production environments; secrets management | S | No secrets in the client bundle or the repository. |
-| `AuthService` (signals: `user`, `status`) with magic link, Google and GitHub | M | Signing in and out never changes or hides local documents. |
+| Provision staging and production (Neon project and roles, Render services, S3 bucket); secrets management. Development already runs on Docker. | S | No secrets in the client bundle or either repository. Neon, AWS and Render keys live only in Render's environment variables. |
+| ✅ Server foundation in the `inkframe-server` repository (done 2026-10-20): Express 5 with Zod validation (`route()`), security headers, a CORS allow-list with credentials, refusal of cross-site writes, rate limits, a 2 MB body limit, JSON errors and content-free logs; Better Auth at `/api/auth` (email and password); Postgres in Docker with the `inkframe_owner` and `inkframe_app` roles; Drizzle schema and first migration (Better Auth's tables, `documents`, `document_versions`) with row-level security; `asUser()` for per-user transactions; CI with a Postgres service | M | 25 tests against a real Postgres: sign-up, sign-in, sign-out ends the session at once, hashed passwords; two users can't read, change, delete or create each other's documents or versions; no user set means no rows; deleting an account deletes its documents; the server's role can't bypass row-level security. Checked end to end with the built server. |
+| `AuthService` in the app (signals: `user`, `status`), using the Better Auth client against the server; then magic links (an email provider such as Amazon SES or Resend) and Google and GitHub (OAuth apps) | M | Signing in and out never changes or hides local documents. |
 | Account section in `/settings`: profile, sign out, export my data, delete account | M | Account deletion removes every server-side row and file (verified by a test). |
+| Sign-out choice: "Remove synced documents from this device" | S | Removes synced documents, their versions and cached images from IndexedDB; keeps "On this device only" documents. |
 | Sign-in entry points: top bar avatar menu, settings | S | No route requires an account. |
+| Privacy policy and terms of service; data processing terms with Neon, AWS and Render; review for India's DPDP Act and, for users in the EU, GDPR | S | Published and linked from sign-in before launch. |
 
 #### M6.2: Cloud document storage and sync
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Split `DocumentManager` into `LocalDocumentStore` (current IndexedDB code) and `CloudDocumentStore`, coordinated by a `SyncEngine` | M | Signed-out behavior is unchanged (existing tests pass untouched). |
+| ✅ Put storage behind a `DocumentStore` interface: `DocumentManager` keeps the library logic, `LocalDocumentStore` holds the IndexedDB code, and the `DOCUMENT_STORE` token picks the store (done 2026-10-20) | S | Signed-out behavior is unchanged: all app tests pass; specs now get `DocumentManager` from `TestBed`. A spec runs the manager on an in-memory store. |
+| `CloudDocumentStore` (calls the API) and a `SyncEngine` that writes to the local store first, then queues the change for the cloud | M | Signed-out behavior is unchanged (existing tests pass untouched). |
+| Server-side document checks: size limit, known schema version, JSON depth limit | S | Oversized or malformed documents are rejected with a clear message; the server never renders document HTML. |
+| Trash: deleting a synced document sets `deleted_at`; it can be restored for 30 days, then a daily job deletes it, its versions and its images | S | Restoring brings back the document and its history on every device. |
 | Server tables `documents` and `document_versions` (see [6.6](#66-optional-cloud-architecture-m6)) with per-owner access rules | M | A user can never read or write another user's rows (tested at the API level). |
 | Optimistic concurrency: each save sends the version it was based on; the server rejects stale saves | M | Two devices editing the same document never lose data: the losing edit becomes a "conflict copy" document. |
 | Offline queue: pending saves stored in IndexedDB and replayed on reconnect | M | Edits made offline sync after reconnect, in order. |
@@ -735,24 +754,29 @@ An `EditorExtension` can contribute nodes, marks, input rules, keymaps, plugins,
 ### 6.6 Optional cloud architecture (M6)
 
 ```
-Browser (Inkframe app)                          Backend (signed-in users only)
-┌───────────────────────────────┐              ┌────────────────────────────────────┐
-│ Editor ─► LocalDocumentStore  │   HTTPS      │ API: auth · documents · images     │
-│           (IndexedDB, primary)│◄────────────►│      · public links · AI proxy     │
-│ SyncEngine · ImageStore cache │              ├────────────────────────────────────┤
-│ AuthService (signals)         │              │ Postgres │ Object storage │ AI     │
-│ AiProvider ───────────────────┼──── SSE ────►│ (RLS)    │ (private)      │ model  │
-│ CollaborationExtension ◄──────┼─ WebSocket ─►│ Yjs sync server (Hocuspocus) ─► DB │
-└───────────────────────────────┘              └────────────────────────────────────┘
+Browser (Inkframe app, inkframe.app)            inkframe-server (api.inkframe.app, Render)
+┌───────────────────────────────┐   cookie     ┌──────────────────────────────────────┐
+│ AuthService (Better Auth      │◄────────────►│ /api/auth  Better Auth (sign-in,     │
+│   client, signals)            │   session    │            sessions, accounts)       │
+│ Editor ─► LocalDocumentStore  │              │ /v1        documents · versions ·    │
+│           (IndexedDB, primary)│  HTTPS +     │            images · public links ·   │
+│ SyncEngine ─► CloudDocStore ──┼─ cookie ────►│            later: AI proxy           │
+│ ImageStore cache ◄────────────┼─ presigned ─┐│  ├─► Postgres (RLS): Docker locally, │
+│ AiProvider (after launch) ────┼──── SSE ────►│  │   Neon (Singapore) in production  │
+│ CollaborationExtension ◄──────┼─ WebSocket ─►│  └─► S3 private bucket, Singapore    │
+└───────────────────────────────┘             └┤ Hocuspocus (after launch) ─► Postgres│
+                                               └──────────────────────────────────────┘
 ```
+
+The Angular SSR server stays a static and prerendering server; it holds no user data and no database credentials.
 
 **Interfaces** (the seams that keep the provider swappable):
 
 | Interface | Implementations | Lives in |
 | --- | --- | --- |
-| `DocumentStore` | `LocalDocumentStore` (today's code), `CloudDocumentStore` | App (`src/app/features/documents`) |
+| `DocumentStore` (`list`, `get`, `put`, `remove`, `clear`; `DOCUMENT_STORE` token) | ✅ `LocalDocumentStore` (since 2026-10-20); `CloudDocumentStore` and the `SyncEngine` in M6.2 | App (`src/app/features/documents/data-access`) |
 | `ImageStore` | IndexedDB; cloud with a local cache | Library `/core` (`imageStorage` gains a cloud resolver) |
-| `AuthService` | The chosen provider's SDK | App |
+| `AuthService` | The Better Auth client, pointed at the server's `/api/auth` | App |
 | `AiProvider` | Server proxy client in the app; library consumers bring their own | Library `/core` (interface), app (implementation) |
 | Collaboration provider | Hocuspocus provider | Library extension, wired up in the app |
 
@@ -767,7 +791,13 @@ Browser (Inkframe app)                          Backend (signed-in users only)
 | `public_links` | `id`, `document_id`, `created_at`, `expires_at`, `revoked_at` | M6.3. |
 | `ai_usage` | `user_id`, `period`, `request_count`, `token_count` | Quotas only; **never stores prompts or document content.** |
 
-Every table is protected by per-owner (and per-member) access rules enforced in the database, not only in API code.
+Every table is protected by per-owner (and per-member) access rules enforced in the database, not only in API code. With one API in front of the database, that works like this:
+
+- `owner_id` is the signed-in session's user id (Better Auth's `user.id`) and references the `user` table, so deleting an account deletes its rows. The client never chooses an owner.
+- The server connects as `inkframe_app`, a role that owns no tables and has no `BYPASSRLS`. Each request runs in a transaction that first calls `set_config('app.user_id', <user id>, true)` (the transaction-local form of `SET LOCAL`, which takes a bound parameter and works with Neon's pooled connections), and row-level security policies compare `owner_id` (or membership) to it.
+- The API also filters by owner in its queries, so a mistake in one layer is caught by the other. Tests sign in as two users and check that neither can read, change or delete the other's rows or images.
+- Migrations run as `inkframe_owner` (Render's pre-deploy command), never as the role the running server uses. Better Auth's own tables have no row-level security: only the server reaches them.
+- A document's key on the server is `(owner_id, id)`, so ids made on devices can't collide across users.
 
 ---
 
@@ -873,13 +903,18 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 | Server exposure of shared content | Share payload lives in the URL fragment, which browsers never send. |
 | Third-party requests | Self-hosted fonts and icons (B1). External images in documents are user-chosen; the editor loads them with `referrerpolicy="no-referrer"`, and the reader should too (add in M0). |
 | Content Security Policy | Add a CSP at deploy time once fonts are self-hosted (no inline scripts; images allow `data:`, `blob:`, `https:`). |
-| **M6:** account takeover, session theft | Provider-managed auth, short-lived tokens, HTTP-only cookies where the provider supports them. |
-| **M6:** reading other users' data | Row-level access rules in the database on every table; API-level tests that attempt cross-user access. |
+| **M6:** account takeover, session theft | Better Auth in the server: sessions stored in Postgres, sent as HTTP-only, `Secure`, `SameSite=Lax` cookies; passwords hashed by Better Auth; its sign-in rate limits on top of the server's. Every `/v1` request checks the session. |
+| **M6:** cross-site requests (CSRF) | `SameSite=Lax` cookies; CORS allows only the app's origin; `/v1` writes with any other `Origin` are refused (403); Better Auth checks the origin of its own endpoints. |
+| **M6:** reading other users' data | Row-level security on every table (the API sets `app.user_id` per transaction, see [6.6](#66-optional-cloud-architecture-m6)), owner filters in API queries, and tests that attempt cross-user access. |
+| **M6:** images reached without permission | S3 bucket with all public access blocked; presigned URLs that expire in minutes, issued only to the owner (or a member); the API's AWS key can reach only that bucket. |
+| **M6:** abuse and runaway costs | Per-user rate limits and storage quotas in the API; request and document size limits; Render and AWS budget alerts. |
+| **M6:** leaked keys | Neon, AWS and Render credentials only in Render environment variables; CI fails if a secret or a server SDK appears in the browser bundle; keys rotated after any leak. |
 | **M6:** leaked AI keys, AI cost abuse | Keys only on the server; per-user rate limits and quotas; CI check on the client bundle. |
-| **M6:** data at rest and in transit | TLS everywhere; provider encryption at rest; private buckets with signed URLs. |
+| **M6:** data at rest and in transit | Standard encryption (D21): TLS everywhere; Neon and S3 encrypt data at rest. Not end-to-end: the service could technically read synced documents, so the app never claims otherwise. |
+| **M6:** logs that leak content | Logs hold ids, status codes and timings only; never document text, titles or tokens. |
 | **M6:** right to be forgotten | Account deletion removes documents, versions, images, links, memberships and usage rows. |
 
-A security review of the backend, the access rules and the AI endpoint is required before M6 goes to production.
+A security review of the API, the access rules and the bucket policy is required before launch (and of the AI endpoint before M6.4 goes live).
 
 ### 9.4 Definition of done (every feature)
 
@@ -898,6 +933,11 @@ A security review of the backend, the access rules and the AI endpoint is requir
 - [ ] CSP and caching headers configured; service worker versioning verified.
 - [ ] Backup, restore and migration tested with documents from the previous release.
 - [ ] Library tarball installed into a clean Angular app and smoke-tested.
+- [ ] **Cloud (M6.1–M6.3):** Neon's point-in-time restore window set to at least 7 days (longer than the Free plan allows), and a restore rehearsed on a staging branch; S3 versioning on the image bucket.
+- [ ] Cross-user access tests pass against staging; security review done and its findings fixed.
+- [ ] Two-device sync tested end to end: offline edits, conflicts, deletes and Trash restore.
+- [ ] Privacy policy and terms published; every "no server" / "no account" claim updated ([2.5](#25-messaging)).
+- [ ] Secrets only in Render environment variables; budget alerts set in Render and AWS.
 
 ---
 
@@ -924,14 +964,14 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | --- | --- | --- |
 | D1 | Name **Inkframe**; package `@inkframe-ui/editor`; selector `<ink-editor>` | Final |
 | D2 | Position as a **full WYSIWYG document editor**; Markdown is an import/export format, never the storage format | Final (this plan) |
-| D3 | Local-first storage in IndexedDB; core features never need a backend. Cloud is an optional layer (M6). | Final |
+| D3 | Local-first storage in IndexedDB; core features never need a backend. Cloud is an optional layer (M6). | Final. 2026-10-20: the layer's sync (M6.1–M6.3) ships at launch; the local copy stays primary. |
 | D4 | Share links carry the document in the URL fragment | Final |
 | D5 | Public cloud links: opt-in, revocable, synced documents only (M6.3). Fragment links stay the default. | Final |
 | D6 | Real-time collaboration uses Yjs with `y-prosemirror` (M6.5), not at launch. Store `yjs_state` from M6.2 onward; keep the undo seam isolated. | Final |
 | D7 | Angular 22, standalone components, signals, SSR with prerendered marketing pages | Final |
 | D8 | UI: SCSS tokens + Tailwind v4 + Angular Material components | Final |
 | D9 | No analytics in the app (server-side aggregate counts for M6 features only) | Final |
-| D10 | Backend provider for M6 | **Open.** Recommended: Supabase, plus Hocuspocus for collaboration. |
+| D10 | Backend for M6: a Node.js server (Express 5, TypeScript, Zod validation) with Better Auth built in, Postgres (Neon in production), Amazon S3 for images; Hocuspocus for collaboration later | Decided 2026-10-20 (was open, with Supabase recommended). The same day: the API changed from ASP.NET Core to Node, then accounts moved from Neon Managed Better Auth into the server so development can use a local database. |
 | D11 | An account is never required to use the editor | Final |
 | D12 | AI calls go through a server proxy; the library ships a provider-agnostic `AiProvider` interface; AI is signed-in only | Final |
 | D13 | Sync conflicts never silently overwrite; the losing edit becomes a conflict copy | Final |
@@ -942,6 +982,9 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D18 | Pageless means the full canvas; the ruler sets its margins. No fixed-width presets. | Final |
 | D19 | Pages layout shows real pages on screen, split with the same rules as printing (M3.5 step 6). The document never stores where pages end; spacers on screen do. Page numbers and one line of plain-text header and footer, on screen and in print, Pages layout only (M3.5 step 7); formatted headers and footers only with clear demand. | Changed 2026-10-18 (was: one long sheet, pages only in print), and 2026-10-19 (was: no headers, footers or printed page numbers) |
 | D20 | Page colors come from a fixed palette with a light and a dark value each; print and exports use the light value. | Final |
+| D21 | Synced documents use standard encryption (TLS, encryption at rest, database access rules), not end-to-end encryption. Password resets never lose documents; the app never claims the service can't read them. "On this device only" stays the choice for the most sensitive writing. | Decided 2026-10-20 |
+| D22 | Hosting: Render (Singapore) for the Angular SSR server and `inkframe-server`; Neon in `aws-ap-southeast-1` and the S3 bucket in `ap-southeast-1`, so all three share one region | Decided 2026-10-20. Confirm the users' region before creating the Neon project: it can't be moved. |
+| D23 | The server lives in its own repository, `inkframe-server`, next to this one. Developers run Postgres in Docker (`docker compose up -d`); production uses Neon. | Decided 2026-10-20 |
 
 ### 11.2 Risks
 
@@ -957,6 +1000,10 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Cloud features undermine the privacy positioning | High | Account optional forever (D11), per-document sync choice, clear labels, signed-out experience unchanged. |
 | Collaboration takes far more work than expected | High | Ship sync (M6.2) and AI (M6.4) first and collaboration last; store `yjs_state` early so no data migration is needed. |
 | Server data breach | High | Database-enforced access rules, least-privilege service keys, a security review before launch, no AI content stored. |
+| Sync (now before launch) delays the launch | High | `DocumentStore` seam already in place; build sync behind a feature flag; launch local-only if sync is not ready (see [section 5](#5-roadmap-to-production)). |
+| Wrong database region | Medium | A Neon project's region is fixed; choose it from where users are before creating production (D22). Moving later means a dump and restore with downtime. |
+| The app and the server drift apart (two repositories) | Medium | Versioned `/v1` routes that only grow; the server's Zod schemas and README describe the contract; a change that breaks the app needs a new version. Later: generate an OpenAPI description from the Zod schemas. |
+| Three providers (Neon, Render, AWS) | Medium | Each sits behind code we own (`DocumentStore`, the API, presigned URLs); standard Postgres and S3 APIs, so each can be replaced. |
 | Running costs (storage, AI tokens, sync server) | Medium | Per-user quotas from day one; free-tier limits; consider a paid plan for heavy cloud and AI use. |
 | AI output is wrong or unwanted | Medium | Suggestions always need an explicit Accept and are one undo step. |
 | Dependence on one backend or AI provider | Medium | `DocumentStore`, `ImageStore`, `AuthService` and `AiProvider` interfaces; models configured server-side. |

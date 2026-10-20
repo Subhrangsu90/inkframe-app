@@ -52,7 +52,7 @@ describe('default page setup', () => {
 
   it('applies to new blank documents, templates and imports, but not to copies', async () => {
     TestBed.inject(PageSetupDefaults).save(a4Pages);
-    const manager = new DocumentManager();
+    const manager = TestBed.inject(DocumentManager);
 
     const blank = await manager.createDoc('Blank');
     expect(pageOf(blank.doc)).toEqual(a4Pages);

@@ -109,7 +109,7 @@ describe('DocumentManager Service', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    manager = new DocumentManager();
+    manager = TestBed.inject(DocumentManager);
   });
 
   it('initializes document manager instance', () => {

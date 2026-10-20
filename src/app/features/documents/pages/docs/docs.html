@@ -101,7 +101,9 @@
       <!-- Stays at the top while the documents scroll under it -->
       <div class="sticky-head">
         <div class="section-head">
-          <h2 id="docs-heading" class="section-title">{{ searchQuery() ? 'Results' : 'Recent' }}</h2>
+          <h2 id="docs-heading" class="section-title">
+            {{ searchQuery() ? 'Results' : 'Recent' }}
+          </h2>
           <div class="section-tools">
             <!-- Next to the list it changes; hidden when there is nothing to lay out -->
             @if (filteredDocs().length > 0) {

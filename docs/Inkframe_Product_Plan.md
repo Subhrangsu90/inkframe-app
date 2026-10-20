@@ -5,7 +5,7 @@
 | **Product** | Inkframe: a private, full WYSIWYG document editor that runs entirely on your device |
 | **Deliverables** | The web app (`inkframe-app`) and the embeddable Angular editor library (`@inkframe-ui/editor`) |
 | **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer (M6), in a separate repository (`inkframe-server`): a Node.js server (Express, TypeScript, Zod) with Better Auth built in, Postgres (Docker on developer machines, Neon in production), Amazon S3 for images, hosted on Render; later AI and Yjs. |
-| **Plan version** | 4.4 (moves accounts, sync and cloud images, M6.1–M6.3, before launch, and decides the backend). 4.3 added M3.5: page setup. 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
+| **Plan version** | 4.5 (adds M6.6: subscriptions). 4.4 moved accounts, sync and cloud images, M6.1–M6.3, before launch, and decided the backend. 4.3 added M3.5: page setup. 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
 | **Last updated** | 2026-10-20 |
 | **Status** | Pre-launch. The core editor is built; the work below takes it to a production release. |
 
@@ -128,6 +128,7 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | "Collaborate in real time", "AI writing assistant" | Not built. | M6.5, M6.4, after launch. Always paired with "optional, no account needed to write". |
 | "End-to-end encrypted", "even we can't read your documents" | Synced documents use standard encryption (D21): the service could technically read them. | Never, unless end-to-end encryption is built. Say instead: "encrypted in transit and at rest; only you can open your documents in the app". |
 | "Block mode", "Drag blocks", "Nested pages" | Not built. | M7. Never call it "Notion mode": Notion is a trademark, and "Block mode" is ours. |
+| "Pro plan", prices, "Free forever" for cloud features | Plans, prices and the payment provider are open (D24, D25). | M6.6. "The editor is free forever" may be said now: writing, local documents, export and share links never need an account or a payment. |
 | "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Built (M3.5 steps 1–5) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "See your pages as they print" | Built (M3.5 step 6) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "Headers and footers", "Page numbers" (in print) | Built (M3.5 step 7, Pages layout only) and checked in Chrome, not yet released. | Claim once released and checked in Chrome, Firefox and Safari. Never "formatted headers": they are one line of plain text (D19). |
@@ -247,6 +248,8 @@ M6.1–M6.3 ship before launch; M6.4 and M6.5 after.
 | AI assistant: continue, summarize, improve, shorten, fix grammar, translate, change tone | ⬜ | M6.4 | Suggestions need an explicit Accept; one undo step. |
 | Real-time collaboration: live cursors, presence, roles | ⬜ | M6.5 | Yjs; undo affects only your own edits. |
 | Comments and suggestions (track changes) | ⬜ | After M6.5 | Builds on collaboration roles. |
+| Plans: Free and Pro (Team later), with limits on synced documents, image storage, server-side versions, public links and AI | ⬜ | M6.6 | The editor stays free forever; only cloud capacity, AI and collaboration are paid. Losing a plan never deletes data: over a limit, documents stay readable and exportable. |
+| Pricing page, Settings → Plan and billing (usage, Upgrade, Manage billing), upgrade offers at limits | ⬜ | M6.6 | Payment happens on the provider's hosted checkout; no card data in Inkframe. |
 
 ### 3.8 Block mode (M7)
 
@@ -320,7 +323,7 @@ Milestones are sequential; work inside a milestone can run in parallel. Sizes: *
 
 ```
 M0 Stabilize ─► M1 WYSIWYG ─► M2 Data safety ─► M3 Mobile & PWA ─► M3.5 Page setup ─► M6.1–M6.3 Accounts, sync, images ─► M4 Launch ─┬─► M5 Growth
-                                                                                                                                       ├─► M6.4 AI, M6.5 Collaboration
+                                                                                                                                       ├─► M6.6 Subscriptions (or at launch, D25), M6.4 AI, M6.5 Collaboration
                                                                                                                                        └─► M7 Block mode
 ```
 
@@ -541,7 +544,7 @@ Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-a
 4. **Disclose whenever content leaves the device:** sync badges in the library, a label on every AI action.
 5. **Providers stay behind interfaces** (`DocumentStore`, `ImageStore`, `AuthService`, `AiProvider`, collaboration provider; see [section 6.6](#66-optional-cloud-architecture-m6)) so the backend can be swapped.
 
-**Backend (decided 2026-10-20, D10, D22):**
+**Backend (decided 2026-10-20, D10, D22).** Every server route and table, with its status, is in the server repository's [Server Plan](../../inkframe-server/docs/Server_Plan.md).
 
 | Part | Choice | Notes |
 | --- | --- | --- |
@@ -555,7 +558,7 @@ Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-a
 
 Collaboration (M6.5) will need a Yjs sync server (Hocuspocus, also Node and TypeScript), as a third Render service or inside the API service.
 
-**Sequence:** M6.1 → M6.2 → M6.3, all before M4. After launch: M6.5, and M6.4 (AI) whenever there is capacity.
+**Sequence:** M6.1 → M6.2 → M6.3, all before M4. M6.6 (subscriptions) follows M6.3, at launch or soon after (D25). After launch: M6.5, and M6.4 (AI) whenever there is capacity.
 
 #### M6.1: Backend foundation and accounts
 
@@ -563,10 +566,10 @@ Collaboration (M6.5) will need a Yjs sync server (Hocuspocus, also Node and Type
 | --- | --- | --- |
 | Provision staging and production (Neon project and roles, Render services, S3 bucket); secrets management. Development already runs on Docker. | S | No secrets in the client bundle or either repository. Neon, AWS and Render keys live only in Render's environment variables. |
 | ✅ Server foundation in the `inkframe-server` repository (done 2026-10-20): Express 5 in a modular layout (`modules/<feature>` with routes, controller, service and Zod DTOs checked by `validate(dto)`), security headers, a CORS allow-list with credentials, refusal of cross-site writes, rate limits, a 2 MB body limit, JSON errors and content-free logs; Better Auth at `/api/auth` (email and password); Postgres in Docker with the `inkframe_owner` and `inkframe_app` roles; Drizzle schema and first migration (Better Auth's tables, `documents`, `document_versions`) with row-level security; `asUser()` for per-user transactions; CI with a Postgres service | M | 25 tests against a real Postgres: sign-up, sign-in, sign-out ends the session at once, hashed passwords; two users can't read, change, delete or create each other's documents or versions; no user set means no rows; deleting an account deletes its documents; the server's role can't bypass row-level security. Checked end to end with the built server. |
-| ✅ Sign-in and sign-up pages (`/signin`, `/signup`, standalone, one `AuthPage` with two modes) and `AuthService` (signals: `user`, `status`) on the Better Auth client, with "Continue with Google" when the server offers it (`GET /v1/auth/methods`); done 2026-10-20 in `src/app/features/account/` | M | Signing in and out never changes or hides local documents. People who never signed in on a device send nothing: the app only asks the server about the session when the device remembers a sign-in (`localStorage` `inkframe-account`: id, name and email, never a password). Better Auth's client (11 kB) loads only when used; the initial bundle is 145.9 of 150 kB. A return address after sign-in is always a path inside the app. Checked end to end in Chrome (sign up, reload, sign out, wrong password, return address); no axe violations in either theme or on phones; 21 tests. |
+| ✅ Sign-in and sign-up pages (`/signin`, `/signup`, standalone, one `AuthPage` with two modes) and `AuthService` (signals: `user`, `status`) on the Better Auth client, with "Continue with Google" when the server offers it (`GET /v1/auth/methods`); done 2026-10-20 in `src/app/features/account/` | M | Signing in and out never changes or hides local documents. People who never signed in on a device send nothing: the app only asks the server about the session when the device remembers a sign-in (`localStorage` `inkframe-account`: id, name and email, never a password). Better Auth's client and Zod load only when used; the initial bundle is 146.2 of 150 kB. Forms, server answers and the remembered sign-in are checked with Zod schemas (`auth.schemas.ts`, `core/api-response.ts`), the same library as the server. A return address after sign-in is always a path inside the app. Checked end to end in Chrome (sign up, reload, sign out, wrong password, return address); no axe violations in either theme or on phones; 21 tests. |
 | Account section in `/settings`: profile, sign out, export my data, delete account | M | Account deletion removes every server-side row and file (verified by a test). |
 | Sign-out choice: "Remove synced documents from this device" | S | Removes synced documents, their versions and cached images from IndexedDB; keeps "On this device only" documents. |
-| ✅ Sign-in entry points: the sidebar footer (avatar, name and email, or "Sign in"; it comes back to the current page) and Settings → Account (sign in, create an account, sign out). Accounts are switched by `CLOUD` in `src/app/core/cloud.ts`: on in development, off in production builds until sync ships, which hides both and makes `/signin` and `/signup` 404s. | S | No route requires an account. |
+| ✅ Sign-in entry points: the sidebar footer (avatar, name and email, or "Sign in"; it comes back to the current page) and Settings → Account (sign in, create an account, sign out). Accounts are switched by the environment files (`src/environments/`, read through `CLOUD` in `core/cloud.ts`; endpoint paths in `core/api-endpoints.ts`): on in development, off in production builds until sync ships, which hides both and makes `/signin` and `/signup` 404s. | S | No route requires an account. |
 | Email verification, password reset and magic links (an email provider such as Amazon SES or Resend), then GitHub | M | Password reset never reveals whether an email has an account. |
 | Privacy policy and terms of service; data processing terms with Neon, AWS and Render; review for India's DPDP Act and, for users in the EU, GDPR | S | Published and linked from sign-in before launch. |
 
@@ -614,6 +617,18 @@ Collaboration (M6.5) will need a Yjs sync server (Hocuspocus, also Node and Type
 | Schema-change policy for shared documents: additive changes only, or a server-side transform | S | Documented with the versioning rules in [section 8](#8-library-productization-inkframe-uieditor). |
 | Page setup (M3.5) in shared documents | S | A layout change on one client reaches every client. y-prosemirror syncs the document's content; if it doesn't sync attributes of the `doc` node, page setup syncs through a `Y.Map` next to the document (verify first). |
 | Concurrency test suite: two or more clients, concurrent edits in text, lists, tables and code blocks, offline merge | L | All clients converge; node views (callout, code block, table) stay correct under remote changes. |
+
+#### M6.6: Subscriptions
+
+Plans pay for what costs money to run (storage, sync beyond the free amount, AI, collaboration); the editor itself stays free forever. Server routes, tables, plan limits and the provider comparison are in the [Server Plan, section 4](../../inkframe-server/docs/Server_Plan.md#4-subscriptions-m66).
+
+| Work | Size | Exit criteria |
+| --- | --- | --- |
+| Choose the payment provider (D24) and plans and prices (D25) | S | Provider account approved; products in test mode |
+| Server: `billing` module behind a `BillingProvider` interface; `subscriptions` table filled only by signed webhooks; limits checked in every service | L | Forged, replayed and out-of-order webhooks change nothing; a limit answers 402 `plan_limit` and never deletes data |
+| App: pricing page; Settings → Plan and billing (plan, renewal date, usage bars, Upgrade, Manage billing); limit messages that offer an upgrade | M | Both themes, phones, keyboard; checkout and portal open in the provider's test mode |
+| Account deletion cancels the subscription first; export includes billing history links | S | Tested with a fake provider |
+| Pricing, refund and cancellation policy; terms updated | S | Published before the first sale |
 
 ### M7: Block mode (Notion-style writing)
 
@@ -986,6 +1001,8 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D21 | Synced documents use standard encryption (TLS, encryption at rest, database access rules), not end-to-end encryption. Password resets never lose documents; the app never claims the service can't read them. "On this device only" stays the choice for the most sensitive writing. | Decided 2026-10-20 |
 | D22 | Hosting: Render (Singapore) for the Angular SSR server and `inkframe-server`; Neon in `aws-ap-southeast-1` and the S3 bucket in `ap-southeast-1`, so all three share one region | Decided 2026-10-20. Confirm the users' region before creating the Neon project: it can't be moved. |
 | D23 | The server lives in its own repository, `inkframe-server`, next to this one. Developers run Postgres in Docker (`docker compose up -d`); production uses Neon. | Decided 2026-10-20 |
+| D24 | Payment provider for subscriptions | **Open.** Recommended: a merchant of record, which handles sales tax, VAT and GST in every country: Dodo Payments (India-friendly, Better Auth plugin), or Paddle. See the Server Plan, 4.3. |
+| D25 | Plans, prices, and whether subscriptions ship at launch | **Open.** Proposal: Free and Pro, Pro around $5 a month; the editor stays free forever either way. See the Server Plan, 4.2. |
 
 ### 11.2 Risks
 
@@ -1005,7 +1022,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Wrong database region | Medium | A Neon project's region is fixed; choose it from where users are before creating production (D22). Moving later means a dump and restore with downtime. |
 | The app and the server drift apart (two repositories) | Medium | Versioned `/v1` routes that only grow; the server's Zod schemas and README describe the contract; a change that breaks the app needs a new version. Later: generate an OpenAPI description from the Zod schemas. |
 | Three providers (Neon, Render, AWS) | Medium | Each sits behind code we own (`DocumentStore`, the API, presigned URLs); standard Postgres and S3 APIs, so each can be replaced. |
-| Running costs (storage, AI tokens, sync server) | Medium | Per-user quotas from day one; free-tier limits; consider a paid plan for heavy cloud and AI use. |
+| Running costs (storage, AI tokens, sync server) | Medium | Per-user quotas from day one; free-tier limits; a Pro plan for heavy cloud and AI use (M6.6). |
 | AI output is wrong or unwanted | Medium | Suggestions always need an explicit Accept and are one undo step. |
 | Dependence on one backend or AI provider | Medium | `DocumentStore`, `ImageStore`, `AuthService` and `AiProvider` interfaces; models configured server-side. |
 | Block mode grows into a Notion clone | High | D16 keeps databases out; columns are optional (M7.4); ship M7.1–M7.3 first. |

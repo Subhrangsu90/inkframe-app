@@ -1,56 +1,25 @@
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CLOUD } from '@app/core/cloud';
-import { AUTH_API_LOADER, type AuthApi, type AuthApiResult, type SessionUser } from './auth-api';
+import { AUTH_API_LOADER, type AuthApi, type AuthApiResult } from './auth-api';
 import { NETWORK_ERROR, authErrorMessage } from './auth-errors';
+// Types only: the schemas (and Zod) load on demand with the auth API module.
+import type { AccountHint, AccountUser, SignInMethods } from './auth.schemas';
+
+export type { AccountUser, SignInMethods } from './auth.schemas';
 
 /** `unknown` until the browser has checked (and always on the server, which can't see the session). */
 export type AuthStatus = 'unknown' | 'signed-out' | 'signed-in';
 
-export interface AccountUser {
-  id: string;
-  name: string;
-  email: string;
-  /** A profile photo (from Google sign-in), or null. Always an https address. */
-  image: string | null;
-}
-
 export type AuthOutcome = { ok: true } | { ok: false; message: string };
 
-/** Which sign-in methods the server offers (GET /v1/auth/methods). */
-export interface SignInMethods {
-  emailPassword: boolean;
-  google: boolean;
-}
-
 /**
- * What this device remembers between visits: who was signed in, or that a
- * Google sign-in is under way. Without it the app never contacts the server,
- * so people who don't use accounts send nothing anywhere.
+ * Where this device remembers a sign-in between visits (AccountHintSchema):
+ * who was signed in, or that a Google sign-in is under way. Without it the
+ * app never contacts the server, so people who don't use accounts send
+ * nothing anywhere.
  */
-interface AccountHint {
-  user?: AccountUser;
-  pending?: true;
-}
-
 const HINT_KEY = 'inkframe-account';
-
-/** Only https photos: no `javascript:`, `data:` or plain-http (mixed content) addresses. */
-function safeImage(image: unknown): string | null {
-  if (typeof image !== 'string') return null;
-  try {
-    return new URL(image).protocol === 'https:' ? image : null;
-  } catch {
-    return null;
-  }
-}
-
-const toUser = ({ id, name, email, image }: SessionUser): AccountUser => ({
-  id,
-  name,
-  email,
-  image: safeImage(image),
-});
 
 /**
  * The optional Inkframe account: who is signed in, and signing in, up and
@@ -65,8 +34,13 @@ export class AuthService {
   private api?: Promise<AuthApi>;
   private methodsRequest?: Promise<SignInMethods>;
   private started = false;
+  /**
+   * Goes up with every sign-in, sign-up and sign-out, so a session check
+   * that started before one can't undo it when its answer arrives late.
+   */
+  private actions = 0;
 
-  /** Whether accounts appear in this build (see CLOUD). */
+  /** Whether accounts appear in this build (see CLOUD and src/environments). */
   readonly enabled = this.cloud.enabled;
 
   private readonly state = signal<{ status: AuthStatus; user: AccountUser | null }>({
@@ -84,20 +58,20 @@ export class AuthService {
   start(): void {
     if (this.started || !this.browser) return;
     this.started = true;
-    const hint = this.enabled ? readHint() : null;
-    if (!hint) {
+    const raw = this.enabled ? readHint() : null;
+    if (!raw) {
       this.state.set({ status: 'signed-out', user: null });
       return;
     }
-    // Show who was signed in at once; the server confirms below.
-    if (hint.user) this.state.set({ status: 'signed-in', user: hint.user });
-    void this.refresh();
+    void this.resume(raw);
   }
 
   /** Asks the server who is signed in. Offline, it keeps what this device knew. */
   async refresh(): Promise<void> {
+    const actions = this.actions;
     try {
       const { data, error } = await (await this.client()).getSession();
+      if (actions !== this.actions) return; // someone signed in or out meanwhile
       if (error) throw error;
       if (data?.user) this.signedInAs(data.user);
       else this.signedOut();
@@ -107,10 +81,12 @@ export class AuthService {
   }
 
   signIn(email: string, password: string): Promise<AuthOutcome> {
+    this.actions++;
     return this.attempt((api) => api.signInEmail({ email, password }));
   }
 
   signUp(name: string, email: string, password: string): Promise<AuthOutcome> {
+    this.actions++;
     return this.attempt((api) => api.signUpEmail({ name, email, password }));
   }
 
@@ -140,6 +116,7 @@ export class AuthService {
   }
 
   async signOut(): Promise<AuthOutcome> {
+    this.actions++;
     try {
       const { error } = await (await this.client()).signOut();
       // 401: the session had already ended, which is what signing out wants.
@@ -153,14 +130,35 @@ export class AuthService {
 
   /** Which sign-in buttons to show. Asks the server once; email only when it can't be reached. */
   methods(): Promise<SignInMethods> {
-    this.methodsRequest ??= fetch(`${this.cloud.apiUrl}/v1/auth/methods`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((body: { data: SignInMethods }) => body.data)
+    this.methodsRequest ??= this.client()
+      .then((api) => api.getMethods())
       .catch(() => {
         this.methodsRequest = undefined;
         return { emailPassword: true, google: false };
       });
     return this.methodsRequest;
+  }
+
+  /** Shows who was signed in as soon as the hint is checked, then asks the server. */
+  private async resume(raw: string): Promise<void> {
+    const actions = this.actions;
+    let hint: AccountHint | null;
+    try {
+      hint = (await this.client()).parseHint(raw);
+    } catch {
+      // The auth module couldn't load (offline before it was ever cached): try next visit.
+      if (actions === this.actions) this.state.set({ status: 'signed-out', user: null });
+      return;
+    }
+    if (actions !== this.actions) return; // someone signed in or out meanwhile
+    if (!hint) {
+      this.signedOut();
+      return;
+    }
+    if (hint.user && this.status() === 'unknown') {
+      this.state.set({ status: 'signed-in', user: hint.user });
+    }
+    await this.refresh();
   }
 
   private client(): Promise<AuthApi> {
@@ -169,7 +167,7 @@ export class AuthService {
   }
 
   private async attempt(
-    call: (api: AuthApi) => Promise<AuthApiResult<{ user: SessionUser }>>,
+    call: (api: AuthApi) => Promise<AuthApiResult<{ user: AccountUser }>>,
   ): Promise<AuthOutcome> {
     try {
       const { data, error } = await call(await this.client());
@@ -181,8 +179,7 @@ export class AuthService {
     }
   }
 
-  private signedInAs(sessionUser: SessionUser): void {
-    const user = toUser(sessionUser);
+  private signedInAs(user: AccountUser): void {
     this.started = true;
     this.state.set({ status: 'signed-in', user });
     writeHint({ user });
@@ -200,15 +197,10 @@ export class AuthService {
   }
 }
 
-function readHint(): AccountHint | null {
+/** The remembered hint as stored; AuthApi.parseHint checks it. */
+function readHint(): string | null {
   try {
-    const raw = localStorage.getItem(HINT_KEY);
-    const hint = raw ? (JSON.parse(raw) as AccountHint) : null;
-    if (!hint || !(hint.pending || hint.user?.id)) return null;
-    // Saved before photos existed, or edited by hand: check the photo again.
-    return hint.user
-      ? { ...hint, user: { ...hint.user, image: safeImage(hint.user.image) } }
-      : hint;
+    return localStorage.getItem(HINT_KEY);
   } catch {
     return null;
   }

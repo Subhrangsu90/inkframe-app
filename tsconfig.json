@@ -7,6 +7,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "paths": {
       "@app/*": ["./src/app/*"],
+      "@env/*": ["./src/environments/*"],
       "@inkframe-ui/editor": ["./projects/inkframe-editor/src/public-api.ts", "./dist/inkframe-editor"],
       "@inkframe-ui/editor/core": ["./projects/inkframe-editor/core/index.ts", "./dist/inkframe-editor/core"],
       "@inkframe-ui/editor/toolbar": ["./projects/inkframe-editor/toolbar/index.ts", "./dist/inkframe-editor/toolbar"],

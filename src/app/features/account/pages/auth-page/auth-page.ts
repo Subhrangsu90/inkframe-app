@@ -10,8 +10,16 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ToastService } from '@app/shared/ui';
-import { AuthService } from '@app/features/account/data-access/auth.service';
+import type { z } from 'zod';
+import { AuthService, type AuthOutcome } from '@app/features/account/data-access/auth.service';
 import { googleErrorMessage } from '@app/features/account/data-access/auth-errors';
+import {
+  type FormField,
+  MIN_PASSWORD,
+  SignInFormSchema,
+  SignUpFormSchema,
+  fieldErrors,
+} from '@app/features/account/data-access/auth.schemas';
 import {
   SIGN_IN_PATH,
   SIGN_UP_PATH,
@@ -21,12 +29,9 @@ import {
 
 export type AuthMode = 'sign-in' | 'sign-up';
 
-type Field = 'name' | 'email' | 'password';
+type Field = FormField;
 
-/** Loose on purpose: the server has the final say; this only catches typos early. */
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD = 8;
-const MAX_PASSWORD = 128;
+const FIELD_ORDER: readonly Field[] = ['name', 'email', 'password'];
 
 /**
  * Sign in (/signin) and create an account (/signup): one page, two modes.
@@ -90,17 +95,21 @@ export class AuthPage {
     event.preventDefault();
     if (this.busy()) return;
     this.formError.set(null);
-    const invalid = this.validate();
-    if (invalid) {
-      this.host.nativeElement.querySelector<HTMLInputElement>(`#auth-${invalid}`)?.focus();
-      return;
+    // Zod checks the fields (auth.schemas.ts); the server checks them again.
+    const form = { name: this.name(), email: this.email(), password: this.password() };
+    let attempt: () => Promise<AuthOutcome>;
+    if (this.isSignUp) {
+      const fields = this.check(SignUpFormSchema.safeParse(form));
+      if (!fields) return;
+      attempt = () => this.auth.signUp(fields.name, fields.email, fields.password);
+    } else {
+      const fields = this.check(SignInFormSchema.safeParse(form));
+      if (!fields) return;
+      attempt = () => this.auth.signIn(fields.email, fields.password);
     }
 
     this.busy.set('form');
-    const email = this.email().trim();
-    const outcome = this.isSignUp
-      ? await this.auth.signUp(this.name().trim(), email, this.password())
-      : await this.auth.signIn(email, this.password());
+    const outcome = await attempt();
     this.busy.set(null);
 
     if (!outcome.ok) {
@@ -123,25 +132,20 @@ export class AuthPage {
     }
   }
 
-  /** Checks the fields; returns the first one with a problem, or null. */
-  private validate(): Field | null {
-    const errors: Partial<Record<Field, string>> = {};
-    if (this.isSignUp && !this.name().trim()) errors.name = 'Enter your name.';
-
-    const email = this.email().trim();
-    if (!email) errors.email = 'Enter your email address.';
-    else if (!EMAIL.test(email)) errors.email = 'Enter an email address like name@example.com.';
-
-    const password = this.password();
-    if (!password) errors.password = this.isSignUp ? 'Choose a password.' : 'Enter your password.';
-    else if (this.isSignUp && password.length < MIN_PASSWORD) {
-      errors.password = `Use at least ${MIN_PASSWORD} characters.`;
-    } else if (password.length > MAX_PASSWORD) {
-      errors.password = `Use at most ${MAX_PASSWORD} characters.`;
+  /**
+   * The checked fields, or null after showing each field's first problem
+   * and moving focus to the first field that has one.
+   */
+  private check<T>(result: z.ZodSafeParseResult<T>): T | null {
+    if (result.success) {
+      this.fieldErrors.set({});
+      return result.data;
     }
-
+    const errors = fieldErrors(result.error);
     this.fieldErrors.set(errors);
-    return (['name', 'email', 'password'] as const).find((field) => errors[field]) ?? null;
+    const first = FIELD_ORDER.find((field) => errors[field]);
+    this.host.nativeElement.querySelector<HTMLInputElement>(`#auth-${first}`)?.focus();
+    return null;
   }
 
   /** Shows a problem with the attempt and moves focus to it, so screen readers announce it. */

@@ -1,15 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { CLOUD } from '@app/core/cloud';
 import { AUTH_API_LOADER, type AuthApi } from './auth-api';
 import { NETWORK_ERROR } from './auth-errors';
+import { parseHint } from './auth.schemas';
 import { AuthService } from './auth.service';
 
 const HINT = 'inkframe-account';
 const ada = { id: 'u_1', name: 'Ada', email: 'ada@example.test', image: null };
 const PHOTO = 'https://lh3.googleusercontent.com/a/photo=s96-c';
 
-/** A server stand-in: every call succeeds unless a test says otherwise. */
+/**
+ * A server stand-in: every call succeeds unless a test says otherwise. Its
+ * answers are already checked, as the real AuthApi's are; reading the hint
+ * uses the real schema.
+ */
 function fakeApi(): { [K in keyof AuthApi]: ReturnType<typeof vi.fn> } {
   return {
     getSession: vi.fn(async () => ({ data: { user: ada }, error: null })),
@@ -20,6 +25,8 @@ function fakeApi(): { [K in keyof AuthApi]: ReturnType<typeof vi.fn> } {
       error: null,
     })),
     signOut: vi.fn(async () => ({ data: { success: true }, error: null })),
+    getMethods: vi.fn(async () => ({ emailPassword: true, google: true })),
+    parseHint: vi.fn(parseHint),
   };
 }
 
@@ -43,8 +50,6 @@ describe('AuthService', () => {
     loader = vi.fn(async () => api);
   });
 
-  afterEach(() => vi.unstubAllGlobals());
-
   it('contacts nobody for people who never signed in on this device', () => {
     const auth = setup();
     expect(auth.status()).toBe('unknown');
@@ -53,14 +58,25 @@ describe('AuthService', () => {
     expect(loader).not.toHaveBeenCalled();
   });
 
-  it('shows the remembered user at once, then asks the server', async () => {
+  it('shows the remembered user as soon as it is checked, then asks the server', async () => {
     localStorage.setItem(HINT, JSON.stringify({ user: ada }));
+    api.getSession.mockReturnValue(new Promise(() => {})); // the server hasn't answered yet
     const auth = setup();
     auth.start();
-    expect(auth.status()).toBe('signed-in');
+    await vi.waitFor(() => expect(auth.status()).toBe('signed-in'));
     expect(auth.user()).toEqual(ada);
-    await vi.waitFor(() => expect(api.getSession).toHaveBeenCalled());
+    expect(api.parseHint).toHaveBeenCalled();
+    expect(api.getSession).toHaveBeenCalled();
     expect(loader).toHaveBeenCalledWith('http://api.test');
+  });
+
+  it('forgets a remembered sign-in that was edited into something else', async () => {
+    localStorage.setItem(HINT, JSON.stringify({ user: { name: 'no id' } }));
+    const auth = setup();
+    auth.start();
+    await vi.waitFor(() => expect(auth.status()).toBe('signed-out'));
+    expect(api.getSession).not.toHaveBeenCalled();
+    expect(localStorage.getItem(HINT)).toBeNull();
   });
 
   it('forgets the user when the server says the session ended', async () => {
@@ -145,30 +161,7 @@ describe('AuthService', () => {
     expect(JSON.parse(localStorage.getItem(HINT)!)).toEqual({ pending: true });
   });
 
-  it('asks the server which sign-in buttons to show, once', async () => {
-    const fetch = vi.fn(
-      async () =>
-        new Response(JSON.stringify({ data: { emailPassword: true, google: true } }), {
-          status: 200,
-        }),
-    );
-    vi.stubGlobal('fetch', fetch);
-    const auth = setup();
-    expect(await auth.methods()).toEqual({ emailPassword: true, google: true });
-    await auth.methods();
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith('http://api.test/v1/auth/methods');
-  });
-
-  it('does nothing in builds without accounts', () => {
-    localStorage.setItem(HINT, JSON.stringify({ user: ada }));
-    const auth = setup(false);
-    auth.start();
-    expect(auth.status()).toBe('signed-out');
-    expect(loader).not.toHaveBeenCalled();
-  });
-
-  it('keeps the profile photo from Google, and remembers it for the next visit', async () => {
+  it('keeps the profile photo, and remembers it for the next visit', async () => {
     api.getSession.mockResolvedValue({ data: { user: { ...ada, image: PHOTO } }, error: null });
     localStorage.setItem(HINT, JSON.stringify({ pending: true }));
     const auth = setup();
@@ -177,33 +170,25 @@ describe('AuthService', () => {
     expect(JSON.parse(localStorage.getItem(HINT)!).user.image).toBe(PHOTO);
   });
 
-  it('drops photo addresses that are not https', async () => {
+  it('asks the server which sign-in buttons to show, once', async () => {
     const auth = setup();
-    for (const image of [
-      'javascript:alert(1)',
-      'http://example.test/a.png',
-      'data:image/png;base64,AA',
-      'not a url',
-    ]) {
-      api.signInEmail.mockResolvedValue({ data: { user: { ...ada, image } }, error: null });
-      await auth.signIn('ada@example.test', 'secret-password');
-      expect(auth.user()?.image, image).toBeNull();
-    }
+    expect(await auth.methods()).toEqual({ emailPassword: true, google: true });
+    await auth.methods();
+    expect(api.getMethods).toHaveBeenCalledTimes(1);
   });
 
-  it('reads users remembered before photos existed, and checks remembered photos again', () => {
-    localStorage.setItem(
-      HINT,
-      JSON.stringify({ user: { id: 'u_1', name: 'Ada', email: 'ada@example.test' } }),
-    );
+  it('offers email only when the server cannot say, and asks again next time', async () => {
+    api.getMethods.mockRejectedValueOnce(new TypeError('Failed to fetch'));
     const auth = setup();
-    auth.start();
-    expect(auth.user()).toEqual(ada);
+    expect(await auth.methods()).toEqual({ emailPassword: true, google: false });
+    expect(await auth.methods()).toEqual({ emailPassword: true, google: true });
+  });
 
-    TestBed.resetTestingModule();
-    localStorage.setItem(HINT, JSON.stringify({ user: { ...ada, image: 'javascript:alert(1)' } }));
-    const again = setup();
-    again.start();
-    expect(again.user()?.image).toBeNull();
+  it('does nothing in builds without accounts', () => {
+    localStorage.setItem(HINT, JSON.stringify({ user: ada }));
+    const auth = setup(false);
+    auth.start();
+    expect(auth.status()).toBe('signed-out');
+    expect(loader).not.toHaveBeenCalled();
   });
 });

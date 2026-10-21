@@ -207,7 +207,8 @@ function place(el: HTMLElement, left: number, top: number, scale: number): boole
 class ListDragView {
   private readonly handle: HTMLElement;
   private readonly line: HTMLElement;
-  private hovered: { pos: number; dom: HTMLElement } | null = null;
+  /** The list item the handle is beside: its position, its element and its first block's. */
+  private hovered: { pos: number; dom: HTMLElement; lead: HTMLElement } | null = null;
   private dragging: { pos: number; node: PMNode } | null = null;
   private target: ListDropTarget | null = null;
   private readonly cleanups: (() => void)[] = [];
@@ -226,7 +227,8 @@ class ListDragView {
 
     this.listen(view.dom, 'mousemove', (e) => this.onMouseMove(e as MouseEvent));
     this.listen(view.dom, 'mouseleave', (e) => {
-      if ((e as MouseEvent).relatedTarget !== this.handle) this.hideHandle();
+      const event = e as MouseEvent;
+      if (event.relatedTarget !== this.handle && !this.isTowardHandle(event)) this.hideHandle();
     });
     this.listen(this.handle, 'mouseleave', (e) => {
       const to = (e as MouseEvent).relatedTarget as Node | null;
@@ -265,14 +267,32 @@ class ListDragView {
     this.handle.classList.remove('is-visible');
   }
 
+  /**
+   * Whether the pointer is on its way from the hovered item to the handle:
+   * left of the item's text, level with it. It crosses the item's gutter
+   * there (a task's checkbox, a bullet, the list's padding), which is no
+   * item's text; the handle must stay, or it could never be reached.
+   */
+  private isTowardHandle(e: MouseEvent): boolean {
+    if (!this.hovered || !this.handle.classList.contains('is-visible')) return false;
+    const handle = this.handle.getBoundingClientRect();
+    const text = this.hovered.lead.getBoundingClientRect();
+    return (
+      e.clientX >= handle.left &&
+      e.clientX < text.left &&
+      e.clientY >= Math.min(handle.top, text.top) &&
+      e.clientY <= Math.max(handle.bottom, text.bottom)
+    );
+  }
+
   private onMouseMove(e: MouseEvent): void {
-    if (this.dragging || !this.view.editable) return;
+    if (this.dragging || !this.view.editable || this.isTowardHandle(e)) return;
     const hit = this.view.posAtCoords({ left: e.clientX, top: e.clientY });
     const ctx = hit ? findListItem(this.view.state.doc.resolve(hit.pos)) : null;
     const dom = ctx && (this.view.nodeDOM(ctx.itemPos) as HTMLElement | null);
     const lead = ctx && (this.view.nodeDOM(ctx.itemPos + 1) as HTMLElement | null);
     if (!ctx || !dom || !lead?.getBoundingClientRect) return this.hideHandle();
-    this.hovered = { pos: ctx.itemPos, dom };
+    this.hovered = { pos: ctx.itemPos, dom, lead };
     const item = dom.getBoundingClientRect();
     const text = lead.getBoundingClientRect();
     // Rects are in viewport pixels, sizes below in CSS pixels: on a zoomed page they differ.

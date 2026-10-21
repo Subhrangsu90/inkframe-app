@@ -3,9 +3,10 @@
 
 /* Highlighted text, inside `.ProseMirror`. */
 @mixin document {
-  // Highlight colors are light pastels: the text on them is always dark, so it
-  // stays readable in the dark theme too (and matches exported HTML, where
-  // browsers draw <mark> text black).
+  // Highlight colors are light pastels: the text on them is dark, so it stays
+  // readable in the dark theme too (and matches exported HTML, where browsers
+  // draw <mark> text black). Text with a color of its own keeps it: its <span>
+  // is inside the <mark> (the highlight mark comes first in the schema).
   mark {
     color: #1b1b1f;
     border-radius: 0;

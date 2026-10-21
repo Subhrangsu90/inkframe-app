@@ -9,7 +9,10 @@ import {
   HeadingExtension,
   HistoryExtension,
   BulletListExtension,
+  TextColorExtension,
+  HighlightExtension,
 } from '../index';
+import { DOMSerializer } from 'prosemirror-model';
 
 describe('Modular Extension Architecture (TipTap-style)', () => {
   const dummyService = {
@@ -23,6 +26,30 @@ describe('Modular Extension Architecture (TipTap-style)', () => {
     onTableMenu: () => {},
     onSlashKeyDown: () => false,
   } as any;
+
+  it('puts a highlight around a text color, whatever order the extensions come in', () => {
+    const manager = new ExtensionManager(
+      [TextColorExtension, HighlightExtension],
+      dummyService,
+      dummyHooks,
+    );
+    const { schema } = manager;
+    expect(Object.keys(schema.marks).indexOf('highlight')).toBeLessThan(
+      Object.keys(schema.marks).indexOf('textColor'),
+    );
+    const text = schema.text('x', [
+      schema.marks['textColor'].create({ color: '#ea580c' }),
+      schema.marks['highlight'].create({ color: '#bfdbfe' }),
+    ]);
+    const div = document.createElement('div');
+    div.appendChild(
+      DOMSerializer.fromSchema(schema).serializeFragment(
+        schema.nodes['paragraph'].create(null, text).content,
+      ),
+    );
+    expect(div.firstElementChild!.tagName).toBe('MARK');
+    expect(div.querySelector('mark > span')!.getAttribute('style')).toContain('color');
+  });
 
   it('compiles full schema when using DEFAULT_EXTENSIONS (StarterKit)', () => {
     const manager = new ExtensionManager(DEFAULT_EXTENSIONS, dummyService, dummyHooks);

@@ -148,7 +148,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Bold, italic, underline, strikethrough, inline code | ✅ | P0 | Shortcuts and input rules. |
 | Subscript, superscript, small text | ✅ | P0 | |
 | Text color (21-swatch palette) | ✅ | P0 | Values are sanitized before reaching `style`. |
-| Highlight (background color) | ✅ | P0 | 8 pastel colors (text on them stays dark in both themes); `Mod-Alt-H`. Markdown export as `<mark>`; `==text==` imports. |
+| Highlight (background color) | ✅ | P0 | 8 pastel colors (text on them stays dark in both themes, unless it has a text color: fixed 2026-10-21, the color's `<span>` now sits inside the `<mark>`, so its color shows); `Mod-Alt-H`. Markdown export as `<mark>`; `==text==` imports. |
 | Links with safe-protocol allow-list | ✅ | P0 | **Bind `Mod-k`**: the tooltip advertises Ctrl+K but nothing handles it. |
 | Clear formatting | ✅ | P0 | |
 | Paragraph alignment (left, center, right, justify) | ✅ | P0 | Paragraphs and headings; `Mod-Shift-L/E/R/J`. Kept when a block changes type or Enter starts a new line. Markdown export wraps aligned blocks in `<div align>`. |

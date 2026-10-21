@@ -77,6 +77,19 @@ export class ExtensionManager {
       }
     }
 
+    // A mark's place decides how marks nest in the HTML. A highlight's <mark>
+    // draws its text dark (on light colors, in both themes), so it must wrap a
+    // text color's <span>, whose own color then shows: highlight goes first,
+    // whatever order the extensions came in.
+    const markNames = Object.keys(markMap);
+    const colorAt = markNames.indexOf('textColor');
+    const highlightAt = markNames.indexOf('highlight');
+    if (colorAt >= 0 && highlightAt > colorAt) {
+      markNames.splice(highlightAt, 1);
+      markNames.splice(colorAt, 0, 'highlight');
+    }
+    const marks = Object.fromEntries(markNames.map((name) => [name, markMap[name]]));
+
     // 3. List items start with a block of the list_lead group (paragraphs and
     // headings). When an extension replaced those with specs outside the
     // group, items start with a paragraph instead.
@@ -91,7 +104,7 @@ export class ExtensionManager {
       }
     }
 
-    return new Schema({ nodes: nodeMap, marks: markMap });
+    return new Schema({ nodes: nodeMap, marks });
   }
 
   createContext(): ExtensionContext {

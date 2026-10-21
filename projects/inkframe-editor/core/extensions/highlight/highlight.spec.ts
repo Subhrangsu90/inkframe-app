@@ -119,4 +119,46 @@ describe('Highlight mark', () => {
     expect(highlighted.join('')).toBe('important bold words');
     expect(fromObsidian.textContent).toContain('a == b');
   });
+
+  it('wraps a text color, so the color shows on the highlight', () => {
+    const both = [
+      marks['highlight'].create({ color: '#bfdbfe' }),
+      marks['textColor'].create({ color: '#ea580c' }),
+    ];
+    const d = doc(p([text('Welcome', both), text(' plain')]));
+    // The marks on "Welcome"; HTML may write the text color as rgb().
+    const marksOf = (parsed: PMNode) =>
+      parsed.firstChild!.firstChild!.marks.map((m) => [m.type.name, m.attrs['color']]);
+    const expected = [
+      ['highlight', '#bfdbfe'],
+      ['textColor', expect.stringMatching(/^(#ea580c|rgb\(234, 88, 12\))$/)],
+    ];
+
+    // <mark> draws its text dark; the color's <span> inside it keeps its own color.
+    const html = docToHtml(d);
+    expect(html).toMatch(
+      /^<p><mark [^>]*><span style="color: [^"]+">Welcome<\/span><\/mark> plain<\/p>$/,
+    );
+    expect(marksOf(htmlToDoc(html))).toEqual(expected);
+
+    const md = docToMarkdown(d);
+    expect(md).toBe(
+      '<mark style="background-color: #bfdbfe"><span style="color: #ea580c">Welcome</span></mark> plain',
+    );
+    expect(markdownToDoc(md).eq(d)).toBe(true);
+
+    // Documents written with the color outside the highlight read the same.
+    expect(
+      marksOf(
+        htmlToDoc(
+          '<p><span style="color: #ea580c"><mark data-color="#bfdbfe" style="background-color: #bfdbfe">Welcome</mark></span> plain</p>',
+        ),
+      ),
+    ).toEqual(expected);
+    expect(
+      markdownToDoc(
+        '<span style="color: #ea580c"><mark style="background-color: #bfdbfe">Welcome</mark></span> plain',
+      ).eq(d),
+    ).toBe(true);
+  });
 });

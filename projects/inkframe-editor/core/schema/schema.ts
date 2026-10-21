@@ -67,9 +67,10 @@ export const schema = new Schema({
     .addToEnd('strikethrough', strikethrough)
     .addToEnd('subscript', subscript)
     .addToEnd('superscript', superscript)
+    // Before textColor, so a highlight wraps a text color (see ExtensionManager).
+    .addToEnd('highlight', highlight)
     .addToEnd('textColor', textColor)
     .addToEnd('small', small)
-    .addToEnd('highlight', highlight)
     .addToEnd('fontSize', fontSize)
     .addToEnd('fontFamily', fontFamily),
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { imageStorage, StorageError } from './image-storage';
+import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
+import { ImageStorage, imageStorage, StorageError } from './image-storage';
 
 // jsdom has no IndexedDB, so documents go to the localStorage fallback here.
 describe('imageStorage writes', () => {
@@ -50,6 +51,103 @@ describe('imageStorage writes', () => {
     await imageStorage.putImage(meta, blob);
     expect((await imageStorage.getImage('img_restored'))?.blob).toBe(blob);
     expect(await imageStorage.getImage('img_missing')).toBeNull();
+  });
+});
+
+/** Adds `item` to the list stored under `list`, the way the app changes its index. */
+const append = (storage: ImageStorage, item: string) =>
+  storage.updateDocuments(
+    ['list'],
+    (current) => new Map([['list', [...((current.get('list') as string[]) ?? []), item]]]),
+  );
+
+describe('imageStorage.updateDocuments (localStorage)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('writes what the update makes of the stored values, and deletes nulls', async () => {
+    await imageStorage.saveDocument('list', ['a']);
+    await imageStorage.saveDocument('old', 'x');
+    await imageStorage.updateDocuments(['list', 'missing'], (current) => {
+      expect([...current.keys()]).toEqual(['list']);
+      return new Map<string, unknown>([
+        ['list', [...(current.get('list') as string[]), 'b']],
+        ['old', null],
+      ]);
+    });
+    expect(await imageStorage.getDocument('list')).toEqual(['a', 'b']);
+    expect(await imageStorage.getDocument('old')).toBeNull();
+  });
+
+  it('keeps every change when updates overlap', async () => {
+    await Promise.all(['a', 'b', 'c'].map((item) => append(imageStorage, item)));
+    expect(await imageStorage.getDocument('list')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('writes nothing when the read fails', async () => {
+    await imageStorage.saveDocument('list', ['kept']);
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('refused', 'SecurityError');
+    });
+    const update = vi.fn(() => new Map([['list', []]]));
+    const error = await imageStorage.updateDocuments(['list'], update).catch((e) => e);
+    vi.restoreAllMocks();
+
+    expect(error).toBeInstanceOf(StorageError);
+    expect(update).not.toHaveBeenCalled();
+    expect(await imageStorage.getDocument('list')).toEqual(['kept']);
+  });
+});
+
+describe('ImageStorage on IndexedDB', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  /** Two instances on one (fake) IndexedDB: two tabs of the app. */
+  const twoTabs = () => {
+    const idb = new IDBFactory();
+    return [new ImageStorage(idb), new ImageStorage(idb)] as const;
+  };
+
+  it('keeps every change when two tabs update the same document at once', async () => {
+    const [a, b] = twoTabs();
+    expect(await a.storageMode()).toBe('indexeddb');
+    const items = Array.from({ length: 12 }, (_, i) => `item ${i}`);
+    await Promise.all(items.map((item, i) => append(i % 2 ? a : b, item)));
+    expect((await b.getDocument<string[]>('list'))?.sort()).toEqual([...items].sort());
+  });
+
+  it('writes nothing when a read fails', async () => {
+    const [tab] = twoTabs();
+    await tab.saveDocument('list', ['kept']);
+    vi.spyOn(IDBObjectStore.prototype, 'get').mockImplementation(() => {
+      throw new DOMException('Connection lost', 'UnknownError');
+    });
+    const error = await append(tab, 'new').catch((e) => e);
+    vi.restoreAllMocks();
+
+    expect(error).toBeInstanceOf(StorageError);
+    expect(await tab.getDocument('list')).toEqual(['kept']);
+  });
+
+  it('starts from a copy saved while IndexedDB was unavailable, then removes deleted ones', async () => {
+    const [tab] = twoTabs();
+    localStorage.setItem('list', JSON.stringify(['from localStorage']));
+    localStorage.setItem('old', JSON.stringify('x'));
+    await tab.updateDocuments(
+      ['list'],
+      (current) =>
+        new Map<string, unknown>([
+          ['list', [...(current.get('list') as string[]), 'new']],
+          ['old', null],
+        ]),
+    );
+    expect(await tab.getDocument('list')).toEqual(['from localStorage', 'new']);
+    expect(localStorage.getItem('old')).toBeNull();
   });
 });
 

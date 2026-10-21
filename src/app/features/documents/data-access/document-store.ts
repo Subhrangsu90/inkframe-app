@@ -32,6 +32,17 @@ export interface DocumentStore {
   /** A document's content, or null when there is none. */
   get(id: string): Promise<StoredDoc | null>;
   /**
+   * Saves a document's content and its entry in one step. `entry` gets the
+   * entry as stored at that moment (undefined when the library has none)
+   * and returns the entry to save, or null to save nothing. Resolves to the
+   * entry saved, or null. Throws a StorageError when storage refuses it.
+   */
+  save(
+    id: string,
+    doc: StoredDoc,
+    entry: (current: DocMeta | undefined) => DocMeta | null,
+  ): Promise<DocMeta | null>;
+  /**
    * Writes documents and their entries, adding entries or replacing those
    * with the same id. An entry without `doc` updates the entry only. Throws
    * a StorageError when storage refuses the write.

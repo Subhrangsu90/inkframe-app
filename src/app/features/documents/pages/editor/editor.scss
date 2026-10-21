@@ -50,7 +50,7 @@
     background-color var(--ink-transition-fast),
     border-color var(--ink-transition-fast);
 
-  &:hover,
+  &:hover:not(:disabled),
   &:focus-visible {
     background: var(--ink-surface-2);
     border-color: var(--ink-border);
@@ -59,6 +59,11 @@
     .edit-icon {
       opacity: 0.9;
     }
+  }
+
+  /* Read-only while another tab edits the document. */
+  &:disabled {
+    cursor: default;
   }
 
   .title-text {
@@ -540,9 +545,10 @@
 }
 
 /* ═══════════════════════════════════════════════ */
-/* VERSION PREVIEW                                 */
+/* VERSION PREVIEW, AND "OPEN IN ANOTHER TAB"       */
 /* ═══════════════════════════════════════════════ */
-.version-preview-bar {
+.version-preview-bar,
+.elsewhere-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -553,11 +559,13 @@
   color: var(--ink-text);
 }
 
-.version-preview-icon {
+.version-preview-icon,
+.elsewhere-icon {
   color: var(--ink-accent-text);
 }
 
-.version-preview-text {
+.version-preview-text,
+.elsewhere-text {
   flex: 1 1 200px;
   min-width: 0;
   margin: 0;
@@ -578,7 +586,8 @@
   }
 }
 
-.version-preview-actions {
+.version-preview-actions,
+.elsewhere-actions {
   display: flex;
   gap: 8px;
   margin-left: auto;

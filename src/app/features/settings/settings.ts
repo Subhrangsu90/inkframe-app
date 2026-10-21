@@ -14,7 +14,10 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
 import { AuthService } from '@app/features/account/data-access/auth.service';
-import { DocumentManager } from '@app/features/documents/data-access/document-manager';
+import {
+  DocumentManager,
+  formatRelativeTime,
+} from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import {
@@ -49,7 +52,7 @@ export class Settings implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly backup = inject(BackupService);
-  private readonly storageHealth = inject(StorageHealth);
+  protected readonly storageHealth = inject(StorageHealth);
   readonly layout = inject(LayoutService);
   readonly pwa = inject(PwaService);
   readonly editorPreferences = inject(EditorPreferences);
@@ -88,6 +91,11 @@ export class Settings implements OnInit {
   readonly currentTheme = computed(() => this.themeService.theme());
   readonly docCount = signal<number>(0);
   readonly storageUsed = signal<string>('0 KB');
+  /** When the last backup was exported (or restored) here. */
+  readonly lastBackupText = computed(() => {
+    const time = this.storageHealth.lastBackup();
+    return time ? `Last backup: ${formatRelativeTime(time)}.` : 'No backup yet.';
+  });
 
   async ngOnInit(): Promise<void> {
     await this.updateStats();

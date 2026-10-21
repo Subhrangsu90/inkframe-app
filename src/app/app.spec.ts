@@ -141,12 +141,13 @@ describe('DocumentManager Service', () => {
       },
     };
 
-    const meta = await manager.saveDoc('doc_unit_1', docContent);
-    expect(meta.id).toBe('doc_unit_1');
-    expect(meta.title).toBe('Test Persisted Title');
+    const created = await manager.createDoc('Untitled Document');
+    const meta = await manager.saveDoc(created.meta.id, docContent);
+    expect(meta?.id).toBe(created.meta.id);
+    expect(meta?.title).toBe('Test Persisted Title');
 
     const index = await manager.getIndex();
-    expect(index.some((d) => d.id === 'doc_unit_1')).toBe(true);
+    expect(index.find((d) => d.id === created.meta.id)?.title).toBe('Test Persisted Title');
   });
 
   it('deletes document and updates index', async () => {
@@ -154,13 +155,13 @@ describe('DocumentManager Service', () => {
       schemaVersion: SCHEMA_VERSION,
       doc: { type: 'doc', content: [] },
     };
-    await manager.saveDoc('doc_to_delete', docContent, 'To Delete');
+    const { meta } = await manager.createDoc('To Delete', docContent);
     let index = await manager.getIndex();
-    expect(index.some((d) => d.id === 'doc_to_delete')).toBe(true);
+    expect(index.some((d) => d.id === meta.id)).toBe(true);
 
-    await manager.deleteDoc('doc_to_delete');
+    await manager.deleteDoc(meta.id);
     index = await manager.getIndex();
-    expect(index.some((d) => d.id === 'doc_to_delete')).toBe(false);
+    expect(index.some((d) => d.id === meta.id)).toBe(false);
   });
 });
 

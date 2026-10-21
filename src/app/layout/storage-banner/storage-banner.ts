@@ -6,9 +6,20 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { StorageHealth } from '@app/features/documents/data-access/storage-health';
+import {
+  StorageHealth,
+  backupReminderDue,
+} from '@app/features/documents/data-access/storage-health';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ToastService } from '@app/shared/ui/toast/toast';
+
+interface BannerMessage {
+  /** `error`: edits are not being saved; `warning`: they may be lost; `reminder`: export a backup. */
+  tone: 'error' | 'warning' | 'reminder';
+  title: string;
+  body: string;
+}
 
 /**
  * Shown when this browser cannot save: storage is full, or blocked. Offers a
@@ -22,10 +33,15 @@ import { ToastService } from '@app/shared/ui/toast/toast';
     @if (message(); as m) {
       <div
         class="storage-banner"
-        [class.is-error]="health.status() !== 'limited'"
-        [attr.role]="health.status() === 'limited' ? 'status' : 'alert'"
+        [class.is-error]="m.tone === 'error'"
+        [class.is-reminder]="m.tone === 'reminder'"
+        [attr.role]="m.tone === 'error' ? 'alert' : 'status'"
       >
-        <ink-icon name="alert-triangle" [size]="16" class="banner-icon" />
+        <ink-icon
+          [name]="m.tone === 'reminder' ? 'database' : 'alert-triangle'"
+          [size]="16"
+          class="banner-icon"
+        />
         <p class="banner-text">
           <strong>{{ m.title }}</strong> {{ m.body }}
         </p>
@@ -37,9 +53,9 @@ import { ToastService } from '@app/shared/ui/toast/toast';
           <button
             type="button"
             class="banner-close"
-            (click)="health.dismissed.set(true)"
-            aria-label="Dismiss"
-            title="Dismiss"
+            (click)="dismiss()"
+            [attr.aria-label]="m.tone === 'reminder' ? 'Remind me later' : 'Dismiss'"
+            [attr.title]="m.tone === 'reminder' ? 'Remind me later' : 'Dismiss'"
           >
             <ink-icon name="close" [size]="13" />
           </button>
@@ -70,6 +86,15 @@ import { ToastService } from '@app/shared/ui/toast/toast';
 
         .banner-icon {
           color: var(--ink-danger);
+        }
+      }
+
+      &.is-reminder {
+        background: var(--ink-accent-soft);
+        border-bottom-color: color-mix(in srgb, var(--ink-accent) 25%, transparent);
+
+        .banner-icon {
+          color: var(--ink-accent-text);
         }
       }
 
@@ -154,26 +179,49 @@ import { ToastService } from '@app/shared/ui/toast/toast';
 })
 export class StorageBanner {
   protected readonly health = inject(StorageHealth);
+  private readonly library = inject(DocumentLibrary);
   private readonly injector = inject(Injector);
   private readonly toast = inject(ToastService);
 
   protected readonly busy = signal(false);
 
-  protected readonly message = computed(() => {
+  /** Storage works, and a backup is due (see backupReminderDue). */
+  private readonly reminderDue = computed(
+    () =>
+      this.health.status() === 'ok' &&
+      backupReminderDue(
+        this.library.documents(),
+        this.health.lastBackup(),
+        this.health.reminderClosed(),
+        Date.now(),
+      ),
+  );
+
+  protected readonly message = computed((): BannerMessage | null => {
+    if (this.reminderDue()) {
+      return {
+        tone: 'reminder',
+        title: 'Back up your documents.',
+        body: 'They are kept only in this browser. Export a backup now and then, so you can restore them if its data is cleared.',
+      };
+    }
     if (this.health.dismissed()) return null;
     switch (this.health.status()) {
       case 'full':
         return {
+          tone: 'error',
           title: 'Storage is full.',
           body: 'Your latest changes are not saved. Export a backup, then delete documents or images you no longer need.',
         };
       case 'limited':
         return {
+          tone: 'warning',
           title: 'This browser limits storage for Inkframe.',
           body: 'Images are not kept and space is small. Export a backup now and then so you do not lose work.',
         };
       case 'unavailable':
         return {
+          tone: 'error',
           title: 'This browser is blocking storage.',
           body: 'Nothing you write can be saved here. Export a backup before you close this tab.',
         };
@@ -181,6 +229,12 @@ export class StorageBanner {
         return null;
     }
   });
+
+  /** Closes the banner: the reminder for a while, a problem until the status changes. */
+  protected dismiss(): void {
+    if (this.reminderDue()) this.health.closeBackupReminder();
+    else this.health.dismissed.set(true);
+  }
 
   protected async exportBackup(): Promise<void> {
     this.busy.set(true);

@@ -60,7 +60,11 @@ const STORE_NAME = 'images';
 const DOC_STORE_NAME = 'documents';
 const DB_VERSION = 2;
 
-class ImageStorage {
+/**
+ * The storage behind `imageStorage`, which apps use. Another instance keeps
+ * its own caches; tests give one another IndexedDB, to act as a second tab.
+ */
+export class ImageStorage {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
   private readonly urlCache = new Map<string, string>();
   private readonly dataUrlCache = new Map<string, string>();
@@ -68,16 +72,24 @@ class ImageStorage {
   private readonly metaCache = new Map<string, StoredImageMetadata>();
   private readonly writeListeners = new Set<StorageWriteListener>();
 
+  /** `idbFactory`: the IndexedDB to use instead of the browser's. */
+  constructor(private readonly idbFactory?: IDBFactory) {}
+
   private isBrowser(): boolean {
     return typeof window !== 'undefined';
   }
 
+  private indexedDB(): IDBFactory | undefined {
+    return this.idbFactory ?? (typeof indexedDB === 'undefined' ? undefined : indexedDB);
+  }
+
   private getDB(): Promise<IDBDatabase | null> {
-    if (!this.isBrowser() || typeof indexedDB === 'undefined') return Promise.resolve(null);
+    const factory = this.indexedDB();
+    if (!this.isBrowser() || !factory) return Promise.resolve(null);
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      const request = factory.open(DB_NAME, DB_VERSION);
 
       request.onupgradeneeded = () => {
         const db = request.result;
@@ -653,6 +665,88 @@ class ImageStorage {
   }
 
   /**
+   * Reads the documents stored under `keys` and writes what `update` makes of
+   * them, in one step: a failed read writes nothing, and a change made
+   * meanwhile, in this tab or another, is never overwritten (IndexedDB runs
+   * such transactions one after another; localStorage is synchronous).
+   * `update` gets the value of each key that has one and returns the writes:
+   * a value per key, or null to delete the key. It runs inside the
+   * transaction, so it must be synchronous; if it throws, nothing is written.
+   * Throws a StorageError when storage refuses the reads or the writes.
+   */
+  async updateDocuments(
+    keys: readonly string[],
+    update: (current: ReadonlyMap<string, unknown>) => ReadonlyMap<string, unknown>,
+  ): Promise<void> {
+    if (!this.isBrowser()) return;
+    if (await this.getDB()) {
+      let deleted: string[] = [];
+      await this.idbWrite(DOC_STORE_NAME, (store) => {
+        const current = new Map<string, unknown>();
+        const write = () => {
+          deleted = [];
+          for (const [key, value] of update(current)) {
+            if (value === null) {
+              store.delete(key);
+              deleted.push(key);
+            } else {
+              store.put(value, key);
+            }
+          }
+        };
+        let reading = keys.length;
+        if (reading === 0) return write();
+        for (const key of keys) {
+          const request = store.get(key);
+          request.onsuccess = () => {
+            // Documents saved while IndexedDB was unavailable (as getDocument reads them).
+            const value = request.result ?? this.readLocal(key);
+            if (value !== undefined) current.set(key, value);
+            if (--reading === 0) write();
+          };
+        }
+      });
+      // As deleteDocument does: no fallback copy is left behind either.
+      for (const key of deleted) this.removeLocal(key);
+      return;
+    }
+    try {
+      const current = new Map<string, unknown>();
+      for (const key of keys) {
+        const item = localStorage.getItem(key);
+        if (item !== null) current.set(key, JSON.parse(item));
+      }
+      for (const [key, value] of update(current)) {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, JSON.stringify(value));
+      }
+    } catch (e) {
+      const error = new StorageError(isQuotaError(e) ? 'quota' : 'unavailable', { cause: e });
+      this.report(error);
+      throw error;
+    }
+    this.report();
+  }
+
+  /** The localStorage copy of a document, or undefined when there is none. */
+  private readLocal(key: string): unknown {
+    try {
+      const item = localStorage.getItem(key);
+      return item === null ? undefined : JSON.parse(item);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private removeLocal(key: string): void {
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+    } catch {
+      // Storage unavailable: there is no fallback copy to remove.
+    }
+  }
+
+  /**
    * Permanently deletes the whole database (all documents and images) and
    * clears in-memory caches. Resolves once the deletion has completed.
    */
@@ -662,13 +756,14 @@ class ImageStorage {
     this.dataUrlCache.clear();
     this.blobCache.clear();
     this.metaCache.clear();
-    if (!this.isBrowser() || typeof indexedDB === 'undefined') return;
+    const factory = this.indexedDB();
+    if (!this.isBrowser() || !factory) return;
 
     const db = await this.dbPromise;
     db?.close();
     this.dbPromise = null;
     await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.deleteDatabase(DB_NAME);
+      const req = factory.deleteDatabase(DB_NAME);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
       // Other tabs close their connections via onversionchange; if one cannot,
@@ -695,11 +790,7 @@ class ImageStorage {
     } catch (e) {
       console.warn('Failed to delete document from IndexedDB:', e);
     }
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-    } catch {
-      // Storage unavailable: there is no fallback copy to remove.
-    }
+    this.removeLocal(key);
   }
 
   /**

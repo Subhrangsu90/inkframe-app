@@ -575,6 +575,10 @@ export class Editor {
     this.timer = undefined;
     this.changed.emit(this.svc.getJSON());
   }
+  /** Whether there are changes not emitted yet (debounced; see flush()). */
+  hasPendingChanges(): boolean {
+    return this.timer !== undefined;
+  }
 
   private scheduleEmit() {
     clearTimeout(this.timer);

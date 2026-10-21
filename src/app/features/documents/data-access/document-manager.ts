@@ -10,6 +10,7 @@ import {
 } from './doc-text';
 import { DOCUMENT_STORE, DocMeta } from './document-store';
 import { ACTIVE_DOC_ID_KEY } from './local-document-store';
+import { DocumentChannel } from './document-channel';
 
 export type { StoredDoc };
 export type { DocMeta } from './document-store';
@@ -42,6 +43,8 @@ export function formatRelativeTime(timestamp: number): string {
 })
 export class DocumentManager {
   private readonly store = inject(DOCUMENT_STORE);
+  /** Other tabs hear of every change, to show the latest documents. */
+  private readonly channel = inject(DocumentChannel);
 
   getIndex(): Promise<DocMeta[]> {
     return this.store.list();
@@ -69,23 +72,45 @@ export class DocumentManager {
     return this.store.get(id);
   }
 
-  /** Throws a StorageError when storage refuses the write. */
-  async saveDoc(id: string, doc: StoredDoc, explicitTitle?: string): Promise<DocMeta> {
+  /**
+   * Saves edits to a document in the library. Resolves to its entry, or to
+   * null when the library no longer has it (deleted, perhaps in another
+   * tab): saving never brings a deleted document back. Throws a
+   * StorageError when storage refuses the write.
+   */
+  saveDoc(id: string, doc: StoredDoc, explicitTitle?: string): Promise<DocMeta | null> {
+    return this.write(id, doc, explicitTitle, false);
+  }
+
+  /** Saves a document, adding it to the library when `create`. */
+  private async write(
+    id: string,
+    doc: StoredDoc,
+    explicitTitle: string | undefined,
+    create: boolean,
+  ): Promise<DocMeta | null> {
+    // Worked out before the store's transaction, which should stay short.
     const title = explicitTitle || extractDocTitle(doc);
-    const now = Date.now();
-    const existing = (await this.store.list()).find((d) => d.id === id);
-    const meta: DocMeta = {
-      ...existing,
-      id,
-      title,
-      wordCount: extractDocWordCount(doc),
-      excerpt: extractDocExcerpt(doc, title),
-      excerptVersion: EXCERPT_VERSION,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    };
-    await this.store.put([{ meta, doc }]);
-    this.setActiveDocId(id);
+    const wordCount = extractDocWordCount(doc);
+    const excerpt = extractDocExcerpt(doc, title);
+    const meta = await this.store.save(id, doc, (existing) => {
+      if (!existing && !create) return null;
+      const now = Date.now();
+      return {
+        ...existing,
+        id,
+        title,
+        wordCount,
+        excerpt,
+        excerptVersion: EXCERPT_VERSION,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+      };
+    });
+    if (meta) {
+      this.setActiveDocId(id);
+      this.channel.post({ type: 'saved', ids: [id] });
+    }
     return meta;
   }
 
@@ -105,6 +130,7 @@ export class DocumentManager {
       meta.excerptVersion = EXCERPT_VERSION;
     }
     await this.store.put(stale.map((meta) => ({ meta })));
+    this.channel.post({ type: 'saved', ids: [] });
     return true;
   }
 
@@ -139,8 +165,8 @@ export class DocumentManager {
     };
     if (options.defaultPageSetup ?? !initialDoc) doc = withDefaultPageSetup(doc);
 
-    const meta = await this.saveDoc(id, doc, docTitle);
-    this.setActiveDocId(id);
+    const meta = await this.write(id, doc, docTitle, true);
+    if (!meta) throw new Error(`Document ${id} was not created`);
     return { meta, doc };
   }
 
@@ -150,6 +176,7 @@ export class DocumentManager {
    */
   async deleteDoc(id: string): Promise<string> {
     await this.store.remove(id);
+    this.channel.post({ type: 'deleted', ids: [id] });
     const index = await this.store.list();
     if (index.length === 0) {
       const created = await this.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);
@@ -164,8 +191,9 @@ export class DocumentManager {
    * Permanently deletes every document and image on this device. Preferences
    * such as the theme and sidebar state are kept.
    */
-  clearAll(): Promise<void> {
-    return this.store.clear();
+  async clearAll(): Promise<void> {
+    await this.store.clear();
+    this.channel.post({ type: 'cleared' });
   }
 
   /**
@@ -173,8 +201,9 @@ export class DocumentManager {
    * included), adding them to the index or replacing entries with the same
    * id. Used to restore backups.
    */
-  putDocs(entries: { meta: DocMeta; doc: StoredDoc }[]): Promise<void> {
-    return this.store.put(entries);
+  async putDocs(entries: { meta: DocMeta; doc: StoredDoc }[]): Promise<void> {
+    await this.store.put(entries);
+    this.channel.post({ type: 'saved', ids: entries.map((e) => e.meta.id) });
   }
 
   /** A fresh, unused document id. */

@@ -10,6 +10,7 @@ import {
   describeRestore,
 } from './backup';
 import { DocumentManager } from '../data-access/document-manager';
+import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory } from '../versions/version-history';
 
 const docWith = (text: string, imageId?: string): StoredDoc => ({
@@ -90,6 +91,17 @@ describe('BackupService', () => {
     expect(new Uint8Array(await image!.blob.arrayBuffer())).toEqual(
       new Uint8Array([137, 80, 78, 71, 1, 2, 3]),
     );
+  });
+
+  it('counts a replace restore as a backup for the reminder, but not a merge', async () => {
+    await docs.createDoc('A', docWith('Alpha'));
+    const backup = { ...(await backups.create()), createdAt: 5000 };
+    const health = TestBed.inject(StorageHealth);
+
+    await backups.restore(throughFile(backups, backup), 'merge');
+    expect(health.lastBackup()).toBeNull();
+    await backups.restore(throughFile(backups, backup), 'replace');
+    expect(health.lastBackup()).toBe(5000);
   });
 
   it('replace deletes documents that are not in the backup', async () => {

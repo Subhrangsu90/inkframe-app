@@ -21,10 +21,13 @@
         type="button"
         class="header-title-btn"
         (click)="isEditingTitle.set(true)"
-        title="Click to rename document"
+        [disabled]="editingElsewhere()"
+        [attr.title]="editingElsewhere() ? null : 'Click to rename document'"
       >
         <span class="title-text">{{ docTitle() }}</span>
-        <ink-icon name="edit" [size]="12" svgClass="edit-icon" />
+        @if (!editingElsewhere()) {
+          <ink-icon name="edit" [size]="12" svgClass="edit-icon" />
+        }
       </button>
     }
 
@@ -92,7 +95,7 @@
 <ng-template #headerRight>
   <div class="header-actions">
     <!-- Page setup: only while editing the current document -->
-    @if (activeView() === 'rich' && !previewVersion()) {
+    @if (activeView() === 'rich' && !previewVersion() && !editingElsewhere()) {
       <button
         type="button"
         class="page-setup-btn"
@@ -240,6 +243,25 @@
 <!-- ═════════════════════════════════════════════ -->
 <div class="editor-workspace-body" [class.is-preview]="activeView() === 'preview'">
   <div class="view-panel editor-view-panel">
+    <!-- Another tab edits this document; this one follows its saves, read-only (EditLocks). -->
+    @if (editingElsewhere()) {
+      <div class="elsewhere-bar" role="status">
+        <ink-icon name="eye" [size]="15" class="elsewhere-icon" />
+        <p class="elsewhere-text">
+          <strong>Open in another tab</strong>
+          <span
+            >This document is being edited in another tab or window, so it is read-only here.</span
+          >
+        </p>
+        <div class="elsewhere-actions">
+          <button type="button" class="version-btn version-btn-primary" (click)="takeOver()">
+            <ink-icon name="edit" [size]="14" />
+            <span>Edit here</span>
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- A version from the history, shown in place of the editor -->
     @if (previewVersion(); as version) {
       <div class="version-preview-bar" role="status">
@@ -294,7 +316,7 @@
         #editorComp
         [initialDoc]="currentStoredDoc()"
         [extensions]="extensions()"
-        [editable]="activeView() === 'rich'"
+        [editable]="activeView() === 'rich' && !editingElsewhere()"
         [showToolbar]="activeView() === 'rich' && showToolbar()"
         mobileToolbar="bottom"
         [showRuler]="editorPreferences.showRuler()"

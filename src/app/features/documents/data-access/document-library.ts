@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ConfirmDialogService, ToastService } from '@app/shared/ui';
 import { docPath } from '../documents.paths';
 import { DocMeta, DocumentManager } from './document-manager';
+import { DocumentChannel } from './document-channel';
 
 /** The document list shown in the sidebar and the docs page, and the actions that change it. */
 @Injectable({
@@ -20,6 +21,8 @@ export class DocumentLibrary {
 
   constructor() {
     this.refreshDocs();
+    // Documents created, edited or deleted in another tab.
+    inject(DocumentChannel).listen(() => void this.refreshDocs());
   }
 
   setActiveDocId(id: string): void {

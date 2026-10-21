@@ -51,13 +51,14 @@ describe('Schema migrations', () => {
         ],
       },
     };
-    expect(SCHEMA_VERSION).toBe(5);
+    expect(SCHEMA_VERSION).toBe(7);
     const migrated = migrate(v1);
     expect(migrated).toEqual(v1.doc);
     const node = schema.nodeFromJSON(migrated);
     node.check();
-    expect(node.child(0).attrs).toEqual({ level: 1, align: null });
-    expect(node.child(1).attrs).toEqual({ align: null });
+    const unformatted = { align: null, indent: null, lineSpacing: null };
+    expect(node.child(0).attrs).toEqual({ level: 1, ...unformatted });
+    expect(node.child(1).attrs).toEqual(unformatted);
   });
 
   it('drops fixed row heights from version 2 table cells', () => {
@@ -143,6 +144,62 @@ describe('Schema migrations', () => {
     expect(storedPageSetupOf(node)).toBeNull();
     expect(pageSetupOf(node)).toEqual(DEFAULT_PAGE_SETUP);
     expect(pageSetupOf(node).layout).toBe('pageless');
+  });
+
+  it('loads version 5 documents unchanged: no indent, line spacing or font size, in Sans', () => {
+    const v5: StoredDoc = {
+      schemaVersion: 5,
+      doc: {
+        type: 'doc',
+        attrs: { page: { ...DEFAULT_PAGE_SETUP, layout: 'pages', font: undefined } },
+        content: [
+          {
+            type: 'paragraph',
+            attrs: { align: 'center' },
+            content: [{ type: 'text', text: 'Before paragraph formatting' }],
+          },
+        ],
+      },
+    };
+    const migrated = migrate(v5);
+    expect(migrated).toEqual(v5.doc);
+    const node = schema.nodeFromJSON(migrated);
+    node.check();
+    expect(node.child(0).attrs).toEqual({ align: 'center', indent: null, lineSpacing: null });
+    expect(node.child(0).child(0).marks).toEqual([]);
+    expect(pageSetupOf(node)).toEqual({ ...DEFAULT_PAGE_SETUP, layout: 'pages' });
+    expect(pageSetupOf(node).font).toBe('sans');
+  });
+
+  it('loads version 6 documents unchanged: no fonts chosen for text', () => {
+    const v6: StoredDoc = {
+      schemaVersion: 6,
+      doc: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Before fonts',
+                marks: [{ type: 'fontSize', attrs: { size: 18 } }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const migrated = migrate(v6);
+    expect(migrated).toEqual(v6.doc);
+    const node = schema.nodeFromJSON(migrated);
+    node.check();
+    expect(
+      node
+        .child(0)
+        .child(0)
+        .marks.map((m) => m.type.name),
+    ).toEqual(['fontSize']);
   });
 
   it('ignores row heights in pasted or imported HTML', () => {

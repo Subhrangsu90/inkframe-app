@@ -12,6 +12,8 @@ import {
 } from '../extensions/marks/marks-schema';
 import { textColor } from '../extensions/text-color/text-color-schema';
 import { highlight } from '../extensions/highlight/highlight-schema';
+import { fontSize } from '../extensions/font-size/font-size-schema';
+import { fontFamily } from '../extensions/font-family/font-family-schema';
 import { link } from '../extensions/link/link-schema';
 import { image } from '../extensions/image/image-schema';
 import { code_block } from '../extensions/code-block/code-block-schema';
@@ -67,5 +69,7 @@ export const schema = new Schema({
     .addToEnd('superscript', superscript)
     .addToEnd('textColor', textColor)
     .addToEnd('small', small)
-    .addToEnd('highlight', highlight),
+    .addToEnd('highlight', highlight)
+    .addToEnd('fontSize', fontSize)
+    .addToEnd('fontFamily', fontFamily),
 });

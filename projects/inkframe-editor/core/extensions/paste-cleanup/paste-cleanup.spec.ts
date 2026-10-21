@@ -174,6 +174,39 @@ describe('Paste from a web page', () => {
   });
 });
 
+describe('Paragraph indents', () => {
+  const indents = (doc: PMNode) => doc.children.map((n) => n.attrs['indent'] ?? 0);
+
+  it('become indent levels from Google Docs (36pt a level) and Word (half an inch)', () => {
+    const docs = paste(
+      '<b style="font-weight:normal;" id="docs-internal-guid-1">' +
+        '<p dir="ltr" style="line-height:1.38;margin-left: 36pt;margin-top:0pt"><span>one</span></p>' +
+        '<p dir="ltr" style="margin-left: 72pt"><span>two</span></p>' +
+        '<h2 dir="ltr" style="margin-left: 36pt"><span>heading</span></h2>' +
+        '<p dir="ltr" style="margin-left: 0pt"><span>none</span></p></b>',
+    );
+    expect(indents(docs)).toEqual([1, 2, 1, 0]);
+    expect(docs.child(0).attrs['lineSpacing']).toBeNull(); // Google Docs' default spacing is not kept
+
+    const word = paste(
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office"><body>' +
+        "<p class=MsoNormal style='margin-left:.5in'>half</p>" +
+        "<p class=MsoNormal style='margin-left:1.27cm'>metric</p>" +
+        "<p class=MsoNormal style='margin-left:9in'>far</p>" +
+        "<p class=MsoNormal style='margin-left:.1in'>nudge</p></body></html>",
+    );
+    expect(indents(word)).toEqual([1, 1, 8, 0]);
+  });
+
+  it('are not read from web pages, or inside list items, where the margin is the list', () => {
+    expect(indents(paste('<p style="margin-left: 48px">web</p>'))).toEqual([0]);
+    const list = paste(
+      '<b id="docs-internal-guid-2"><ul><li style="margin-left: 36pt"><p style="margin-left: 36pt">item</p></li></ul></b>',
+    );
+    expect(list.child(0).child(0).child(0).attrs['indent']).toBeNull();
+  });
+});
+
 describe('cleanPastedHtml', () => {
   it('leaves content copied from an Inkframe editor untouched', () => {
     const internal = '<p data-pm-slice="1 1 []"><span style="color: #1f2937">dark text</span></p>';

@@ -3,6 +3,7 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { DOMPURIFY_CONFIG } from '../../io/html';
 import { sanitizeCssColor } from '../../schema/sanitize-css';
 import { NumberStyle, defaultNumberStyle } from '../lists/list-schema';
+import { MAX_INDENT } from '../paragraph-format/paragraph-format-schema';
 
 export type PasteSource = 'word' | 'google-docs' | 'other';
 
@@ -262,6 +263,39 @@ function cleanGoogleDocs(root: HTMLElement): void {
   });
 }
 
+// ── Indents (Word and Google Docs) ────────────────────────────────
+
+const PX_PER_UNIT: Record<string, number> = {
+  px: 1,
+  pt: 96 / 72,
+  in: 96,
+  cm: 96 / 2.54,
+  mm: 96 / 25.4,
+};
+
+/** Word and Google Docs indent by half an inch per Tab or Increase indent. */
+const INDENT_STEP_PX = 48;
+
+/** A CSS length in pixels (`36pt`, `.5in`, `1.27cm`), or null. */
+function lengthPx(value: string): number | null {
+  const m = /^(-?\d*\.?\d+)(px|pt|in|cm|mm)$/i.exec(value.trim());
+  return m ? Number(m[1]) * PX_PER_UNIT[m[2].toLowerCase()] : null;
+}
+
+/**
+ * Word and Google Docs write an indented paragraph as `margin-left` in half
+ * inches (36pt, .5in); that becomes the indent level the schema reads
+ * (`data-indent`). Not inside list items, where the margin is the list's.
+ */
+function convertIndents(root: HTMLElement): void {
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>('p, h1, h2, h3, h4, h5, h6'))) {
+    if (el.closest('li')) continue;
+    const px = lengthPx(el.style.marginLeft || '');
+    const level = px ? Math.min(MAX_INDENT, Math.round(px / INDENT_STEP_PX)) : 0;
+    if (level >= 1) el.setAttribute('data-indent', String(level));
+  }
+}
+
 // ── Inline styles ─────────────────────────────────────────────────
 
 /**
@@ -300,7 +334,8 @@ function cleanStyle(el: HTMLElement): void {
 /**
  * Cleans HTML pasted from other applications before it is parsed into the
  * document: rebuilds Word's paragraph-based lists, unwraps the Google Docs
- * wrapper, maps Google Docs checklists to task lists, removes Office markup
+ * wrapper, maps Google Docs checklists to task lists, keeps Word and Google
+ * Docs paragraph indents as indent levels, removes Office markup
  * and the default colors that would make pasted text unreadable in the other
  * theme, then sanitizes the result with DOMPurify. Content copied from an
  * Inkframe editor (marked with `data-pm-slice`) is returned unchanged.
@@ -317,6 +352,7 @@ export function cleanPastedHtml(html: string): string {
   } else if (source === 'google-docs') {
     cleanGoogleDocs(body);
   }
+  if (source !== 'other') convertIndents(body);
   body.querySelectorAll<HTMLElement>('[style]').forEach(cleanStyle);
   if (source === 'word')
     body.querySelectorAll('[class^="Mso"]').forEach((el) => el.removeAttribute('class'));

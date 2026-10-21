@@ -15,6 +15,7 @@
           "/icons/icon.svg",
           "/media/inter-latin-wght-normal-*.woff2",
           "/media/jetbrains-mono-latin-wght-normal-*.woff2",
+          "/media/source-serif-4-latin-wght-normal-*.woff2",
           "/media/material-symbols-outlined-*.woff2"
         ]
       }

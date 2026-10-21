@@ -7,8 +7,11 @@
  *   by all list types; list items can start with a heading; `note` callouts.
  * - 5: `page` attribute on `doc`: the page setup (layout, paper, margins,
  *   page color); `page_break` blocks at the top level.
+ * - 6: `indent` and `lineSpacing` attributes on paragraphs and headings;
+ *   `fontSize` mark; `font` in the page setup.
+ * - 7: `fontFamily` mark.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 7;
 
 /** The envelope that is saved to your database. */
 export interface StoredDoc {
@@ -42,6 +45,10 @@ const migrations: Record<number, Migration> = {
   3: (doc) => doc,
   // A version 4 document has no page setup, which means Pageless.
   4: (doc) => doc,
+  // Only additions: no indent, line spacing or font size, and the sans font.
+  5: (doc) => doc,
+  // Only additions: no fonts chosen for text.
+  6: (doc) => doc,
 };
 
 /** Removes the fixed row height from table cells (version 2 to 3). */

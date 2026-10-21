@@ -205,9 +205,11 @@ export class StaticPageView {
     this.resize?.observe(body);
     this.mutations?.observe(body, { childList: true });
     this.wide?.addEventListener('change', this.onChange);
-    // Images change the layout when they load, and so do fonts.
+    // Images change the layout when they load, and so do fonts: those the
+    // page starts with, and those it needs later (a document font picked).
     body.addEventListener('load', this.onChange, true);
     void document.fonts?.ready.then(this.onChange);
+    document.fonts?.addEventListener('loadingdone', this.onChange);
   }
 
   /** The document's page setup: pages in Pages layout, none in Pageless. */
@@ -222,6 +224,7 @@ export class StaticPageView {
     this.mutations?.disconnect();
     this.wide?.removeEventListener('change', this.onChange);
     this.body.removeEventListener('load', this.onChange, true);
+    document.fonts?.removeEventListener('loadingdone', this.onChange);
     this.clear();
   }
 

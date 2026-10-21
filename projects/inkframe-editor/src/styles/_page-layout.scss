@@ -45,6 +45,16 @@ body[data-theme='light'] .ink-canvas,
   padding: 20px 16px 40px;
 }
 
+/*
+ * The document's font (Serif or Mono, from pageLayoutStyle()): its text and
+ * its page headers and footers. Sans is the page's own font. Code keeps
+ * its monospace font.
+ */
+.ink-canvas .ProseMirror,
+.ink-canvas .ink-page-band {
+  font-family: var(--ink-doc-font, inherit);
+}
+
 @media (min-width: 768px) {
   .ink-canvas:not([data-ink-layout='pages']) .ink-sheet-body {
     padding-top: 3rem;

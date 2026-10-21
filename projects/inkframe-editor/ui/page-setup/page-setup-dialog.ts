@@ -8,6 +8,8 @@ import {
 } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import {
+  DOCUMENT_FONTS,
+  DocumentFont,
   MARGIN_PRESETS,
   MAX_MARGIN_TEXT,
   MIN_MARGIN_TEXT_MARGIN_MM,
@@ -24,6 +26,7 @@ import {
   PageOrientation,
   PageSetup,
   PaperSize,
+  findDocumentFont,
   findPaperSize,
   fitMargins,
   marginPresetOf,
@@ -162,6 +165,7 @@ const paperOption = (paper: PaperSize) =>
               [style]="colorStyle()"
               [style.width.px]="preview().width"
               [style.height.px]="preview().height"
+              [style.font-family]="fontStack()"
             >
               @if (zone(); as zone) {
                 <div class="ink-ps-zone" [style]="zone"></div>
@@ -473,8 +477,26 @@ const paperOption = (paper: PaperSize) =>
             }
           }
 
-          <!-- The page color: on the Page tab, and alone in Pageless. -->
+          <!-- The font and the page color: on the Page tab, and alone in Pageless. -->
           @if (layout() === 'pageless' || tab() === 'page') {
+            <fieldset class="ink-ps-group">
+              <legend class="ink-ps-legend">Font</legend>
+              <div class="ink-ps-segmented ink-ps-segmented-fill">
+                @for (option of fonts; track option.value) {
+                  <label [class.is-checked]="font() === option.value">
+                    <input
+                      type="radio"
+                      name="ink-ps-font"
+                      [value]="option.value"
+                      [checked]="font() === option.value"
+                      (change)="setFont(option.value)"
+                    />
+                    <span [style.font-family]="option.stack">{{ option.label }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+
             <fieldset class="ink-ps-group">
               <legend class="ink-ps-legend">
                 Page color
@@ -1333,6 +1355,7 @@ export class PageSetupDialog {
   protected readonly aligns = ALIGNS;
   protected readonly numberPositions = NUMBER_POSITIONS;
   protected readonly tabs = TABS;
+  protected readonly fonts = DOCUMENT_FONTS;
 
   /** What the dialog starts from: a document without page setup keeps its Pageless layout. */
   private readonly initial: PageSetup = this.data.current ?? {
@@ -1349,6 +1372,9 @@ export class PageSetupDialog {
   protected readonly orientation = signal<PageOrientation>(this.initial.orientation);
   protected readonly color = signal(this.initial.color);
   protected readonly printColor = signal(this.initial.printColor);
+  protected readonly font = signal<DocumentFont>(this.initial.font);
+  /** The font for the preview's header and footer. */
+  protected readonly fontStack = computed(() => findDocumentFont(this.font()).stack);
   protected readonly colorLabel = computed(
     () => this.colors.find((c) => c.name === this.color())?.label ?? 'None',
   );
@@ -1520,6 +1546,7 @@ export class PageSetupDialog {
       footer: this.marginText().footer,
       pageNumbers: this.numbers(),
       firstPage: this.firstPage(),
+      font: this.font(),
     });
   });
 
@@ -1555,6 +1582,11 @@ export class PageSetupDialog {
 
   protected setPrintColor(print: boolean): void {
     this.printColor.set(print);
+    this.defaultSaved.set(false);
+  }
+
+  protected setFont(font: DocumentFont): void {
+    this.font.set(font);
     this.defaultSaved.set(false);
   }
 

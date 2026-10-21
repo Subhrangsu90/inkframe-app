@@ -1,7 +1,11 @@
 import { NodeSpec } from 'prosemirror-model';
 import { nodes as basicNodes } from 'prosemirror-schema-basic';
 import { LIST_LEAD_GROUP } from '../lists/list-schema';
-import { readTextAlign, textAlignAttrs } from '../text-align/text-align-schema';
+import {
+  blockFormatAttrSpecs,
+  blockFormatDomAttrs,
+  readBlockFormat,
+} from '../paragraph-format/paragraph-format-schema';
 
 /**
  * The top node. `page` holds the document's page setup (see
@@ -16,7 +20,7 @@ export const doc: NodeSpec = {
 export const paragraph: NodeSpec = {
   ...basicNodes.paragraph,
   group: `block ${LIST_LEAD_GROUP}`,
-  attrs: { align: { default: null } },
-  parseDOM: [{ tag: 'p', getAttrs: (dom) => ({ align: readTextAlign(dom as HTMLElement) }) }],
-  toDOM: (node) => ['p', textAlignAttrs(node.attrs['align']), 0],
+  attrs: blockFormatAttrSpecs(),
+  parseDOM: [{ tag: 'p', getAttrs: (dom) => readBlockFormat(dom as HTMLElement) }],
+  toDOM: (node) => ['p', blockFormatDomAttrs(node.attrs), 0],
 };

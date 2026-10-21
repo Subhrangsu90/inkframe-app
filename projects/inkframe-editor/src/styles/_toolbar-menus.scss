@@ -19,9 +19,20 @@
   overflow-x: hidden !important;
 }
 
-/* The status bar's zoom levels: short items. */
-.mat-mdc-menu-panel.ink-zoom-menu {
+/* The status bar's zoom levels and the toolbar's line spacings: short items. */
+.mat-mdc-menu-panel.ink-zoom-menu,
+.mat-mdc-menu-panel.ink-spacing-menu {
   min-width: 150px !important;
+}
+
+/* Long menus scroll on short screens instead of being cut off. */
+.mat-mdc-menu-panel.ink-font-menu,
+.mat-mdc-menu-panel.ink-paragraph-menu {
+  overflow-y: auto !important;
+
+  .mat-mdc-menu-content {
+    overflow-y: visible !important;
+  }
 }
 
 /* A small heading over a group of menu items (e.g. "Bullet style"). */

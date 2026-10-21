@@ -3,8 +3,10 @@ import {
   StoredDoc,
   docToHtmlDocument,
   docToMarkdown,
+  findDocumentFont,
   imageStorage,
   migrate,
+  pageSetupOf,
   schema,
 } from '@inkframe-ui/editor/core';
 import { downloadFile, safeFileName } from './data-url';
@@ -47,7 +49,7 @@ export async function downloadHtml(stored: StoredDoc, title: string): Promise<st
 
 let printFrame: HTMLIFrameElement | null = null;
 
-const EDITOR_FONTS = /Inter Variable|JetBrains Mono Variable/;
+const EDITOR_FONTS = /Inter Variable|Source Serif 4 Variable|JetBrains Mono Variable/;
 
 // By its text rather than `instanceof CSSFontFaceRule`, which not every DOM implements.
 const isFontFace = (rule: CSSRule): rule is CSSFontFaceRule =>
@@ -103,15 +105,16 @@ function editorTextStyle(): Pick<HtmlDocumentOptions, 'editorFontSize' | 'editor
   return { editorFontSize: size.trim() || undefined };
 }
 
-/** Loads the fonts the document's text needs, waiting up to `timeoutMs`. */
-async function loadFonts(doc: Document, timeoutMs = 3000): Promise<void> {
+/**
+ * Loads the fonts the document's text needs (its own font, and the code
+ * font), waiting up to `timeoutMs`.
+ */
+async function loadFonts(doc: Document, family: string, timeoutMs = 3000): Promise<void> {
   const fonts = doc.fonts;
   if (!fonts) return;
   const text = doc.body.textContent || ' ';
-  const loaded = Promise.all([
-    fonts.load('16px "Inter Variable"', text),
-    fonts.load('16px "JetBrains Mono Variable"', text),
-  ]).then(
+  const families = new Set([family, findDocumentFont('mono').family]);
+  const loaded = Promise.all([...families].map((f) => fonts.load(`16px "${f}"`, text))).then(
     () => fonts.ready,
     () => undefined,
   );
@@ -169,7 +172,8 @@ export async function printDocument(
   // Images load lazily, and the frame is 0×0 so none is ever near the screen:
   // load them all before printing, or the printout has blank images. The
   // same goes for fonts, or the printout uses the fallback fonts.
-  await Promise.all([loadAllImages(win.document), loadFonts(win.document)]);
+  const font = findDocumentFont(pageSetupOf(toNode(stored)).font).family;
+  await Promise.all([loadAllImages(win.document), loadFonts(win.document, font)]);
   const pageTitle = document.title;
   const cleanup = () => {
     document.title = pageTitle;

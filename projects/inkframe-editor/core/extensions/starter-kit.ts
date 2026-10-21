@@ -18,10 +18,16 @@ import {
 } from './marks/marks-extensions';
 import { TextColorExtension } from './text-color/text-color-extension';
 import { HighlightExtension } from './highlight/highlight-extension';
+import { FontSizeExtension } from './font-size/font-size-extension';
+import { FontFamilyExtension } from './font-family/font-family-extension';
 import { HeadingExtension } from './heading/heading-extension';
 import { BlockquoteExtension } from './blockquote/blockquote-extension';
 import { CodeBlockExtension } from './code-block/code-block-extension';
 import { TextAlignExtension } from './text-align/text-align-extension';
+import {
+  IndentExtension,
+  LineSpacingExtension,
+} from './paragraph-format/paragraph-format-extension';
 import {
   BulletListExtension,
   OrderedListExtension,
@@ -60,12 +66,16 @@ export const DEFAULT_EXTENSIONS: EditorExtension[] = [
   TextColorExtension,
   SmallExtension,
   HighlightExtension,
+  FontSizeExtension,
+  FontFamilyExtension,
 
   // Hierarchy & blocks
   HeadingExtension,
   BlockquoteExtension,
   CodeBlockExtension,
   TextAlignExtension,
+  IndentExtension,
+  LineSpacingExtension,
 
   // Lists
   BulletListExtension,

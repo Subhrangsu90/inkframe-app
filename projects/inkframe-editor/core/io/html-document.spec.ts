@@ -128,6 +128,23 @@ describe('docToHtmlDocument', () => {
     expect(print).toContain(`html, body, .ink-print-page { background: ${cream}; }`);
   });
 
+  it('sets the text in the document font, with code still in mono', () => {
+    const serif = docToHtmlDocument(withPage({ font: 'serif' }));
+    expect(serif).toContain("body { font-family: 'Source Serif 4 Variable',");
+    expect(serif).toMatch(/code, pre \{ font-family: 'JetBrains Mono Variable'/);
+    // Pageless too: the font is not a Pages setting.
+    const pageless = schema.nodeFromJSON({ ...doc.toJSON(), attrs: { page: { font: 'mono' } } });
+    expect(docToHtmlDocument(pageless)).toContain("body { font-family: 'JetBrains Mono Variable',");
+    expect(docToHtmlDocument(doc)).not.toMatch(/body \{ font-family/);
+  });
+
+  it('prints headers and footers in the document font when the printout flows by itself', () => {
+    const html = docToHtmlDocument(withPage({ font: 'serif', footer: { text: 'Draft' } }));
+    expect(html).toMatch(
+      /@bottom-left \{ content: "Draft"; font: 11\.2px 'Source Serif 4 Variable'/,
+    );
+  });
+
   it('ignores a page color name it does not know', () => {
     const html = docToHtmlDocument(withPage({ color: 'neon', printColor: true }));
     expect(html).not.toMatch(/@page \{ background/);

@@ -27,11 +27,27 @@ import {
   setTextColorCommand,
 } from '../extensions/text-color/text-color-commands';
 import { insertDividerCommand } from '../extensions/divider/divider-commands';
+import { setTextAlignCommand, textAlignAt } from '../extensions/text-align/text-align-commands';
+import { LineSpacing } from '../extensions/paragraph-format/paragraph-format-schema';
 import {
-  setBlockTypeKeepingAlign,
-  setTextAlignCommand,
-  textAlignAt,
-} from '../extensions/text-align/text-align-commands';
+  indentAt,
+  indentCommand,
+  lineSpacingAt,
+  outdentCommand,
+  setBlockTypeKeepingFormat,
+  setLineSpacingCommand,
+} from '../extensions/paragraph-format/paragraph-format-commands';
+import {
+  fontSizeAt,
+  removeFontSizeCommand,
+  setFontSizeCommand,
+} from '../extensions/font-size/font-size-commands';
+import { FontFamily } from '../extensions/font-family/font-family-schema';
+import {
+  fontFamilyAt,
+  removeFontFamilyCommand,
+  setFontFamilyCommand,
+} from '../extensions/font-family/font-family-commands';
 import { ListKind, NumberStyle } from '../extensions/lists/list-schema';
 import {
   ListState,
@@ -224,6 +240,31 @@ export class EditorService implements EditorHooks {
   readonly currentHighlight = signal<string | null>(null);
   /** Alignment of the block at the cursor; null where blocks cannot be aligned (code blocks). */
   readonly textAlign = signal<TextAlign | null>('left');
+  /** Font size of the selection in pixels; null for the document's size, or several sizes. */
+  readonly fontSize = signal<number | null>(null);
+  /**
+   * The font size, in pixels, the selection's text is shown at: its own size,
+   * or else the size of the block at the cursor (headings are larger). Null
+   * until the editor is shown.
+   */
+  readonly shownFontSize = computed(() => {
+    const own = this.fontSize();
+    // Measured again whenever the document or the selection changes.
+    this.doc();
+    this.selection();
+    return own ?? this.blockFontSize();
+  });
+  /** Font of the selection; null for the document's font, or several fonts. */
+  readonly fontFamily = signal<FontFamily | null>(null);
+  /** Line spacing of the block at the cursor; null for the default. */
+  readonly lineSpacing = signal<LineSpacing | null>(null);
+  /** Whether the selection has blocks that take a line spacing (not only code blocks). */
+  readonly canSetLineSpacing = signal(true);
+  /** Indent level of the block at the cursor (0 for none). */
+  readonly indentLevel = signal(0);
+  /** Whether Increase and Decrease indent would change something (in lists: nest list items). */
+  readonly canIndent = signal(false);
+  readonly canOutdent = signal(false);
   readonly block = signal<BlockInfo>(
     { type: 'paragraph', level: null, list: null },
     { equal: sameBlock },
@@ -568,6 +609,13 @@ export class EditorService implements EditorHooks {
     }
     this.currentHighlight.set(highlight);
     this.textAlign.set(textAlignAt(state));
+    this.fontSize.set(fontSizeAt(state));
+    this.fontFamily.set(fontFamilyAt(state));
+    this.lineSpacing.set(lineSpacingAt(state));
+    this.canSetLineSpacing.set(setLineSpacingCommand(null)(state));
+    this.indentLevel.set(indentAt(state));
+    this.canIndent.set(indentCommand(state));
+    this.canOutdent.set(outdentCommand(state));
 
     this.doc.set(state.doc);
     this.selection.set({ from, to });
@@ -659,6 +707,20 @@ export class EditorService implements EditorHooks {
     return this.schema.nodes[name];
   }
 
+  /**
+   * The font size of the block at the cursor as shown, in CSS pixels (the
+   * zoom does not change it). Null without a view or a layout.
+   */
+  private blockFontSize(): number | null {
+    const v = this.view;
+    const { $head } = v?.state.selection ?? {};
+    if (!v || !$head || $head.depth === 0) return null;
+    const dom = v.nodeDOM($head.before());
+    if (!(dom instanceof Element)) return null;
+    const size = Math.round(parseFloat(getComputedStyle(dom).fontSize));
+    return size > 0 ? size : null;
+  }
+
   /** Toggles a formatting mark; marks cannot be combined with inline code. */
   private toggleFormatMark(name: string): void {
     const type = this.markType(name);
@@ -715,6 +777,30 @@ export class EditorService implements EditorHooks {
   setTextAlign(align: TextAlign) {
     this.run(setTextAlignCommand(align));
   }
+  /** Sets the selection's font size in pixels; null resets it to the document's size. */
+  setFontSize(size: number | null) {
+    if (!this.markType('fontSize')) return;
+    if (size === null) this.run(removeFontSizeCommand);
+    else if (!this.isCode()) this.run(setFontSizeCommand(size));
+  }
+  /** Sets the selection's font; null resets it to the document's font. */
+  setFontFamily(font: FontFamily | null) {
+    if (!this.markType('fontFamily')) return;
+    if (font === null) this.run(removeFontFamilyCommand);
+    else if (!this.isCode()) this.run(setFontFamilyCommand(font));
+  }
+  /** Sets the line spacing of the paragraphs and headings in the selection; null is the default. */
+  setLineSpacing(spacing: LineSpacing | null) {
+    this.run(setLineSpacingCommand(spacing));
+  }
+  /** Indents the paragraphs and headings in the selection one level; in a list, nests the items. */
+  indent() {
+    this.run(indentCommand);
+  }
+  /** Takes one indent level away; in a list, moves the items one level out. */
+  outdent() {
+    this.run(outdentCommand);
+  }
   clearFormatting() {
     this.run(clearFormattingCommand);
   }
@@ -727,7 +813,7 @@ export class EditorService implements EditorHooks {
 
   paragraph() {
     const paragraph = this.nodeType('paragraph');
-    if (paragraph) this.run(setBlockTypeKeepingAlign(paragraph));
+    if (paragraph) this.run(setBlockTypeKeepingFormat(paragraph));
   }
 
   /** Toggles: pressing H2 while already in an H2 turns it back into a paragraph. */
@@ -738,8 +824,8 @@ export class EditorService implements EditorHooks {
     const b = this.block();
     this.run(
       b.type === 'heading' && b.level === level
-        ? setBlockTypeKeepingAlign(paragraph)
-        : setBlockTypeKeepingAlign(heading, { level }),
+        ? setBlockTypeKeepingFormat(paragraph)
+        : setBlockTypeKeepingFormat(heading, { level }),
     );
   }
 

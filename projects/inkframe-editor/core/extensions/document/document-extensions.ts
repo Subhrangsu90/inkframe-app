@@ -1,6 +1,6 @@
 import { nodes as basicNodes } from 'prosemirror-schema-basic';
 import { createExtension } from '../../editor/extension-types';
-import { setBlockTypeKeepingAlign } from '../text-align/text-align-commands';
+import { setBlockTypeKeepingFormat } from '../paragraph-format/paragraph-format-commands';
 import { doc, paragraph } from './document-schema';
 
 export const DocExtension = createExtension({
@@ -12,7 +12,7 @@ export const ParagraphExtension = createExtension({
   name: 'paragraph',
   nodes: { paragraph },
   keymaps: (ctx) => ({
-    'Mod-Alt-0': setBlockTypeKeepingAlign(ctx.schema.nodes['paragraph']),
+    'Mod-Alt-0': setBlockTypeKeepingFormat(ctx.schema.nodes['paragraph']),
   }),
   slashItems: [
     {

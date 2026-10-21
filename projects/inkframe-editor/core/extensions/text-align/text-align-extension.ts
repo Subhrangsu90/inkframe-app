@@ -1,5 +1,6 @@
 import { createExtension } from '../../editor/extension-types';
-import { setTextAlignCommand, splitAlignedBlockCommand } from './text-align-commands';
+import { setTextAlignCommand } from './text-align-commands';
+import { splitFormattedBlockCommand } from '../paragraph-format/paragraph-format-commands';
 
 /** Left, center, right and justified paragraphs and headings. */
 export const TextAlignExtension = createExtension({
@@ -9,6 +10,6 @@ export const TextAlignExtension = createExtension({
     'Shift-Mod-e': setTextAlignCommand('center'),
     'Shift-Mod-r': setTextAlignCommand('right'),
     'Shift-Mod-j': setTextAlignCommand('justify'),
-    Enter: splitAlignedBlockCommand,
+    Enter: splitFormattedBlockCommand,
   }),
 });

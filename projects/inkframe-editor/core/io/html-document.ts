@@ -2,8 +2,10 @@ import { Fragment, Node as PMNode } from 'prosemirror-model';
 import { docToHtml, sanitizeHtml } from './html';
 import { withPageStarts } from './page-starts';
 import {
+  DOCUMENT_FONTS,
   MarginLine,
   PageSetup,
+  findDocumentFont,
   findPageColor,
   pageDimensions,
   pageMarginBoxCss,
@@ -20,8 +22,8 @@ export interface HtmlDocumentOptions {
   lang?: string;
   /**
    * `@font-face` rules to include, so the page uses the same fonts as the
-   * editor (Inter and JetBrains Mono). Leave out for a file that makes no
-   * network requests; it then uses the system's fonts.
+   * editor (Inter, Source Serif 4 and JetBrains Mono). Leave out for a file
+   * that makes no network requests; it then uses the system's fonts.
    */
   fontFaceCss?: string;
   /**
@@ -46,8 +48,7 @@ export interface HtmlDocumentOptions {
   pageStarts?: readonly number[] | null;
 }
 
-const SANS_SERIF =
-  "'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+const SANS_SERIF = DOCUMENT_FONTS[0].stack;
 
 const LETTER_SPACING = /^(normal|-?\d+(\.\d+)?(px|em|rem))$/;
 
@@ -201,7 +202,7 @@ function pageSetupCss(
     ? `@page { size: ${mm(width)} ${mm(height)}; margin: 0; }`
     : pageRuleCss(setup) +
       '\n' +
-      pageMarginBoxCss(setup, `${marginTextSize(fontSize)} ${SANS_SERIF}`);
+      pageMarginBoxCss(setup, `${marginTextSize(fontSize)} ${findDocumentFont(setup.font).stack}`);
   return `@media print {
   ${page}
   body { font-size: ${fontSize}; letter-spacing: ${letterSpacing}; }
@@ -279,6 +280,13 @@ function pageColorCss(setup: PageSetup): string {
 `;
 }
 
+/** The document's font, when it is not Sans: the text, headers and footers (code stays mono). */
+function documentFontCss(setup: PageSetup): string {
+  return setup.font === 'sans'
+    ? ''
+    : `body { font-family: ${findDocumentFont(setup.font).stack}; }\n`;
+}
+
 /** A header or footer as HTML: its left, center and right text (escaped). */
 function marginLineHtml(edge: 'top' | 'bottom', line: MarginLine | null): string {
   if (!line) return '';
@@ -334,6 +342,7 @@ export function docToHtmlDocument(doc: PMNode, options: HtmlDocumentOptions = {}
   const css =
     (options.fontFaceCss ?? '') +
     HTML_DOCUMENT_CSS +
+    documentFontCss(setup) +
     pageSetupCss(setup, fontSize, letterSpacing, paged) +
     (paged ? pageBoxCss(setup, fontSize) : '') +
     pageColorCss(setup);

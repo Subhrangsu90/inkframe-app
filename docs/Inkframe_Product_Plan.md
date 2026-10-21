@@ -132,6 +132,8 @@ Block mode (M7) brings the block-editing style people know from Notion-like tool
 | "A4 and Letter pages", "Landscape", "Ruler", "Page color" | Built (M3.5 steps 1–5) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "See your pages as they print" | Built (M3.5 step 6) and checked in Chrome, not yet released. | Claim once released and checked in Firefox and Safari. |
 | "Headers and footers", "Page numbers" (in print) | Built (M3.5 step 7, Pages layout only) and checked in Chrome, not yet released. | Claim once released and checked in Chrome, Firefox and Safari. Never "formatted headers": they are one line of plain text (D19). |
+| "Indent", "Line spacing", "Font sizes", "Serif and mono fonts" | Built (2026-10-20) and checked in Chrome, not yet released. | Claim once released. Never "any font": the document font is one of three (D26), and text can take one of twelve (D27). |
+| "Fonts for selected text" | Built (2026-10-21) and checked in Chrome, not yet released. | Claim once released. The nine system fonts show as named only where the system has them (D27). |
 
 ---
 
@@ -150,9 +152,10 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | Links with safe-protocol allow-list | ✅ | P0 | **Bind `Mod-k`**: the tooltip advertises Ctrl+K but nothing handles it. |
 | Clear formatting | ✅ | P0 | |
 | Paragraph alignment (left, center, right, justify) | ✅ | P0 | Paragraphs and headings; `Mod-Shift-L/E/R/J`. Kept when a block changes type or Enter starts a new line. Markdown export wraps aligned blocks in `<div align>`. |
-| Indent / outdent for paragraphs | ⬜ | P1 | Lists already support Tab and Shift+Tab. Indent handles on the ruler could come later; M3.5's ruler sets margins only. |
-| Font family per document (sans, serif, mono) | ⬜ | P1 | A document-level setting, not per character. |
-| Line spacing, font size per selection | ⬜ | P2 | Only if users ask; it complicates Markdown export. |
+| Indent / outdent for paragraphs | ✅ | P1 | Paragraphs and headings, up to 8 levels of 1.5rem (one level of list nesting); `Mod-]` / `Mod-[` (as in Google Docs) and the toolbar's paragraph menu; Backspace at the start of an indented block takes a level away. In lists the same keys nest list items, as Tab and Shift+Tab do. Tab itself stays with lists and tables, so elsewhere it still moves focus out of the document (no keyboard trap). Kept by Enter and when a block changes type. Word and Google Docs paragraph indents paste as levels. Indent handles on the ruler could come later; M3.5's ruler sets margins only. |
+| Font family per document (sans, serif, mono) | ✅ | P1 | A document-level setting, not per character (D26): Font in Page setup (Page tab, and in Pageless), so "Set as default" carries it to new documents. Sans is Inter, Serif is Source Serif 4 (self-hosted, Latin cached offline), Mono is JetBrains Mono; code stays mono. Editor, reader, version previews, print and HTML export use it; headers and footers too. Markdown drops it, like the rest of page setup. |
+| Line spacing, font size per selection | ✅ | P2 | Built 2026-10-20 by request. Line spacing: Single, 1.15, 1.5, Double (line heights 1.2, 1.38, 1.8, 2.4, as in Google Docs; the default stays 1.65), in the paragraph menu with alignment and indent; since 2026-10-21 its own toolbar button and menu. Font size: a `fontSize` mark in pixels, not on inline code; since 2026-10-21 set in the toolbar as in Google Docs: − and + change it by a pixel, and the box between them shows the size the text has (its own, or its block's) and takes a size typed in (6–120) or picked from its list (Default, 10–72). Markdown keeps both as inline HTML (`<div style="line-height: …">`, `<span style="font-size: …">`) and reads them back. Pastes keep neither: every Google Docs span says 11pt, so sizes and spacings from other sources are their styling. |
+| Font family per selection | ✅ | P2 | Built 2026-10-21 by request (D27). A `fontFamily` mark, stored by name (`FONT_FAMILIES`): the three document fonts, then Arial, Comic Sans MS, Courier New, Georgia, Impact, Palatino, Times New Roman, Trebuchet MS and Verdana, each with fallbacks. The toolbar's font menu shows each in its own font, with Default (the document font) first; not on inline code. HTML writes `data-font-family` with the stack as a style; Markdown keeps the stack as `<span style="font-family: …">` and reads back only the listed stacks. Pastes keep no fonts, as with sizes. |
 
 ### 3.2 Blocks
 
@@ -757,7 +760,11 @@ page: {
 
 Together with the new `page_break` block, this takes `SCHEMA_VERSION` from 4 to 5 with a no-op migration. The writing mode (M7) stays in `StoredDoc.meta` because it is a view setting; page setup changes what prints and exports, so it lives in the document (D17).
 
-**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 5 to 6; versions 2 to 5 are taken, 5 by M3.5) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
+**Paragraph formatting (2026-10-20):** paragraphs and headings gain `indent` (1–8, null for none) and `lineSpacing` (1, 1.15, 1.5 or 2, null for the default), text gains a `fontSize` mark (`size` in pixels, 6–120), and the page setup gains `font` (`'sans' | 'serif' | 'mono'`, Sans when missing). `SCHEMA_VERSION` goes from 5 to 6 with a no-op migration (fixture test), so older app versions refuse such documents instead of dropping the formatting. Every value is checked against a fixed list or range before it reaches a `style`.
+
+**Fonts for text (2026-10-21):** text gains a `fontFamily` mark (`font`, one of `FONT_FAMILIES` by name, never CSS). `SCHEMA_VERSION` goes from 6 to 7 with a no-op migration (fixture test), for the same reason.
+
+**Planned envelope and index changes (M7):** `StoredDoc` gains an optional `meta` object (`mode`, `icon`, `cover`); documents without it open in Document mode, so no migration is needed. The documents index (`DocMeta`) gains `parentId` and `icon` for the page tree. The new block types (`toggle`, `page_link`, `columns`, `column`) are additive, but `SCHEMA_VERSION` still goes up (from 6 to 7; versions 2 to 6 are taken, 5 by M3.5 and 6 by paragraph formatting) with a no-op migration: older app versions then refuse such documents with a clear "made with a newer version" message instead of failing on unknown blocks.
 
 **Backup format (`.inkframe.json`):** `{ format: "inkframe-backup", version: 1, createdAt, documents: [{ meta, doc, versions: [{ meta, doc }] }], images: [{ id, name, type, size, createdAt, data }] }`. `doc` is the stored envelope (migrated on load); `data` is a `data:` URL. Only images that documents or versions show are included.
 
@@ -835,7 +842,7 @@ Clean and soft: a warm off-white canvas (soft charcoal in dark mode, with a dark
 | Accent `--ink-accent` / soft | `#028380` / `#e0f8f6` | `#028380` / `#0d302f` |
 | Accent text `--ink-accent-text` | `#017a78` | `#58aaa6` |
 
-**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code, optional serif body as a document setting. Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px teal (`--ink-border-focus`, 70% opacity in light, 60% in dark, for 3:1 contrast), never removed.
+**Typography:** Inter for the UI (14px) and the document body (14px, 1.65 line height, set with `--ink-editor-font-size`; headings, code and captions scale with it in em), JetBrains Mono for code; documents can switch their whole text to Source Serif 4 or JetBrains Mono in Page setup (D26). Scale 12 / 13 / 14 / 16 / 20 / 24 / 32 / 48 / 64. **Spacing:** 4px base. **Radius:** 6 / 10 / 16px. **Focus ring:** 3px teal (`--ink-border-focus`, 70% opacity in light, 60% in dark, for 3:1 contrast), never removed.
 
 ### 7.2 Editor layout
 
@@ -914,7 +921,8 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 | Scripts in pasted or imported HTML | DOMPurify, then ProseMirror schema parsing keeps only known nodes and marks. |
 | Malicious shared documents | Rendered through the schema serializer, then DOMPurify; no raw HTML from the payload is trusted. |
 | CSS injection through attributes (tracking pixels) | `sanitizeCssColor` / `sanitizeCssLength` on colors, widths and heights. |
-| Page setup values in shared documents (M3.5) | Layout, paper and orientation are checked against fixed lists; margins are clamped numbers; page color is a palette name, never a CSS value. Anything else falls back to the default. |
+| Page setup values in shared documents (M3.5) | Layout, paper, orientation and font are checked against fixed lists; margins are clamped numbers; page color is a palette name, never a CSS value. Anything else falls back to the default. |
+| Paragraph formatting and font sizes in shared documents | Indent is a whole number 1–8, line spacing one of four values, font size a whole number of pixels 6–120; anything else is dropped before it reaches a `style`. From HTML only Inkframe's own data attributes are read. |
 | `javascript:` links, tab-nabbing | `sanitizeHref` allow-list; links get `rel="noopener noreferrer nofollow"`. |
 | Server exposure of shared content | Share payload lives in the URL fragment, which browsers never send. |
 | Third-party requests | Self-hosted fonts and icons (B1). External images in documents are user-chosen; the editor loads them with `referrerpolicy="no-referrer"`, and the reader should too (add in M0). |
@@ -1003,6 +1011,8 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D23 | The server lives in its own repository, `inkframe-server`, next to this one. Developers run Postgres in Docker (`docker compose up -d`); production uses Neon. | Decided 2026-10-20 |
 | D24 | Payment provider for subscriptions | **Open.** Recommended: a merchant of record, which handles sales tax, VAT and GST in every country: Dodo Payments (India-friendly, Better Auth plugin), or Paddle. See the Server Plan, 4.3. |
 | D25 | Plans, prices, and whether subscriptions ship at launch | **Open.** Proposal: Free and Pro, Pro around $5 a month; the editor stays free forever either way. See the Server Plan, 4.2. |
+| D26 | The document font (Sans, Serif, Mono) is part of the page setup, chosen in the Page setup dialog, never per character; there is no font picker in the toolbar (per character: superseded by D27). Font sizes are per selection, in pixels. Line spacing uses word-processor names (Single to Double), as line heights of 1.2× the spacing. Paragraph indent uses `Mod-]` / `Mod-[`; Tab stays with lists and tables. | Decided 2026-10-20 |
+| D27 | Text can also take a font of its own, from the toolbar's font menu (as in Google Docs): one of `FONT_FAMILIES`, the three document fonts and nine fonts most systems have, stored by name. No web fonts are loaded for it, so the app stays offline and private; a system font a device lacks shows as its fallback. Text without a font keeps the document font (D26). Font size and line spacing get their own toolbar controls. | Decided 2026-10-21 |
 
 ### 11.2 Risks
 
@@ -1059,6 +1069,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Highlight | `Mod-Alt-H` | `==text==` (import only) |
 | Align left / center / right / justify | `Mod-Shift-L` / `E` / `R` / `J` | |
 | Indent / outdent list item | `Tab` / `Shift-Tab` | |
+| Indent / outdent paragraph or heading | `Mod-]` / `Mod-[` (in lists they nest list items); `Backspace` at the start of an indented block outdents | |
 | Next / previous table cell | `Tab` / `Shift-Tab` | |
 | Link | `Mod-K` | |
 | Find / replace | `Mod-F` / `Mod-H` (macOS: `Mod-Shift-H`) | |
@@ -1071,8 +1082,8 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | Group | Extensions |
 | --- | --- |
 | Essentials | `doc`, `paragraph`, `text`, `hard_break`, `history` |
-| Inline formatting | `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `textColor`, `small`, `highlight`, `clear_formatting` |
-| Blocks | `heading`, `blockquote`, `code_block`, `text_align`, `divider` |
+| Inline formatting | `bold`, `italic`, `underline`, `strike`, `code`, `subscript`, `superscript`, `textColor`, `small`, `highlight`, `fontSize`, `fontFamily`, `clear_formatting` |
+| Blocks | `heading`, `blockquote`, `code_block`, `text_align`, `indent`, `line_spacing`, `divider` |
 | Lists | `bullet_list`, `ordered_list`, `task_list` |
 | Rich inserts | `table`, `callout`, `link`, `image` |
 | Editing aids | `search` (find and replace), `placeholder` (`createPlaceholderExtension(text)` for other text), `paste_cleanup` |

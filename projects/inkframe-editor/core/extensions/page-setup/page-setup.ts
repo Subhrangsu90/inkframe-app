@@ -63,6 +63,54 @@ export interface PageSetup {
   pageNumbers: PageNumbers;
   /** Whether the header, footer and number show on the first page too (false for a title page). */
   firstPage: boolean;
+  /** The document's font: its text, headers and footers, on screen and in print. */
+  font: DocumentFont;
+}
+
+/** A document's font: the whole document, not chosen per character. */
+export type DocumentFont = 'sans' | 'serif' | 'mono';
+
+export interface DocumentFontOption {
+  value: DocumentFont;
+  label: string;
+  /** The font family the app serves (`@font-face`). */
+  family: string;
+  /** The CSS font stack, with system fonts after it for pages without the font files. */
+  stack: string;
+}
+
+/**
+ * The document fonts: Inter, Source Serif 4 and JetBrains Mono, which the
+ * app serves itself. On screen, Sans is the page's own font, so a host app's
+ * body font stays the document's font until someone picks another.
+ */
+export const DOCUMENT_FONTS: readonly DocumentFontOption[] = [
+  {
+    value: 'sans',
+    label: 'Sans',
+    family: 'Inter Variable',
+    stack:
+      "'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  },
+  {
+    value: 'serif',
+    label: 'Serif',
+    family: 'Source Serif 4 Variable',
+    stack:
+      "'Source Serif 4 Variable', 'Source Serif 4', 'Source Serif Pro', Georgia, Cambria, 'Times New Roman', serif",
+  },
+  {
+    value: 'mono',
+    label: 'Mono',
+    family: 'JetBrains Mono Variable',
+    stack:
+      "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  },
+];
+
+/** The option for a document font (Sans for an unknown one). */
+export function findDocumentFont(font: DocumentFont): DocumentFontOption {
+  return DOCUMENT_FONTS.find((f) => f.value === font) ?? DOCUMENT_FONTS[0];
 }
 
 export interface PaperSize {
@@ -158,6 +206,7 @@ export const DEFAULT_PAGE_SETUP: PageSetup = {
   footer: { text: '', align: 'left' },
   pageNumbers: { position: 'none', align: 'right', format: 'number' },
   firstPage: true,
+  font: 'sans',
 };
 
 /** Regions that use US paper sizes; everywhere else uses A4. */
@@ -332,6 +381,7 @@ export function normalizePageSetup(raw: unknown): PageSetup | null {
     footer: marginTextOf(raw['footer'], d.footer),
     pageNumbers: pageNumbersOf(raw['pageNumbers']),
     firstPage: raw['firstPage'] !== false,
+    font: oneOf(raw['font'], ['sans', 'serif', 'mono'] as const, d.font),
   };
 }
 
@@ -367,7 +417,8 @@ export function samePageSetup(a: PageSetup | null, b: PageSetup | null): boolean
     a.pageNumbers.position === b.pageNumbers.position &&
     a.pageNumbers.align === b.pageNumbers.align &&
     a.pageNumbers.format === b.pageNumbers.format &&
-    a.firstPage === b.firstPage
+    a.firstPage === b.firstPage &&
+    a.font === b.font
   );
 }
 
@@ -493,7 +544,9 @@ export function pageMarginBoxCss(setup: PageSetup, font: string): string {
  * with the `ink-canvas` class (with `data-ink-layout` set to the layout and
  * `data-ink-page-color` to the color's name; see the editor's page layout
  * styles): the paper size and margins for Pages, the side margins for
- * Pageless, and the page color's light and dark values.
+ * Pageless, the page color's light and dark values, and the font unless it
+ * is Sans (the page's own). Host apps can change the fonts behind Serif and
+ * Mono with `--ink-font-serif` and `--ink-font-mono`.
  */
 export function pageLayoutStyle(setup: PageSetup): Record<string, string> {
   const { width, height } = pageDimensions(setup);
@@ -501,10 +554,12 @@ export function pageLayoutStyle(setup: PageSetup): Record<string, string> {
   const sides = setup.sideMargins;
   const total = sides.left + sides.right;
   const color = findPageColor(setup.color);
+  const font = setup.font === 'sans' ? null : findDocumentFont(setup.font);
   return {
     ...(color
       ? { '--ink-page-color-light': color.light, '--ink-page-color-dark': color.dark }
       : {}),
+    ...(font ? { '--ink-doc-font': `var(--ink-font-${font.value}, ${font.stack})` } : {}),
     '--ink-page-width': mm(width),
     '--ink-page-height': mm(height),
     '--ink-page-margin-top': mm(top),

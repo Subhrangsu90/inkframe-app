@@ -239,9 +239,11 @@ class PaginationView {
   ) {
     this.observer?.observe(view.dom);
     this.wide?.addEventListener('change', this.onChange);
-    // Images change the layout when they load, and so do fonts.
+    // Images change the layout when they load, and so do fonts: those the
+    // page starts with, and those it needs later (a document font picked).
     view.dom.addEventListener('load', this.onChange, true);
     void document.fonts?.ready.then(this.onChange);
+    document.fonts?.addEventListener('loadingdone', this.onChange);
     this.schedule(0);
   }
 
@@ -255,6 +257,7 @@ class PaginationView {
     this.observer?.disconnect();
     this.wide?.removeEventListener('change', this.onChange);
     this.view.dom.removeEventListener('load', this.onChange, true);
+    document.fonts?.removeEventListener('loadingdone', this.onChange);
   }
 
   private schedule(delay: number): void {

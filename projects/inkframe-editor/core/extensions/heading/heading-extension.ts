@@ -1,6 +1,6 @@
 import { textblockTypeInputRule } from 'prosemirror-inputrules';
 import { createExtension } from '../../editor/extension-types';
-import { setBlockTypeKeepingAlign } from '../text-align/text-align-commands';
+import { setBlockTypeKeepingFormat } from '../paragraph-format/paragraph-format-commands';
 import { heading } from './heading-schema';
 
 export const HeadingExtension = createExtension({
@@ -12,12 +12,12 @@ export const HeadingExtension = createExtension({
     })),
   ],
   keymaps: (ctx) => ({
-    'Mod-Alt-1': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 1 }),
-    'Mod-Alt-2': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 2 }),
-    'Mod-Alt-3': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 3 }),
-    'Mod-Alt-4': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 4 }),
-    'Mod-Alt-5': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 5 }),
-    'Mod-Alt-6': setBlockTypeKeepingAlign(ctx.schema.nodes['heading'], { level: 6 }),
+    'Mod-Alt-1': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 1 }),
+    'Mod-Alt-2': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 2 }),
+    'Mod-Alt-3': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 3 }),
+    'Mod-Alt-4': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 4 }),
+    'Mod-Alt-5': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 5 }),
+    'Mod-Alt-6': setBlockTypeKeepingFormat(ctx.schema.nodes['heading'], { level: 6 }),
   }),
   slashItems: [
     {

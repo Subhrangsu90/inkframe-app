@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_PAGE_SETUP,
+  DOCUMENT_FONTS,
   MARGIN_PRESETS,
   MAX_MARGIN_TEXT,
   PAGE_COLORS,
   PageSetup,
   defaultPaperForLocale,
+  findDocumentFont,
   findPageColor,
   fitMargins,
   hasMarginText,
@@ -57,6 +59,7 @@ describe('normalizePageSetup', () => {
       footer: 'Footer',
       pageNumbers: { position: 'middle', align: 'center', format: 'roman' },
       firstPage: 'no',
+      font: "'Comic Sans MS'; color: red",
       extra: { injected: true },
     });
     expect(setup).toEqual({
@@ -71,6 +74,7 @@ describe('normalizePageSetup', () => {
       footer: { text: '', align: 'left' },
       pageNumbers: { position: 'none', align: 'center', format: 'number' },
       firstPage: true,
+      font: 'sans',
     });
   });
 
@@ -250,6 +254,41 @@ describe('page colors', () => {
     expect(pageLayoutStyle(DEFAULT_PAGE_SETUP)).not.toHaveProperty('--ink-page-color-light');
     expect(pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, color: 'neon' })).not.toHaveProperty(
       '--ink-page-color-dark',
+    );
+  });
+});
+
+describe('document fonts', () => {
+  it('keep a known font, and read anything else as Sans', () => {
+    expect(normalizePageSetup({ font: 'serif' })!.font).toBe('serif');
+    expect(normalizePageSetup({ font: 'mono' })!.font).toBe('mono');
+    expect(normalizePageSetup({ font: 'Georgia' })!.font).toBe('sans');
+    expect(normalizePageSetup({})!.font).toBe('sans');
+  });
+
+  it('give the canvas the font, with the system fonts after it; Sans keeps the page font', () => {
+    const serif = pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, font: 'serif' })['--ink-doc-font'];
+    expect(serif).toBe(`var(--ink-font-serif, ${findDocumentFont('serif').stack})`);
+    expect(serif).toMatch(/'Source Serif 4 Variable'.*serif\)$/);
+    expect(pageLayoutStyle({ ...DEFAULT_PAGE_SETUP, font: 'mono' })['--ink-doc-font']).toContain(
+      'JetBrains Mono Variable',
+    );
+    expect(pageLayoutStyle(DEFAULT_PAGE_SETUP)).not.toHaveProperty('--ink-doc-font');
+  });
+
+  it('tell setups apart', () => {
+    expect(samePageSetup(DEFAULT_PAGE_SETUP, { ...DEFAULT_PAGE_SETUP, font: 'serif' })).toBe(false);
+    expect(DOCUMENT_FONTS.map((f) => f.label)).toEqual(['Sans', 'Serif', 'Mono']);
+  });
+
+  it('are the margin boxes font too', () => {
+    const setup = {
+      ...a4Pages,
+      font: 'serif' as const,
+      footer: { text: 'Draft', align: 'left' as const },
+    };
+    expect(pageMarginBoxCss(setup, `11px ${findDocumentFont('serif').stack}`)).toContain(
+      "font: 11px 'Source Serif 4 Variable'",
     );
   });
 });

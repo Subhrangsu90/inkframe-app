@@ -25,6 +25,7 @@ import {
   DEFAULT_PAGE_SETUP,
   PageSetup,
   docToHtml,
+  findDocumentFont,
   findPageColor,
   migrate,
   pageLayoutStyle,
@@ -52,8 +53,8 @@ import {
 import { combineLatest } from 'rxjs';
 import { printDocument } from '@app/features/documents/transfer/doc-export';
 
-/** Header and footer text when the browser prints the reader page (0.8 × the 14px text). */
-const MARGIN_TEXT_FONT = "11.2px 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif";
+/** Header and footer text when the browser prints the reader page: 0.8 × the 14px text, in the document's font. */
+const marginTextFont = (setup: PageSetup) => `11.2px ${findDocumentFont(setup.font).stack}`;
 
 @Component({
   selector: 'ink-reader',
@@ -101,7 +102,7 @@ export class Reader implements OnInit {
   private readonly printPageRule = effect((onCleanup) => {
     const setup = this.pageSetup();
     const color = setup.printColor ? findPageColor(setup.color)?.light : undefined;
-    const rules = [pageRuleCss(setup), pageMarginBoxCss(setup, MARGIN_TEXT_FONT)];
+    const rules = [pageRuleCss(setup), pageMarginBoxCss(setup, marginTextFont(setup))];
     if (color) {
       rules.push(
         `@page { background: ${color}; }`,

@@ -8,7 +8,7 @@ import { docToHtml, htmlToDoc } from '../../io/html';
 
 const p = (text = '') => ({
   type: 'paragraph',
-  attrs: { align: null },
+  attrs: { align: null, indent: null, lineSpacing: null },
   ...(text ? { content: [{ type: 'text', text }] } : {}),
 });
 const doc = (...content: unknown[]) => schema.nodeFromJSON({ type: 'doc', content });

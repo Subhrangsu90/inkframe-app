@@ -15,9 +15,3 @@ export function readTextAlign(dom: HTMLElement): Exclude<TextAlign, 'left'> | nu
     .toLowerCase();
   return sanitizeTextAlign(value === '-webkit-center' ? 'center' : value);
 }
-
-// The value is checked against the allow-list: shared documents can carry any attribute value.
-export const textAlignAttrs = (raw: unknown) => {
-  const align = sanitizeTextAlign(raw);
-  return align ? { style: `text-align: ${align}` } : {};
-};

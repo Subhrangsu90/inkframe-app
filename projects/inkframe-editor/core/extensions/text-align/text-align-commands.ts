@@ -1,23 +1,13 @@
 import { Command, EditorState } from 'prosemirror-state';
-import { setBlockType, splitBlockAs } from 'prosemirror-commands';
-import { Attrs, Node as PMNode, NodeType } from 'prosemirror-model';
+import { NodeType } from 'prosemirror-model';
 import { TextAlign, sanitizeTextAlign } from './text-align-schema';
+import {
+  forEachSelectedTextblock,
+  setBlockTypeKeepingFormat,
+  splitFormattedBlockCommand,
+} from '../paragraph-format/paragraph-format-commands';
 
 const supportsAlign = (type: NodeType) => !!type.spec.attrs?.['align'];
-
-/** Calls `f` for every textblock the selection touches (each cell of a cell selection). */
-function forEachSelectedTextblock(
-  state: EditorState,
-  f: (node: PMNode, pos: number) => void,
-): void {
-  for (const { $from, $to } of state.selection.ranges) {
-    state.doc.nodesBetween($from.pos, $to.pos, (node, pos) => {
-      if (!node.isTextblock) return true;
-      f(node, pos);
-      return false;
-    });
-  }
-}
 
 /**
  * Aligns the paragraphs and headings in the selection. `left` (or null)
@@ -51,53 +41,13 @@ export function textAlignAt(state: EditorState): TextAlign | null {
 }
 
 /**
- * `setBlockType` that keeps each block's alignment, so turning a centered
- * paragraph into a heading (or back) keeps it centered.
+ * @deprecated Use `setBlockTypeKeepingFormat`, which keeps the indent and
+ * line spacing too (as this does now). Removed in 2.0.
  */
-export function setBlockTypeKeepingAlign(nodeType: NodeType, attrs: Attrs | null = null): Command {
-  const command = setBlockType(nodeType, attrs);
-  if (!supportsAlign(nodeType)) return command;
-  return (state, dispatch, view) =>
-    command(
-      state,
-      dispatch &&
-        ((tr) => {
-          forEachSelectedTextblock(state, (node, pos) => {
-            const align = node.attrs['align'];
-            const mapped = tr.mapping.map(pos);
-            const now = tr.doc.nodeAt(mapped);
-            if (align && now?.type === nodeType && now.attrs['align'] !== align) {
-              tr.setNodeAttribute(mapped, 'align', align);
-            }
-          });
-          dispatch(tr);
-        }),
-      view,
-    );
-}
+export const setBlockTypeKeepingAlign = setBlockTypeKeepingFormat;
 
 /**
- * Enter at the end of an aligned paragraph or heading: the new paragraph
- * keeps the alignment, as in word processors. Returns false otherwise so the
- * default Enter behavior runs (splitting in the middle already keeps attributes).
+ * @deprecated Use `splitFormattedBlockCommand`, which carries the indent and
+ * line spacing too (as this does now). Removed in 2.0.
  */
-export const splitAlignedBlockCommand: Command = (state, dispatch) => {
-  const { $from, empty } = state.selection;
-  const parent = $from.parent;
-  const align = sanitizeTextAlign(parent.attrs['align']);
-  const paragraph = state.schema.nodes['paragraph'];
-  if (
-    !empty ||
-    !align ||
-    !paragraph ||
-    !supportsAlign(paragraph) ||
-    parent.content.size === 0 ||
-    $from.parentOffset !== parent.content.size
-  ) {
-    return false;
-  }
-  return splitBlockAs((_node, atEnd) => (atEnd ? { type: paragraph, attrs: { align } } : null))(
-    state,
-    dispatch,
-  );
-};
+export const splitAlignedBlockCommand = splitFormattedBlockCommand;

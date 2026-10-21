@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  inject,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { EditorService } from '@inkframe-ui/editor/core';
 
@@ -10,6 +18,7 @@ import { EditorService } from '@inkframe-ui/editor/core';
   template: `
     @if (svc.slashMenu(); as m) {
       <ul
+        #list
         class="ink-slash"
         role="listbox"
         aria-label="Insert block"
@@ -23,6 +32,7 @@ import { EditorService } from '@inkframe-ui/editor/core';
           <!-- Keyboard users pick with the arrow keys and Enter while typing (EditorService.onSlashKeyDown), so focus stays in the document. -->
           <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
           <li
+            #option
             role="option"
             [attr.aria-selected]="i === svc.slashActive()"
             [class.active]="i === svc.slashActive()"
@@ -177,6 +187,25 @@ import { EditorService } from '@inkframe-ui/editor/core';
 })
 export class SlashMenu {
   protected readonly svc = inject(EditorService);
+  private readonly list = viewChild<ElementRef<HTMLElement>>('list');
+  private readonly options = viewChildren<ElementRef<HTMLElement>>('option');
+
+  constructor() {
+    // The arrow keys move the active item while focus stays in the document,
+    // so the browser does not scroll to it: keep it in view. Only the menu
+    // scrolls (not the page, as scrollIntoView could: the menu is fixed).
+    afterRenderEffect(() => {
+      const list = this.list()?.nativeElement;
+      const item = this.options()[this.svc.slashActive()]?.nativeElement;
+      if (!list || !item) return;
+      const padding = parseFloat(getComputedStyle(list).paddingTop) || 0;
+      const top = item.offsetTop - padding;
+      const bottom = item.offsetTop + item.offsetHeight + padding;
+      if (top < list.scrollTop) list.scrollTop = top;
+      else if (bottom > list.scrollTop + list.clientHeight)
+        list.scrollTop = bottom - list.clientHeight;
+    });
+  }
 }
 
 // Backward compatibility alias

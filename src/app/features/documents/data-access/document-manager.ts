@@ -11,6 +11,7 @@ import {
 import { DOCUMENT_STORE, DocMeta } from './document-store';
 import { ACTIVE_DOC_ID_KEY } from './local-document-store';
 import { DocumentChannel } from './document-channel';
+import { ImageCleanup } from './image-cleanup';
 
 export type { StoredDoc };
 export type { DocMeta } from './document-store';
@@ -45,6 +46,8 @@ export class DocumentManager {
   private readonly store = inject(DOCUMENT_STORE);
   /** Other tabs hear of every change, to show the latest documents. */
   private readonly channel = inject(DocumentChannel);
+  /** Deletes images no document shows any more. */
+  private readonly imageCleanup = inject(ImageCleanup);
 
   getIndex(): Promise<DocMeta[]> {
     return this.store.list();
@@ -175,8 +178,11 @@ export class DocumentManager {
    * document creates the welcome document, so the library is never empty.
    */
   async deleteDoc(id: string): Promise<string> {
+    // Read first: its images can go once nothing else shows them.
+    const deleted = await this.store.get(id);
     await this.store.remove(id);
     this.channel.post({ type: 'deleted', ids: [id] });
+    if (deleted) this.imageCleanup.afterDeleting(deleted);
     const index = await this.store.list();
     if (index.length === 0) {
       const created = await this.createDoc('Welcome to Inkframe ✦', WELCOME_DOC);

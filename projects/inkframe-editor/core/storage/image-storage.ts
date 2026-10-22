@@ -4,6 +4,14 @@
  */
 import type { DocJSON } from '../schema/migrations';
 
+/**
+ * Images larger than this on their long side, in pixels, are scaled down
+ * when saved (see `imageStorage.saveImage`). Enough for a sharp full-width
+ * image on a high-density screen, and for print (an A4 page is 2480 pixels
+ * wide at 300 dpi).
+ */
+export const MAX_IMAGE_DIMENSION = 2560;
+
 export interface StoredImageMetadata {
   id: string;
   name: string;
@@ -55,6 +63,22 @@ export function isQuotaError(error: unknown): boolean {
   );
 }
 
+/** A stored image mentioned in text: a document's attribute, or HTML or Markdown. */
+const IMAGE_REF = /ink-idb:([^\s"'<>()\\]+)/g;
+
+/** Adds the ids of the stored images `value` mentions, at any depth, to `into`. */
+function collectImageRefs(value: unknown, into: Set<string>): void {
+  if (typeof value === 'string') {
+    if (value.includes('ink-idb:')) {
+      for (const match of value.matchAll(IMAGE_REF)) into.add(match[1]);
+    }
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectImageRefs(item, into);
+  } else if (value && typeof value === 'object') {
+    for (const item of Object.values(value)) collectImageRefs(item, into);
+  }
+}
+
 const DB_NAME = 'inkframe_storage';
 const STORE_NAME = 'images';
 const DOC_STORE_NAME = 'documents';
@@ -66,8 +90,12 @@ const DB_VERSION = 2;
  */
 export class ImageStorage {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
+  /**
+   * Object URLs that show stored images. They point at IndexedDB's copies,
+   * which browsers keep on disk, so they hold on to little memory.
+   */
   private readonly urlCache = new Map<string, string>();
-  private readonly dataUrlCache = new Map<string, string>();
+  /** Images saved while IndexedDB is unavailable: they live in memory, for this visit. */
   private readonly blobCache = new Map<string, Blob>();
   private readonly metaCache = new Map<string, StoredImageMetadata>();
   private readonly writeListeners = new Set<StorageWriteListener>();
@@ -214,52 +242,37 @@ export class ImageStorage {
   }
 
   /**
-   * Saves an image file or blob to IndexedDB and returns a stable custom URI
-   * with format: ink-idb:<id> and a temporary preview object URL.
+   * Saves an image file or blob and returns a stable URI (`ink-idb:<id>`)
+   * and an object URL that shows it. Images larger than `maxDimension`
+   * pixels on their long side (MAX_IMAGE_DIMENSION by default) are scaled
+   * down first; null keeps every image as it is. Throws a StorageError when
+   * storage refuses the image.
    */
   async saveImage(
     file: File | Blob,
     name?: string,
+    options: { maxDimension?: number | null } = {},
   ): Promise<{ id: string; uri: string; url: string }> {
     const id = `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const fileName = name || (file instanceof File ? file.name : 'image.png');
     const uri = `ink-idb:${id}`;
-
-    this.blobCache.set(id, file);
-
-    if (!this.isBrowser()) {
-      return { id, uri, url: '' };
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    this.urlCache.set(id, objectUrl);
-
-    // Pre-cache data URL asynchronously for instant sharing and exports
-    this.blobToDataUrl(file)
-      .then((dUrl) => {
-        if (dUrl) this.dataUrlCache.set(id, dUrl);
-      })
-      .catch(() => {
-        // Only a cache: resolveToDataUrl() converts the blob when it is needed.
-      });
-
-    const record: ImageRecord = {
+    const maxDimension =
+      options.maxDimension === undefined ? MAX_IMAGE_DIMENSION : options.maxDimension;
+    // Loaded when an image is saved: pages that show documents don't need it.
+    const blob =
+      maxDimension === null
+        ? file
+        : await (await import('./scale-image')).scaleDownImage(file, maxDimension);
+    const meta: StoredImageMetadata = {
       id,
       name: fileName,
-      type: file.type || 'image/png',
-      size: file.size,
+      type: blob.type || 'image/png',
+      size: blob.size,
       createdAt: Date.now(),
-      blob: file,
     };
-    const { blob: _blob, ...meta } = record;
-    this.metaCache.set(id, meta);
-
-    // Without IndexedDB the image lives in memory for this visit only.
-    if (await this.getDB()) {
-      await this.idbWrite(STORE_NAME, (store) => store.put(record));
-    }
-
-    return { id, uri, url: objectUrl };
+    await this.storeImage(meta, blob);
+    // Shown from the stored copy, so the file read in memory can go.
+    return { id, uri, url: this.isBrowser() ? await this.resolveUrl(uri) : '' };
   }
 
   /**
@@ -267,17 +280,26 @@ export class ImageStorage {
    * to restore backups, whose documents refer to images as `ink-idb:<id>`.
    */
   async putImage(meta: StoredImageMetadata, blob: Blob): Promise<void> {
-    this.blobCache.set(meta.id, blob);
-    this.metaCache.set(meta.id, meta);
     const cached = this.urlCache.get(meta.id);
     if (cached) {
       URL.revokeObjectURL(cached);
       this.urlCache.delete(meta.id);
     }
-    this.dataUrlCache.delete(meta.id);
-    if (!this.isBrowser() || !(await this.getDB())) return;
-    const record: ImageRecord = { ...meta, blob };
-    await this.idbWrite(STORE_NAME, (store) => store.put(record));
+    await this.storeImage(meta, blob);
+  }
+
+  /** In IndexedDB; without it, in memory for this visit. Throws a StorageError when storage refuses it. */
+  private async storeImage(meta: StoredImageMetadata, blob: Blob): Promise<void> {
+    if (this.isBrowser() && (await this.getDB())) {
+      await this.idbWrite(STORE_NAME, (store) =>
+        store.put({ ...meta, blob } satisfies ImageRecord),
+      );
+      this.blobCache.delete(meta.id);
+      this.metaCache.delete(meta.id);
+      return;
+    }
+    this.blobCache.set(meta.id, blob);
+    this.metaCache.set(meta.id, meta);
   }
 
   /** An image's metadata and data, or null when there is no image with this id. */
@@ -339,9 +361,6 @@ export class ImageStorage {
     const id = src.slice('ink-idb:'.length);
     const cached = this.urlCache.get(id);
     if (cached) return cached;
-
-    const cachedData = this.dataUrlCache.get(id);
-    if (cachedData) return cachedData;
 
     const blob = await this.getImageBlob(id);
     if (blob && this.isBrowser()) {
@@ -431,16 +450,11 @@ export class ImageStorage {
       const id = src.slice('ink-idb:'.length);
       const blob = await this.getImageBlob(id);
       if (blob) {
-        if (optimize) {
-          return await this.optimizeImageBlob(blob);
-        }
-        const cached = this.dataUrlCache.get(id);
-        if (cached) return cached;
-        const dataUrl = await this.blobToDataUrl(blob);
-        if (dataUrl) {
-          this.dataUrlCache.set(id, dataUrl);
-          return dataUrl;
-        }
+        // Not kept: Base64 copies of images take a third more memory than the images.
+        const dataUrl = optimize
+          ? await this.optimizeImageBlob(blob)
+          : await this.blobToDataUrl(blob);
+        if (dataUrl) return dataUrl;
       }
       return src;
     }
@@ -627,7 +641,6 @@ export class ImageStorage {
       URL.revokeObjectURL(cached);
       this.urlCache.delete(id);
     }
-    this.dataUrlCache.delete(id);
     this.blobCache.delete(id);
     this.metaCache.delete(id);
 
@@ -638,6 +651,73 @@ export class ImageStorage {
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
+  }
+
+  /**
+   * Deletes stored images that nothing refers to any more. An image is in
+   * use while a stored document mentions it (`ink-idb:<id>` anywhere in it:
+   * documents, their versions, anything saved with saveDocument) or one of
+   * `alsoUsedBy` does (edits not saved, say). With `onlyFrom`, only images
+   * those documents mention are considered (a document just deleted).
+   * Images saved less than `minAgeMs` ago are kept: edits not saved yet may
+   * show them, in this tab or another. Deletes nothing when storage can't
+   * be read in full. Resolves to the number of images deleted.
+   */
+  async deleteUnusedImages(
+    options: {
+      onlyFrom?: readonly unknown[];
+      alsoUsedBy?: readonly unknown[];
+      minAgeMs?: number;
+    } = {},
+  ): Promise<number> {
+    const db = this.isBrowser() ? await this.getDB() : null;
+    if (!db) return 0; // images kept in memory last for this visit only anyway
+    const used = new Set<string>();
+    for (const value of options.alsoUsedBy ?? []) collectImageRefs(value, used);
+    let images: StoredImageMetadata[];
+    try {
+      // Copies saved while IndexedDB was unavailable, which getDocument still reads.
+      for (let i = 0; i < localStorage.length; i++) {
+        collectImageRefs(localStorage.getItem(localStorage.key(i) ?? ''), used);
+      }
+      images = await new Promise<StoredImageMetadata[]>((resolve, reject) => {
+        // One read of every document and every image, so they agree.
+        const tx = db.transaction([DOC_STORE_NAME, STORE_NAME], 'readonly');
+        const documents = tx.objectStore(DOC_STORE_NAME).openCursor();
+        documents.onsuccess = () => {
+          const cursor = documents.result;
+          if (!cursor) return;
+          collectImageRefs(cursor.value, used);
+          cursor.continue();
+        };
+        const records = tx.objectStore(STORE_NAME).getAll();
+        tx.oncomplete = () =>
+          resolve((records.result as ImageRecord[]).map(({ blob: _blob, ...meta }) => meta));
+        tx.onabort = () => reject(tx.error);
+      });
+    } catch (e) {
+      console.warn('Images could not be checked for use:', e);
+      return 0;
+    }
+
+    let candidates: Set<string> | null = null;
+    if (options.onlyFrom) {
+      candidates = new Set();
+      for (const value of options.onlyFrom) collectImageRefs(value, candidates);
+    }
+    const cutoff = Date.now() - (options.minAgeMs ?? 0);
+    const unused = images.filter(
+      ({ id, createdAt }) =>
+        !used.has(id) && (!candidates || candidates.has(id)) && createdAt < cutoff,
+    );
+    if (unused.length === 0) return 0;
+    await this.idbWrite(STORE_NAME, (store) => unused.forEach(({ id }) => store.delete(id)));
+    for (const { id } of unused) {
+      const url = this.urlCache.get(id);
+      if (url) URL.revokeObjectURL(url);
+      this.urlCache.delete(id);
+    }
+    return unused.length;
   }
 
   /**
@@ -753,7 +833,6 @@ export class ImageStorage {
   async clearAll(): Promise<void> {
     for (const url of this.urlCache.values()) URL.revokeObjectURL(url);
     this.urlCache.clear();
-    this.dataUrlCache.clear();
     this.blobCache.clear();
     this.metaCache.clear();
     const factory = this.indexedDB();

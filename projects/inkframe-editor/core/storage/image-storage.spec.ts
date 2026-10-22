@@ -190,3 +190,88 @@ describe('Image Storage (IndexedDB)', () => {
     expect(result.doc.content[0].attrs.src).toBe('data:image/png;base64,ABC');
   });
 });
+
+describe('ImageStorage images on IndexedDB', () => {
+  // Node's Blob: fake-indexeddb copies it the way browsers copy theirs.
+  const NodeBlob = (globalThis as any).process.getBuiltinModule('node:buffer').Blob;
+  const png = () => new NodeBlob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' });
+  const meta = (id: string, createdAt = 1) => ({
+    id,
+    name: `${id}.png`,
+    type: 'image/png',
+    size: 4,
+    createdAt,
+  });
+  const docShowing = (...ids: string[]) => ({
+    schemaVersion: 1,
+    doc: {
+      type: 'doc',
+      content: ids.map((id) => ({ type: 'image', attrs: { src: `ink-idb:${id}` } })),
+    },
+  });
+  const ids = async (storage: ImageStorage) =>
+    (await storage.listImages()).map((image) => image.id).sort();
+  async function storageWith(...images: ReturnType<typeof meta>[]) {
+    const storage = new ImageStorage(new IDBFactory());
+    for (const image of images) await storage.putImage(image, png());
+    return storage;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('keeps a saved image in IndexedDB only, not in memory too', async () => {
+    const storage = new ImageStorage(new IDBFactory());
+    const { id, uri } = await storage.saveImage(png(), 'dot.png');
+    expect(uri).toBe(`ink-idb:${id}`);
+    expect(await ids(storage)).toEqual([id]);
+    expect((storage as any).blobCache.size).toBe(0);
+    expect((await storage.getImage(id))?.blob.size).toBe(4);
+  });
+
+  it('deletes images nothing shows, and keeps those documents, versions or unsaved edits show', async () => {
+    const storage = await storageWith(
+      meta('shown'),
+      meta('versioned'),
+      meta('unsaved'),
+      meta('unused'),
+      meta('new', Date.now()),
+    );
+    await storage.saveDocument('inkframe_doc_a', docShowing('shown'));
+    await storage.saveDocument('inkframe_version_v1', docShowing('versioned'));
+
+    const deleted = await storage.deleteUnusedImages({
+      alsoUsedBy: [docShowing('unsaved')],
+      minAgeMs: 60_000,
+    });
+    expect(deleted).toBe(1);
+    expect(await ids(storage)).toEqual(['new', 'shown', 'unsaved', 'versioned']);
+  });
+
+  it('with onlyFrom, considers only the images those documents show', async () => {
+    const storage = await storageWith(meta('a'), meta('b'));
+    expect(await storage.deleteUnusedImages({ onlyFrom: [docShowing('a')] })).toBe(1);
+    expect(await ids(storage)).toEqual(['b']);
+  });
+
+  it('counts images that localStorage copies, HTML or Markdown mention', async () => {
+    const storage = await storageWith(meta('local'), meta('html'), meta('md'), meta('gone'));
+    localStorage.setItem('inkframe_doc_old', JSON.stringify(docShowing('local')));
+    await storage.saveDocument('notes', '<img src="ink-idb:html"> and ![x](ink-idb:md)');
+
+    expect(await storage.deleteUnusedImages()).toBe(1);
+    expect(await ids(storage)).toEqual(['html', 'local', 'md']);
+  });
+
+  it('deletes nothing when the documents cannot all be read', async () => {
+    const storage = await storageWith(meta('a'));
+    vi.spyOn(IDBObjectStore.prototype, 'openCursor').mockImplementation(() => {
+      throw new DOMException('Connection lost', 'UnknownError');
+    });
+    expect(await storage.deleteUnusedImages()).toBe(0);
+    vi.restoreAllMocks();
+    expect(await ids(storage)).toEqual(['a']);
+  });
+});

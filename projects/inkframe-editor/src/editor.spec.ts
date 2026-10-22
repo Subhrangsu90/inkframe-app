@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TextSelection } from 'prosemirror-state';
@@ -20,7 +20,8 @@ const textOf = (stored: StoredDoc) => (stored.doc as any).content[0].content?.[0
         #ed
         [initialDoc]="initial"
         [showToolbar]="false"
-        [debounceMs]="10000"
+        [debounceMs]="debounce"
+        [maxWaitMs]="maxWait"
         (changed)="emitted.push($event)"
       />
     }
@@ -30,12 +31,15 @@ class Host {
   readonly show = signal(true);
   readonly editor = viewChild<Editor>('ed');
   initial = docWith('first');
+  debounce = 10000;
+  maxWait: number | null = null;
   emitted: StoredDoc[] = [];
 }
 
 describe('<ink-editor> change emission', () => {
-  async function setup() {
+  async function setup(timing: { debounce?: number; maxWait?: number | null } = {}) {
     const fixture = TestBed.createComponent(Host);
+    Object.assign(fixture.componentInstance, timing);
     await fixture.whenStable();
     const host = fixture.componentInstance;
     const editor = host.editor()!;
@@ -58,6 +62,27 @@ describe('<ink-editor> change emission', () => {
     expect(host.emitted).toHaveLength(1);
     expect(textOf(host.emitted[0])).toBe('first edited');
     expect(view.state.doc.textContent).toBe('second');
+  });
+
+  it('with maxWaitMs, emits during steady typing too, not only once it pauses', async () => {
+    const steady = async (maxWait: number | null) => {
+      const { host, view } = await setup({ debounce: 1000, maxWait });
+      vi.useFakeTimers();
+      try {
+        // 5 seconds of typing, never pausing for the debounce's second.
+        for (let i = 0; i < 10; i++) {
+          type(view, 'x');
+          vi.advanceTimersByTime(500);
+        }
+        const whileTyping = host.emitted.length;
+        vi.advanceTimersByTime(1000);
+        return { whileTyping, after: host.emitted.length };
+      } finally {
+        vi.useRealTimers();
+      }
+    };
+    expect(await steady(null)).toEqual({ whileTyping: 0, after: 1 });
+    expect(await steady(3000)).toEqual({ whileTyping: 1, after: 2 });
   });
 
   it('flush is a no-op without pending changes', async () => {

@@ -113,6 +113,7 @@ export class Page {
 | `editable` | `boolean` | `true` | `false` shows the document read-only, without toolbar or menus. |
 | `extensions` | `EditorExtension[]` | `DEFAULT_EXTENSIONS` | The features to enable. See [Extensions](#extensions). |
 | `debounceMs` | `number` | `300` | How long to wait after the last edit before emitting `changed`. |
+| `maxWaitMs` | `number \| null` | `null` | The longest `changed` waits after the first edit not emitted yet, so steady typing is emitted too, not only once it pauses. `null`: no limit. |
 | `showToolbar` | `boolean` | `true` | Shows the toolbar. |
 | `showStatusBar` | `boolean` | `true` | Shows words, characters and reading time below the document. |
 | `showRuler` | `boolean` | `true` | Shows the ruler above the page, with handles for the left and right margins. Only while editing, and only from 768px up. |
@@ -124,7 +125,7 @@ export class Page {
 
 | Output | Payload | Description |
 | --- | --- | --- |
-| `changed` | `StoredDoc` | The document after edits, debounced by `debounceMs`. |
+| `changed` | `StoredDoc` | The document after edits, debounced by `debounceMs` (and `maxWaitMs`). |
 | `historyRequested` | `void` | The user asked to open version history (the toolbar's history button). |
 
 ### Methods

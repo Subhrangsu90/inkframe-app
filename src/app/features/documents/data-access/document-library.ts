@@ -36,6 +36,11 @@ export class DocumentLibrary {
     return list;
   }
 
+  /** Shows a document's entry as just saved (newest first), without reading the library again. */
+  noteSaved(meta: DocMeta): void {
+    this.documents.update((docs) => [meta, ...docs.filter((d) => d.id !== meta.id)]);
+  }
+
   /** Creates an empty document and lists it; returns its id. Throws when storage refuses it. */
   async createDocWithoutOpening(title = 'Untitled Document'): Promise<string> {
     const created = await this.docManager.createDoc(title);

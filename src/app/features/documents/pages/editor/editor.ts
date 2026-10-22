@@ -49,6 +49,7 @@ import {
 import { PageFrames, PageView } from '@inkframe-ui/editor/ui';
 import { LayoutService } from '@app/layout/layout.service';
 import {
+  DocMeta,
   DocumentManager,
   extractDocTitle,
 } from '@app/features/documents/data-access/document-manager';
@@ -245,6 +246,12 @@ export class EditorView implements OnInit {
   });
   private previewToken = 0;
 
+  /**
+   * Edits are saved once typing pauses for a second, and at least every five
+   * seconds while it goes on. Leaving the page or hiding the tab saves at once.
+   */
+  protected readonly saveDelayMs = 1000;
+  protected readonly saveMaxWaitMs = 5000;
   /** Saves run one after another, in the order edits were made. */
   private saveChain: Promise<void> = Promise.resolve();
   private pendingSaves = 0;
@@ -489,11 +496,11 @@ export class EditorView implements OnInit {
     this.pendingSaves++;
     this.saveStatus.set('saving');
     const task = this.saveChain.then(async () => {
-      let saved = false;
+      let saved: DocMeta | null = null;
       let failed = false;
       try {
         // Null when the document was deleted (in another tab): it stays deleted.
-        saved = (await this.docManager.saveDoc(id, doc, title)) !== null;
+        saved = await this.docManager.saveDoc(id, doc, title);
         if (saved) this.storageHealth.markSaved(id);
         else this.leaveDeleted(id);
       } catch (e) {
@@ -509,14 +516,14 @@ export class EditorView implements OnInit {
         }
       }
       if (saved) {
-        await this.library.refreshDocs();
+        this.library.noteSaved(saved);
         if (previous !== undefined) {
           await this.versionHistory
             .recordEdit(id, previous, doc)
             .catch((e) => console.warn('Failed to save a version:', e));
         }
       }
-      return saved;
+      return saved !== null;
     });
     this.saveChain = task.then(
       () => undefined,

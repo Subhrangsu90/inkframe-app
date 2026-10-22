@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { Node as PMNode } from 'prosemirror-model';
 import { schema } from '../schema/schema';
-import { WORDS_PER_MINUTE, countWords, docStats } from './doc-stats';
+import { WORDS_PER_MINUTE, countWords, docStats, docText, textStats } from './doc-stats';
+import { randomEdit, sampleDoc, seededRandom } from './random-edits.fixtures';
 import {
   DEFAULT_PLACEHOLDER,
   isDocEmpty,
@@ -85,5 +86,81 @@ describe('placeholderPlugin', () => {
     const attributes = plugin.props.attributes as (s: EditorState) => Record<string, string>;
     expect(attributes(empty)).toEqual({ 'aria-placeholder': 'Start writing' });
     expect(attributes(full)).toEqual({});
+  });
+});
+
+describe('docStats while editing', () => {
+  it('stays the same as counting the whole text, through many random edits', () => {
+    for (const seed of [11, 12, 13]) {
+      const random = seededRandom(seed);
+      let state = EditorState.create({ schema, doc: sampleDoc() });
+      for (let step = 0; step < 300; step++) {
+        const tr = randomEdit(state, random);
+        if (!tr?.docChanged) continue;
+        state = state.apply(tr);
+        expect(docStats(state.doc), `seed ${seed}, step ${step}`).toEqual(
+          textStats(docText(state.doc)),
+        );
+      }
+    }
+  });
+});
+
+describe('countWords on mixed scripts', () => {
+  const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu;
+  /** The rule with Unicode patterns only, to check the faster countWords against. */
+  const reference = (text: string) => {
+    let words = 0;
+    for (const token of text.split(/\s+/)) {
+      if (!token) continue;
+      const cjk = token.match(CJK)?.length ?? 0;
+      words += cjk;
+      if (/[\p{L}\p{N}]/u.test(cjk ? token.replace(CJK, '') : token)) words++;
+    }
+    return words;
+  };
+
+  it('counts the same as the Unicode rule on random text', () => {
+    const random = seededRandom(5);
+    const pieces = [
+      'a',
+      'Z',
+      '7',
+      '-',
+      "'",
+      '.',
+      '@',
+      '[',
+      '`',
+      '—',
+      '…',
+      '¿',
+      'é',
+      'é',
+      'ß',
+      'λ',
+      'ж',
+      '٣',
+      '中',
+      'ひ',
+      'カ',
+      '々',
+      '〇',
+      '한',
+      '👍',
+      '𠀀',
+      ' ',
+      '\n',
+      ' ',
+      '　',
+      '\t',
+    ];
+    for (let i = 0; i < 3000; i++) {
+      const length = 1 + Math.floor(random() * 30);
+      const text = Array.from({ length }, () => pieces[Math.floor(random() * pieces.length)]).join(
+        '',
+      );
+      expect(countWords(text), JSON.stringify(text)).toBe(reference(text));
+    }
   });
 });

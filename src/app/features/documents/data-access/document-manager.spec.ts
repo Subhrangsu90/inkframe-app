@@ -285,3 +285,29 @@ describe('document previews', () => {
     expect(entry.excerptVersion).toBe(EXCERPT_VERSION);
   });
 });
+
+describe('document previews of long documents', () => {
+  const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const long = (paragraphs: number): StoredDoc => ({
+    schemaVersion: SCHEMA_VERSION,
+    doc: {
+      type: 'doc',
+      content: Array.from({ length: paragraphs }, (_, i) => p(`Paragraph ${i} has words`)),
+    },
+  });
+
+  it('reads only as far as the preview reaches, with the same result', () => {
+    const preview = extractDocExcerpt(long(20));
+    expect(preview.endsWith('…')).toBe(true);
+    expect(extractDocExcerpt(long(20_000))).toBe(preview);
+  });
+
+  it('keeps text that fits exactly, and shortens text one character longer', () => {
+    const exactly = (n: number): StoredDoc => ({
+      schemaVersion: SCHEMA_VERSION,
+      doc: { type: 'doc', content: [p('a'.repeat(n - 4) + ' end')] },
+    });
+    expect(extractDocExcerpt(exactly(30), '', 30)).toBe('a'.repeat(26) + ' end');
+    expect(extractDocExcerpt(exactly(31), '', 30)).toBe('a'.repeat(27) + '…');
+  });
+});

@@ -141,7 +141,15 @@
         </div>
       </div>
 
-      @if (filteredDocs().length === 0) {
+      @if (!library.loaded()) {
+        <!-- Until storage answers (and in the prerendered page): placeholders, not "No documents". -->
+        <div [class]="viewMode() === 'grid' ? 'docs-grid' : 'docs-list'" role="status">
+          <span class="sr-only">Loading your documents…</span>
+          @for (placeholder of [1, 2, 3]; track placeholder) {
+            <ink-skeleton [variant]="viewMode() === 'grid' ? 'card' : 'bar'" />
+          }
+        </div>
+      } @else if (filteredDocs().length === 0) {
         <div class="empty-state">
           <span class="empty-icon">
             <ink-icon [name]="searchQuery() ? 'search' : 'file-text'" [size]="22" />

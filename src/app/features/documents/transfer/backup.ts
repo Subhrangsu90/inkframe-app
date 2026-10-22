@@ -12,11 +12,13 @@ import { DocMeta, DocumentManager } from '../data-access/document-manager';
 import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory, VersionMeta } from '../versions/version-history';
 import { dataUrlToBlob, downloadFile } from './data-url';
+import { BACKUP_EXTENSION } from './file-types';
+
+export { BACKUP_EXTENSION };
 import { newVersionId } from '../versions/version-store';
 
 export const BACKUP_FORMAT = 'inkframe-backup';
 export const BACKUP_VERSION = 1;
-export const BACKUP_EXTENSION = '.inkframe.json';
 
 export interface BackupVersion {
   meta: VersionMeta;

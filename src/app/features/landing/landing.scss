@@ -67,17 +67,46 @@
   pointer-events: none;
 }
 
-/* ── Canvas Token Light Pools ── */
+/*
+ * ── Canvas Token Light Pools ──
+ * Each pool is a disc of the element's size, blurred by --orb-blur: drawn as
+ * a radial gradient with a blur's fall-off (full at 2 blurs inside the edge,
+ * 84% at 1, half at the edge, 16% at 1 outside, none at 2). A CSS blur filter
+ * looked the same but had the GPU blur hundreds of pixels every frame of the
+ * pools' drift.
+ */
 .canvas-orb-primary {
-  background: var(--ink-canvas-glow-primary);
+  --orb-color: var(--ink-canvas-glow-primary);
 }
 
 .canvas-orb-secondary {
-  background: var(--ink-canvas-glow-secondary);
+  --orb-color: var(--ink-canvas-glow-secondary);
 }
 
 .canvas-orb-warm {
-  background: var(--ink-canvas-glow-warm);
+  --orb-color: var(--ink-canvas-glow-warm);
+}
+
+.canvas-orb-primary,
+.canvas-orb-secondary,
+.canvas-orb-warm {
+  &::before {
+    // --orb-blur is set in the markup where it isn't 100px.
+    --blur: var(--orb-blur, 100px);
+    content: '';
+    position: absolute;
+    inset: calc(-2 * var(--blur));
+    border-radius: 50%;
+    // 100% is the edge plus 2 blurs.
+    background: radial-gradient(
+      closest-side,
+      var(--orb-color) calc(100% - 4 * var(--blur)),
+      color-mix(in srgb, var(--orb-color) 84%, transparent) calc(100% - 3 * var(--blur)),
+      color-mix(in srgb, var(--orb-color) 50%, transparent) calc(100% - 2 * var(--blur)),
+      color-mix(in srgb, var(--orb-color) 16%, transparent) calc(100% - var(--blur)),
+      transparent 100%
+    );
+  }
 }
 
 /* ── Hero Angled Grid Background with Vignette Mask ── */

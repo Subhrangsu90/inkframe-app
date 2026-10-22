@@ -8,9 +8,7 @@ import {
 } from '@inkframe-ui/editor/core';
 import { dataUrlToBlob } from './data-url';
 
-/** For the `accept` attribute of file inputs. */
-export const IMPORT_ACCEPT =
-  '.md,.markdown,.mdown,.mkd,.txt,.html,.htm,text/markdown,text/html,text/plain';
+export { IMPORT_ACCEPT } from './file-types';
 
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
 

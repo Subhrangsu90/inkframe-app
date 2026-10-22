@@ -1,3 +1,8 @@
+/*
+ * For tests. App code imports from the files themselves: through this file,
+ * every page (and the first page load) would also download every component
+ * listed here, whichever one it uses.
+ */
 export * from './toast/toast';
 export * from './toast/toast-container';
 export * from './skeleton/skeleton';

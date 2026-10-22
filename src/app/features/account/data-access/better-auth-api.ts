@@ -1,7 +1,7 @@
 import { createAuthClient } from 'better-auth/client';
 import type { z } from 'zod';
 import { API, apiUrl } from '@app/core/api-endpoints';
-import { getJson } from '@app/core/api-response';
+import { REQUEST_TIMEOUT_MS, getJson } from '@app/core/api-response';
 import type { AuthApi, AuthApiResult } from './auth-api';
 import { SessionSchema, SignInMethodsSchema, UserPayloadSchema, parseHint } from './auth.schemas';
 
@@ -31,7 +31,7 @@ export function createAuthApi(base: string): AuthApi {
     baseURL: base,
     basePath: API.auth,
     // The session is a cookie for the server's origin: send it along.
-    fetchOptions: { credentials: 'include' },
+    fetchOptions: { credentials: 'include', timeout: REQUEST_TIMEOUT_MS },
   });
   return {
     getSession: () => checked(client.getSession(), SessionSchema),

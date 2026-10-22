@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InkIcon } from '@app/shared/ui/icons/icon';
-import { ToastService } from '@app/shared/ui';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import type { z } from 'zod';
 import { AuthService, type AuthOutcome } from '@app/features/account/data-access/auth.service';
 import { googleErrorMessage } from '@app/features/account/data-access/auth-errors';

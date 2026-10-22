@@ -1,6 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import { docPath } from '../documents.paths';
 import { DocMeta, DocumentManager } from './document-manager';
 import { DocumentChannel } from './document-channel';
@@ -16,6 +18,12 @@ export class DocumentLibrary {
   private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly documents = signal<DocMeta[]>([]);
+  /**
+   * The list has been read from storage. Never on the server: a prerendered
+   * page shows the list as loading, not as empty.
+   */
+  readonly loaded = signal(false);
+  private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly activeDocId = signal<string>('');
   readonly isCreating = signal<boolean>(false);
 
@@ -33,6 +41,7 @@ export class DocumentLibrary {
   async refreshDocs(): Promise<DocMeta[]> {
     const list = await this.docManager.getIndex();
     this.documents.set(list);
+    if (this.browser) this.loaded.set(true);
     return list;
   }
 

@@ -56,7 +56,8 @@ import {
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import { InkIcon } from '@app/shared/ui/icons/icon';
-import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import { buildShareableUrl } from '@app/features/documents/transfer/share-codec';
 import {
   docToMarkdownText,

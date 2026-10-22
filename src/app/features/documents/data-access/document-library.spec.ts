@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DocumentLibrary } from './document-library';
@@ -74,5 +75,31 @@ describe('DocumentLibrary.noteSaved', () => {
     library.noteSaved({ ...entry('b', 3), title: 'B, edited' });
     expect(library.documents().map((d) => d.title)).toEqual(['B, edited', 'a']);
     expect(getIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('DocumentLibrary.loaded', () => {
+  const setup = (platform: string) => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: platform },
+        { provide: DocumentManager, useValue: { getIndex: vi.fn(async () => []) } },
+      ],
+    });
+    return TestBed.inject(DocumentLibrary);
+  };
+
+  it('turns true once storage has answered, even with no documents', async () => {
+    const library = setup('browser');
+    expect(library.loaded()).toBe(false);
+    await library.refreshDocs();
+    expect(library.loaded()).toBe(true);
+  });
+
+  it('stays false on the server, so prerendered pages show the list as loading, not empty', async () => {
+    const library = setup('server');
+    await library.refreshDocs();
+    expect(library.loaded()).toBe(false);
   });
 });

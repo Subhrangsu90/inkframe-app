@@ -5,7 +5,12 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter, TitleStrategy, withNavigationErrorHandler } from '@angular/router';
+import {
+  provideRouter,
+  TitleStrategy,
+  withNavigationErrorHandler,
+  withViewTransitions,
+} from '@angular/router';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 import { MatIconRegistry } from '@angular/material/icon';
@@ -17,7 +22,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // A page whose code fails to download says so (core/navigation-errors.ts).
-    provideRouter(routes, withNavigationErrorHandler(handleNavigationError)),
+    provideRouter(routes, withNavigationErrorHandler(handleNavigationError), withViewTransitions()),
     // Titles, descriptions, robots and share tags for every page (core/page-meta.ts).
     { provide: TitleStrategy, useExisting: PageMetaStrategy },
     provideClientHydration(),

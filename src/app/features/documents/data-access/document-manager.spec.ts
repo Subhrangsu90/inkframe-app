@@ -55,6 +55,51 @@ describe('DocumentManager persistence', () => {
     expect(await manager.getDoc(a.meta.id)).toEqual(docWith('first'));
   });
 
+  it('never empties the library when reading its index fails', async () => {
+    const a = await manager.createDoc('A', docWith('A'));
+    const b = await manager.createDoc('B', docWith('B'));
+    const getItem = Storage.prototype.getItem;
+    const failing = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (
+      this: Storage,
+      key: string,
+    ) {
+      if (key === 'inkframe_docs_index') throw new DOMException('Connection lost', 'UnknownError');
+      return getItem.call(this, key);
+    });
+    const outcome = await manager.createDoc('C', docWith('C')).catch((e) => e);
+    failing.mockRestore();
+
+    expect(outcome).toMatchObject({ name: 'StorageError' });
+    expect((await manager.getIndex()).map((d) => d.id).sort()).toEqual(
+      [a.meta.id, b.meta.id].sort(),
+    );
+  });
+
+  it('never brings back a document deleted meanwhile (in another tab, say)', async () => {
+    const a = await manager.createDoc('A', docWith('A'));
+    await manager.createDoc('B', docWith('B'));
+    await manager.deleteDoc(a.meta.id);
+
+    expect(await manager.saveDoc(a.meta.id, docWith('late edit'))).toBeNull();
+    expect(await manager.getDoc(a.meta.id)).toBeNull();
+    expect((await manager.getIndex()).map((d) => d.id)).not.toContain(a.meta.id);
+  });
+
+  it('keeps every document in the index when saves and new documents overlap', async () => {
+    const a = await manager.createDoc('A', docWith('A'));
+    // Not awaited one by one: each reads and writes the index.
+    const created = await Promise.all([
+      manager.saveDoc(a.meta.id, docWith('A, edited')),
+      manager.createDoc('B', docWith('B')),
+      manager.createDoc('C', docWith('C')),
+      manager.saveDoc(a.meta.id, docWith('A, edited again')),
+    ]);
+
+    const ids = (await manager.getIndex()).map((d) => d.id).sort();
+    expect(ids).toEqual([a.meta.id, created[1].meta.id, created[2].meta.id].sort());
+    expect(await manager.getDoc(a.meta.id)).toEqual(docWith('A, edited again'));
+  });
+
   it('saves no longer mirror every document into the legacy key', async () => {
     await manager.createDoc('A', docWith('A'));
     expect(localStorage.getItem('inkframe_saved_doc')).toBeNull();
@@ -97,6 +142,15 @@ describe('DocumentManager with another store', () => {
     const store: DocumentStore = {
       list: async () => index.map((meta) => ({ ...meta })),
       get: async (id) => docs.get(id) ?? null,
+      save: async (id, doc, entry) => {
+        const meta = entry(index.find((d) => d.id === id));
+        if (!meta) return null;
+        docs.set(id, doc);
+        index = [...index.filter((d) => d.id !== id), meta].sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        );
+        return meta;
+      },
       put: async (entries) => {
         for (const { meta, doc } of entries) {
           if (doc) docs.set(meta.id, doc);
@@ -229,5 +283,31 @@ describe('document previews', () => {
     const [entry] = await manager.getIndex();
     expect(entry.excerpt).toBe('Remember the milk');
     expect(entry.excerptVersion).toBe(EXCERPT_VERSION);
+  });
+});
+
+describe('document previews of long documents', () => {
+  const p = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+  const long = (paragraphs: number): StoredDoc => ({
+    schemaVersion: SCHEMA_VERSION,
+    doc: {
+      type: 'doc',
+      content: Array.from({ length: paragraphs }, (_, i) => p(`Paragraph ${i} has words`)),
+    },
+  });
+
+  it('reads only as far as the preview reaches, with the same result', () => {
+    const preview = extractDocExcerpt(long(20));
+    expect(preview.endsWith('…')).toBe(true);
+    expect(extractDocExcerpt(long(20_000))).toBe(preview);
+  });
+
+  it('keeps text that fits exactly, and shortens text one character longer', () => {
+    const exactly = (n: number): StoredDoc => ({
+      schemaVersion: SCHEMA_VERSION,
+      doc: { type: 'doc', content: [p('a'.repeat(n - 4) + ' end')] },
+    });
+    expect(extractDocExcerpt(exactly(30), '', 30)).toBe('a'.repeat(26) + ' end');
+    expect(extractDocExcerpt(exactly(31), '', 30)).toBe('a'.repeat(27) + '…');
   });
 });

@@ -3,7 +3,11 @@ import { TestBed } from '@angular/core/testing';
 import { imageStorage } from '@inkframe-ui/editor/core';
 import { StorageBanner } from './storage-banner';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
+import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
+import { DocumentManager } from '@app/features/documents/data-access/document-manager';
 import { BackupService } from '@app/features/documents/transfer/backup';
+
+const DAY = 24 * 60 * 60 * 1000;
 
 /** Makes the next document writes fail the way a full or blocked browser does. */
 const refuseWrites = (name: string) =>
@@ -61,6 +65,32 @@ describe('StorageBanner', () => {
     await vi.waitFor(() => expect(download).toHaveBeenCalled());
     expect(download.mock.calls[0][0]?.get('doc_1')?.title).toBe('Draft');
     await fixture.whenStable();
+  });
+
+  it('reminds to export a backup after two weeks of writing, and can be put off', async () => {
+    // Storage works (as with IndexedDB), and a document was written in.
+    vi.spyOn(imageStorage, 'storageMode').mockResolvedValue('indexeddb');
+    const now = Date.now();
+    await TestBed.inject(DocumentManager).putDocs([
+      {
+        meta: { id: 'a', title: 'Notes', wordCount: 2, createdAt: now - 30 * DAY, updatedAt: now },
+        doc: { schemaVersion: 4, doc: { type: 'doc' } },
+      },
+    ]);
+    const library = TestBed.inject(DocumentLibrary);
+    await library.refreshDocs();
+    const { fixture, el, health } = await render();
+
+    const banner = el.querySelector('.storage-banner')!;
+    expect(health.status()).toBe('ok');
+    expect(banner.classList).toContain('is-reminder');
+    expect(banner.getAttribute('role')).toBe('status');
+    expect(banner.textContent).toContain('Back up your documents.');
+
+    el.querySelector<HTMLButtonElement>('.banner-close')!.click();
+    await fixture.whenStable();
+    expect(el.querySelector('.storage-banner')).toBeNull();
+    expect(Number(localStorage.getItem('inkframe-backup-reminder-closed'))).toBeGreaterThan(0);
   });
 
   it('can be dismissed until the status changes', async () => {

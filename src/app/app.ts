@@ -8,7 +8,8 @@ import {
 } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
+import { ToastContainerComponent } from './shared/ui/toast/toast-container';
+import { ConfirmDialogComponent } from './shared/ui/confirm-dialog/confirm-dialog';
 import { AppShellComponent } from './layout/app-shell/app-shell';
 import { isStandalonePage } from './layout/standalone-page';
 import { PwaService } from './core/pwa';

@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   ElementRef,
   inject,
@@ -48,13 +49,15 @@ import {
 import { PageFrames, PageView } from '@inkframe-ui/editor/ui';
 import { LayoutService } from '@app/layout/layout.service';
 import {
+  DocMeta,
   DocumentManager,
   extractDocTitle,
 } from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
 import { InkIcon } from '@app/shared/ui/icons/icon';
-import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import { buildShareableUrl } from '@app/features/documents/transfer/share-codec';
 import {
   docToMarkdownText,
@@ -64,6 +67,11 @@ import {
 } from '@app/features/documents/transfer/doc-export';
 import { VersionHistory, VersionMeta } from '@app/features/documents/versions/version-history';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
+import {
+  DocumentChannel,
+  LibraryChange,
+} from '@app/features/documents/data-access/document-channel';
+import { EditAccess, EditLock, EditLocks } from '@app/features/documents/data-access/edit-locks';
 import { PageSetupDefaults } from '@app/features/documents/data-access/page-setup-default';
 import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { VersionPanel } from './version-panel/version-panel';
@@ -123,6 +131,7 @@ export type EditorViewTab = 'rich' | 'preview';
   host: {
     '(document:keydown.escape)': 'showShareMenu.set(false)',
     '(document:keydown)': 'onDocumentKeydown($event)',
+    '(document:visibilitychange)': 'onVisibilityChange()',
   },
 })
 export class EditorView implements OnInit {
@@ -135,6 +144,8 @@ export class EditorView implements OnInit {
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly versionHistory = inject(VersionHistory);
   private readonly storageHealth = inject(StorageHealth);
+  private readonly editLocks = inject(EditLocks);
+  private readonly document = inject(DOCUMENT);
   private readonly sanitizer = inject(DomSanitizer);
   protected readonly pageSetupDefaults = inject(PageSetupDefaults);
   protected readonly editorPreferences = inject(EditorPreferences);
@@ -176,9 +187,16 @@ export class EditorView implements OnInit {
     // Reloading for an app update waits until every edit is saved.
     const removeBeforeReload = inject(PwaService).beforeReload(() => this.settle());
 
+    const stopListening = inject(DocumentChannel).listen((change) => this.onLibraryChange(change));
+
     inject(DestroyRef).onDestroy(() => {
       this.layout.clearHeaderTemplates();
       removeBeforeReload();
+      stopListening();
+      // Other tabs may edit the document once this tab's last edits are saved.
+      const lock = this.lock;
+      this.lock = null;
+      void this.saveChain.then(() => lock?.release());
     });
   }
 
@@ -191,6 +209,15 @@ export class EditorView implements OnInit {
   readonly currentStoredDoc = signal<StoredDoc | null>(null);
   /** `error`: storage refused the latest edits (see the storage banner). */
   readonly saveStatus = signal<'saved' | 'saving' | 'error'>('saved');
+  /** Another tab or window is editing the document, so this one shows it read-only. */
+  readonly editingElsewhere = signal(false);
+  /** The open document's lock (see EditLocks), and whether it lets this tab edit. */
+  private lock: EditLock | null = null;
+  private access: EditAccess = 'edit';
+  /** Another tab saved the document while this one was hidden: show its text when shown. */
+  private reloadWhenShown = false;
+  /** The document being left because it was deleted, so it is left only once. */
+  private leaving: string | null = null;
   /** An export or print being prepared. */
   readonly exporting = signal(false);
 
@@ -220,6 +247,12 @@ export class EditorView implements OnInit {
   });
   private previewToken = 0;
 
+  /**
+   * Edits are saved once typing pauses for a second, and at least every five
+   * seconds while it goes on. Leaving the page or hiding the tab saves at once.
+   */
+  protected readonly saveDelayMs = 1000;
+  protected readonly saveMaxWaitMs = 5000;
   /** Saves run one after another, in the order edits were made. */
   private saveChain: Promise<void> = Promise.resolve();
   private pendingSaves = 0;
@@ -280,21 +313,27 @@ export class EditorView implements OnInit {
 
   async loadDocument(id: string): Promise<void> {
     const token = ++this.loadToken;
+    let lock: EditLock | null = null;
+    let access = 'edit' as EditAccess;
     try {
-      let docId = id;
-      let doc = await this.docManager.getDoc(id);
-      if (token !== this.loadToken) return;
-      if (!doc) {
-        // If not found, fall back to welcome doc or create one
-        if (id === 'doc_default') {
-          doc = WELCOME_DOC;
-          await this.docManager.saveDoc(id, doc, 'Welcome to Inkframe ✦');
-        } else {
-          const created = await this.docManager.createDoc('Untitled Document');
-          doc = created.doc;
-          docId = created.meta.id;
+      // First, whether another tab is editing it: this one then only shows it.
+      lock = await this.editLocks.open(id, (next) => {
+        access = next;
+        if (lock && lock === this.lock) {
+          this.access = next;
+          void this.onAccessChange(next);
         }
-        if (token !== this.loadToken) return;
+      });
+      const accessWhenRead = access;
+      if (token !== this.loadToken) return lock.release();
+      const doc = await this.docManager.getDoc(id);
+      if (token !== this.loadToken) return lock.release();
+      if (!doc) {
+        // Not a new document in its place: every visit to the link would add one.
+        lock.release();
+        this.toast.error('This document is not in this browser. It may have been deleted.');
+        await this.router.navigate(['/docs'], { replaceUrl: true });
+        return;
       }
 
       // Load into the editor *before* switching ids: loadDoc() first emits any
@@ -303,18 +342,104 @@ export class EditorView implements OnInit {
       // stay untouched, so edits are never saved into the wrong document.
       this.editorRef()?.loadDoc(doc);
 
-      if (docId !== this.currentDocId()) this.closeHistory();
-      this.currentDocId.set(docId);
-      this.library.setActiveDocId(docId);
+      this.switchLock(lock);
+      if (id !== this.currentDocId()) this.closeHistory();
+      this.currentDocId.set(id);
+      this.library.setActiveDocId(id);
       this.currentStoredDoc.set(doc);
       this.docTitle.set(extractDocTitle(doc));
       this.saveStatus.set('saved');
+      this.leaving = null;
+      this.reloadWhenShown = false;
+      this.access = access;
+      this.editingElsewhere.set(accessWhenRead === 'elsewhere');
+      // The other tab let it go while it was read: show its last edits first.
+      if (access !== accessWhenRead) void this.onAccessChange(access);
     } catch (e) {
+      if (lock !== this.lock) lock?.release();
       if (token !== this.loadToken) return;
       console.warn('Failed to load document:', e);
       this.toast.error('This document could not be opened');
       await this.router.navigate(['/docs']);
     }
+  }
+
+  /** Holds `next` for the open document; the previous one goes once its edits are saved. */
+  private switchLock(next: EditLock): void {
+    const previous = this.lock;
+    this.lock = next;
+    if (previous && previous !== next) void this.saveChain.then(() => previous.release());
+  }
+
+  /** Another tab took the open document over, or let it go. */
+  private async onAccessChange(access: EditAccess): Promise<void> {
+    if (access === 'elsewhere') {
+      // Edits made before the other tab took over are this tab's to save.
+      this.flushPendingEdits();
+      this.isEditingTitle.set(false);
+      this.closeHistory();
+      this.editingElsewhere.set(true);
+      return;
+    }
+    // The other tab may have changed it: show its text before allowing edits.
+    await this.reloadFromStorage();
+    if (this.access === 'edit') this.editingElsewhere.set(false);
+  }
+
+  /** "Edit here": takes the document over from the tab editing it. */
+  takeOver(): void {
+    this.lock?.takeOver();
+  }
+
+  /** Documents changed in another tab (see DocumentChannel). */
+  private onLibraryChange(change: LibraryChange): void {
+    const id = this.currentDocId();
+    if (change.type === 'cleared' || (change.type === 'deleted' && change.ids.includes(id))) {
+      this.leaveDeleted(id);
+    } else if (change.type === 'saved' && change.ids.includes(id) && !this.hasLocalEdits()) {
+      // Saved by the tab editing it, or restored from a backup: show that text
+      // (in a hidden tab, once it is shown again).
+      if (this.document.visibilityState === 'hidden') this.reloadWhenShown = true;
+      else void this.reloadFromStorage();
+    }
+  }
+
+  protected onVisibilityChange(): void {
+    if (this.reloadWhenShown && this.document.visibilityState === 'visible') {
+      if (!this.hasLocalEdits()) void this.reloadFromStorage();
+    }
+  }
+
+  /** Edits not saved yet: waiting in the editor, or being saved. */
+  private hasLocalEdits(): boolean {
+    return this.pendingSaves > 0 || (this.editorRef()?.hasPendingChanges() ?? false);
+  }
+
+  /** Shows the open document as saved, for when another tab changed it. */
+  private async reloadFromStorage(): Promise<void> {
+    this.reloadWhenShown = false;
+    const id = this.currentDocId();
+    const token = this.loadToken;
+    const doc = await this.docManager.getDoc(id);
+    if (token !== this.loadToken) return;
+    if (!doc) return this.leaveDeleted(id);
+    try {
+      this.editorRef()?.loadDoc(doc);
+    } catch (e) {
+      // Saved by a newer version of Inkframe in another tab, say: keep what is shown.
+      console.warn('Failed to show the latest text:', e);
+      return;
+    }
+    this.currentStoredDoc.set(doc);
+    this.docTitle.set(extractDocTitle(doc));
+  }
+
+  /** The open document was deleted in another tab: leave it, since its edits can't be saved. */
+  private leaveDeleted(id: string): void {
+    if (id !== this.currentDocId() || this.leaving === id) return;
+    this.leaving = id;
+    this.toast.info('This document was deleted in another tab.');
+    void this.router.navigate(['/docs']);
   }
 
   /** Emits any debounced edits now so they are saved (called before leaving the page). */
@@ -343,6 +468,10 @@ export class EditorView implements OnInit {
   }
 
   async onTitleChange(newTitle: string): Promise<void> {
+    if (this.editingElsewhere()) {
+      this.isEditingTitle.set(false);
+      return;
+    }
     const trimmed = newTitle.trim() || 'Untitled Document';
     this.docTitle.set(trimmed);
     this.isEditingTitle.set(false);
@@ -368,31 +497,34 @@ export class EditorView implements OnInit {
     this.pendingSaves++;
     this.saveStatus.set('saving');
     const task = this.saveChain.then(async () => {
-      let saved = true;
+      let saved: DocMeta | null = null;
+      let failed = false;
       try {
-        await this.docManager.saveDoc(id, doc, title);
-        this.storageHealth.markSaved(id);
+        // Null when the document was deleted (in another tab): it stays deleted.
+        saved = await this.docManager.saveDoc(id, doc, title);
+        if (saved) this.storageHealth.markSaved(id);
+        else this.leaveDeleted(id);
       } catch (e) {
-        saved = false;
+        failed = true;
         console.warn('Failed to save document:', e);
         this.storageHealth.markUnsaved(id, title, doc);
       }
       this.pendingSaves--;
       if (id === this.currentDocId()) {
-        if (!saved) this.saveStatus.set('error');
+        if (failed) this.saveStatus.set('error');
         else if (this.pendingSaves === 0 && this.saveStatus() !== 'error') {
           this.saveStatus.set('saved');
         }
       }
       if (saved) {
-        await this.library.refreshDocs();
+        this.library.noteSaved(saved);
         if (previous !== undefined) {
           await this.versionHistory
             .recordEdit(id, previous, doc)
             .catch((e) => console.warn('Failed to save a version:', e));
         }
       }
-      return saved;
+      return saved !== null;
     });
     this.saveChain = task.then(
       () => undefined,
@@ -521,6 +653,7 @@ export class EditorView implements OnInit {
       this.closeHistory();
       return;
     }
+    if (this.editingElsewhere()) return;
     // So the list includes the latest edits' automatic version.
     await this.settle();
     this.historyOpen.set(true);
@@ -576,7 +709,7 @@ export class EditorView implements OnInit {
    */
   async restorePreviewedVersion(): Promise<void> {
     const meta = this.previewVersion();
-    if (!meta || this.historyBusy()) return;
+    if (!meta || this.historyBusy() || this.editingElsewhere()) return;
     this.historyBusy.set(true);
     try {
       const target = await this.versionHistory.get(meta.id);

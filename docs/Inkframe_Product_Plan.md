@@ -312,7 +312,7 @@ M6.1–M6.3 ship before launch; M6.4 and M6.5 after.
 - ~~**Formatting isn't enforced.**~~ Resolved: the codebase was formatted in one commit (listed in `.git-blame-ignore-revs`) and `format:check` runs in CI. `.gitattributes` keeps checkouts on LF so the check passes on Windows too.
 - ~~**Failed saves are silent.**~~ Resolved in M2: writes throw a `StorageError` and report to `imageStorage.onWrite` listeners; the editor shows "Not saved" and the storage banner offers a backup. A related bug was fixed too: after an IndexedDB quota error, the edit used to go to localStorage, where the older IndexedDB copy hid it on reload.
 - **Image saves on a full disk:** inserting an image when storage is full now shows the banner, but the image is silently not inserted. Show a message at the insertion point.
-- **Unknown document ids:** opening `/doc/<unknown id>` creates a document but the sidebar only lists it after its first save.
+- ~~**Unknown document ids:** opening `/doc/<unknown id>` creates a document but the sidebar only lists it after its first save.~~ Resolved: such a link opens the library with a message and creates nothing (a new document on every visit before).
 - **Reader images are mouse-only:** a click opens the lightbox, but images cannot be focused. Fix in the M4 accessibility pass.
 - **Global window events:** the column-menu event is filtered per editor but still travels through `window`. Move it to the editor service.
 - **Uncompressed responses:** `src/server.ts` sends files without compression, so a first visit (and the service worker's download) is about 1.8 MB instead of roughly 450 kB. Add compression, or serve the static files from a CDN, in M4.

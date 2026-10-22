@@ -5,6 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  Injector,
   signal,
   TemplateRef,
   viewChild,
@@ -14,22 +15,21 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ThemeService, AppTheme, StorageError } from '@inkframe-ui/editor/core';
 import { AuthService } from '@app/features/account/data-access/auth.service';
-import { DocumentManager } from '@app/features/documents/data-access/document-manager';
+import {
+  DocumentManager,
+  formatRelativeTime,
+} from '@app/features/documents/data-access/document-manager';
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { WELCOME_DOC } from '@app/features/documents/data-access/welcome-doc';
-import {
-  BACKUP_EXTENSION,
-  BackupError,
-  BackupService,
-  ParsedBackup,
-  describeRestore,
-} from '@app/features/documents/transfer/backup';
+import { BACKUP_EXTENSION } from '@app/features/documents/transfer/file-types';
+import type { ParsedBackup } from '@app/features/documents/transfer/backup';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
 import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { PwaService } from '@app/core/pwa';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { InkAvatar } from '@app/shared/ui/avatar/avatar';
-import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import { LayoutService } from '@app/layout/layout.service';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -48,8 +48,8 @@ export class Settings implements OnInit {
   private readonly library = inject(DocumentLibrary);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
-  private readonly backup = inject(BackupService);
-  private readonly storageHealth = inject(StorageHealth);
+  private readonly injector = inject(Injector);
+  protected readonly storageHealth = inject(StorageHealth);
   readonly layout = inject(LayoutService);
   readonly pwa = inject(PwaService);
   readonly editorPreferences = inject(EditorPreferences);
@@ -88,6 +88,11 @@ export class Settings implements OnInit {
   readonly currentTheme = computed(() => this.themeService.theme());
   readonly docCount = signal<number>(0);
   readonly storageUsed = signal<string>('0 KB');
+  /** When the last backup was exported (or restored) here. */
+  readonly lastBackupText = computed(() => {
+    const time = this.storageHealth.lastBackup();
+    return time ? `Last backup: ${formatRelativeTime(time)}.` : 'No backup yet.';
+  });
 
   async ngOnInit(): Promise<void> {
     await this.updateStats();
@@ -127,11 +132,21 @@ export class Settings implements OnInit {
     }
   }
 
+  /**
+   * Backups load when used: they need the editor's schema, which the
+   * Settings page would otherwise download before showing anything.
+   */
+  private loadBackups() {
+    return import('@app/features/documents/transfer/backup');
+  }
+
   async exportBackup(): Promise<void> {
     if (this.backupBusy()) return;
     this.backupBusy.set('export');
     try {
-      const filename = await this.backup.download(this.storageHealth.unsavedDocs());
+      const { BackupService } = await this.loadBackups();
+      const backups = this.injector.get(BackupService);
+      const filename = await backups.download(this.storageHealth.unsavedDocs());
       this.toast.success('Downloaded ' + filename);
     } catch (e) {
       console.warn('Backup failed:', e);
@@ -147,9 +162,18 @@ export class Settings implements OnInit {
     input.value = ''; // so choosing the same file again fires (change) again
     if (!file || this.backupBusy()) return;
 
+    let transfer: typeof import('@app/features/documents/transfer/backup');
+    try {
+      transfer = await this.loadBackups();
+    } catch {
+      this.toast.error('The backup could not be read. Check your connection and try again.');
+      return;
+    }
+    const { BackupError, describeRestore } = transfer;
+    const backups = this.injector.get(transfer.BackupService);
     let backup: ParsedBackup;
     try {
-      backup = this.backup.parse(await file.text());
+      backup = backups.parse(await file.text());
     } catch (e) {
       this.toast.error(e instanceof BackupError ? e.message : 'This file could not be read');
       return;
@@ -176,7 +200,7 @@ export class Settings implements OnInit {
 
     this.backupBusy.set('restore');
     try {
-      const summary = await this.backup.restore(backup, choice === 'confirm' ? 'merge' : 'replace');
+      const summary = await backups.restore(backup, choice === 'confirm' ? 'merge' : 'replace');
       this.toast.success(describeRestore(summary), 5000);
     } catch (e) {
       console.warn('Restore failed:', e);

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DocumentLibrary } from './document-library';
@@ -51,5 +52,54 @@ describe('DocumentLibrary.deleteDoc', () => {
     dialog.close(true);
     await pending;
     expect(docManager.deleteDoc).toHaveBeenCalledWith('a');
+  });
+});
+
+describe('DocumentLibrary.noteSaved', () => {
+  it('shows a saved entry first, without reading the library again', async () => {
+    const entry = (id: string, updatedAt: number): DocMeta => ({
+      id,
+      title: id,
+      wordCount: 1,
+      createdAt: 0,
+      updatedAt,
+    });
+    const getIndex = vi.fn(async () => [entry('a', 2), entry('b', 1)]);
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: DocumentManager, useValue: { getIndex } }],
+    });
+    const library = TestBed.inject(DocumentLibrary);
+    await library.refreshDocs();
+    getIndex.mockClear();
+
+    library.noteSaved({ ...entry('b', 3), title: 'B, edited' });
+    expect(library.documents().map((d) => d.title)).toEqual(['B, edited', 'a']);
+    expect(getIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('DocumentLibrary.loaded', () => {
+  const setup = (platform: string) => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: platform },
+        { provide: DocumentManager, useValue: { getIndex: vi.fn(async () => []) } },
+      ],
+    });
+    return TestBed.inject(DocumentLibrary);
+  };
+
+  it('turns true once storage has answered, even with no documents', async () => {
+    const library = setup('browser');
+    expect(library.loaded()).toBe(false);
+    await library.refreshDocs();
+    expect(library.loaded()).toBe(true);
+  });
+
+  it('stays false on the server, so prerendered pages show the list as loading, not empty', async () => {
+    const library = setup('server');
+    await library.refreshDocs();
+    expect(library.loaded()).toBe(false);
   });
 });

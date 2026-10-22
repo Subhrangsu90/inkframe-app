@@ -1,8 +1,11 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { ConfirmDialogService, ToastService } from '@app/shared/ui';
+import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import { docPath } from '../documents.paths';
 import { DocMeta, DocumentManager } from './document-manager';
+import { DocumentChannel } from './document-channel';
 
 /** The document list shown in the sidebar and the docs page, and the actions that change it. */
 @Injectable({
@@ -15,11 +18,19 @@ export class DocumentLibrary {
   private readonly confirmDialog = inject(ConfirmDialogService);
 
   readonly documents = signal<DocMeta[]>([]);
+  /**
+   * The list has been read from storage. Never on the server: a prerendered
+   * page shows the list as loading, not as empty.
+   */
+  readonly loaded = signal(false);
+  private readonly browser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly activeDocId = signal<string>('');
   readonly isCreating = signal<boolean>(false);
 
   constructor() {
     this.refreshDocs();
+    // Documents created, edited or deleted in another tab.
+    inject(DocumentChannel).listen(() => void this.refreshDocs());
   }
 
   setActiveDocId(id: string): void {
@@ -30,7 +41,13 @@ export class DocumentLibrary {
   async refreshDocs(): Promise<DocMeta[]> {
     const list = await this.docManager.getIndex();
     this.documents.set(list);
+    if (this.browser) this.loaded.set(true);
     return list;
+  }
+
+  /** Shows a document's entry as just saved (newest first), without reading the library again. */
+  noteSaved(meta: DocMeta): void {
+    this.documents.update((docs) => [meta, ...docs.filter((d) => d.id !== meta.id)]);
   }
 
   /** Creates an empty document and lists it; returns its id. Throws when storage refuses it. */

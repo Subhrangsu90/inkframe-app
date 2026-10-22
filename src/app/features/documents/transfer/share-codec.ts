@@ -1,5 +1,5 @@
 import { type StoredDoc, extractDocTitle } from '../data-access/document-manager';
-import { markdownToDoc, SCHEMA_VERSION, imageStorage } from '@inkframe-ui/editor/core';
+import { SCHEMA_VERSION, imageStorage } from '@inkframe-ui/editor/core';
 
 export interface DecodedSharedDoc {
   doc: StoredDoc;
@@ -157,7 +157,7 @@ export async function decompressSharedDoc(hash: string): Promise<DecodedSharedDo
 
     // Fallback: Check if raw markdown text
     if (trimmed) {
-      const pmNode = markdownToDoc(trimmed);
+      const { markdownPayloadToDoc } = await import('./markdown-payload');
       const firstLine = trimmed
         .split('\n')[0]
         .replace(/^#+\s*/, '')
@@ -166,7 +166,7 @@ export async function decompressSharedDoc(hash: string): Promise<DecodedSharedDo
         title: firstLine || 'Shared Document',
         doc: {
           schemaVersion: SCHEMA_VERSION,
-          doc: pmNode.toJSON(),
+          doc: markdownPayloadToDoc(trimmed),
         },
       };
     }

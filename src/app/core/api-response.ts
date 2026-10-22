@@ -45,13 +45,22 @@ const unexpected = (status: number) =>
     `Unexpected answer from the server (${status})`,
   );
 
+/**
+ * How long a request to the server may take before it is given up, so a
+ * stalled connection fails like a dropped one instead of hanging.
+ */
+export const REQUEST_TIMEOUT_MS = 15_000;
+
 /** GETs a /v1 route and returns its `data`, checked against `data`. */
 export async function getJson<T extends z.ZodType>(
   url: string,
   data: T,
   init: RequestInit = {},
 ): Promise<z.output<T>> {
-  const res = await fetch(url, init);
+  const res = await fetch(url, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const failure = ApiErrorBody.safeParse(body);

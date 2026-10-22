@@ -1,8 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { EditorState } from 'prosemirror-state';
+import { Node as PMNode } from 'prosemirror-model';
+import Prism from 'prismjs';
 import { schema } from '../../schema/schema';
 import { docToHtml, htmlToDoc } from '../../io/html';
 import { docToMarkdown, markdownToDoc } from '../../io/markdown';
+import { randomEdit, sampleDoc, seededRandom } from '../../editor/random-edits.fixtures';
 import { highlightKey, highlightPlugin } from './highlight.plugin';
 
 describe('Code blocks', () => {
@@ -85,5 +88,87 @@ describe('Code blocks', () => {
     const classes = found.map((d: any) => d.type.attrs.class);
     expect(classes.some((c: string) => c.includes('keyword'))).toBe(true);
     expect(classes.some((c: string) => c.includes('string'))).toBe(true);
+  });
+});
+
+describe('Syntax highlighting while editing', () => {
+  const { nodes } = schema;
+  const p = (text: string) => nodes['paragraph'].create(null, schema.text(text));
+  const code = (text: string, language = 'typescript') =>
+    nodes['code_block'].create({ language }, schema.text(text));
+  const stateOf = (doc: PMNode) =>
+    EditorState.create({ schema, doc, plugins: [highlightPlugin()] });
+  /** The token decorations, comparable. */
+  const tokens = (state: EditorState) =>
+    highlightKey
+      .getState(state)
+      .find()
+      .map((d: any) => `${d.from}-${d.to} ${d.type.attrs.class}`)
+      .sort();
+  /** The same document highlighted from scratch. */
+  const fromScratch = (state: EditorState) => tokens(stateOf(state.doc));
+
+  it('tokenizes nothing for typing outside code, and moves the tokens along', () => {
+    let state = stateOf(nodes['doc'].create(null, [p('Intro'), code('const a = 1;'), p('End')]));
+    const tokenize = vi.spyOn(Prism, 'tokenize');
+    try {
+      state = state.apply(state.tr.insertText('More text. ', 1));
+      expect(tokenize).not.toHaveBeenCalled();
+      expect(tokens(state)).toEqual(fromScratch(state));
+      expect(tokens(state).length).toBeGreaterThan(0);
+    } finally {
+      tokenize.mockRestore();
+    }
+  });
+
+  it('tokenizes only the code block that changed', () => {
+    let state = stateOf(
+      nodes['doc'].create(null, [code('const a = 1;'), p('Between'), code('let b = "x";')]),
+    );
+    const tokenize = vi.spyOn(Prism, 'tokenize');
+    try {
+      state = state.apply(state.tr.insertText(' // note', 13));
+      expect(tokenize).toHaveBeenCalledTimes(1);
+      expect(tokens(state)).toEqual(fromScratch(state));
+    } finally {
+      tokenize.mockRestore();
+    }
+  });
+
+  it('highlights again when the language changes, and drops tokens when code becomes a paragraph', () => {
+    let state = stateOf(nodes['doc'].create(null, [code('print("hi") # comment', 'python')]));
+    state = state.apply(state.tr.setNodeMarkup(0, undefined, { language: 'json' }));
+    expect(tokens(state)).toEqual(fromScratch(state));
+
+    state = state.apply(state.tr.setNodeMarkup(0, nodes['paragraph']));
+    expect(tokens(state)).toEqual([]);
+  });
+
+  it('redecorates a long code block whole when most of its tokens change', () => {
+    const lines = Array.from({ length: 200 }, (_, i) => `const v${i} = f("s", ${i});`);
+    let state = stateOf(nodes['doc'].create(null, [p('Intro'), code(lines.join('\n')), p('End')]));
+    const before = tokens(state).length;
+
+    // Opening a comment at the top turns all that follows into one comment token.
+    state = state.apply(state.tr.insertText('/* ', 8));
+    expect(tokens(state)).toEqual(fromScratch(state));
+    expect(tokens(state).length).toBeLessThan(before / 10);
+
+    state = state.apply(state.tr.insertText(' */', 11));
+    expect(tokens(state)).toEqual(fromScratch(state));
+    expect(tokens(state).length).toBeGreaterThan(before / 2);
+  });
+
+  it('stays the same as highlighting from scratch through many random edits', () => {
+    for (const seed of [1, 2, 3]) {
+      const random = seededRandom(seed);
+      let state = stateOf(sampleDoc());
+      for (let step = 0; step < 300; step++) {
+        const tr = randomEdit(state, random);
+        if (!tr?.docChanged) continue;
+        state = state.apply(tr);
+        expect(tokens(state), `seed ${seed}, step ${step}`).toEqual(fromScratch(state));
+      }
+    }
   });
 });

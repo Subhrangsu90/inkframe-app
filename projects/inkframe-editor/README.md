@@ -113,6 +113,7 @@ export class Page {
 | `editable` | `boolean` | `true` | `false` shows the document read-only, without toolbar or menus. |
 | `extensions` | `EditorExtension[]` | `DEFAULT_EXTENSIONS` | The features to enable. See [Extensions](#extensions). |
 | `debounceMs` | `number` | `300` | How long to wait after the last edit before emitting `changed`. |
+| `maxWaitMs` | `number \| null` | `null` | The longest `changed` waits after the first edit not emitted yet, so steady typing is emitted too, not only once it pauses. `null`: no limit. |
 | `showToolbar` | `boolean` | `true` | Shows the toolbar. |
 | `showStatusBar` | `boolean` | `true` | Shows words, characters and reading time below the document. |
 | `showRuler` | `boolean` | `true` | Shows the ruler above the page, with handles for the left and right margins. Only while editing, and only from 768px up. |
@@ -124,7 +125,7 @@ export class Page {
 
 | Output | Payload | Description |
 | --- | --- | --- |
-| `changed` | `StoredDoc` | The document after edits, debounced by `debounceMs`. |
+| `changed` | `StoredDoc` | The document after edits, debounced by `debounceMs` (and `maxWaitMs`). |
 | `historyRequested` | `void` | The user asked to open version history (the toolbar's history button). |
 
 ### Methods
@@ -136,6 +137,7 @@ export class Page {
 | `getMarkdown(): string` / `loadMarkdown(md)` | Markdown export and import. |
 | `getHtml(): string` / `loadHtml(html)` | HTML export and import. Imported HTML is sanitized. |
 | `flush()` | Emits pending (debounced) changes now. |
+| `hasPendingChanges(): boolean` | Whether there are changes `changed` has not emitted yet (debounced). |
 | `focus()` / `blur()` | Moves focus into the document, or closes the editor's menus. |
 | `openPageSetup(section?)` | Opens the Page setup dialog (when the editor is editable), at its top or, with `'header'` or `'footer'`, at that field. The status bar opens it too, and so does double-clicking a page's top or bottom margin. |
 | `getPageStarts(): number[] \| null` | Where page view starts each page after the first, as positions in `getJSON()`'s document (empty for one page); null when page view is off. Pass them to `docToHtmlDocument()` (`pageStarts`) to print the pages shown, with their headers, footers and page numbers. See [Page setup](#page-setup). |

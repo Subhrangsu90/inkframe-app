@@ -45,13 +45,12 @@ import {
   type ImagePreviewPayload,
 } from '@inkframe-ui/editor/ui';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { ToastService } from '@app/shared/ui';
+import { ToastService } from '@app/shared/ui/toast/toast';
 import {
   decompressSharedDoc,
   buildShareableUrl,
 } from '@app/features/documents/transfer/share-codec';
 import { combineLatest } from 'rxjs';
-import { printDocument } from '@app/features/documents/transfer/doc-export';
 
 /** Header and footer text when the browser prints the reader page: 0.8 × the 14px text, in the document's font. */
 const marginTextFont = (setup: PageSetup) => `11.2px ${findDocumentFont(setup.font).stack}`;
@@ -227,6 +226,9 @@ export class Reader implements OnInit {
     try {
       const doc = schema.nodeFromJSON(migrate(active));
       const pageStarts = this.pageView()?.pageStarts(doc) ?? null;
+      // Loaded when printing: the export code it comes with (Markdown, for
+      // one) is large, and most people only read.
+      const { printDocument } = await import('@app/features/documents/transfer/doc-export');
       await printDocument(active, this.docTitle(), pageStarts);
     } catch (e) {
       console.warn('Print failed:', e);

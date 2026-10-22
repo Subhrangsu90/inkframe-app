@@ -239,6 +239,11 @@
         <h2 id="storage-heading" class="section-title">Storage</h2>
         <p class="section-desc">
           Documents and images are saved in this browser's storage (IndexedDB).
+          @if (storageHealth.persisted() === true) {
+            The browser keeps them even when the device runs low on space.
+          } @else if (storageHealth.persisted() === false) {
+            The browser may delete them when the device runs low on space, so export backups.
+          }
         </p>
       </div>
 
@@ -280,6 +285,7 @@
             <span class="setting-label">Export backup</span>
             <span class="setting-desc">
               One .inkframe.json file with every document, its version history and its images.
+              {{ lastBackupText() }}
             </span>
           </div>
           <button

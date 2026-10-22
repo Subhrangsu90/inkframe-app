@@ -9,13 +9,16 @@ import {
   schema,
 } from '@inkframe-ui/editor/core';
 import { DocMeta, DocumentManager } from '../data-access/document-manager';
+import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory, VersionMeta } from '../versions/version-history';
 import { dataUrlToBlob, downloadFile } from './data-url';
+import { BACKUP_EXTENSION } from './file-types';
+
+export { BACKUP_EXTENSION };
 import { newVersionId } from '../versions/version-store';
 
 export const BACKUP_FORMAT = 'inkframe-backup';
 export const BACKUP_VERSION = 1;
-export const BACKUP_EXTENSION = '.inkframe.json';
 
 export interface BackupVersion {
   meta: VersionMeta;
@@ -147,6 +150,8 @@ const sameContent = (a: StoredDoc, b: StoredDoc) =>
 export class BackupService {
   private readonly docs = inject(DocumentManager);
   private readonly versions = inject(VersionHistory);
+  /** Knows when the last backup was made, for the backup reminder. */
+  private readonly health = inject(StorageHealth);
 
   /**
    * Collects every document, its version history and the images they show.
@@ -209,6 +214,7 @@ export class BackupService {
       .join('-');
     const filename = `inkframe-backup-${stamp}${BACKUP_EXTENSION}`;
     downloadFile(new Blob([JSON.stringify(backup)], { type: 'application/json' }), filename);
+    this.health.recordBackup(backup.createdAt);
     return filename;
   }
 
@@ -352,6 +358,8 @@ export class BackupService {
     }
 
     await this.docs.putDocs(toWrite.map(({ meta, entry }) => ({ meta, doc: entry.doc })));
+    // Everything here now came from the backup, so it is backed up as of then.
+    if (mode === 'replace') this.health.recordBackup(backup.createdAt);
     return summary;
   }
 }

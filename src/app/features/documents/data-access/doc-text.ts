@@ -74,23 +74,42 @@ export function extractDocExcerpt(stored: StoredDoc, title = '', maxLength = 180
     const blocks = childrenOf(stored?.doc as DocJSON | undefined);
     const first = blocks[0];
     const titleHeading = first?.type === 'heading' && plainText(first).trim() === title.trim();
-    const headings = blocks.filter((b, i) => b.type === 'heading' && !(i === 0 && titleHeading));
     const clean = (texts: string[]) =>
       texts.map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean);
 
-    const lead = clean(first?.type === 'heading' && !titleHeading ? [plainText(first)] : []);
-    const body = clean(blocks.filter((b) => b.type !== 'heading').flatMap(textBlocks));
-    const parts = body.length > 0 ? [...lead, ...body] : clean(headings.map(plainText));
-
-    const text = parts.reduce(
-      (out, part) => (!out ? part : out + (/[.!?:;…]$/.test(out) ? ' ' : ' · ') + part),
-      '',
-    );
+    // The body text, only as far as the preview reaches: documents can be long.
+    const bodyText = () => {
+      let body = '';
+      for (const block of blocks) {
+        if (block.type === 'heading') continue;
+        for (const part of clean(textBlocks(block))) {
+          body = joinParts(body, part);
+          if (body.length > maxLength) return body;
+        }
+      }
+      return body;
+    };
+    const body = bodyText();
+    let text: string;
+    if (body) {
+      const [lead] = clean(first?.type === 'heading' && !titleHeading ? [plainText(first)] : []);
+      text = lead ? joinParts(lead, body) : body;
+    } else {
+      const headings = blocks.filter((b, i) => b.type === 'heading' && !(i === 0 && titleHeading));
+      text = clean(headings.map(plainText)).reduce(joinParts, '');
+    }
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength).replace(/\s+\S*$/, '') + '…';
   } catch {
     return '';
   }
+}
+
+/** Joins preview parts with " · ", or with a space after one that ends a sentence. */
+function joinParts(out: string, part: string): string {
+  if (!out) return part;
+  // Only the last character: testing `$` on the whole text gets slow as it grows.
+  return out + (/[.!?:;…]/.test(out[out.length - 1]) ? ' ' : ' · ') + part;
 }
 
 /** Counted like the editor's status bar, so library cards and the editor agree. */

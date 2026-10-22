@@ -23,15 +23,12 @@ import {
 import { DocumentLibrary } from '@app/features/documents/data-access/document-library';
 import { docPath } from '@app/features/documents/documents.paths';
 import { InkIcon, InkIconName } from '@app/shared/ui/icons/icon';
-import { ToastService } from '@app/shared/ui';
+import { ToastService } from '@app/shared/ui/toast/toast';
+import { SkeletonComponent } from '@app/shared/ui/skeleton/skeleton';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
-import { buildShareableUrl } from '@app/features/documents/transfer/share-codec';
-import {
-  IMPORT_ACCEPT,
-  ImportError,
-  readImportFile,
-} from '@app/features/documents/transfer/doc-import';
-import { BACKUP_EXTENSION } from '@app/features/documents/transfer/backup';
+// Sharing and importing load when used: they need the document converters,
+// which the library page would otherwise download before showing anything.
+import { BACKUP_EXTENSION, IMPORT_ACCEPT } from '@app/features/documents/transfer/file-types';
 
 const hasFiles = (event: DragEvent) => !!event.dataTransfer?.types.includes('Files');
 
@@ -59,7 +56,7 @@ export interface TemplateStarter {
 @Component({
   selector: 'ink-docs',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, InkIcon],
+  imports: [CommonModule, FormsModule, RouterLink, InkIcon, SkeletonComponent],
   templateUrl: './docs.html',
   styleUrl: './docs.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -305,6 +302,14 @@ export class Docs implements OnInit {
     const created: string[] = [];
     const problems: string[] = [];
     try {
+      let reader: typeof import('@app/features/documents/transfer/doc-import');
+      try {
+        reader = await import('@app/features/documents/transfer/doc-import');
+      } catch {
+        this.toast.error('The import could not start. Check your connection and try again.');
+        return;
+      }
+      const { ImportError, readImportFile } = reader;
       for (const file of files) {
         if (file.name.toLowerCase().endsWith(BACKUP_EXTENSION)) {
           problems.push(`"${file.name}" is a backup: restore it in Settings.`);
@@ -378,6 +383,7 @@ export class Docs implements OnInit {
       const doc = await this.docManager.getDoc(id);
       if (doc) {
         const meta = this.library.documents().find((d: DocMeta) => d.id === id);
+        const { buildShareableUrl } = await import('@app/features/documents/transfer/share-codec');
         const url = await buildShareableUrl(doc, meta?.title);
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
           await navigator.clipboard.writeText(url);

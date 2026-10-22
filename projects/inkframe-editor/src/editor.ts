@@ -318,6 +318,8 @@ export class Editor {
   private readonly injector = inject(Injector);
   private pageSetupDialog?: DialogRef<PageSetup, PageSetupDialog>;
   private timer?: ReturnType<typeof setTimeout>;
+  /** When the oldest change not emitted yet was made (see maxWaitMs). */
+  private firstPendingAt?: number;
   /** The page setup on screen: a ruler drag's preview, otherwise the document's. */
   protected readonly shownSetup = computed(
     () => this.svc.pageSetupPreview() ?? this.svc.pageSetup(),
@@ -335,7 +337,10 @@ export class Editor {
   /** Read once at mount. Use loadDoc() to replace the document later. */
   readonly initialDoc = input<StoredDoc | null>(null);
   readonly editable = input(true);
+  /** `changed` waits until typing pauses this long… */
   readonly debounceMs = input(300);
+  /** …but no longer than this after the first unsent change, so steady typing is saved too. Null: no limit. */
+  readonly maxWaitMs = input<number | null>(null);
   readonly extensions = input<EditorExtension[]>(DEFAULT_EXTENSIONS);
   readonly showToolbar = input(true);
   /** Words, characters and reading time below the document. */
@@ -573,15 +578,28 @@ export class Editor {
     if (this.timer === undefined) return;
     clearTimeout(this.timer);
     this.timer = undefined;
+    this.firstPendingAt = undefined;
     this.changed.emit(this.svc.getJSON());
+  }
+  /** Whether there are changes not emitted yet (debounced; see flush()). */
+  hasPendingChanges(): boolean {
+    return this.timer !== undefined;
   }
 
   private scheduleEmit() {
     clearTimeout(this.timer);
+    const now = Date.now();
+    this.firstPendingAt ??= now;
+    const maxWait = this.maxWaitMs();
+    const delay =
+      maxWait === null
+        ? this.debounceMs()
+        : Math.min(this.debounceMs(), Math.max(0, this.firstPendingAt + maxWait - now));
     this.timer = setTimeout(() => {
       this.timer = undefined;
+      this.firstPendingAt = undefined;
       this.zone.run(() => this.changed.emit(this.svc.getJSON()));
-    }, this.debounceMs());
+    }, delay);
   }
 }
 

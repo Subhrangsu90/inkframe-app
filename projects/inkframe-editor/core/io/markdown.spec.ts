@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Node as PMNode } from 'prosemirror-model';
-import { schema } from '../schema';
+import { schema } from '../schema/schema';
 import { docToMarkdown, markdownToDoc } from './markdown';
 
 const { marks, nodes } = schema;
@@ -114,5 +114,84 @@ describe('Markdown round trip', () => {
     expect(list.type.name).toBe('task_list');
     expect(list.child(0).attrs['checked']).toBe(true);
     expect(list.child(1).attrs['checked']).toBe(false);
+  });
+});
+
+describe('Markdown IO', () => {
+  it('converts markdown to document and back to markdown', () => {
+    const inputMd = '# Heading 1\n\nThis is **bold** text and `code`.';
+    const doc = markdownToDoc(inputMd);
+    expect(doc).toBeTruthy();
+    expect(doc.type.name).toBe('doc');
+
+    const serialized = docToMarkdown(doc);
+    expect(serialized).toContain('# Heading 1');
+    expect(serialized).toContain('**bold**');
+    expect(serialized).toContain('`code`');
+  });
+
+  it('serializes and parses callout and table blocks', () => {
+    const doc = schema.node('doc', null, [
+      schema.node('callout', { type: 'info' }, [
+        schema.node('paragraph', null, [schema.text('Important notice')]),
+      ]),
+    ]);
+    const md = docToMarkdown(doc);
+    expect(md).toContain('> [!INFO]');
+    expect(md).toContain('Important notice');
+  });
+});
+
+describe('Markdown round trips: code block languages and task lists', () => {
+  it('preserves code block language fences across markdown round-trip', () => {
+    const codeBlock = schema.nodes['code_block'].create(
+      { language: 'typescript' },
+      schema.text('const answer: number = 42;'),
+    );
+    const doc = schema.node('doc', null, [codeBlock]);
+
+    const markdown = docToMarkdown(doc);
+    expect(markdown).toContain('```typescript');
+    expect(markdown).toContain('const answer: number = 42;');
+
+    const roundTripDoc = markdownToDoc(markdown);
+    let foundLang = false;
+    roundTripDoc.descendants((node) => {
+      if (node.type.name === 'code_block') {
+        foundLang = true;
+        expect(node.attrs['language']).toBe('typescript');
+        expect(node.textContent).toBe('const answer: number = 42;');
+      }
+    });
+    expect(foundLang).toBe(true);
+  });
+
+  it('preserves task item states in markdown round-trip', () => {
+    const item1 = schema.nodes['task_item'].create(
+      { checked: false },
+      schema.nodes['paragraph'].create(null, [schema.text('Todo task')]),
+    );
+    const item2 = schema.nodes['task_item'].create(
+      { checked: true },
+      schema.nodes['paragraph'].create(null, [schema.text('Completed task')]),
+    );
+    const taskList = schema.nodes['task_list'].create(null, [item1, item2]);
+    const doc = schema.node('doc', null, [taskList]);
+
+    const markdown = docToMarkdown(doc);
+    expect(markdown).toContain('- [ ] Todo task');
+    expect(markdown).toContain('- [x] Completed task');
+
+    const roundTripDoc = markdownToDoc(markdown);
+    let foundUnchecked = false;
+    let foundChecked = false;
+    roundTripDoc.descendants((node) => {
+      if (node.type.name === 'task_item') {
+        if (node.attrs['checked'] === false) foundUnchecked = true;
+        if (node.attrs['checked'] === true) foundChecked = true;
+      }
+    });
+    expect(foundUnchecked).toBe(true);
+    expect(foundChecked).toBe(true);
   });
 });

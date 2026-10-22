@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
 import { DOMParser as PMDOMParser, DOMSerializer, Node as PMNode } from 'prosemirror-model';
-import { schema } from '../schema';
+import { schema } from '../schema/schema';
 
-import { highlightCodeInHtml } from '../highlight.plugin';
+import { highlightCodeInHtml } from '../extensions/code-block/highlight.plugin';
 
 export const DOMPURIFY_CONFIG = {
   USE_PROFILES: { html: true },

@@ -6,34 +6,34 @@
   /* Document text size. Headings, code and captions scale with it (em). */
   --ink-editor-font-size: 14px;
 
-  /* Surfaces & Backgrounds - Clean, Professional Obsidian Base (Tiptap-inspired) */
-  --ink-bg-app: #0d0d0d;
-  --ink-bg-card: #151516;
-  --ink-bg-wrapper: #0d0d0d;
-  --ink-bg-header: #131315;
-  --ink-bg-toolbar: #131315;
-  --ink-bg-page: #151516;
-  --ink-bg-menu: #18181b;
-  --ink-bg-popover: #18181b;
-  --ink-bg-input: #151516;
+  /* Surfaces & Backgrounds - Soft charcoal base */
+  --ink-bg-app: #151515;
+  --ink-bg-card: #1e1e1d;
+  --ink-bg-wrapper: #151515;
+  --ink-bg-header: #1e1e1d;
+  --ink-bg-toolbar: #1e1e1d;
+  --ink-bg-page: #1e1e1d;
+  --ink-bg-menu: #242423;
+  --ink-bg-popover: #242423;
+  --ink-bg-input: #1e1e1d;
   --ink-bg-hover: rgba(255, 255, 255, 0.06);
-  --ink-bg-subtle: #1c1c1f;
-  --ink-bg-table: #151516;
-  --ink-bg-th: #1a1a1d;
-  --ink-bg-code: #0a0a0b;
-  --ink-bg-code-gutter: #080809;
+  --ink-bg-subtle: #262625;
+  --ink-bg-table: #1e1e1d;
+  --ink-bg-th: #242423;
+  --ink-bg-code: #111111;
+  --ink-bg-code-gutter: #0d0d0d;
 
   /* Borders & Dividers - Hairline Precision (1px subtle) */
-  --ink-border-default: rgba(255, 255, 255, 0.08);
+  --ink-border-default: #2a2a29;
   --ink-border-subtle: rgba(255, 255, 255, 0.05);
-  --ink-border-focus: rgba(139, 92, 246, 0.45);
+  --ink-border-focus: rgba(88, 170, 166, 0.6);
 
-  /* Typography */
-  --ink-text-primary: #f9fafb;
-  --ink-text-secondary: rgba(255, 255, 255, 0.65);
-  --ink-text-muted: rgba(255, 255, 255, 0.4);
-  --ink-text-heading: #ffffff;
-  --ink-text-inverse: #0d0d0d;
+  /* Typography (warm off-white) */
+  --ink-text-primary: #f0efec;
+  --ink-text-secondary: #c3c2b7;
+  --ink-text-muted: #9a9891;
+  --ink-text-heading: #faf9f6;
+  --ink-text-inverse: #151515;
 
   /* Shadows - Minimal & Flat Micro-Elevation Only */
   --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
@@ -44,44 +44,44 @@
 
   /* Buttons & Interactive States */
   --ink-btn-hover-bg: rgba(255, 255, 255, 0.06);
-  --ink-btn-active-bg: rgba(139, 92, 246, 0.16);
-  --ink-btn-active-text: #c4b5fd;
-  --ink-btn-active-border: rgba(139, 92, 246, 0.32);
+  --ink-btn-active-bg: rgba(2, 131, 128, 0.22);
+  --ink-btn-active-text: #58aaa6;
+  --ink-btn-active-border: rgba(88, 170, 166, 0.32);
 
   /* Active / Selected Item States */
-  --ink-active-bg: rgba(139, 92, 246, 0.16);
-  --ink-active-text: #c4b5fd;
-  --ink-active-border: rgba(139, 92, 246, 0.32);
+  --ink-active-bg: rgba(2, 131, 128, 0.22);
+  --ink-active-text: #58aaa6;
+  --ink-active-border: rgba(88, 170, 166, 0.32);
 
   /* Badges, Glyphs & Shortcuts */
   --ink-badge-bg: rgba(255, 255, 255, 0.08);
   --ink-badge-text: rgba(255, 255, 255, 0.7);
-  --ink-badge-active-bg: rgba(139, 92, 246, 0.2);
-  --ink-badge-active-text: #ddd6fe;
+  --ink-badge-active-bg: rgba(2, 131, 128, 0.26);
+  --ink-badge-active-text: #8fd0cb;
   --ink-glyph-bg: rgba(255, 255, 255, 0.08);
   --ink-glyph-text: rgba(255, 255, 255, 0.8);
 
-  /* Accents - Refined Violet / Indigo Accent */
-  --ink-accent-primary: #8b5cf6;
-  --ink-accent-hover: #7c3aed;
-  --ink-accent-light: #a78bfa;
+  /* Accents - Teal. Primary fills buttons; light is for accent-colored text and icons. */
+  --ink-accent-primary: #028380;
+  --ink-accent-hover: #08726f;
+  --ink-accent-light: #58aaa6;
   --ink-danger: #ef4444;
   --ink-danger-bg: rgba(239, 68, 68, 0.12);
   --ink-danger-hover-bg: rgba(239, 68, 68, 0.2);
   --ink-danger-text: #f87171;
 
   /* Tables */
-  --ink-border: rgba(255, 255, 255, 0.08);
-  --ink-table-bg: #151516;
-  --ink-th-bg: #1a1a1d;
-  --ink-th-color: #f9fafb;
+  --ink-border: #2a2a29;
+  --ink-table-bg: #1e1e1d;
+  --ink-th-bg: #242423;
+  --ink-th-color: #f0efec;
 
   /* Scrollbars */
   --ink-scrollbar-thumb: rgba(255, 255, 255, 0.12);
   --ink-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
 
   /* Lightbox */
-  --ink-lightbox-backdrop: rgba(10, 10, 11, 0.92);
+  --ink-lightbox-backdrop: rgba(17, 17, 17, 0.92);
 
   /* Find and replace */
   --ink-search-match-bg: rgba(250, 204, 21, 0.28);
@@ -116,12 +116,12 @@ body.theme-light,
   /* Borders & Dividers - Hairline Precision */
   --ink-border-default: rgba(0, 0, 0, 0.08);
   --ink-border-subtle: rgba(0, 0, 0, 0.05);
-  --ink-border-focus: rgba(124, 58, 237, 0.35);
+  --ink-border-focus: rgba(1, 122, 120, 0.7);
 
   /* Typography */
   --ink-text-primary: #0d0d0d;
   --ink-text-secondary: rgba(13, 13, 13, 0.65);
-  --ink-text-muted: rgba(13, 13, 13, 0.4);
+  --ink-text-muted: #6b6b73;
   --ink-text-heading: #0d0d0d;
   --ink-text-inverse: #ffffff;
 
@@ -134,27 +134,27 @@ body.theme-light,
 
   /* Buttons & Interactive States */
   --ink-btn-hover-bg: rgba(0, 0, 0, 0.04);
-  --ink-btn-active-bg: rgba(124, 58, 237, 0.08);
-  --ink-btn-active-text: #6d28d9;
-  --ink-btn-active-border: rgba(124, 58, 237, 0.25);
+  --ink-btn-active-bg: rgba(2, 131, 128, 0.1);
+  --ink-btn-active-text: #017a78;
+  --ink-btn-active-border: rgba(2, 131, 128, 0.25);
 
   /* Active / Selected Item States */
-  --ink-active-bg: rgba(124, 58, 237, 0.08);
-  --ink-active-text: #6d28d9;
-  --ink-active-border: rgba(124, 58, 237, 0.25);
+  --ink-active-bg: rgba(2, 131, 128, 0.1);
+  --ink-active-text: #017a78;
+  --ink-active-border: rgba(2, 131, 128, 0.25);
 
   /* Badges, Glyphs & Shortcuts */
   --ink-badge-bg: rgba(0, 0, 0, 0.05);
   --ink-badge-text: rgba(13, 13, 13, 0.7);
-  --ink-badge-active-bg: rgba(124, 58, 237, 0.1);
-  --ink-badge-active-text: #6d28d9;
+  --ink-badge-active-bg: rgba(2, 131, 128, 0.1);
+  --ink-badge-active-text: #017a78;
   --ink-glyph-bg: rgba(0, 0, 0, 0.05);
   --ink-glyph-text: #374151;
 
-  /* Accents */
-  --ink-accent-primary: #7c3aed;
-  --ink-accent-hover: #6d28d9;
-  --ink-accent-light: #7c3aed;
+  /* Accents - Teal */
+  --ink-accent-primary: #028380;
+  --ink-accent-hover: #08726f;
+  --ink-accent-light: #017a78;
   --ink-danger: #dc2626;
   --ink-danger-bg: #fef2f2;
   --ink-danger-hover-bg: #fee2e2;

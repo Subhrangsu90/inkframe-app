@@ -1,0 +1,265 @@
+/* ═════════════════════════════════════════════ */
+/* STANDALONE READER PAGE (NO SIDEBAR, NO SHELL) */
+/* ═════════════════════════════════════════════ */
+
+ink-reader {
+  display: block;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.reader-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: var(--ink-canvas-bg, var(--ink-bg, #0a0b0e));
+  color: var(--ink-text);
+  overflow: hidden;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* ═════════════════════════════════════════════ */
+/* MINIMAL READER TOP BAR                        */
+/* ═════════════════════════════════════════════ */
+.reader-header {
+  height: 54px;
+  min-height: 54px;
+  background-color: var(--ink-surface, #14161a);
+  border-bottom: 1px solid var(--ink-border, #24262d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  user-select: none;
+  padding: 0 16px;
+  box-shadow: var(--ink-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  @media (min-width: 640px) {
+    padding: 0 24px;
+  }
+}
+
+.reader-header-inner {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Brand Link */
+.reader-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.reader-brand-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ink-radius-sm, 6px);
+  background: var(--ink-accent, #028380);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  box-shadow: 0 2px 6px rgba(2, 131, 128, 0.4);
+}
+
+.reader-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-text-heading, #f8fafc);
+  letter-spacing: -0.2px;
+  display: inline;
+}
+
+/* Center Document Title */
+.reader-title-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.reader-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-text-heading, #f8fafc);
+  max-width: 440px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action Icons */
+.reader-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.reader-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--ink-radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-text-muted, #94a3b8);
+  cursor: pointer;
+  text-decoration: none;
+  transition: 0.15s ease;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+
+  &:hover {
+    background: var(--ink-surface-2, #1e2026);
+    border-color: var(--ink-border, #2a2d35);
+    color: var(--ink-text-heading, #f8fafc);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+/* ═════════════════════════════════════════════ */
+/* VIEWPORT: THE DESK UNDER THE PAGE             */
+/* ═════════════════════════════════════════════ */
+.reader-layout {
+  /* Like a PDF viewer: a grey desk, a paper page with a thin shadow. */
+  --reader-desk: #e8e6e1;
+  --reader-page-shadow: 0 1px 2px rgba(31, 27, 20, 0.16), 0 3px 10px rgba(31, 27, 20, 0.08);
+}
+
+[data-theme='dark'] .reader-layout,
+.theme-dark .reader-layout {
+  --reader-desk: #09090a;
+  --reader-page-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.reader-viewport {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--reader-desk);
+  transition: background-color 0.2s ease;
+}
+
+/* ═════════════════════════════════════════════ */
+/* THE PAGE: THE DOCUMENT'S OWN LAYOUT           */
+/* ═════════════════════════════════════════════ */
+/*
+ * The canvas, sheet and margins follow the document's page setup (the
+ * editor's layout styles: .ink-canvas, .ink-sheet, .ink-sheet-body). Pageless
+ * fills the window; Pages lies on the desk at the paper's size.
+ */
+.reader-canvas {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.reader-canvas[data-ink-layout='pages'] {
+  background-color: var(--reader-desk);
+
+  > .reader-sheet {
+    box-shadow: var(--reader-page-shadow);
+  }
+}
+
+.reader-sheet {
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* ═════════════════════════════════════════════ */
+/* THE DOCUMENT                                  */
+/* ═════════════════════════════════════════════ */
+/*
+ * The document uses the editor's own content styles (.ProseMirror), so readers
+ * see it as it was written, plus the global .ink-static-doc stand-ins for what
+ * the editor draws with node views (src/styles/static-doc.scss).
+ */
+
+/* ═════════════════════════════════════════════ */
+/* PRINT                                         */
+/* ═════════════════════════════════════════════ */
+@media print {
+  .reader-header {
+    display: none !important;
+  }
+
+  /*
+   * The document flows onto as many pages as it needs: nothing keeps the
+   * screen's height (ink-reader is 100dvh and clips, and the viewport is a
+   * flex item that would shrink to nothing).
+   */
+  ink-reader,
+  .reader-layout,
+  .reader-viewport,
+  .reader-canvas {
+    display: block !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* The printer's page and margins replace the on-screen sheet. */
+  .reader-sheet {
+    width: auto !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .reader-sheet .reader-content {
+    padding: 0 !important;
+    color: #111827 !important;
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      color: #000000 !important;
+    }
+
+    pre {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+    }
+  }
+}

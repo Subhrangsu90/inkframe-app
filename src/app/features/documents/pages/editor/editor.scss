@@ -1,0 +1,669 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HEADER LEFT: Title & Save Status                */
+/* ═══════════════════════════════════════════════ */
+.header-doc-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.doc-icon-tile {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ink-radius-sm);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-accent-soft);
+  color: var(--ink-accent-text);
+  flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+  }
+}
+
+.header-title-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: var(--ink-radius-sm);
+  color: var(--ink-text-heading);
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  max-width: min(240px, 38vw);
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast);
+
+  &:hover,
+  &:focus-visible {
+    background: var(--ink-surface-2);
+    border-color: var(--ink-border);
+    outline: none;
+
+    .edit-icon {
+      opacity: 0.9;
+    }
+  }
+
+  .title-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .edit-icon {
+    flex-shrink: 0;
+    color: var(--ink-text-muted);
+    opacity: 0;
+    transition: opacity var(--ink-transition-fast);
+  }
+}
+
+.header-title-input {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-text-heading);
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-accent);
+  box-shadow: 0 0 0 3px var(--ink-border-focus);
+  border-radius: var(--ink-radius-sm);
+  padding: 3px 8px;
+  outline: none;
+  width: min(240px, 38vw);
+}
+
+.save-status {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-text-muted);
+  flex-shrink: 0;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--ink-success);
+    box-shadow: 0 0 0 3px var(--ink-success-soft);
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  &.saving .status-dot {
+    background-color: var(--ink-warning);
+    box-shadow: 0 0 0 3px var(--ink-warning-soft);
+    animation: pulse 1s infinite;
+  }
+
+  /* Shown on phones too: unsaved work is worth the space. */
+  &.error {
+    display: inline-flex;
+    color: var(--ink-danger);
+    font-weight: 600;
+
+    .status-dot {
+      background-color: var(--ink-danger);
+      box-shadow: 0 0 0 3px var(--ink-danger-soft);
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HEADER CENTER: Edit / Preview                   */
+/* ═══════════════════════════════════════════════ */
+.header-tabs-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segmented-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--ink-surface-2);
+  border: 1px solid var(--ink-border);
+  border-radius: var(--ink-radius-md);
+}
+
+.tab-btn {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--ink-text-muted);
+  cursor: pointer;
+  transition:
+    color var(--ink-transition-fast),
+    background-color var(--ink-transition-fast),
+    box-shadow var(--ink-transition-fast);
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--ink-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+
+  &.active {
+    background: var(--ink-surface);
+    color: var(--ink-text-heading);
+    font-weight: 600;
+    box-shadow:
+      var(--ink-shadow-sm),
+      0 0 0 1px var(--ink-border);
+  }
+
+  span {
+    display: none;
+
+    @media (min-width: 480px) {
+      display: inline;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* HEADER RIGHT: Page setup, Share & Export        */
+/* ═══════════════════════════════════════════════ */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-setup-btn,
+.share-btn,
+.export-btn {
+  height: 32px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--ink-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--ink-transition-fast),
+    border-color var(--ink-transition-fast),
+    color var(--ink-transition-fast),
+    box-shadow var(--ink-transition-fast);
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+}
+
+/* An editing tool, not an output: quieter than Share and Export. */
+.page-setup-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-text-secondary);
+
+  &:hover {
+    background: var(--ink-surface-2);
+    color: var(--ink-text);
+  }
+}
+
+.share-btn {
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-border);
+  color: var(--ink-text);
+  box-shadow: var(--ink-shadow-sm);
+
+  &:hover {
+    background: var(--ink-surface-2);
+    border-color: var(--ink-border-strong);
+  }
+}
+
+.export-btn {
+  background: var(--ink-accent);
+  border: 1px solid transparent;
+  color: var(--ink-accent-contrast, #fff);
+  box-shadow:
+    0 1px 2px rgba(2, 131, 128, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  &:hover {
+    background: var(--ink-accent-hover);
+  }
+}
+
+/* Rendered in an overlay below the Share button; a bottom sheet on phones. */
+.share-popover {
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  background: var(--ink-surface);
+  border: 1px solid var(--ink-border-strong);
+  border-radius: var(--ink-radius-md);
+  box-shadow: var(--ink-shadow-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: popoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (max-width: 639px) {
+    width: 100%;
+    max-width: none;
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+    padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+    animation-name: sheetIn;
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.share-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close-share-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ink-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--ink-text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ink-surface-2);
+    color: var(--ink-text);
+  }
+}
+
+.share-popover-desc {
+  font-size: 12px;
+  color: var(--ink-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.share-link-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ink-surface-2);
+  border: 1px solid var(--ink-border);
+  border-radius: var(--ink-radius-sm);
+  padding: 4px 4px 4px 10px;
+}
+
+.share-link-input {
+  flex: 1 1 0;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  font-size: 11.5px;
+  color: var(--ink-text);
+  outline: none;
+  user-select: all;
+}
+
+.share-copy-action-btn {
+  height: 28px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 5px;
+  background: var(--ink-accent);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--ink-transition-fast);
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--ink-accent-hover);
+  }
+}
+
+.share-popover-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--ink-border);
+}
+
+.preview-reader-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-accent-text);
+  text-decoration: none;
+  transition: opacity var(--ink-transition-fast);
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+/* Phones: the title takes the room the header has left; buttons show icons only. */
+@media (max-width: 639px) {
+  .header-doc-meta {
+    width: 100%;
+  }
+
+  .header-title-btn {
+    max-width: 100%;
+  }
+
+  .header-title-input {
+    width: 100%;
+  }
+
+  .export-caret {
+    display: none;
+  }
+}
+
+/* Touch screens: 44px targets */
+@media (pointer: coarse) {
+  .header-title-btn {
+    min-height: 44px;
+  }
+
+  .segmented-pill {
+    padding: 0;
+    gap: 0;
+  }
+
+  .tab-btn {
+    height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .page-setup-btn,
+  .share-btn,
+  .export-btn {
+    height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .close-share-btn {
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px -10px 0;
+  }
+
+  .share-copy-action-btn,
+  .version-btn {
+    height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* MAIN WORKSPACE BODY & PANELS                    */
+/* ═══════════════════════════════════════════════ */
+/* A row: the page, and the version history panel beside it when open. */
+.editor-workspace-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative;
+}
+
+.view-panel {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &.hidden {
+    display: none;
+  }
+}
+
+/*
+ * The editor fills whatever height the screen leaves below the header, edge to
+ * edge: the toolbar is a strip under the header and the page sits on the
+ * canvas, with no frame around them (design plan 7.2).
+ */
+.editor-scroll-container {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+
+  /* Kept in the page (not removed) while a version is previewed. */
+  &[hidden] {
+    display: none;
+  }
+
+  ink-editor {
+    --ink-editor-border: none;
+    --ink-editor-radius: 0;
+    --ink-editor-height: 100%;
+    /* Small enough to fit above an on-screen keyboard on a small phone. */
+    --ink-editor-min-height: 160px;
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* VERSION PREVIEW                                 */
+/* ═══════════════════════════════════════════════ */
+.version-preview-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 16px;
+  background: var(--ink-accent-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-accent) 25%, transparent);
+  color: var(--ink-text);
+}
+
+.version-preview-icon {
+  color: var(--ink-accent-text);
+}
+
+.version-preview-text {
+  flex: 1 1 200px;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 13px;
+
+  strong {
+    font-weight: 650;
+    color: var(--ink-text-heading);
+    overflow-wrap: anywhere;
+  }
+
+  span {
+    color: var(--ink-text-muted);
+  }
+}
+
+.version-preview-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.version-btn {
+  height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--ink-radius-sm);
+  border: 1px solid var(--ink-border);
+  background: var(--ink-surface);
+  color: var(--ink-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--ink-surface-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ink-border-focus);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.version-btn-primary {
+  background: var(--ink-accent);
+  border-color: transparent;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: var(--ink-accent-hover);
+  }
+}
+
+/*
+ * The version as the reader shows it: read only, no editing controls, in the
+ * version's own page layout (.ink-canvas, .ink-sheet and .ink-sheet-body
+ * come from the editor's layout styles).
+ */
+.version-preview {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+:host ::ng-deep {
+  .editor-scroll-container .ink-editor-wrapper {
+    box-shadow: var(--ink-shadow-sm);
+
+    @media (max-width: 767px) {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+
+  .editor-workspace-body.is-preview,
+  .is-preview,
+  .ProseMirror-preview,
+  .ProseMirror[contenteditable='false'] {
+    .ink-table-row-handle,
+    .ink-table-col-corner-dot,
+    .ink-table-col-header-handle,
+    .ink-table-row-dot,
+    .ink-table-col-dot,
+    .ink-table-add-row-btn,
+    .ink-table-add-col-btn,
+    .ink-table-col-opt-btn,
+    .column-resize-handle,
+    .ink-table-cell-placeholder {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
+    }
+  }
+}

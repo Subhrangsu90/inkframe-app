@@ -1,0 +1,199 @@
+/* ── Inkframe Design System Tokens (Phase 1) ── */
+:root {
+  /* Canvas & Surfaces */
+  --ink-bg: #f7f6f3; /* Warm off-white canvas */
+  --ink-surface: #ffffff; /* Clean white cards and sheets */
+  --ink-surface-2: #f1f0ec; /* Input backgrounds, hover states */
+  --ink-surface-subtle: #eae8e3; /* Secondary backgrounds */
+
+  /* Hairline Borders */
+  --ink-border: #e8e6e1; /* 1px subtle boundary */
+  --ink-border-strong: #d6d3cc; /* Hover / active boundary */
+  --ink-border-focus: rgba(1, 122, 120, 0.7); /* 3:1 against white */
+
+  /* Sidebar: matches the surface in light, sits darker than the page in dark */
+  --ink-sidebar: var(--ink-surface);
+
+  /* Canvas Atmosphere & Ambient Lighting (Premium Backdrop System) */
+  --ink-canvas-bg: var(--ink-bg);
+  --ink-canvas-grid: rgba(27, 27, 31, 0.035);
+  --ink-canvas-glow-primary: rgba(2, 131, 128, 0.06);
+  --ink-canvas-glow-secondary: rgba(88, 170, 166, 0.04);
+  --ink-canvas-glow-warm: rgba(245, 158, 11, 0.025);
+  --ink-canvas-highlight: rgba(255, 255, 255, 0.7);
+  --ink-beam-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(2, 131, 128, 0.25) 50%,
+    transparent 100%
+  );
+
+  /* Typography */
+  --ink-text: #1b1b1f; /* Primary text */
+  --ink-text-muted: #6b6b73; /* Captions, counts, placeholders */
+  --ink-text-heading: #111113;
+
+  /* Accent & Actions (Teal). Fill for buttons; use --ink-accent-text for accent-colored text and icons. */
+  --ink-accent: #028380; /* Primary brand action */
+  --ink-accent-hover: #08726f;
+  --ink-accent-soft: #e0f8f6; /* Active button background */
+  --ink-accent-text: #017a78;
+  --ink-accent-contrast: #ffffff; /* Contrast text on accent action */
+
+  /* Status Colors */
+  --ink-danger: #dc2626;
+  --ink-danger-soft: #fef2f2;
+  --ink-success: #16a34a;
+  --ink-success-soft: #f0fdf4;
+  --ink-warning: #f59e0b;
+  --ink-warning-soft: #fffbeb;
+
+  /* Micro-Elevation Shadows */
+  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ink-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --ink-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+  --ink-shadow-page: 0 1px 4px rgba(0, 0, 0, 0.05);
+  --ink-shadow-glass: 0 8px 32px 0 rgba(2, 131, 128, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+
+  /* Geometry & Motion */
+  --ink-radius-sm: 6px;
+  --ink-radius-md: 10px;
+  --ink-radius-lg: 16px;
+  --ink-radius-pill: 9999px;
+  --ink-transition-fast: 120ms ease-out;
+  --ink-transition-base: 180ms ease-out;
+
+  /*
+   * Stacking for app-wide layers. Angular CDK overlays (menus, popovers) sit
+   * at 1000; dialogs and the image lightbox go above them, toasts above those.
+   */
+  --ink-z-modal: 1100;
+  --ink-z-toast: 1200;
+  --ink-z-grain: 1300; /* decorative texture; never takes pointer events */
+
+  /* Button heights */
+  --ink-btn-height: 36px;
+  --ink-btn-height-mobile: 44px;
+
+  /* Backward Compatibility Mappings for Existing Components */
+  --ink-bg-app: var(--ink-bg);
+  --ink-bg-card: var(--ink-surface);
+  --ink-bg-wrapper: var(--ink-bg);
+  --ink-bg-header: var(--ink-surface);
+  --ink-bg-toolbar: var(--ink-surface);
+  --ink-bg-page: var(--ink-surface);
+  --ink-bg-input: var(--ink-surface-2);
+  --ink-bg-hover: var(--ink-surface-2);
+  --ink-text-primary: var(--ink-text);
+  --ink-text-secondary: var(--ink-text-muted);
+  --ink-accent-primary: var(--ink-accent);
+  --ink-border-default: var(--ink-border);
+}
+
+:root[data-theme='dark'],
+html.dark,
+:root.dark,
+body[data-theme='dark'],
+body.theme-dark,
+.theme-dark {
+  /* Canvas & Surfaces */
+  --ink-bg: #151515; /* Soft charcoal canvas */
+  --ink-surface: #1e1e1d; /* Surface sheet */
+  --ink-surface-2: #272726; /* Inputs, hover */
+  --ink-surface-subtle: #2f2f2e;
+
+  /* Hairline Borders */
+  --ink-border: #2a2a29;
+  --ink-border-strong: #3a3a38;
+  --ink-border-focus: rgba(88, 170, 166, 0.6); /* 3:1 against the surface */
+
+  /* Sidebar: darker than the page */
+  --ink-sidebar: #111111;
+
+  /* Canvas Atmosphere & Ambient Lighting (Premium Backdrop System) */
+  --ink-canvas-bg: var(--ink-bg);
+  --ink-canvas-grid: rgba(255, 255, 255, 0.03);
+  --ink-canvas-glow-primary: rgba(2, 131, 128, 0.14);
+  --ink-canvas-glow-secondary: rgba(88, 170, 166, 0.06);
+  --ink-canvas-glow-warm: rgba(245, 158, 11, 0.035);
+  --ink-canvas-highlight: rgba(255, 255, 255, 0.06);
+  --ink-beam-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(88, 170, 166, 0.35) 50%,
+    transparent 100%
+  );
+
+  /* Typography (warm off-white) */
+  --ink-text: #f0efec;
+  --ink-text-muted: #9a9891;
+  --ink-text-heading: #faf9f6;
+
+  /* Accent & Actions (Teal) */
+  --ink-accent: #028380;
+  --ink-accent-hover: #08726f;
+  --ink-accent-soft: #0d302f;
+  --ink-accent-text: #58aaa6;
+  --ink-accent-contrast: #ffffff;
+
+  /* Status Colors */
+  --ink-danger: #ef4444;
+  --ink-danger-soft: rgba(239, 68, 68, 0.12);
+  --ink-success: #22c55e;
+  --ink-success-soft: rgba(34, 197, 94, 0.12);
+  --ink-warning: #f59e0b;
+  --ink-warning-soft: rgba(245, 158, 11, 0.12);
+
+  /* Micro-Elevation Shadows */
+  --ink-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ink-shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+  --ink-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --ink-shadow-page: 0 2px 12px rgba(0, 0, 0, 0.45);
+  --ink-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 1px 2px rgba(255, 255, 255, 0.05);
+
+  /* Backward Compatibility Mappings */
+  --ink-bg-app: var(--ink-bg);
+  --ink-bg-card: var(--ink-surface);
+  --ink-bg-wrapper: var(--ink-bg);
+  --ink-bg-header: var(--ink-surface);
+  --ink-bg-toolbar: var(--ink-surface);
+  --ink-bg-page: var(--ink-surface);
+  --ink-bg-input: var(--ink-surface-2);
+  --ink-bg-hover: var(--ink-surface-2);
+  --ink-text-primary: var(--ink-text);
+  --ink-text-secondary: var(--ink-text-muted);
+  --ink-accent-primary: var(--ink-accent);
+  --ink-border-default: var(--ink-border);
+}
+
+/* ── Standard Focus Rings & Accessibility ── */
+.ink-focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 3px var(--ink-border-focus);
+    border-color: var(--ink-accent) !important;
+  }
+}
+
+/* ── Standard Button Heights & Touch Target ── */
+.ink-btn-base {
+  height: var(--ink-btn-height);
+  padding: 0 14px;
+  border-radius: var(--ink-radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--ink-transition-fast);
+  box-sizing: border-box;
+
+  @media (max-width: 640px) {
+    height: var(--ink-btn-height-mobile);
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}

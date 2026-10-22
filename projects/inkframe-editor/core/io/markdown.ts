@@ -10,16 +10,29 @@ import MarkdownIt from 'markdown-it';
 import type StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
 import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
 import type Token from 'markdown-it/lib/token.mjs';
+import { schema } from '../schema/schema';
 import {
-  CalloutKind,
   DEFAULT_HIGHLIGHT_COLOR,
   sanitizeHighlightColor,
-  sanitizeTextAlign,
-  schema,
-} from '../schema';
-import { sanitizeCssColor } from '../link-utils';
-import { sanitizeListStart } from '../lists/list-schema';
-import { isListNode } from '../lists/list-commands';
+} from '../extensions/highlight/highlight-schema';
+import { sanitizeCssColor } from '../schema/sanitize-css';
+import { CalloutKind } from '../extensions/callout/callout-schema';
+import { sanitizeTextAlign } from '../extensions/text-align/text-align-schema';
+import {
+  INDENT_STEP_REM,
+  blockFormatCss,
+  lineSpacingForHeight,
+  sanitizeIndent,
+  sanitizeLineSpacing,
+} from '../extensions/paragraph-format/paragraph-format-schema';
+import { sanitizeFontSize } from '../extensions/font-size/font-size-schema';
+import {
+  findFontFamily,
+  fontFamilyForStack,
+  sanitizeFontFamily,
+} from '../extensions/font-family/font-family-schema';
+import { sanitizeListStart } from '../extensions/lists/list-schema';
+import { isListNode } from '../extensions/lists/list-commands';
 
 const ALIGN_MARKER: Record<string, string> = {
   left: ':---',
@@ -30,16 +43,33 @@ const ALIGN_MARKER: Record<string, string> = {
 type NodeSerializer = (typeof defaultMarkdownSerializer.nodes)[string];
 
 /**
- * Markdown has no alignment, so aligned paragraphs and headings are wrapped
- * in `<div align="…">` with blank lines around the content. GitHub and most
- * renderers that allow HTML show them aligned, the Markdown inside is still
- * parsed, and markdownToDoc() reads the wrapper back.
+ * The `<div>` that carries a paragraph's or heading's formatting in
+ * Markdown, for example `<div align="center" style="margin-left: 3rem">`;
+ * null when it has none. Alignment stays the `align` attribute (which GitHub
+ * shows); indent and line spacing are a style.
  */
-function keepingAlignment(serialize: NodeSerializer): NodeSerializer {
+function formatWrapper(node: PMNode): string | null {
+  const align = sanitizeTextAlign(node.attrs['align']);
+  const style = blockFormatCss({
+    indent: node.attrs['indent'],
+    lineSpacing: node.attrs['lineSpacing'],
+  });
+  if (!align && !style) return null;
+  return `<div${align ? ` align="${align}"` : ''}${style ? ` style="${style}"` : ''}>`;
+}
+
+/**
+ * Markdown has no alignment, indent or line spacing, so formatted
+ * paragraphs and headings are wrapped in a `<div>` (see formatWrapper) with
+ * blank lines around the content. Renderers that allow HTML show the
+ * formatting, the Markdown inside is still parsed, and markdownToDoc() reads
+ * the wrapper back.
+ */
+function keepingFormat(serialize: NodeSerializer): NodeSerializer {
   return (state, node, parent, index) => {
-    const align = sanitizeTextAlign(node.attrs['align']);
-    if (!align) return serialize(state, node, parent, index);
-    state.write(`<div align="${align}">`);
+    const wrapper = formatWrapper(node);
+    if (!wrapper) return serialize(state, node, parent, index);
+    state.write(wrapper);
     state.closeBlock(node);
     serialize(state, node, parent, index);
     state.write('</div>');
@@ -49,14 +79,14 @@ function keepingAlignment(serialize: NodeSerializer): NodeSerializer {
 
 /**
  * Whether a list can be written tight (no blank line between items): every
- * item is one unaligned line of text plus nested lists. A second paragraph,
- * or the blank lines around an alignment wrapper, need a loose list.
+ * item is one unformatted line of text plus nested lists. A second
+ * paragraph, or the blank lines around a format wrapper, need a loose list.
  */
 function canBeTight(list: PMNode): boolean {
   let tight = true;
   list.forEach((item) =>
     item.forEach((child, _, i) => {
-      if (i > 0 ? !isListNode(child) : !!sanitizeTextAlign(child.attrs['align'])) tight = false;
+      if (i > 0 ? !isListNode(child) : !!formatWrapper(child)) tight = false;
     }),
   );
   return tight;
@@ -73,12 +103,15 @@ function withTightness(list: PMNode): PMNode {
     : list.type.create({ ...list.attrs, tight }, list.content);
 }
 
+/** How a page break is written in Markdown, and the only form that reads back as one. */
+const PAGE_BREAK_HTML = '<div class="ink-page-break"></div>';
+
 // Extend serializer with callouts, task lists, and tables
 export const inkMarkdownSerializer = new MarkdownSerializer(
   {
     ...defaultMarkdownSerializer.nodes,
-    paragraph: keepingAlignment(defaultMarkdownSerializer.nodes['paragraph']),
-    heading: keepingAlignment(defaultMarkdownSerializer.nodes['heading']),
+    paragraph: keepingFormat(defaultMarkdownSerializer.nodes['paragraph']),
+    heading: keepingFormat(defaultMarkdownSerializer.nodes['heading']),
     callout(state, node) {
       const type = (node.attrs['type'] || 'info').toUpperCase();
       state.write(`> [!${type}]\n`);
@@ -145,6 +178,11 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
       state.write('```');
       state.closeBlock(node);
     },
+    // Markdown has no page breaks; this HTML line breaks pages wherever HTML is printed.
+    page_break(state, node) {
+      state.write(PAGE_BREAK_HTML);
+      state.closeBlock(node);
+    },
   },
   {
     ...defaultMarkdownSerializer.marks,
@@ -190,6 +228,28 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
       mixable: true,
       expelEnclosingWhitespace: true,
     },
+    fontSize: {
+      open(_state, mark) {
+        const size = sanitizeFontSize(mark.attrs['size']);
+        return size ? `<span style="font-size: ${size}px">` : '';
+      },
+      close(_state, mark) {
+        return sanitizeFontSize(mark.attrs['size']) ? '</span>' : '';
+      },
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
+    fontFamily: {
+      open(_state, mark) {
+        const font = findFontFamily(mark.attrs['font']);
+        return font ? `<span style="font-family: ${font.stack}">` : '';
+      },
+      close(_state, mark) {
+        return findFontFamily(mark.attrs['font']) ? '</span>' : '';
+      },
+      mixable: true,
+      expelEnclosingWhitespace: true,
+    },
     // `==text==` is not standard Markdown; <mark> renders wherever HTML is allowed.
     highlight: {
       open(_state, mark) {
@@ -209,62 +269,88 @@ export const inkMarkdownSerializer = new MarkdownSerializer(
 
 const tokenizer = MarkdownIt({ html: false });
 
-/** Inline tags written by the serializer, mapped to markdown-it token names. */
+/**
+ * Inline tags written by the serializer, mapped to markdown-it token names.
+ * A `<span>` is a text color, a font size or a font, depending on its style.
+ */
 const INLINE_TAGS: Record<string, string> = {
   u: 'ink_underline',
   small: 'ink_small',
   sub: 'ink_sub',
   sup: 'ink_sup',
-  span: 'ink_color',
   mark: 'ink_highlight',
 };
 
-/** How many of each tag are open in an inline run, so stray closing tags stay text. */
-const openTags = new WeakMap<StateInline, Record<string, number>>();
+/**
+ * The tags open in an inline run, innermost last, so stray closing tags
+ * stay text and each `</span>` closes the mark its `<span>` opened.
+ */
+const openTags = new WeakMap<StateInline, { tag: string; token: string }[]>();
 
 tokenizer.inline.ruler.before('emphasis', 'ink_inline_tags', (state, silent) => {
   if (state.src.charCodeAt(state.pos) !== 0x3c /* < */) return false;
   const rest = state.src.slice(state.pos, state.posMax);
   let open = openTags.get(state);
-  if (!open) openTags.set(state, (open = {}));
+  if (!open) openTags.set(state, (open = []));
 
   const close = /^<\/(u|small|sub|sup|span|mark)>/.exec(rest);
   if (close) {
     const tag = close[1];
-    if (!open[tag]) return false; // stray closing tag: keep as text
+    const index = open.map((o) => o.tag).lastIndexOf(tag);
+    if (index < 0) return false; // stray closing tag: keep as text
     if (!silent) {
-      open[tag]--;
-      state.push(`${INLINE_TAGS[tag]}_close`, tag, -1);
+      const [{ token }] = open.splice(index, 1);
+      state.push(`${token}_close`, tag, -1);
     }
     state.pos += close[0].length;
     return true;
   }
 
   let tag: string;
-  let color: string | null = null;
+  let token: string;
+  const attrs: [string, string][] = [];
   const simple = /^<(u|small|sub|sup)>/.exec(rest);
-  const span = /^<span style="color:\s*([^";]+);?\s*">/.exec(rest);
+  const color = /^<span style="color:\s*([^";]+);?\s*">/.exec(rest);
+  const size = /^<span style="font-size:\s*(\d+)px;?\s*">/.exec(rest);
+  const family = /^<span style="font-family:\s*([^";]+?);?\s*">/.exec(rest);
   const mark = /^<mark(?: style="background-color:\s*([^";]+);?\s*")?>/.exec(rest);
   if (simple) {
     tag = simple[1];
-  } else if (span) {
+    token = INLINE_TAGS[tag];
+  } else if (color) {
+    const value = sanitizeCssColor(color[1]);
+    if (!value) return false;
     tag = 'span';
-    color = sanitizeCssColor(span[1]);
-    if (!color) return false;
+    token = 'ink_color';
+    attrs.push(['color', value]);
+  } else if (size) {
+    const value = sanitizeFontSize(size[1]);
+    if (!value) return false;
+    tag = 'span';
+    token = 'ink_font_size';
+    attrs.push(['size', String(value)]);
+  } else if (family) {
+    const value = fontFamilyForStack(family[1]);
+    if (!value) return false;
+    tag = 'span';
+    token = 'ink_font_family';
+    attrs.push(['font', value]);
   } else if (mark) {
+    const value = mark[1] === undefined ? null : sanitizeHighlightColor(mark[1]);
+    if (mark[1] !== undefined && !value) return false;
     tag = 'mark';
-    color = mark[1] === undefined ? null : sanitizeHighlightColor(mark[1]);
-    if (mark[1] !== undefined && !color) return false;
+    token = INLINE_TAGS[tag];
+    if (value) attrs.push(['color', value]);
   } else {
     return false;
   }
-  const length = (simple ?? span ?? mark)![0].length;
+  const length = (simple ?? color ?? size ?? family ?? mark)![0].length;
   // Only treat it as a mark when the matching closing tag follows.
   if (!rest.slice(length).includes(`</${tag}>`)) return false;
   if (!silent) {
-    open[tag] = (open[tag] ?? 0) + 1;
-    const token = state.push(`${INLINE_TAGS[tag]}_open`, tag, 1);
-    if (color) token.attrSet('color', color);
+    open.push({ tag, token });
+    const opened = state.push(`${token}_open`, tag, 1);
+    for (const [name, value] of attrs) opened.attrSet(name, value);
   }
   state.pos += length;
   return true;
@@ -472,30 +558,60 @@ tokenizer.core.ruler.push('ink_callouts', (state) => {
   }
 });
 
-const ALIGN_OPEN = /^<div align="(left|center|right|justify)">$/;
-const ALIGN_CLOSE = /^<\/div>$/;
+const FORMAT_OPEN = /^<div(?: align="(left|center|right|justify)")?(?: style="([^"]+)")?>$/;
+const FORMAT_CLOSE = /^<\/div>$/;
 
 /**
- * Reads the `<div align="…">` wrappers written by the serializer. With raw
- * HTML disabled each wrapper line arrives as a paragraph of its own; the
- * paragraphs and headings between a matching pair (in the same parent block)
- * get the alignment, and the wrapper paragraphs are dropped.
+ * The formatting a wrapper line written by formatWrapper() stands for, or
+ * null when the line is not one: any other style makes it plain text.
  */
-tokenizer.core.ruler.push('ink_alignment', (state) => {
+function readFormatWrapper(line: string): Record<string, string> | null {
+  const m = FORMAT_OPEN.exec(line);
+  if (!m || (!m[1] && !m[2])) return null;
+  const format: Record<string, string> = {};
+  if (m[1]) format['align'] = m[1];
+  for (const declaration of m[2]?.split(';') ?? []) {
+    const [prop, value = ''] = declaration.split(':').map((part) => part.trim());
+    if (!prop) continue;
+    if (prop === 'margin-left') {
+      const rem = /^(\d+(?:\.\d+)?)rem$/.exec(value);
+      const indent = rem && sanitizeIndent(Number(rem[1]) / INDENT_STEP_REM);
+      if (!indent) return null;
+      format['indent'] = String(indent);
+    } else if (prop === 'line-height') {
+      const spacing = lineSpacingForHeight(value);
+      if (!spacing) return null;
+      format['lineSpacing'] = String(spacing);
+    } else {
+      return null;
+    }
+  }
+  return format;
+}
+
+/**
+ * Reads the `<div>` wrappers written by the serializer (see formatWrapper).
+ * With raw HTML disabled each wrapper line arrives as a paragraph of its
+ * own; the paragraphs and headings between a matching pair (in the same
+ * parent block) get the formatting, and the wrapper paragraphs are dropped.
+ */
+tokenizer.core.ruler.push('ink_block_format', (state) => {
   const tokens = state.tokens;
-  const wrapperAt = (i: number, re: RegExp) =>
+  const wrapperLine = (i: number) =>
     tokens[i]?.type === 'paragraph_open' &&
     tokens[i + 1]?.type === 'inline' &&
-    tokens[i + 2]?.type === 'paragraph_close' &&
-    re.exec(tokens[i + 1].content.trim());
+    tokens[i + 2]?.type === 'paragraph_close'
+      ? tokens[i + 1].content.trim()
+      : null;
 
   for (let i = 0; i < tokens.length; i++) {
-    const open = wrapperAt(i, ALIGN_OPEN);
-    if (!open) continue;
+    const line = wrapperLine(i);
+    const format = line ? readFormatWrapper(line) : null;
+    if (!format) continue;
     const level = tokens[i].level;
     let close = -1;
     for (let j = i + 3; j < tokens.length && tokens[j].level >= level; j++) {
-      if (tokens[j].level === level && wrapperAt(j, ALIGN_CLOSE)) {
+      if (tokens[j].level === level && FORMAT_CLOSE.test(wrapperLine(j) ?? '')) {
         close = j;
         break;
       }
@@ -504,7 +620,7 @@ tokenizer.core.ruler.push('ink_alignment', (state) => {
     for (let j = i + 3; j < close; j++) {
       const t = tokens[j];
       if (t.level === level && (t.type === 'paragraph_open' || t.type === 'heading_open')) {
-        t.attrSet('align', open[1]);
+        for (const [name, value] of Object.entries(format)) t.attrSet(name, value);
       }
     }
     tokens.splice(close, 3);
@@ -513,7 +629,34 @@ tokenizer.core.ruler.push('ink_alignment', (state) => {
   }
 });
 
-const alignAttr = (tok: Token) => sanitizeTextAlign(tok.attrGet('align'));
+/**
+ * Reads the page breaks written by the serializer. With raw HTML disabled the
+ * line arrives as a paragraph of its own; at the top level it becomes a page
+ * break (elsewhere it stays text: page breaks are top-level blocks).
+ */
+tokenizer.core.ruler.push('ink_page_break', (state) => {
+  const tokens = state.tokens;
+  for (let i = 0; i < tokens.length; i++) {
+    if (
+      tokens[i].type === 'paragraph_open' &&
+      tokens[i].level === 0 &&
+      tokens[i + 1]?.type === 'inline' &&
+      tokens[i + 1].content.trim() === PAGE_BREAK_HTML &&
+      tokens[i + 2]?.type === 'paragraph_close'
+    ) {
+      const token = new state.Token('ink_page_break', 'div', 0);
+      token.block = true;
+      tokens.splice(i, 3, token);
+    }
+  }
+});
+
+/** A paragraph's or heading's formatting, from its wrapper (see the ink_block_format rule). */
+const formatAttrs = (tok: Token) => ({
+  align: sanitizeTextAlign(tok.attrGet('align')),
+  indent: sanitizeIndent(tok.attrGet('indent')),
+  lineSpacing: sanitizeLineSpacing(tok.attrGet('lineSpacing')),
+});
 
 /** markdown-it hides the paragraphs of tight lists (as prosemirror-markdown reads them). */
 function listIsTight(tokens: Token[], i: number): boolean {
@@ -527,10 +670,10 @@ function listIsTight(tokens: Token[], i: number): boolean {
 
 export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
   ...defaultMarkdownParser.tokens,
-  paragraph: { block: 'paragraph', getAttrs: (tok) => ({ align: alignAttr(tok) }) },
+  paragraph: { block: 'paragraph', getAttrs: formatAttrs },
   heading: {
     block: 'heading',
-    getAttrs: (tok) => ({ level: +tok.tag.slice(1), align: alignAttr(tok) }),
+    getAttrs: (tok) => ({ level: +tok.tag.slice(1), ...formatAttrs(tok) }),
   },
   ink_highlight: {
     mark: 'highlight',
@@ -548,6 +691,14 @@ export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
     mark: 'textColor',
     getAttrs: (tok) => ({ color: tok.attrGet('color') }),
   },
+  ink_font_size: {
+    mark: 'fontSize',
+    getAttrs: (tok) => ({ size: sanitizeFontSize(tok.attrGet('size')) }),
+  },
+  ink_font_family: {
+    mark: 'fontFamily',
+    getAttrs: (tok) => ({ font: sanitizeFontFamily(tok.attrGet('font')) }),
+  },
   table: { block: 'table' },
   table_row: { block: 'table_row' },
   table_header: {
@@ -562,6 +713,7 @@ export const inkMarkdownParser = new MarkdownParser(schema, tokenizer, {
     block: 'callout',
     getAttrs: (tok) => ({ type: tok.attrGet('kind') }),
   },
+  ink_page_break: { node: 'page_break' },
   task_list: {
     block: 'task_list',
     getAttrs: (_tok, tokens, i) => ({ tight: listIsTight(tokens, i) }),

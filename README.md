@@ -1,59 +1,124 @@
-# InkframeApp
+# Inkframe
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+Inkframe is a private WYSIWYG document editor that runs entirely in the browser. There is no account, no server and no tracking: documents and images stay in the browser's IndexedDB, and share links carry the whole document in the URL fragment, which browsers never send to a server.
 
-## Development server
+This repository holds two products:
 
-To start a local development server, run:
+- **The Inkframe app** (`src/`): an Angular app with server-side rendering for the landing page, and an installable PWA that works offline.
+- **The editor library**, [`@inkframe-ui/editor`](projects/inkframe-editor/README.md) (`projects/inkframe-editor/`): the ProseMirror-based editor the app uses, packaged for other Angular apps.
 
-```bash
-ng serve
-```
+The product plan, with the roadmap and architecture, is in [docs/Inkframe_Product_Plan.md](docs/Inkframe_Product_Plan.md).
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Requirements
 
-## Code scaffolding
+- Node.js 24 (the version CI uses)
+- npm 11
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Getting started
 
 ```bash
-ng generate --help
+npm ci
+npm start
 ```
 
-## Building
+Then open <http://localhost:4200>. The app imports the library from source, so library changes reload in the app without a separate build.
 
-To build the project run:
+**Accounts (optional).** In development builds the app has sign-in pages (`/signin`, `/signup`), an account item in the sidebar and Settings → Account. They talk to [inkframe-server](../inkframe-server) on <http://localhost:3001>: start it there with `npm run db:up` and `npm run dev`. Everything else works without it. The server's address and the on/off switch live in the environment files: [src/environments/environment.development.ts](src/environments/environment.development.ts) for `ng serve` and development builds, [src/environments/environment.ts](src/environments/environment.ts) for production (accounts off until sync ships). Every endpoint path the app calls is listed in [src/app/core/api-endpoints.ts](src/app/core/api-endpoints.ts). After changing `angular.json` or the environment setup, restart `npm start`.
+
+**Validation.** The app checks forms and every server answer with [Zod](https://zod.dev) schemas, like the server does (for example [auth.schemas.ts](src/app/features/account/data-access/auth.schemas.ts) and [core/api-response.ts](src/app/core/api-response.ts)). Zod is loaded only with the pages and modules that use it, never in the first page load (150 kB budget).
+
+## Repository layout
+
+```text
+src/                     The Inkframe app
+  app/core/              App-wide services (PWA install and updates)
+  app/layout/            App shell: sidebar, header, storage banner
+  app/shared/ui/         Reusable UI components: buttons, dialogs, toasts, icons
+  app/features/          Product areas, each loaded by the router
+    documents/           The docs list, editor and reader (documents.routes.ts)
+      data-access/       Saving and loading documents, storage health, the welcome document
+      versions/          Version history
+      transfer/          Backup and restore, import, export, share links
+      pages/             Routed pages: docs list, editor, reader
+    landing/             Landing page
+    settings/            Settings page
+    not-found/           404 page
+  styles/                Global styles and design tokens
+  server.ts              Express server for SSR
+projects/inkframe-editor/
+  src/                   @inkframe-ui/editor: the <ink-editor> component and the styles
+  core/                  @inkframe-ui/editor/core
+    editor/              EditorService and the extension system
+    extensions/          Editor features, one folder each (lists, table, code-block…)
+    schema/              Document schema and migrations
+    io/                  Markdown and HTML import and export
+    storage/             Image storage in IndexedDB
+    ui-helpers/          Theme, on-screen keyboard, menu and color helpers
+    legacy/              Deprecated APIs, removed in 2.0
+  toolbar/               @inkframe-ui/editor/toolbar
+  ui/                    @inkframe-ui/editor/ui: menus and panels
+public/                  Static files: icons, web app manifest
+scripts/                 Build and CI helper scripts
+docs/                    Product plan
+```
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `npm start` | Development server at <http://localhost:4200> |
+| `npm test` | Unit tests (Vitest), library then app |
+| `npm run test:lib` / `npm run test:app` | Unit tests for one project |
+| `npm run lint` | ESLint |
+| `npm run format` / `npm run format:check` | Prettier |
+| `npm run build:app:prod` | Production build of the app, into `dist/inkframe-app` |
+| `npm run serve:ssr:inkframe-app` | Serves the production build (see below) |
+| `npm run build:lib:prod` | Production build of the library, into `dist/inkframe-editor` |
+| `npm run pack:lib` | Builds the library and packs it into a `.tgz` |
+| `npm run publish:lib:dry` | Builds the library and runs `npm publish --dry-run` |
+| `npm run icons:build` | Rebuilds the icon font subset (see below) |
+
+To run one library spec file:
 
 ```bash
-ng build
+npx ng test inkframe-editor --watch=false --include="../core/extensions/lists/lists.spec.ts"
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The path is relative to `projects/inkframe-editor/src`.
 
-## Running unit tests
+## Things to know
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+**Folders and imports.** Code in `src/app` imports only in these directions, and `npm run lint` fails otherwise:
+
+- `shared/` imports nothing else from the app.
+- `core/` imports only `shared/`.
+- A feature's logic (`data-access/`, `transfer/`, `versions/`) may import `core/`, `shared/` and other features' logic, but not `layout/` or pages.
+- `layout/` and pages may import all of the above and `layout/`.
+- Pages and route files are loaded only by the router: `app.routes.ts` and the feature's own `*.routes.ts`. A feature's `*.paths.ts` (link builders such as `docPath(id)`) may be imported from anywhere except `shared/` and `core/`.
+
+Relative imports go up at most one folder (`../`). Farther imports use the `@app/` alias, for example `import { PwaService } from '@app/core/pwa'`, so the lint rules can check them.
+
+**Routes and links.** Link to a document with `docPath(id)` from `documents.paths.ts`, not a hand-written `['/doc', id]`. Fixed links such as `routerLink="/docs"` stay plain strings. A page shown without the app shell (sidebar and header) sets `data: STANDALONE_PAGE` on its route.
+
+**Editor features.** Each feature has a folder in `projects/inkframe-editor/core/extensions/`, with the same files: `<feature>-schema.ts` (node and mark specs), `<feature>-commands.ts` (ProseMirror commands), `<feature>-extension.ts` (the `EditorExtension`), plugins and node views, a spec, and an `index.ts` that exports them. Its styles are mixins in `src/styles/blocks/_<feature>.scss`, which `_editor-content.scss` includes where the rules belong in its order. `EditorService` methods check what the editor allows (editable, the node exists, not inside inline code) and run the feature's command. A new feature is added to `starter-kit.ts`, its specs to `schema/schema.ts`, and its folder to `core/index.ts`.
+
+**Icons.** The app and the library use a self-hosted subset of Material Symbols, with only the icons in use. After adding or renaming an icon, run `npm run icons:build`, which downloads the new subset from Google Fonts and writes it into the repository. CI fails if the subset is out of date. The script finds icon names written as `<mat-icon>name</mat-icon>` or `icon: 'name'`. Add icons chosen at runtime to `DYNAMIC_ICONS` in [scripts/build-icon-font.mjs](scripts/build-icon-font.mjs).
+
+**No third-party resources.** The app promises that nothing leaves the device, so it must not load fonts, scripts or images from other origins. CI checks the production build with [scripts/check-no-third-party.mjs](scripts/check-no-third-party.mjs).
+
+**Serving the production build locally.** Angular SSR rejects requests from hosts it doesn't know, so set `NG_ALLOWED_HOSTS`:
 
 ```bash
-ng test
+npm run build:app:prod
+NG_ALLOWED_HOSTS=localhost PORT=4000 npm run serve:ssr:inkframe-app
 ```
 
-## Running end-to-end tests
+**Service worker.** The offline service worker (`ngsw-config.json`) only runs in production builds.
 
-For end-to-end (e2e) testing, run:
+## CI
 
-```bash
-ng e2e
-```
+Every push to `master` and every pull request runs [.github/workflows/ci.yml](.github/workflows/ci.yml): formatting, lint, the icon subset check, unit tests, the library and app production builds, and the third-party resource check.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## License
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+[MIT](LICENSE)

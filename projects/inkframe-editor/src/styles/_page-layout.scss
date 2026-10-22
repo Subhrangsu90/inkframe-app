@@ -1,0 +1,201 @@
+/*
+ * ── Page layout ──
+ * A canvas (.ink-canvas, the scrolling area) holds one sheet (.ink-sheet),
+ * whose body (.ink-sheet-body) holds the text. Put `data-ink-layout` and the
+ * custom properties from `pageLayoutStyle()` on the canvas. <ink-editor> does
+ * this itself; the app's reader and version previews use the same classes.
+ *
+ * Pageless (also when data-ink-layout is missing): the sheet is the whole
+ * canvas. Its side margins are shares of the canvas width, never under 32px
+ * (room for the table and list handles), and leave at least 320px of text.
+ *
+ * Pages: the sheet is as wide as the paper and at least one page tall, with
+ * the page margins as padding; the canvas scrolls sideways when the sheet is
+ * wider. The sheet's edge is a shadow, not a border: a border would make the
+ * text column narrower than on paper, and lines would break elsewhere.
+ *
+ * Under 768px both layouts are one full-bleed sheet with 16px margins.
+ */
+.ink-canvas {
+  box-sizing: border-box;
+  /*
+   * The page's color: the document's page color for this theme (from
+   * pageLayoutStyle()), otherwise the theme's page color.
+   */
+  --ink-sheet-bg: var(--ink-page-color-dark, var(--ink-bg-page, #1e1e1d));
+  background: var(--ink-sheet-bg);
+}
+
+:root[data-theme='light'] .ink-canvas,
+body[data-theme='light'] .ink-canvas,
+.theme-light .ink-canvas {
+  --ink-sheet-bg: var(--ink-page-color-light, var(--ink-bg-page, #ffffff));
+}
+
+.ink-sheet {
+  box-sizing: border-box;
+  min-height: 100%;
+  /* Anything drawn on the page in the page's color follows it. */
+  --ink-bg-page: var(--ink-sheet-bg);
+  background: var(--ink-sheet-bg);
+}
+
+.ink-sheet-body {
+  box-sizing: border-box;
+  padding: 20px 16px 40px;
+}
+
+/*
+ * The document's font (Serif or Mono, from pageLayoutStyle()): its text and
+ * its page headers and footers. Sans is the page's own font. Code keeps
+ * its monospace font.
+ */
+.ink-canvas .ProseMirror,
+.ink-canvas .ink-page-band {
+  font-family: var(--ink-doc-font, inherit);
+}
+
+@media (min-width: 768px) {
+  .ink-canvas:not([data-ink-layout='pages']) .ink-sheet-body {
+    padding-top: 3rem;
+    padding-bottom: 4rem;
+    padding-left: max(
+      32px,
+      min(
+        calc(var(--ink-side-margin-left, 0.1) * 100%),
+        calc((100% - 320px) * var(--ink-side-share-left, 0.5))
+      )
+    );
+    padding-right: max(
+      32px,
+      min(
+        calc(var(--ink-side-margin-right, 0.1) * 100%),
+        calc((100% - 320px) * var(--ink-side-share-right, 0.5))
+      )
+    );
+  }
+
+  .ink-canvas[data-ink-layout='pages'] {
+    padding: 18px 14px 44px;
+    overflow-x: auto;
+    background: var(--ink-bg-app, #151515);
+
+    > .ink-sheet {
+      width: var(--ink-page-width, 210mm);
+      min-height: var(--ink-page-height, 297mm);
+      margin: 0 auto;
+      /* The editor's zoom (Fit width, 50–200%): the whole sheet, text and margins alike. */
+      zoom: var(--ink-zoom, 1);
+      box-shadow:
+        0 0 0 1px var(--ink-border-subtle, rgba(255, 255, 255, 0.05)),
+        var(--ink-shadow-page, 0 1px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .ink-sheet-body {
+      padding: var(--ink-page-margin-top, 25.4mm) var(--ink-page-margin-right, 25.4mm)
+        var(--ink-page-margin-bottom, 25.4mm) var(--ink-page-margin-left, 25.4mm);
+    }
+  }
+}
+
+@media (min-width: 900px) {
+  .ink-canvas[data-ink-layout='pages'] {
+    padding: 28px 20px 60px;
+  }
+}
+
+/*
+ * Page view (the editor, Pages layout, 768px up; see the pagination plugin):
+ * the sheet becomes a stack of pages, each as tall as the paper, with a gap
+ * between them and its number below. The pages are drawn behind the text;
+ * spacers in the text keep it off the gaps.
+ */
+@media (min-width: 768px) {
+  .ink-canvas[data-ink-layout='pages'][data-ink-page-view] > .ink-sheet {
+    position: relative;
+    min-height: calc(
+      var(--ink-page-count, 1) * (var(--ink-page-height, 297mm) + var(--ink-page-gap, 28px))
+    );
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.ink-page-frames {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ink-page-frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--ink-page-height, 297mm);
+  background: var(--ink-sheet-bg);
+}
+
+.ink-page-label {
+  position: absolute;
+  right: 0;
+  height: var(--ink-page-gap, 28px);
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-muted, #9a9891);
+  white-space: nowrap;
+}
+
+/*
+ * A page's header or footer: one line in its top or bottom margin, across
+ * the text column, centered in the margin's height. Its left, center and
+ * right parts take the room they need; with centered text beside other
+ * text, they share it in thirds so the center stays centered.
+ */
+.ink-page-band {
+  position: absolute;
+  left: var(--ink-page-margin-left, 25.4mm);
+  right: var(--ink-page-margin-right, 25.4mm);
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  font-size: calc(var(--ink-editor-font-size, 14px) * 0.8);
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-text-muted, #9a9891);
+}
+
+.ink-page-band-top {
+  top: 0;
+  height: var(--ink-page-margin-top, 25.4mm);
+}
+
+.ink-page-band-bottom {
+  bottom: 0;
+  height: var(--ink-page-margin-bottom, 25.4mm);
+}
+
+.ink-page-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.is-empty {
+    flex: 0 0 0;
+  }
+
+  .ink-page-band-balanced > &.is-empty {
+    flex: 1 1 0;
+  }
+}
+
+.ink-page-slot-center {
+  text-align: center;
+}
+
+.ink-page-slot-right {
+  text-align: right;
+}

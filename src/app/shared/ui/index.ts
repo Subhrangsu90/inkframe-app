@@ -7,3 +7,4 @@ export * from './segmented-control/segmented-control';
 export * from './icons/icon';
 export * from './card/card';
 export * from './button/button';
+export * from './avatar/avatar';

@@ -1,12 +1,17 @@
 import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { Router, UrlTree, provideRouter } from '@angular/router';
+import { Component } from '@angular/core';
+import { DocumentLibrary } from './features/documents/data-access/document-library';
+import { isStandalonePage } from './layout/standalone-page';
 import {
   DocumentManager,
   extractDocTitle,
   extractDocWordCount,
   formatRelativeTime,
-} from './core/document-manager';
-import { WELCOME_DOC } from './core/welcome-doc';
+} from './features/documents/data-access/document-manager';
+import { WELCOME_DOC } from './features/documents/data-access/welcome-doc';
 import { routes } from './app.routes';
 import { SCHEMA_VERSION, StoredDoc } from '@inkframe-ui/editor/core';
 
@@ -104,7 +109,7 @@ describe('DocumentManager Service', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    manager = new DocumentManager();
+    manager = TestBed.inject(DocumentManager);
   });
 
   it('initializes document manager instance', () => {
@@ -159,6 +164,9 @@ describe('DocumentManager Service', () => {
   });
 });
 
+@Component({ template: '' })
+class EmptyPage {}
+
 describe('Application Route Definitions', () => {
   it('defines all required lazy-loaded routes with modern chunks', () => {
     const paths = routes.map((r) => r.path);
@@ -183,5 +191,62 @@ describe('Application Route Definitions', () => {
     expect(typeof editorRoute?.loadComponent).toBe('function');
     expect(typeof readerRoute?.loadComponent).toBe('function');
     expect(typeof settingsRoute?.loadComponent).toBe('function');
+  });
+
+  it('shows only the landing page and the reader without the app shell', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter(
+          // Empty pages, so that navigating loads none of the real ones.
+          routes.map((route) =>
+            route.loadComponent
+              ? { ...route, loadComponent: undefined, canDeactivate: [], component: EmptyPage }
+              : route,
+          ),
+        ),
+      ],
+    });
+    const router = TestBed.inject(Router);
+    const standalone: Record<string, boolean> = {};
+    for (const url of ['/', '/s', '/s/abc', '/docs', '/doc/x', '/settings', '/missing']) {
+      await router.navigateByUrl(url);
+      standalone[url] = isStandalonePage(router.routerState.snapshot.root);
+    }
+    expect(standalone).toEqual({
+      '/': true,
+      '/s': true,
+      '/s/abc': true,
+      '/docs': false,
+      '/doc/x': false,
+      // Starts with "/s" but is not the reader.
+      '/settings': false,
+      '/missing': false,
+    });
+  });
+
+  describe('/new, the "New document" shortcut of the installed app', () => {
+    async function open(createDoc: () => Promise<string>): Promise<string> {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: DocumentLibrary, useValue: { createDocWithoutOpening: vi.fn(createDoc) } },
+        ],
+      });
+      const guard = routes.find((r) => r.path === 'new')!.canActivate![0] as () => Promise<UrlTree>;
+      const tree = await TestBed.runInInjectionContext(guard);
+      return TestBed.inject(Router).serializeUrl(tree);
+    }
+
+    it('creates a document and opens it', async () => {
+      expect(await open(async () => 'doc_42')).toBe('/doc/doc_42');
+    });
+
+    it('opens the library when storage refuses the new document', async () => {
+      expect(
+        await open(async () => {
+          throw new DOMException('full', 'QuotaExceededError');
+        }),
+      ).toBe('/docs');
+    });
   });
 });

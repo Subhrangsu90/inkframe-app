@@ -1,0 +1,235 @@
+<div class="app-layout-root" [class.sidebar-collapsed]="layout.sidebarCollapsed()">
+  <!-- First Tab stop: lets keyboard users jump past the sidebar -->
+  <a class="skip-link" href="#main-content" (click)="skipToContent($event)">Skip to content</a>
+
+  <!-- Mobile Drawer Backdrop Overlay -->
+  @if (layout.mobileOpen()) {
+    <div class="mobile-backdrop" (click)="layout.closeMobile()" aria-hidden="true"></div>
+  }
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- CLAUDE-INSPIRED COLLAPSIBLE APP SIDEBAR       -->
+  <!-- ═════════════════════════════════════════════ -->
+  <aside
+    class="app-sidebar"
+    [class.collapsed]="layout.sidebarCollapsed()"
+    [class.mobile-open]="layout.mobileOpen()"
+    aria-label="Application Sidebar"
+  >
+    <!-- Sidebar Top Header: Brand & Collapse Toggle -->
+    <div class="sidebar-header">
+      <a routerLink="/" class="sidebar-brand-link" (click)="layout.closeMobile()">
+        <span class="brand-badge">I</span>
+        <span class="brand-name">Inkframe</span>
+      </a>
+
+      <!-- Collapse Sidebar Button (Image 1 / Image 2 style) -->
+      <button
+        type="button"
+        class="sidebar-toggle-btn"
+        (click)="layout.toggleSidebar()"
+        title="Toggle sidebar"
+        aria-label="Toggle sidebar"
+      >
+        <ink-icon name="sidebar" [size]="17" />
+      </button>
+    </div>
+
+    <!-- Prominent "+ New" Action Button -->
+    <div class="sidebar-action-wrap">
+      <button
+        type="button"
+        class="new-doc-btn"
+        (click)="onCreateNewDoc()"
+        [disabled]="library.isCreating()"
+      >
+        <ink-icon name="plus" [size]="16" svgClass="text-ink-accent-text font-bold" />
+        <span class="font-medium">New document</span>
+        @if (library.isCreating()) {
+          <span class="btn-spinner"></span>
+        }
+      </button>
+    </div>
+
+    <!-- Primary Navigation Links -->
+    <nav class="sidebar-nav-group">
+      <a
+        routerLink="/docs"
+        routerLinkActive="active"
+        class="sidebar-nav-item"
+        (click)="layout.closeMobile()"
+      >
+        <ink-icon name="folder" [size]="16" class="nav-icon" />
+        <span>All Documents</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Documents Section (Claude "Chats and tasks" style) -->
+    <div class="sidebar-docs-section">
+      <div class="section-heading">
+        <span class="section-title">Documents</span>
+        <span class="section-count">{{ library.documents().length }}</span>
+      </div>
+
+      <div class="sidebar-docs-list ink-scrollbar">
+        @for (doc of library.documents(); track doc.id) {
+          <div class="doc-item" [class.active]="library.activeDocId() === doc.id">
+            <a
+              [routerLink]="docPath(doc.id)"
+              (click)="library.setActiveDocId(doc.id); layout.closeMobile()"
+              class="doc-item-link"
+              [title]="doc.title"
+            >
+              <span class="doc-bullet">○</span>
+              <span class="doc-title">{{ doc.title }}</span>
+            </a>
+
+            <!-- Quick Delete Button on Hover -->
+            <button
+              type="button"
+              class="doc-delete-btn"
+              (click)="library.deleteDoc(doc.id, $event)"
+              title="Delete document"
+              aria-label="Delete document"
+            >
+              <ink-icon name="trash" [size]="13" />
+            </button>
+          </div>
+        } @empty {
+          <div class="empty-docs-hint">
+            <span>No documents yet.</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar footer: account, theme (phones only) and settings -->
+    <div class="sidebar-user-footer">
+      <!-- Shown once the browser knows; nothing while it checks, so it never flashes the wrong state. -->
+      @if (auth.enabled) {
+        @switch (auth.status()) {
+          @case ('signed-in') {
+            <a
+              routerLink="/settings"
+              class="footer-account"
+              [title]="'Account: ' + (auth.user()?.email ?? '')"
+              (click)="layout.closeMobile()"
+            >
+              <ink-avatar
+                [name]="auth.user()?.name || auth.user()?.email || ''"
+                [src]="auth.user()?.image"
+                [size]="26"
+              />
+              <span class="account-text">
+                <span class="account-name">{{ auth.user()?.name }}</span>
+                <span class="account-email">{{ auth.user()?.email }}</span>
+              </span>
+            </a>
+          }
+          @case ('signed-out') {
+            <a
+              [routerLink]="signInPath"
+              [queryParams]="signInParams()"
+              class="footer-account footer-sign-in"
+              (click)="layout.closeMobile()"
+            >
+              <ink-icon name="log-in" [size]="15" />
+              <span>Sign in</span>
+            </a>
+          }
+        }
+      }
+      <div class="footer-actions">
+        <!-- Phones: the header has no room for the theme toggle, so it is here. -->
+        <button
+          type="button"
+          class="footer-icon-btn footer-theme-btn"
+          (click)="toggleTheme($event)"
+          [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          title="Toggle light / dark mode"
+        >
+          <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="15" />
+        </button>
+        <a
+          routerLink="/settings"
+          class="footer-icon-btn"
+          title="Settings"
+          aria-label="Settings"
+          (click)="layout.closeMobile()"
+        >
+          <ink-icon name="settings" [size]="15" />
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- MAIN WORKSPACE CONTAINER                      -->
+  <!-- ═════════════════════════════════════════════ -->
+  <div class="app-workspace-container">
+    <!-- Non-Solid Translucent Glass Header -->
+    <header class="app-header">
+      <!-- Left Column: Sidebar Toggle (when collapsed / mobile) + Custom Slot -->
+      <div class="header-left-col">
+        <!-- Sidebar Toggle Icon (Image 2 style in header) -->
+        <button
+          type="button"
+          class="header-sidebar-toggle"
+          (click)="layout.sidebarCollapsed() ? layout.toggleSidebar() : layout.toggleMobile()"
+          title="Toggle sidebar"
+          aria-label="Toggle sidebar"
+        >
+          <ink-icon name="sidebar" [size]="18" />
+        </button>
+
+        <!-- Dynamic Header Left Slot (e.g. Document Title & Save Status) -->
+        <div class="header-left-content">
+          @if (layout.headerLeftTemplate(); as tpl) {
+            <ng-container *ngTemplateOutlet="tpl" />
+          } @else {
+            <ng-content select="[header-left]" />
+          }
+        </div>
+      </div>
+
+      <!-- Center Column: 3 Tabs (Rich Canvas / Raw Markdown / Split View) -->
+      <div class="header-center-col">
+        @if (layout.headerCenterTemplate(); as tpl) {
+          <ng-container *ngTemplateOutlet="tpl" />
+        } @else {
+          <ng-content select="[header-center]" />
+        }
+      </div>
+
+      <!-- Right Column: Header Right Actions & All-time Theme Toggle -->
+      <div class="header-right-col">
+        @if (layout.headerRightTemplate(); as tpl) {
+          <ng-container *ngTemplateOutlet="tpl" />
+        } @else {
+          <ng-content select="[header-right]" />
+        }
+
+        <!-- All-Time Theme Toggle Button at top-right corner -->
+        <button
+          type="button"
+          class="theme-toggle-btn"
+          (click)="toggleTheme($event)"
+          [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          title="Toggle light / dark mode"
+        >
+          <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="16" />
+        </button>
+      </div>
+    </header>
+
+    <!-- Storage full or blocked: offers a backup -->
+    <ink-storage-banner />
+
+    <!-- Main Workspace Content Area -->
+    <main id="main-content" class="app-main-content" tabindex="-1" #mainContent>
+      <ng-content />
+    </main>
+  </div>
+</div>

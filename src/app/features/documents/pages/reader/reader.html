@@ -1,0 +1,104 @@
+<div class="reader-layout">
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- MINIMAL READER HEADER: BRAND, TITLE & SHARE   -->
+  <!-- ═════════════════════════════════════════════ -->
+  <header class="reader-header">
+    <div class="reader-header-inner">
+      <!-- Left: Branding -->
+      <a routerLink="/" class="reader-brand" title="Back to Inkframe">
+        <span class="reader-brand-badge">I</span>
+        <span class="reader-brand-name">Inkframe</span>
+      </a>
+
+      <!-- Center: Document Title -->
+      <div class="reader-title-wrap">
+        <span class="reader-title truncate" [title]="docTitle()">{{ docTitle() }}</span>
+      </div>
+
+      <!-- Right: Action Icons (Share & Theme) -->
+      <div class="reader-actions">
+        <!-- Share Icon Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="copyShareLink()"
+          title="Copy Share Link"
+          aria-label="Share Link"
+        >
+          <ink-icon name="share" [size]="16" />
+        </button>
+
+        <!-- Print: the pages as shown, with their headers, footers and page numbers -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="printDoc()"
+          title="Print or save as PDF"
+          aria-label="Print"
+        >
+          <ink-icon name="printer" [size]="16" />
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="toggleTheme($event)"
+          [title]="isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          aria-label="Toggle Theme"
+        >
+          <ink-icon [name]="isDark() ? 'sun' : 'moon'" [size]="16" />
+        </button>
+
+        <!-- Open or Save to Editor Button -->
+        <button
+          type="button"
+          class="reader-icon-btn"
+          (click)="openInEditor()"
+          [title]="isSharedPayload() ? 'Save to my notes & edit' : 'Open in Editor'"
+          [attr.aria-label]="isSharedPayload() ? 'Save and edit' : 'Open in Editor'"
+        >
+          <ink-icon name="edit" [size]="15" />
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- READING CANVAS: THE DOCUMENT'S PAGE LAYOUT    -->
+  <!-- ═════════════════════════════════════════════ -->
+  <main class="reader-viewport ink-scrollbar">
+    <div
+      class="reader-canvas ink-canvas"
+      [attr.data-ink-layout]="pageSetup().layout"
+      [attr.data-ink-page-view]="pageCount() > 0 ? '' : null"
+      [style]="layoutStyle()"
+    >
+      <!-- Clicking an image opens the lightbox. Mouse only for now: images are not focusable (accessibility gap, see the plan). -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+      <article class="reader-sheet ink-sheet" (click)="onSheetClick($event)">
+        @if (pageCount() > 0) {
+          <ink-page-frames [pages]="pageCount()" [setup]="pageSetup()" />
+        }
+        <div
+          class="reader-content ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
+          [innerHTML]="renderedHtml()"
+          [inkPageView]="pageSetup()"
+          (pageCount)="pageCount.set($event)"
+        ></div>
+      </article>
+    </div>
+  </main>
+
+  <!-- ═════════════════════════════════════════════ -->
+  <!-- IMAGE LIGHTBOX / PREVIEW MODAL                -->
+  <!-- ═════════════════════════════════════════════ -->
+  @if (previewImage(); as preview) {
+    <ink-image-lightbox
+      [src]="preview.src"
+      [alt]="preview.alt"
+      [title]="preview.title"
+      (closed)="previewImage.set(null)"
+    />
+  }
+</div>

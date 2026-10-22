@@ -1,7 +1,7 @@
 /* ── Theme switch reveal ──
    ThemeService.setTheme(theme, origin) switches the theme inside a View
    Transition and grows the new theme as a circle from `origin` (see
-   revealThemeChange in core/theme.ts). These rules replace the browser's
+   revealThemeChange in core/ui-helpers/theme.ts). These rules replace the browser's
    default cross-fade with that reveal. */
 :root.ink-theme-switching {
   &::view-transition-old(root),

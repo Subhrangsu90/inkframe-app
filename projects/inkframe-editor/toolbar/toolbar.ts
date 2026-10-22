@@ -4,14 +4,17 @@ import {
   ElementRef,
   OnDestroy,
   afterNextRender,
+  computed,
   effect,
   inject,
   signal,
   untracked,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectedPosition } from '@angular/cdk/overlay';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
@@ -32,7 +35,21 @@ import {
   NUMBER_STYLES,
   MAX_LIST_START,
   defaultNumberStyle,
+  FONT_SIZES,
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+  FONT_FAMILIES,
+  findFontFamily,
+  findDocumentFont,
+  LINE_SPACINGS,
 } from '@inkframe-ui/editor/core';
+
+let nextToolbarId = 0;
+
+/** A font size in whole pixels, MIN_FONT_SIZE to MAX_FONT_SIZE. */
+function clampFontSize(size: number): number {
+  return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(size)));
+}
 
 @Component({
   selector: 'ink-toolbar',
@@ -45,6 +62,8 @@ import {
     MatDividerModule,
     MatMenuModule,
     MatTooltipModule,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
     KeepMenuOpen,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,12 +85,14 @@ import {
         </button>
       }
 
+      <!-- mousedown: a click or tap must not move focus out of the document, which would close the on-screen keyboard. -->
       <div
         #toolbarEl
         class="ink-toolbar"
         role="toolbar"
         aria-label="Editor toolbar"
         (scroll)="onToolbarScroll()"
+        (mousedown)="$event.preventDefault()"
         (pointerdown)="onPointerDown($event)"
         (pointermove)="onPointerMove($event)"
         (pointerup)="onPointerUp()"
@@ -199,6 +220,134 @@ import {
                 </button>
               }
             </mat-menu>
+          </div>
+          <div class="tb-divider"></div>
+        }
+
+        <!-- Font and font size -->
+        @if (svc.hasExtension('fontFamily') || svc.hasExtension('fontSize')) {
+          <div class="tb-group" role="group" aria-label="Font">
+            @if (svc.hasExtension('fontFamily')) {
+              <button
+                type="button"
+                class="ink-tb-block-btn ink-tb-font-btn"
+                [disabled]="svc.isCode()"
+                [matMenuTriggerFor]="fontMenu"
+                [attr.aria-label]="'Font: ' + fontLabel()"
+                matTooltip="Font"
+              >
+                <span class="block-label">{{ fontLabel() }}</span>
+                <mat-icon class="caret">expand_more</mat-icon>
+              </button>
+              <mat-menu #fontMenu="matMenu" class="ink-toolbar-mat-menu ink-font-menu">
+                <button
+                  mat-menu-item
+                  [class.selected]="!svc.fontFamily()"
+                  (click)="svc.setFontFamily(null)"
+                >
+                  <span class="menu-item-text">Default ({{ documentFontLabel() }})</span>
+                </button>
+                <mat-divider />
+                @for (font of fontFamilies; track font.value) {
+                  <button
+                    mat-menu-item
+                    [class.selected]="svc.fontFamily() === font.value"
+                    (click)="svc.setFontFamily(font.value)"
+                  >
+                    <span class="menu-item-text" [style.font-family]="font.stack">{{
+                      font.label
+                    }}</span>
+                  </button>
+                }
+              </mat-menu>
+            }
+
+            <!-- Font size: − and + change it by a pixel; the box takes a size typed in or picked from its list -->
+            @if (svc.hasExtension('fontSize')) {
+              <div class="ink-tb-size-control">
+                <button
+                  type="button"
+                  class="ink-tb-icon-btn ink-tb-step-btn"
+                  [disabled]="!canStepFontSize(-1)"
+                  (click)="stepFontSize(-1)"
+                  aria-label="Decrease font size"
+                  matTooltip="Decrease font size"
+                >
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <!-- mousedown: unlike the buttons, the box takes focus, to be typed in. -->
+                <input
+                  #sizeInput
+                  cdkOverlayOrigin
+                  #sizeOrigin="cdkOverlayOrigin"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  class="ink-tb-size-input"
+                  role="combobox"
+                  aria-label="Font size"
+                  aria-autocomplete="none"
+                  [attr.aria-expanded]="sizeListOpen()"
+                  [attr.aria-controls]="sizeListId"
+                  [attr.aria-activedescendant]="
+                    sizeListOpen() && activeSize() >= 0 ? sizeListId + '-' + activeSize() : null
+                  "
+                  matTooltip="Font size"
+                  [matTooltipDisabled]="sizeListOpen()"
+                  [disabled]="svc.isCode()"
+                  [value]="sizeListOpen() ? sizeText() : (svc.shownFontSize() ?? '')"
+                  (mousedown)="$event.stopPropagation()"
+                  (focus)="openSizeList()"
+                  (input)="onSizeInput($event)"
+                  (keydown)="onSizeKeydown($event)"
+                  (blur)="closeSizeList()"
+                />
+                <button
+                  type="button"
+                  class="ink-tb-icon-btn ink-tb-step-btn"
+                  [disabled]="!canStepFontSize(1)"
+                  (click)="stepFontSize(1)"
+                  aria-label="Increase font size"
+                  matTooltip="Increase font size"
+                >
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+              <ng-template
+                cdkConnectedOverlay
+                [cdkConnectedOverlayOrigin]="sizeOrigin"
+                [cdkConnectedOverlayOpen]="sizeListOpen()"
+                [cdkConnectedOverlayPositions]="sizeListPositions"
+                (overlayOutsideClick)="onSizeOutsideClick($event)"
+                (detach)="closeSizeList()"
+              >
+                <!-- mousedown: picking a size must not take focus from the box before the click. -->
+                <div
+                  class="ink-size-list"
+                  role="listbox"
+                  aria-label="Font sizes"
+                  [id]="sizeListId"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  @for (size of sizeOptions; track $index) {
+                    <!-- Keyboard users pick with the arrow keys and Enter in the box (onSizeKeydown), so focus stays there. -->
+                    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+                    <div
+                      #sizeOption
+                      role="option"
+                      class="ink-size-option"
+                      [id]="sizeListId + '-' + $index"
+                      [class.active]="activeSize() === $index"
+                      [class.selected]="svc.fontSize() === size"
+                      [attr.aria-selected]="svc.fontSize() === size"
+                      (click)="pickFontSize(size)"
+                    >
+                      {{ size ?? 'Default' }}
+                    </div>
+                  }
+                </div>
+              </ng-template>
+            }
           </div>
           <div class="tb-divider"></div>
         }
@@ -428,34 +577,96 @@ import {
           <div class="tb-divider"></div>
         }
 
-        <!-- Alignment -->
-        @if (svc.hasExtension('text_align')) {
-          <div class="tb-group" role="group" aria-label="Alignment">
-            <button
-              type="button"
-              class="ink-tb-icon-btn ink-tb-align-btn"
-              [class.active]="svc.textAlign() !== 'left' && !!svc.textAlign()"
-              [disabled]="!svc.textAlign()"
-              [matMenuTriggerFor]="alignMenu"
-              aria-label="Text alignment"
-              matTooltip="Alignment"
-            >
-              <mat-icon>{{ alignIcon(svc.textAlign()) }}</mat-icon>
-              <mat-icon class="caret">arrow_drop_down</mat-icon>
-            </button>
-            <mat-menu #alignMenu="matMenu" class="ink-toolbar-mat-menu">
-              @for (option of alignOptions; track option.value) {
+        <!-- Paragraph: alignment and indent, line spacing -->
+        @if (
+          svc.hasExtension('text_align') ||
+          svc.hasExtension('indent') ||
+          svc.hasExtension('line_spacing')
+        ) {
+          <div class="tb-group" role="group" aria-label="Paragraph">
+            @if (svc.hasExtension('text_align') || svc.hasExtension('indent')) {
+              <button
+                type="button"
+                class="ink-tb-icon-btn ink-tb-align-btn"
+                [class.active]="paragraphFormatted()"
+                [disabled]="!svc.textAlign() && !svc.canIndent() && !svc.canOutdent()"
+                [matMenuTriggerFor]="paragraphMenu"
+                aria-label="Alignment and indent"
+                matTooltip="Alignment and indent"
+              >
+                @if (svc.hasExtension('text_align')) {
+                  <mat-icon>{{ alignIcon(svc.textAlign()) }}</mat-icon>
+                } @else {
+                  <mat-icon>format_indent_increase</mat-icon>
+                }
+                <mat-icon class="caret">arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #paragraphMenu="matMenu" class="ink-toolbar-mat-menu ink-paragraph-menu">
+                @if (svc.hasExtension('text_align')) {
+                  @for (option of alignOptions; track option.value) {
+                    <button
+                      mat-menu-item
+                      [class.selected]="svc.textAlign() === option.value"
+                      [disabled]="!svc.textAlign()"
+                      (click)="svc.setTextAlign(option.value)"
+                    >
+                      <mat-icon>{{ option.icon }}</mat-icon>
+                      <span class="menu-item-text">{{ option.label }}</span>
+                      <span class="menu-shortcut">{{ option.shortcut }}</span>
+                    </button>
+                  }
+                }
+                @if (svc.hasExtension('indent')) {
+                  @if (svc.hasExtension('text_align')) {
+                    <mat-divider />
+                  }
+                  <button mat-menu-item [disabled]="!svc.canIndent()" (click)="svc.indent()">
+                    <mat-icon>format_indent_increase</mat-icon>
+                    <span class="menu-item-text">Increase indent</span>
+                    <span class="menu-shortcut">Ctrl+]</span>
+                  </button>
+                  <button mat-menu-item [disabled]="!svc.canOutdent()" (click)="svc.outdent()">
+                    <mat-icon>format_indent_decrease</mat-icon>
+                    <span class="menu-item-text">Decrease indent</span>
+                    <span class="menu-shortcut">Ctrl+[</span>
+                  </button>
+                }
+              </mat-menu>
+            }
+
+            @if (svc.hasExtension('line_spacing')) {
+              <button
+                type="button"
+                class="ink-tb-icon-btn ink-tb-spacing-btn"
+                [class.active]="!!svc.lineSpacing()"
+                [disabled]="!svc.canSetLineSpacing()"
+                [matMenuTriggerFor]="lineSpacingMenu"
+                [attr.aria-label]="'Line spacing: ' + lineSpacingLabel()"
+                matTooltip="Line spacing"
+              >
+                <mat-icon>format_line_spacing</mat-icon>
+                <mat-icon class="caret">arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #lineSpacingMenu="matMenu" class="ink-toolbar-mat-menu ink-spacing-menu">
                 <button
                   mat-menu-item
-                  [class.selected]="svc.textAlign() === option.value"
-                  (click)="svc.setTextAlign(option.value)"
+                  [class.selected]="!svc.lineSpacing()"
+                  (click)="svc.setLineSpacing(null)"
                 >
-                  <mat-icon>{{ option.icon }}</mat-icon>
-                  <span class="menu-item-text">{{ option.label }}</span>
-                  <span class="menu-shortcut">{{ option.shortcut }}</span>
+                  <span class="menu-item-text">Default</span>
                 </button>
-              }
-            </mat-menu>
+                <mat-divider />
+                @for (option of lineSpacings; track option.value) {
+                  <button
+                    mat-menu-item
+                    [class.selected]="svc.lineSpacing() === option.value"
+                    (click)="svc.setLineSpacing(option.value)"
+                  >
+                    <span class="menu-item-text">{{ option.label }}</span>
+                  </button>
+                }
+              </mat-menu>
+            }
           </div>
           <div class="tb-divider"></div>
         }
@@ -1218,10 +1429,15 @@ import {
       -webkit-tap-highlight-color: transparent;
       transition: all 0.14s ease;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background: var(--ink-btn-hover-bg);
         border-color: var(--ink-border-focus);
         color: var(--ink-text-primary, #f8fafc);
+      }
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
       }
 
       &.active {
@@ -1342,8 +1558,9 @@ import {
       }
     }
 
-    /* Alignment and list dropdowns: an icon plus a caret */
+    /* Paragraph, line spacing and list dropdowns: an icon plus a caret */
     .ink-tb-align-btn,
+    .ink-tb-spacing-btn,
     .ink-tb-list-btn {
       width: auto;
       padding: 0 2px 0 6px;
@@ -1353,6 +1570,97 @@ import {
         width: 16px;
         font-size: 16px;
         opacity: 0.7;
+      }
+    }
+
+    /* Font dropdown: the font's name */
+    .ink-tb-font-btn .block-label {
+      min-width: 56px;
+      max-width: 104px;
+    }
+
+    /* Font size: − box + */
+    .ink-tb-size-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .ink-tb-step-btn {
+      width: 26px;
+    }
+
+    .ink-tb-size-input {
+      width: 38px;
+      height: 26px;
+      padding: 0 2px;
+      box-sizing: border-box;
+      border: 1px solid var(--ink-border-default, #2e3036);
+      border-radius: 5px;
+      background: var(--ink-bg-input, transparent);
+      color: var(--ink-text-primary, #f8fafc);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      cursor: text;
+      /* The toolbar's text cannot be selected; the box's must be, to type in it (iOS). */
+      user-select: text;
+      -webkit-user-select: text;
+      transition: border-color 0.12s ease;
+
+      &:hover:not(:disabled) {
+        border-color: var(--ink-border-focus);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--ink-active-text, #60a5fa);
+        box-shadow: 0 0 0 1px var(--ink-active-text, #60a5fa);
+      }
+
+      &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+    }
+
+    /* The box's list of sizes, under it (in the overlay container) */
+    .ink-size-list {
+      min-width: 64px;
+      max-height: min(360px, 60vh);
+      overflow-y: auto;
+      padding: 4px;
+      box-sizing: border-box;
+      background: var(--ink-bg-menu, #242423);
+      border: 1px solid var(--ink-border-default, #2e3036);
+      border-radius: 10px;
+      box-shadow: var(--ink-shadow-menu);
+      scrollbar-width: thin;
+    }
+
+    .ink-size-option {
+      padding: 6px 14px;
+      border-radius: 6px;
+      color: var(--ink-text-primary, #f8fafc);
+      font-size: 13px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.12s ease;
+
+      &:hover,
+      &.active {
+        background-color: var(--ink-bg-hover);
+      }
+
+      &.selected {
+        background-color: var(--ink-active-bg);
+        color: var(--ink-active-text);
+        font-weight: 600;
       }
     }
 
@@ -1384,6 +1692,44 @@ import {
     .small-text {
       font-size: 12px;
     }
+
+    /* Touch screens: 44px targets. A swipe scrolls the row, so the scroll buttons would only cover buttons. */
+    @media (pointer: coarse) {
+      .ink-toolbar {
+        min-height: 56px;
+        padding: 6px 8px;
+        cursor: auto;
+      }
+      .ink-tb-icon-btn {
+        width: 44px;
+        height: 44px;
+      }
+      .ink-tb-align-btn,
+      .ink-tb-spacing-btn,
+      .ink-tb-list-btn {
+        width: auto;
+        min-width: 44px;
+      }
+      .ink-tb-block-btn {
+        height: 44px;
+      }
+      .ink-tb-step-btn {
+        width: 36px;
+      }
+      /* 16px: iOS zooms into smaller text boxes when they take focus. */
+      .ink-tb-size-input {
+        width: 46px;
+        height: 36px;
+        font-size: 16px;
+      }
+      .ink-size-option {
+        padding: 10px 16px;
+        font-size: 15px;
+      }
+      .ink-tb-scroll-btn {
+        display: none;
+      }
+    }
   `,
 })
 export class Toolbar implements OnDestroy {
@@ -1393,6 +1739,129 @@ export class Toolbar implements OnDestroy {
   protected readonly highlightColors: ColorSwatch[] = HIGHLIGHT_COLORS;
   protected readonly alignOptions = TEXT_ALIGN_OPTIONS;
   protected readonly alignIcon = textAlignIcon;
+  protected readonly fontFamilies = FONT_FAMILIES;
+  protected readonly lineSpacings = LINE_SPACINGS;
+
+  /** Whether the block at the cursor is aligned or indented other than by default. */
+  protected readonly paragraphFormatted = computed(
+    () => (!!this.svc.textAlign() && this.svc.textAlign() !== 'left') || this.svc.indentLevel() > 0,
+  );
+
+  /** The name of the document's font (the page setup's), which text without a font of its own has. */
+  protected readonly documentFontLabel = computed(
+    () => findDocumentFont(this.svc.pageSetup().font).label,
+  );
+
+  /** The font the font menu shows: the selection's own, or the document's. */
+  protected readonly fontLabel = computed(
+    () => findFontFamily(this.svc.fontFamily())?.label ?? this.documentFontLabel(),
+  );
+
+  /** The line spacing the line spacing button names: Single, 1.15, 1.5, Double or Default. */
+  protected readonly lineSpacingLabel = computed(
+    () => LINE_SPACINGS.find((o) => o.value === this.svc.lineSpacing())?.label ?? 'Default',
+  );
+
+  // ── Font size box ────────────────────────────────────────────────
+  /** The box's list: Default (the document's size), then FONT_SIZES. */
+  protected readonly sizeOptions: readonly (number | null)[] = [null, ...FONT_SIZES];
+  protected readonly sizeListId = `ink-size-list-${nextToolbarId++}`;
+  protected readonly sizeListPositions: ConnectedPosition[] = [
+    { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: 4 },
+    { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', offsetY: -4 },
+  ];
+  /** Whether the box has focus, with its list open below it. */
+  protected readonly sizeListOpen = signal(false);
+  /** What is typed in the box while it has focus. */
+  protected readonly sizeText = signal('');
+  /** The option picked with the arrow keys (an index of sizeOptions), or -1. */
+  protected readonly activeSize = signal(-1);
+  private readonly sizeInput = viewChild<ElementRef<HTMLInputElement>>('sizeInput');
+  private readonly sizeOptionEls = viewChildren<ElementRef<HTMLElement>>('sizeOption');
+
+  /** Whether − (`delta` -1) or + (1) would change the font size. */
+  protected canStepFontSize(delta: 1 | -1): boolean {
+    const size = this.svc.shownFontSize();
+    if (this.svc.isCode() || size === null) return false;
+    return delta > 0 ? size < MAX_FONT_SIZE : size > MIN_FONT_SIZE;
+  }
+
+  /** Makes the selection's text a pixel larger (`delta` 1) or smaller (-1) than it is shown. */
+  protected stepFontSize(delta: 1 | -1): void {
+    const size = this.svc.shownFontSize();
+    if (size !== null) this.svc.setFontSize(clampFontSize(size + delta));
+  }
+
+  protected openSizeList(): void {
+    const size = this.svc.shownFontSize();
+    this.sizeText.set(size === null ? '' : String(size));
+    this.activeSize.set(-1);
+    this.sizeListOpen.set(true);
+    // After the click that focused the box, which puts the caret where it landed.
+    setTimeout(() => this.sizeInput()?.nativeElement.select());
+  }
+
+  protected closeSizeList(): void {
+    this.sizeListOpen.set(false);
+    this.activeSize.set(-1);
+  }
+
+  protected onSizeInput(event: Event): void {
+    this.sizeText.set((event.target as HTMLInputElement).value);
+    this.activeSize.set(-1);
+  }
+
+  /** Enter applies the size typed or picked; arrows pick from the list; Escape goes back to the document. */
+  protected onSizeKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        event.preventDefault();
+        const from =
+          this.activeSize() >= 0
+            ? this.activeSize()
+            : this.sizeOptions.indexOf(this.svc.fontSize());
+        const last = this.sizeOptions.length - 1;
+        const next = Math.min(last, Math.max(0, from + (event.key === 'ArrowDown' ? 1 : -1)));
+        this.activeSize.set(next);
+        this.sizeOptionEls()[next]?.nativeElement.scrollIntoView?.({ block: 'nearest' });
+        break;
+      }
+      case 'Enter': {
+        event.preventDefault();
+        if (this.activeSize() >= 0) {
+          this.pickFontSize(this.sizeOptions[this.activeSize()]);
+          break;
+        }
+        const typed = parseFloat(this.sizeText());
+        if (Number.isFinite(typed)) {
+          this.pickFontSize(clampFontSize(typed));
+        } else {
+          this.closeSizeList();
+          this.svc.focus();
+        }
+        break;
+      }
+      case 'Escape':
+        event.preventDefault();
+        this.closeSizeList();
+        this.svc.focus();
+        break;
+    }
+  }
+
+  /** Sets the selection's font size (null for the document's) and goes back to the document. */
+  protected pickFontSize(size: number | null): void {
+    this.closeSizeList();
+    this.svc.setFontSize(size);
+  }
+
+  /** A click outside the list and the box, which kept focus (the toolbar does not take it). */
+  protected onSizeOutsideClick(event: MouseEvent): void {
+    if (event.target === this.sizeInput()?.nativeElement) return;
+    this.closeSizeList();
+    this.svc.focus();
+  }
   protected readonly emojis: string[] = COMMON_EMOJIS;
   protected readonly bulletStyles = BULLET_STYLES;
   protected readonly numberStyles = NUMBER_STYLES;
@@ -1420,6 +1889,11 @@ export class Toolbar implements OnDestroy {
 
   protected readonly toolbarRef = viewChild<ElementRef<HTMLDivElement>>('toolbarEl');
   private readonly linkTrigger = viewChild<MatMenuTrigger>('linkTrigger');
+  private readonly menuTriggers = viewChildren(MatMenuTrigger);
+  /** When the toolbar was last pressed, and whether the document had focus then. */
+  private lastPress = { at: 0, documentFocused: false };
+  /** Whether the open menu should hand focus back to the document when it closes. */
+  private refocusDocumentOnClose = false;
   private handledLinkRequests = this.svc.linkEditorRequests();
   protected readonly canScrollLeft = signal(false);
   protected readonly canScrollRight = signal(false);
@@ -1443,6 +1917,23 @@ export class Toolbar implements OnDestroy {
       if (requests === this.handledLinkRequests) return;
       this.handledLinkRequests = requests;
       if (!untracked(() => this.svc.floatingMenu())) this.linkTrigger()?.openMenu();
+    });
+
+    // A menu opened by a click or tap while typing returns focus to the
+    // document when it closes, not to its button: on a phone that keeps the
+    // on-screen keyboard up. Menus opened from the keyboard return to their button.
+    effect((onCleanup) => {
+      const subscriptions = this.menuTriggers().flatMap((trigger) => [
+        trigger.menuOpened.subscribe(() => {
+          this.refocusDocumentOnClose =
+            this.lastPress.documentFocused && Date.now() - this.lastPress.at < 1000;
+        }),
+        trigger.menuClosed.subscribe(() => {
+          if (this.refocusDocumentOnClose) this.svc.focus();
+          this.refocusDocumentOnClose = false;
+        }),
+      ]);
+      onCleanup(() => subscriptions.forEach((s) => s.unsubscribe()));
     });
   }
 
@@ -1499,6 +1990,7 @@ export class Toolbar implements OnDestroy {
   }
 
   protected onPointerDown(event: PointerEvent): void {
+    this.lastPress = { at: Date.now(), documentFocused: this.svc.view?.hasFocus() ?? false };
     if (event.button !== 0 && event.pointerType === 'mouse') return;
 
     const el = this.toolbarRef()?.nativeElement;

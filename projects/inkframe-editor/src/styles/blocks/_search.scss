@@ -1,0 +1,18 @@
+/* ── Find and replace ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Match highlights, inside `.ProseMirror`. */
+@mixin document {
+  // Find and replace matches (searchPlugin).
+  .ink-search-match {
+    background-color: var(--ink-search-match-bg);
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px var(--ink-search-match-bg);
+  }
+
+  .ink-search-match-current {
+    background-color: var(--ink-search-current-bg);
+    box-shadow: 0 0 0 1px var(--ink-search-current-ring);
+    color: #1b1b1f;
+  }
+}

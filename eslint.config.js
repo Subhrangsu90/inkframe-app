@@ -4,6 +4,20 @@ const { defineConfig } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 
+// Import boundaries in src/app; README.md, "Folders and imports", explains them.
+// The rules match `@app/` paths, so imports that leave the parent folder must use the alias.
+const noDeepRelative = {
+  regex: '^\\.\\./\\.\\./',
+  message: 'Import from outside the parent folder with the @app/ alias.',
+};
+// Files at a feature's top level are entry points for the router, except its link builders (*.paths.ts).
+const noFeatureEntryPoints = {
+  regex: '^@app/features/[^/]+/(pages/|(?![^/]+\\.paths$)[^/]+$)',
+  message:
+    "Only the router loads pages and route files. Share a feature's code from its *.paths.ts file or its other folders (data-access/, transfer/, versions/).",
+};
+const importBoundaries = (...patterns) => ['error', { patterns: [noDeepRelative, ...patterns] }];
+
 module.exports = defineConfig([
   {
     files: ['**/*.ts'],
@@ -37,6 +51,43 @@ module.exports = defineConfig([
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+    },
+  },
+  {
+    files: ['src/app/**/*.ts'],
+    rules: { 'no-restricted-imports': importBoundaries(noFeatureEntryPoints) },
+  },
+  {
+    files: ['src/app/app.routes.ts'],
+    rules: { 'no-restricted-imports': importBoundaries() },
+  },
+  {
+    files: ['src/app/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': importBoundaries({
+        regex: '^@app/(?!shared/)',
+        message: 'shared/ must not depend on core/, layout/ or features/.',
+      }),
+    },
+  },
+  {
+    files: ['src/app/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': importBoundaries({
+        regex: '^@app/(?!core/|shared/)',
+        message: 'core/ must not depend on layout/ or features/.',
+      }),
+    },
+  },
+  {
+    // A feature's logic (data-access/, transfer/, versions/), as opposed to its pages.
+    files: ['src/app/features/*/*/**/*.ts'],
+    ignores: ['src/app/features/*/pages/**'],
+    rules: {
+      'no-restricted-imports': importBoundaries(noFeatureEntryPoints, {
+        regex: '^(@app/layout/|\\.\\./pages/)',
+        message: 'Feature logic must not depend on the app shell or on pages.',
+      }),
     },
   },
   {

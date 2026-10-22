@@ -9,7 +9,9 @@ import {
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ToastContainerComponent, ConfirmDialogComponent } from './shared/ui';
-import { AppShellComponent } from './shared/layout/app-shell/app-shell';
+import { AppShellComponent } from './layout/app-shell/app-shell';
+import { isStandalonePage } from './layout/standalone-page';
+import { PwaService } from './core/pwa';
 
 /**
  * Switches the page to the light theme (dark text on white paper) and
@@ -51,11 +53,18 @@ export class App {
 
   constructor() {
     const doc = inject(DOCUMENT);
-    // Printing from the browser's menu: print in the light theme.
+    const pwa = inject(PwaService);
     afterNextRender(() => {
+      // Install prompt, offline status and updates.
+      pwa.start();
+
+      // Printing from the browser's menu: print in the light theme.
       let restore: (() => void) | null = null;
       doc.defaultView?.addEventListener('beforeprint', () => {
         restore ??= useLightThemeForPrint(doc);
+        // Images below the screen load lazily; start them now so the printout
+        // includes them (browsers that load lazy images for print already do).
+        for (const img of Array.from(doc.images)) img.loading = 'eager';
       });
       doc.defaultView?.addEventListener('afterprint', () => {
         restore?.();
@@ -63,24 +72,16 @@ export class App {
       });
     });
 
-    this.updateStandalone(this.router.url);
+    // Pages without the shell are marked in their routes (STANDALONE_PAGE).
+    // Until the first navigation ends there is no route yet: keep the default.
+    if (this.router.navigated) this.updateStandalone();
 
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        this.updateStandalone(event.urlAfterRedirects);
-      });
+      .subscribe(() => this.updateStandalone());
   }
 
-  private updateStandalone(rawUrl: string): void {
-    const url = this.normalizeUrl(rawUrl);
-    // Standalone routes: Landing page ('/' or '') and Reader page ('/s', '/s#...', '/s/...').
-    // Not a bare startsWith('/s'): that also matches '/settings'.
-    const standalone = url === '' || url === '/' || url === '/s' || url.startsWith('/s/');
-    this.isStandalone.set(standalone);
-  }
-
-  private normalizeUrl(url: string): string {
-    return url.split('?')[0].split('#')[0];
+  private updateStandalone(): void {
+    this.isStandalone.set(isStandalonePage(this.router.routerState.snapshot.root));
   }
 }

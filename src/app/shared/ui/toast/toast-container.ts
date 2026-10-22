@@ -57,7 +57,7 @@ import { ToastMessage, ToastService } from './toast';
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 9999;
+      z-index: var(--ink-z-toast, 1200);
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -65,6 +65,11 @@ import { ToastMessage, ToastService } from './toast';
       pointer-events: none;
       max-width: 90vw;
       width: max-content;
+
+      /* Phones: above the editor's toolbar, the home indicator and the on-screen keyboard. */
+      @media (max-width: 767px) {
+        bottom: calc(88px + env(safe-area-inset-bottom) + var(--ink-keyboard-inset, 0px));
+      }
     }
 
     .ink-toast-item {
@@ -105,9 +110,9 @@ import { ToastMessage, ToastService } from './toast';
       }
 
       &[data-type='info'] {
-        border-color: rgba(124, 58, 237, 0.3);
+        border-color: rgba(2, 131, 128, 0.3);
         .ink-toast-icon mat-icon {
-          color: var(--ink-accent, #7c3aed);
+          color: var(--ink-accent-text, #017a78);
         }
       }
     }
@@ -138,9 +143,9 @@ import { ToastMessage, ToastService } from './toast';
     }
 
     .ink-toast-action-btn {
-      background: var(--ink-accent-soft, #f3eeff);
-      color: var(--ink-accent-text, #6d28d9);
-      border: 1px solid rgba(124, 58, 237, 0.2);
+      background: var(--ink-accent-soft, #e0f8f6);
+      color: var(--ink-accent-text, #017a78);
+      border: 1px solid rgba(2, 131, 128, 0.2);
       border-radius: var(--ink-radius-sm, 6px);
       padding: 4px 10px;
       font-size: 12px;
@@ -149,7 +154,7 @@ import { ToastMessage, ToastService } from './toast';
       transition: all var(--ink-transition-fast, 120ms ease-out);
 
       &:hover {
-        background: var(--ink-accent, #7c3aed);
+        background: var(--ink-accent, #028380);
         color: #ffffff;
       }
     }
@@ -186,6 +191,19 @@ import { ToastMessage, ToastService } from './toast';
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-toast-action-btn {
+        min-height: 44px;
+      }
+
+      .ink-toast-close-btn {
+        width: 44px;
+        height: 44px;
+        margin: -8px -12px -8px 0;
       }
     }
   `,

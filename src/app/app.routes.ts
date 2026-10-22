@@ -1,51 +1,31 @@
 import { Routes } from '@angular/router';
-import type { EditorView } from './pages/editor/editor';
+import { accountRoutes } from './features/account/account.routes';
+import { documentsRoutes } from './features/documents/documents.routes';
+import { STANDALONE_PAGE } from './layout/standalone-page';
+import type { PageMetaData } from './core/page-meta';
 
 export const routes: Routes = [
   // Landing Page
+  // The only page search engines index; it keeps the site title (core/page-meta.ts).
   {
     path: '',
-    loadComponent: () => import('./pages/landing/landing').then((m) => m.Landing),
+    loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
     pathMatch: 'full',
+    data: { ...STANDALONE_PAGE, meta: { index: true } satisfies PageMetaData },
   },
-  // All docs list page
-  {
-    path: 'docs',
-    loadComponent: () => import('./pages/docs/docs').then((m) => m.Docs),
-  },
-  // A single doc/editor page
-  {
-    path: 'doc/:id',
-    loadComponent: () => import('./pages/editor/editor').then((m) => m.EditorView),
-    // Save debounced edits before the editor is destroyed: once destruction
-    // starts, the editor can no longer emit them.
-    canDeactivate: [(page: EditorView) => (page.flushPendingEdits(), true)],
-  },
-  // Redirect editor/ to docs
-  {
-    path: 'editor',
-    redirectTo: 'docs',
-    pathMatch: 'full',
-  },
-  // Document reader page (view mode, no edit). Share links carry the
-  // document in the fragment (/s#<payload>); /s/:hash serves older links
-  // and local document ids.
-  {
-    path: 's',
-    loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
-  },
-  {
-    path: 's/:hash',
-    loadComponent: () => import('./pages/reader/reader').then((m) => m.Reader),
-  },
+  ...documentsRoutes,
+  // Sign in and create an account (only in builds with accounts; see core/cloud.ts)
+  ...accountRoutes,
   // Settings page
   {
     path: 'settings',
-    loadComponent: () => import('./pages/settings/settings').then((m) => m.Settings),
+    title: 'Settings',
+    loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
   },
   // 404 - Not Found
   {
     path: '**',
-    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
+    title: 'Page not found',
+    loadComponent: () => import('./features/not-found/not-found').then((m) => m.NotFound),
   },
 ];

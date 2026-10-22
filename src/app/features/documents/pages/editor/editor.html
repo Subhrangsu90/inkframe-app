@@ -1,0 +1,322 @@
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER LEFT: Document Title & Autosave Badge -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerLeft>
+  <div class="header-doc-meta">
+    <span class="doc-icon-tile"><ink-icon name="file-text" [size]="14" /></span>
+
+    <!-- Editable Doc Title -->
+    @if (isEditingTitle()) {
+      <input
+        #titleInput
+        type="text"
+        [value]="docTitle()"
+        (blur)="onTitleChange(titleInput.value)"
+        (keydown.enter)="onTitleChange(titleInput.value); titleInput.blur()"
+        (keydown.escape)="isEditingTitle.set(false)"
+        class="header-title-input"
+      />
+    } @else {
+      <button
+        type="button"
+        class="header-title-btn"
+        (click)="isEditingTitle.set(true)"
+        title="Click to rename document"
+      >
+        <span class="title-text">{{ docTitle() }}</span>
+        <ink-icon name="edit" [size]="12" svgClass="edit-icon" />
+      </button>
+    }
+
+    <!-- Live Autosave Status Indicator -->
+    <div
+      class="save-status"
+      [class.saving]="saveStatus() === 'saving'"
+      [class.error]="saveStatus() === 'error'"
+      [attr.title]="
+        saveStatus() === 'error'
+          ? 'Your latest changes could not be saved in this browser. Export a backup to keep them.'
+          : null
+      "
+      role="status"
+    >
+      <span class="status-dot"></span>
+      <span class="status-label">{{
+        saveStatus() === 'saving' ? 'Saving…' : saveStatus() === 'error' ? 'Not saved' : 'Saved'
+      }}</span>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER CENTER: Rich Canvas & Preview Tabs     -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerCenter>
+  <div class="header-tabs-group" role="tablist" aria-label="Editor Views">
+    <div class="segmented-pill">
+      <!-- TAB 1: Rich Canvas -->
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeView() === 'rich'"
+        class="tab-btn"
+        [class.active]="activeView() === 'rich'"
+        (click)="setActiveView('rich')"
+        title="Edit the document"
+      >
+        <ink-icon name="edit" [size]="13" />
+        <span>Edit</span>
+      </button>
+
+      <!-- TAB 2: Preview -->
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeView() === 'preview'"
+        class="tab-btn"
+        [class.active]="activeView() === 'preview'"
+        (click)="setActiveView('preview')"
+        title="Preview the document as readers see it"
+      >
+        <ink-icon name="eye" [size]="13" />
+        <span>Preview</span>
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER RIGHT: Page setup, Share & Export      -->
+<!-- (word count lives in the editor's status bar) -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerRight>
+  <div class="header-actions">
+    <!-- Page setup: only while editing the current document -->
+    @if (activeView() === 'rich' && !previewVersion()) {
+      <button
+        type="button"
+        class="page-setup-btn"
+        (click)="openPageSetup()"
+        aria-haspopup="dialog"
+        aria-label="Page setup"
+        title="Page setup: paper, margins, font, header and footer"
+      >
+        <ink-icon name="ruler" [size]="14" />
+        <span class="hidden md:inline">Page setup</span>
+      </button>
+    }
+
+    <!-- Share Reader Page Link Popover / Button -->
+    <button
+      type="button"
+      class="share-btn"
+      cdkOverlayOrigin
+      #shareOrigin="cdkOverlayOrigin"
+      (click)="toggleShareMenu()"
+      [attr.aria-expanded]="showShareMenu()"
+      aria-haspopup="dialog"
+      title="Share reader page link"
+    >
+      <ink-icon name="share" [size]="13" />
+      <span class="hidden sm:inline">Share</span>
+    </button>
+
+    <!-- Below the button; a bottom sheet on phones. A click outside or Escape closes it. -->
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="shareOrigin"
+      [cdkConnectedOverlayOpen]="showShareMenu()"
+      [cdkConnectedOverlayPositions]="sharePositions"
+      [cdkConnectedOverlayHasBackdrop]="true"
+      cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+      cdkConnectedOverlayPanelClass="ink-phone-sheet"
+      (backdropClick)="showShareMenu.set(false)"
+      (detach)="showShareMenu.set(false)"
+    >
+      <div
+        class="share-popover"
+        role="dialog"
+        aria-labelledby="share-popover-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
+      >
+        <div class="share-popover-header">
+          <div class="flex items-center gap-1.5 font-semibold text-xs text-ink-text-heading">
+            <ink-icon name="share" [size]="13" svgClass="text-ink-accent" />
+            <span id="share-popover-title">Share Reader Link</span>
+          </div>
+          <button
+            type="button"
+            class="close-share-btn"
+            (click)="showShareMenu.set(false)"
+            aria-label="Close"
+            title="Close"
+          >
+            <ink-icon name="close" [size]="11" />
+          </button>
+        </div>
+
+        <p class="share-popover-desc">
+          Anyone with this link can view this document anywhere with zero backend or account
+          required.
+        </p>
+
+        <div class="share-link-box">
+          <input
+            type="text"
+            readonly
+            [value]="shareUrl() || 'Generating shareable link...'"
+            class="share-link-input font-mono"
+            aria-label="Share link"
+            #shareInput
+            (click)="shareInput.select()"
+          />
+          <button
+            type="button"
+            class="share-copy-action-btn"
+            (click)="copyReaderLink()"
+            title="Copy link"
+            cdkFocusInitial
+          >
+            <ink-icon name="copy" [size]="12" />
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <div class="share-popover-footer">
+          <a
+            [href]="shareUrl() || '/s/' + currentDocId()"
+            target="_blank"
+            (click)="showShareMenu.set(false)"
+            class="preview-reader-link"
+            title="Open reader page"
+          >
+            <ink-icon name="external-link" [size]="12" />
+            <span>Open Reader View</span>
+          </a>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Export Menu -->
+    <button
+      type="button"
+      class="export-btn"
+      [matMenuTriggerFor]="exportMenu"
+      [disabled]="exporting()"
+      aria-label="Export, print or copy"
+      title="Export, print or copy"
+    >
+      <ink-icon name="download" [size]="14" />
+      <span class="hidden sm:inline">Export</span>
+      <ink-icon name="chevron-down" [size]="12" class="export-caret" />
+    </button>
+    <mat-menu #exportMenu="matMenu" xPosition="before" class="ink-export-menu">
+      <button mat-menu-item (click)="exportMarkdown()">
+        <span class="menu-item-glyph"><ink-icon name="file-text" [size]="16" /></span>
+        <span class="menu-item-text">Markdown (.md)</span>
+      </button>
+      <button mat-menu-item (click)="exportHtml()">
+        <span class="menu-item-glyph"><ink-icon name="file-code" [size]="16" /></span>
+        <span class="menu-item-text">Web page (.html)</span>
+      </button>
+      <mat-divider />
+      <button mat-menu-item (click)="printDoc()">
+        <span class="menu-item-glyph"><ink-icon name="printer" [size]="16" /></span>
+        <span class="menu-item-text">Print or save as PDF</span>
+        <span class="menu-shortcut">Ctrl+P</span>
+      </button>
+      <mat-divider />
+      <button mat-menu-item (click)="copyMarkdown()">
+        <span class="menu-item-glyph"><ink-icon name="copy" [size]="16" /></span>
+        <span class="menu-item-text">Copy as Markdown</span>
+      </button>
+    </mat-menu>
+  </div>
+</ng-template>
+
+<!-- ═════════════════════════════════════════════ -->
+<!-- MAIN WORKSPACE VIEW (Rich Canvas / Preview)  -->
+<!-- ═════════════════════════════════════════════ -->
+<div class="editor-workspace-body" [class.is-preview]="activeView() === 'preview'">
+  <div class="view-panel editor-view-panel">
+    <!-- A version from the history, shown in place of the editor -->
+    @if (previewVersion(); as version) {
+      <div class="version-preview-bar" role="status">
+        <ink-icon name="history" [size]="15" class="version-preview-icon" />
+        <p class="version-preview-text">
+          <strong>{{ version.name || 'Earlier version' }}</strong>
+          <span>
+            {{ previewWhen() }} · {{ version.wordCount }}
+            {{ version.wordCount === 1 ? 'word' : 'words' }}
+          </span>
+        </p>
+        <div class="version-preview-actions">
+          <button type="button" class="version-btn" (click)="exitPreview()">
+            <ink-icon name="chevron-left" [size]="14" />
+            <!-- On phones the version list covers the page, so this returns to it. -->
+            <span class="hidden md:inline">Back to current</span>
+            <span class="md:hidden">All versions</span>
+          </button>
+          <button
+            type="button"
+            class="version-btn version-btn-primary"
+            (click)="restorePreviewedVersion()"
+            [disabled]="historyBusy()"
+          >
+            <ink-icon name="rotate-ccw" [size]="14" />
+            <span>Restore this version</span>
+          </button>
+        </div>
+      </div>
+      <div
+        class="version-preview ink-canvas ink-scrollbar"
+        [attr.data-ink-layout]="previewSetup().layout"
+        [attr.data-ink-page-view]="previewPageCount() > 0 ? '' : null"
+        [style]="previewLayoutStyle()"
+      >
+        <article class="ink-sheet">
+          @if (previewPageCount() > 0) {
+            <ink-page-frames [pages]="previewPageCount()" [setup]="previewSetup()" />
+          }
+          <div
+            class="ink-sheet-body ink-static-doc ProseMirror ProseMirror-preview"
+            [innerHTML]="previewHtml()"
+            [inkPageView]="previewSetup()"
+            (pageCount)="previewPageCount.set($event)"
+          ></div>
+        </article>
+      </div>
+    }
+
+    <div class="editor-scroll-container" [hidden]="previewVersion() !== null">
+      <ink-editor
+        #editorComp
+        [initialDoc]="currentStoredDoc()"
+        [extensions]="extensions()"
+        [editable]="activeView() === 'rich'"
+        [showToolbar]="activeView() === 'rich' && showToolbar()"
+        mobileToolbar="bottom"
+        [showRuler]="editorPreferences.showRuler()"
+        [zoom]="editorPreferences.zoom()"
+        (zoomChange)="editorPreferences.setZoom($event)"
+        [defaultPageSetup]="pageSetupDefaults.value()"
+        (defaultPageSetupChange)="pageSetupDefaults.save($event)"
+        (changed)="onDocChanged($event)"
+        (historyRequested)="toggleHistory()"
+      />
+    </div>
+  </div>
+
+  @if (historyOpen()) {
+    <ink-version-panel
+      [versions]="versions()"
+      [selectedId]="previewVersion()?.id ?? null"
+      [busy]="historyBusy()"
+      (selected)="selectVersion($event)"
+      (saveRequested)="saveNamedVersion($event)"
+      (removed)="deleteVersion($event)"
+      (closed)="closeHistory()"
+    />
+  }
+</div>

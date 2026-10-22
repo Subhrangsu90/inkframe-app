@@ -52,13 +52,13 @@ import { MatIconModule } from '@angular/material/icon';
       width: 56px;
       height: 56px;
       border-radius: var(--ink-radius-lg, 16px);
-      background: var(--ink-accent-soft, #f3eeff);
-      color: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent-soft, #e0f8f6);
+      color: var(--ink-accent-text, #017a78);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12);
+      box-shadow: 0 4px 12px rgba(2, 131, 128, 0.12);
 
       mat-icon {
         font-size: 28px;
@@ -83,14 +83,14 @@ import { MatIconModule } from '@angular/material/icon';
     }
 
     .ink-empty-state-action-btn {
-      background: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent, #028380);
       color: #ffffff;
       border-radius: var(--ink-radius-md, 10px);
       font-weight: 600;
       box-shadow: var(--ink-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
 
       &:hover {
-        background: var(--ink-accent-hover, #6d28d9);
+        background: var(--ink-accent-hover, #08726f);
         transform: translateY(-1px);
         box-shadow: var(--ink-shadow-md, 0 4px 16px rgba(0, 0, 0, 0.06));
       }

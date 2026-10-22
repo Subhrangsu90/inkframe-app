@@ -145,14 +145,13 @@ export class ConfirmDialogService {
     .ink-dialog-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 10000;
+      z-index: var(--ink-z-modal, 1100);
       background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
       box-sizing: border-box;
       animation: ink-dialog-fade-in 150ms ease-out;
     }
@@ -181,8 +180,8 @@ export class ConfirmDialogService {
       width: 44px;
       height: 44px;
       border-radius: var(--ink-radius-md, 10px);
-      background: var(--ink-accent-soft, #f3eeff);
-      color: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent-soft, #e0f8f6);
+      color: var(--ink-accent-text, #017a78);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -235,7 +234,8 @@ export class ConfirmDialogService {
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: all var(--ink-transition-fast, 120ms ease-out);
+      transition: var(--ink-transition-fast, 120ms ease-out);
+      transition-property: background-color, border-color, color, box-shadow, opacity, transform;
 
       &:active {
         transform: scale(0.98);
@@ -253,16 +253,18 @@ export class ConfirmDialogService {
     }
 
     .ink-dialog-btn-confirm {
-      background: var(--ink-accent, #7c3aed);
+      background: var(--ink-accent, #028380);
       color: #ffffff;
 
       &:hover {
-        background: var(--ink-accent-hover, #6d28d9);
+        background: var(--ink-accent-hover, #08726f);
       }
     }
 
+    /* A fixed red in both themes: dark mode's --ink-danger is lighter, for text,
+       and gives white button text only 3.8:1. */
     .ink-dialog-btn-destructive {
-      background: var(--ink-danger, #dc2626);
+      background: #dc2626;
       color: #ffffff;
 
       &:hover {
@@ -287,6 +289,13 @@ export class ConfirmDialogService {
       to {
         opacity: 1;
         transform: scale(1);
+      }
+    }
+
+    /* Touch screens: 44px targets. */
+    @media (pointer: coarse) {
+      .ink-dialog-btn {
+        height: 44px;
       }
     }
   `,

@@ -1,0 +1,30 @@
+/*
+ * ── Page setup dialog (CDK Dialog) ──
+ * Centered on larger screens; a bottom sheet on phones, above the on-screen
+ * keyboard (--ink-keyboard-inset, see VisualViewportTracker). The overlay
+ * sizes and positions panes with inline styles, hence !important.
+ */
+.ink-page-setup-backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.ink-page-setup-pane ink-page-setup-dialog {
+  max-height: inherit;
+}
+
+@media (max-width: 539px) {
+  .cdk-global-overlay-wrapper:has(> .ink-page-setup-pane) {
+    align-items: flex-end !important;
+  }
+
+  .cdk-overlay-pane.ink-page-setup-pane {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - var(--ink-keyboard-inset, 0px) - 24px) !important;
+    margin: 0 0 var(--ink-keyboard-inset, 0px) !important;
+
+    .ink-ps {
+      border-radius: 16px 16px 0 0;
+    }
+  }
+}

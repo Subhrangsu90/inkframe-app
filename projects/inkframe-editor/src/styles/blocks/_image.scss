@@ -1,0 +1,253 @@
+/* ── Images ── */
+/* Mixins that _editor-content.scss includes where each set of rules belongs in its order. */
+
+/* Images: resize handles, toolbar and caption. */
+@mixin block {
+  /* Images */
+  .ProseMirror-preview img,
+  img.ink-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0;
+    display: block;
+    margin: 1.25rem 0;
+    border: 1px solid var(--ink-border-default);
+    box-shadow: none;
+  }
+
+  .ProseMirror-preview img {
+    cursor: zoom-in;
+    transition:
+      border-color 0.15s ease,
+      opacity 0.15s ease;
+
+    &:hover {
+      border-color: var(--ink-border-focus);
+      opacity: 0.95;
+    }
+  }
+
+  .ink-image-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 1.25rem 0;
+    vertical-align: middle;
+    transition: width 0.08s ease;
+
+    &.is-resizing {
+      user-select: none;
+      cursor: ew-resize;
+
+      .ink-image-wrapper {
+        outline: 2px dashed var(--ink-accent-light, #58aaa6) !important;
+      }
+    }
+
+    .ink-image-wrapper {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      width: 100%;
+      border-radius: 0;
+      overflow: visible;
+
+      .ink-image {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 0;
+        border: 1px solid var(--ink-border-default);
+        box-shadow: none;
+        cursor: zoom-in;
+        transition: border-color 0.15s ease;
+
+        &:hover {
+          border-color: var(--ink-border-focus);
+        }
+      }
+
+      /* Floating action toolbar (Presets, Preview, Delete) */
+      .ink-image-toolbar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(24, 26, 32, 0.88);
+        backdrop-filter: blur(8px);
+        padding: 3px 6px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
+        z-index: 10;
+        pointer-events: none;
+
+        @media (max-width: 600px) {
+          top: 6px;
+          right: 6px;
+          padding: 2px 4px;
+          gap: 2px;
+          max-width: calc(100% - 12px);
+          overflow-x: auto;
+        }
+
+        .ink-image-tool-btn {
+          background: transparent;
+          border: none;
+          color: #e2e8f0;
+          font-size: 0.78rem;
+          font-weight: 500;
+          padding: 3px 8px;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.12s ease;
+          line-height: 1.3;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+          }
+
+          &.preview-btn {
+            color: #93c5fd;
+            font-weight: 600;
+
+            &:hover {
+              background: #1e3a5f;
+              color: #bfdbfe;
+            }
+          }
+
+          &.preset-btn {
+            font-family: monospace;
+            font-size: 0.74rem;
+          }
+
+          &.delete-btn {
+            color: #f87171;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+
+            &:hover {
+              background: rgba(239, 68, 68, 0.25);
+              color: #fca5a5;
+            }
+          }
+        }
+      }
+
+      /* Size badge during resize */
+      .ink-image-size-badge {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.82);
+        color: #60a5fa;
+        font-size: 0.78rem;
+        font-family: monospace;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        pointer-events: none;
+        z-index: 15;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      }
+
+      /* Resize Handles */
+      .ink-image-resize-handle {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: var(--ink-accent-primary, #028380);
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        z-index: 12;
+        opacity: 0;
+        transition:
+          opacity 0.15s ease,
+          background-color 0.12s ease;
+
+        &:hover {
+          background: var(--ink-accent-hover, #08726f);
+        }
+
+        &.handle-se {
+          bottom: -5px;
+          right: -10px;
+          cursor: nwse-resize;
+        }
+
+        &.handle-e {
+          top: 50%;
+          right: -10px;
+          transform: translateY(-50%);
+          cursor: ew-resize;
+
+          &:hover {
+            background: var(--ink-accent-hover, #08726f);
+          }
+        }
+
+        &.handle-sw {
+          bottom: -5px;
+          left: -10px;
+          cursor: nesw-resize;
+        }
+
+        &.handle-w {
+          top: 50%;
+          left: -10px;
+          transform: translateY(-50%);
+          cursor: ew-resize;
+
+          &:hover {
+            background: var(--ink-accent-hover, #08726f);
+          }
+        }
+      }
+    }
+
+    /* Show controls on hover, selected, or focus */
+    &:hover,
+    &.selected,
+    &:focus-within {
+      .ink-image-wrapper {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      .ink-image-toolbar {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .ink-image-resize-handle {
+        opacity: 1;
+      }
+    }
+
+    /* The container already provides the vertical spacing. */
+    img.ink-image {
+      margin: 0;
+    }
+
+    .ink-image-caption {
+      font-size: 0.875em;
+      line-height: 1.45;
+      color: var(--ink-text-secondary, #666);
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+  }
+}

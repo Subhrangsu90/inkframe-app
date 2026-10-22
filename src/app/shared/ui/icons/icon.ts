@@ -57,6 +57,7 @@ export type InkIconName =
   | 'search'
   | 'folder'
   | 'external-link'
+  | 'install'
   | 'sidebar'
   | 'plus'
   | 'trash'
@@ -70,11 +71,15 @@ export type InkIconName =
   | 'chevron-left'
   | 'upload'
   | 'printer'
+  | 'ruler'
   | 'history'
   | 'alert-triangle'
   | 'rotate-ccw'
   | 'bookmark'
-  | 'file-code';
+  | 'file-code'
+  | 'eye-off'
+  | 'log-in'
+  | 'log-out';
 
 @Component({
   selector: 'ink-icon',
@@ -249,6 +254,15 @@ export type InkIconName =
           <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
           <rect x="6" y="14" width="12" height="8" rx="1" />
         }
+        @case ('ruler') {
+          <path
+            d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"
+          />
+          <path d="m14.5 12.5 2-2" />
+          <path d="m11.5 9.5 2-2" />
+          <path d="m8.5 6.5 2-2" />
+          <path d="m17.5 15.5 2-2" />
+        }
         @case ('history') {
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
@@ -329,6 +343,13 @@ export type InkIconName =
           <path d="M10 14 21 3" />
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
         }
+        @case ('install') {
+          <path d="M12 13V7" />
+          <path d="m15 10-3 3-3-3" />
+          <rect width="20" height="14" x="2" y="3" rx="2" />
+          <path d="M12 17v4" />
+          <path d="M8 21h8" />
+        }
         @case ('sidebar') {
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M9 3v18" />
@@ -373,6 +394,26 @@ export type InkIconName =
             d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
           />
           <circle cx="12" cy="12" r="3" />
+        }
+        @case ('eye-off') {
+          <path
+            d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
+          />
+          <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+          <path
+            d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
+          />
+          <path d="m2 2 20 20" />
+        }
+        @case ('log-in') {
+          <path d="m10 17 5-5-5-5" />
+          <path d="M15 12H3" />
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        }
+        @case ('log-out') {
+          <path d="m16 17 5-5-5-5" />
+          <path d="M21 12H9" />
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
         }
         @case ('chevron-down') {
           <path d="m6 9 6 6 6-6" />

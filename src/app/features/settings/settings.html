@@ -1,0 +1,403 @@
+<!-- ═════════════════════════════════════════════ -->
+<!-- HEADER LEFT: Page Title                       -->
+<!-- ═════════════════════════════════════════════ -->
+<ng-template #headerLeft>
+  <div class="page-heading">
+    <span class="page-icon"><ink-icon name="settings" [size]="14" /></span>
+    <span class="page-title">Settings</span>
+  </div>
+</ng-template>
+
+<div class="settings-body ink-scrollbar">
+  <div class="settings-container">
+    <header class="page-intro">
+      <h1 class="intro-title">Settings</h1>
+      <p class="intro-desc">
+        @if (auth.enabled) {
+          Preferences and data for this browser. Nothing here leaves your device, apart from signing
+          in to an account.
+        } @else {
+          Preferences and data for this browser. Nothing here leaves your device.
+        }
+      </p>
+    </header>
+
+    <!-- ACCOUNT (builds with accounts only; see core/cloud.ts) -->
+    @if (auth.enabled) {
+      <section class="settings-section" aria-labelledby="account-heading">
+        <div class="section-label">
+          <h2 id="account-heading" class="section-title">Account</h2>
+          <p class="section-desc">
+            Optional. An account will sync your documents across your devices. Until sync arrives,
+            your documents stay in this browser either way.
+          </p>
+        </div>
+
+        <div class="settings-card">
+          @switch (auth.status()) {
+            @case ('signed-in') {
+              <div class="setting-row">
+                <div class="account-identity">
+                  <ink-avatar
+                    [name]="auth.user()?.name || auth.user()?.email || ''"
+                    [src]="auth.user()?.image"
+                    [size]="36"
+                  />
+                  <div class="setting-info">
+                    <span class="setting-label">{{ auth.user()?.name }}</span>
+                    <span class="setting-desc">{{ auth.user()?.email }}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="secondary-btn"
+                  (click)="signOut()"
+                  [disabled]="signingOut()"
+                >
+                  @if (signingOut()) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                  } @else {
+                    <ink-icon name="log-out" [size]="14" />
+                  }
+                  Sign out
+                </button>
+              </div>
+            }
+            @case ('signed-out') {
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Not signed in</span>
+                  <span class="setting-desc">You can use Inkframe fully without an account.</span>
+                </div>
+                <div class="row-actions">
+                  <a routerLink="/signup" [queryParams]="settingsReturn" class="secondary-btn">
+                    Create account
+                  </a>
+                  <a routerLink="/signin" [queryParams]="settingsReturn" class="primary-btn">
+                    <ink-icon name="log-in" [size]="14" />
+                    Sign in
+                  </a>
+                </div>
+              </div>
+            }
+            @default {
+              <div class="setting-row">
+                <span class="setting-desc" role="status">Checking your account…</span>
+              </div>
+            }
+          }
+        </div>
+      </section>
+    }
+
+    <!-- APPEARANCE -->
+    <section class="settings-section" aria-labelledby="appearance-heading">
+      <div class="section-label">
+        <h2 id="appearance-heading" class="section-title">Appearance</h2>
+        <p class="section-desc">
+          Choose how Inkframe looks. Applies to the editor, previews and shared links you open.
+        </p>
+      </div>
+
+      <div class="theme-options" role="group" aria-label="Theme">
+        @for (option of themeOptions; track option.id) {
+          <button
+            type="button"
+            class="theme-option"
+            [class.active]="currentTheme() === option.id"
+            [attr.aria-pressed]="currentTheme() === option.id"
+            (click)="setTheme(option.id, $event)"
+          >
+            <span class="theme-preview" [class]="'preview-' + option.id" aria-hidden="true">
+              <span class="pv-sidebar">
+                <span class="pv-dot accent"></span>
+                <span class="pv-bar len-70"></span>
+                <span class="pv-bar len-50"></span>
+                <span class="pv-bar len-60"></span>
+              </span>
+              <span class="pv-main">
+                <span class="pv-header"></span>
+                <span class="pv-page">
+                  <span class="pv-bar heading"></span>
+                  <span class="pv-bar len-90"></span>
+                  <span class="pv-bar len-75"></span>
+                  <span class="pv-bar len-60"></span>
+                </span>
+              </span>
+            </span>
+            <span class="theme-meta">
+              <span class="theme-name">{{ option.name }}</span>
+              <span class="theme-check" aria-hidden="true">
+                <ink-icon name="check" [size]="11" [strokeWidth]="3" />
+              </span>
+            </span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- EDITOR -->
+    <section class="settings-section" aria-labelledby="editor-heading">
+      <div class="section-label">
+        <h2 id="editor-heading" class="section-title">Editor</h2>
+        <p class="section-desc">
+          How documents look while you write. Saved in this browser, not in your documents.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span id="ruler-label" class="setting-label">Show ruler</span>
+            <span id="ruler-desc" class="setting-desc">
+              A ruler above the page, with handles to drag the left and right margins. Shown on
+              larger screens.
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="switch"
+            [attr.aria-checked]="editorPreferences.showRuler()"
+            aria-labelledby="ruler-label"
+            aria-describedby="ruler-desc"
+            (click)="editorPreferences.setShowRuler(!editorPreferences.showRuler())"
+          >
+            <span class="switch-thumb" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- APP: install, offline, updates -->
+    <section class="settings-section" aria-labelledby="app-heading">
+      <div class="section-label">
+        <h2 id="app-heading" class="section-title">App</h2>
+        <p class="section-desc">
+          Install Inkframe to open it in its own window, from your home screen or app list.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Install Inkframe</span>
+            <span class="setting-desc">
+              @if (pwa.standalone()) {
+                You are using the installed app.
+              } @else if (pwa.canInstall()) {
+                Adds Inkframe to your apps. Your documents stay the same.
+              } @else if (pwa.installFromShareMenu()) {
+                Tap Share in your browser, then Add to Home Screen.
+              } @else {
+                If your browser can install apps, Install is in its menu or address bar.
+              }
+            </span>
+          </div>
+          @if (pwa.standalone()) {
+            <span class="status-chip"><span class="chip-dot"></span>Installed</span>
+          } @else if (pwa.canInstall()) {
+            <button type="button" class="secondary-btn" (click)="pwa.install()">
+              <ink-icon name="install" [size]="14" />
+              Install
+            </button>
+          }
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Works offline</span>
+            <span class="setting-desc">
+              @if (pwa.offlineReady()) {
+                Inkframe is saved in this browser and starts without an internet connection.
+              } @else {
+                Inkframe is saved for offline use after it has loaded once. Some browsers, and
+                private windows, don't allow it.
+              }
+            </span>
+          </div>
+          @if (pwa.offlineReady()) {
+            <span class="status-chip"><span class="chip-dot"></span>Ready</span>
+          } @else {
+            <span class="status-chip muted"><span class="chip-dot"></span>Not yet</span>
+          }
+        </div>
+        @if (pwa.updateReady()) {
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Update ready</span>
+              <span class="setting-desc">A new version starts when Inkframe reloads.</span>
+            </div>
+            <button type="button" class="secondary-btn" (click)="pwa.reload()">Reload</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- STORAGE -->
+    <section class="settings-section" aria-labelledby="storage-heading">
+      <div class="section-label">
+        <h2 id="storage-heading" class="section-title">Storage</h2>
+        <p class="section-desc">
+          Documents and images are saved in this browser's storage (IndexedDB).
+        </p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Documents</span>
+          <span class="stat-value">{{ docCount() }}</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-label">Space used</span>
+          <span class="stat-value">{{ storageUsed() }}</span>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Welcome guide</span>
+            <span class="setting-desc">Add the welcome document back to your documents.</span>
+          </div>
+          <button type="button" class="secondary-btn" (click)="restoreSampleDoc()">Restore</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKUP -->
+    <section class="settings-section" aria-labelledby="backup-heading">
+      <div class="section-label">
+        <h2 id="backup-heading" class="section-title">Backup</h2>
+        <p class="section-desc">
+          Your documents exist only in this browser. Clearing site data or losing this device
+          deletes them, so export a backup now and then.
+        </p>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Export backup</span>
+            <span class="setting-desc">
+              One .inkframe.json file with every document, its version history and its images.
+            </span>
+          </div>
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="exportBackup()"
+            [disabled]="backupBusy() !== null"
+          >
+            @if (backupBusy() === 'export') {
+              <span class="btn-spinner" aria-hidden="true"></span>
+            } @else {
+              <ink-icon name="download" [size]="14" />
+            }
+            Export backup
+          </button>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Restore from backup</span>
+            <span class="setting-desc">
+              Add the documents in a backup file to this browser, or replace everything here with
+              them.
+            </span>
+          </div>
+          <button
+            type="button"
+            class="secondary-btn"
+            (click)="restoreInput.click()"
+            [disabled]="backupBusy() !== null"
+          >
+            @if (backupBusy() === 'restore') {
+              <span class="btn-spinner" aria-hidden="true"></span>
+            } @else {
+              <ink-icon name="upload" [size]="14" />
+            }
+            Restore…
+          </button>
+          <input
+            #restoreInput
+            type="file"
+            class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
+            [accept]="backupAccept"
+            (change)="onBackupFileChosen($event)"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- DANGER ZONE -->
+    <section class="settings-section" aria-labelledby="danger-heading">
+      <div class="section-label">
+        <h2 id="danger-heading" class="section-title">Danger zone</h2>
+      </div>
+
+      <div class="settings-card danger-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Delete all data</span>
+            <span class="setting-desc">
+              Permanently deletes every document and image in this browser. Your theme is kept.
+              Export anything you need first.
+            </span>
+          </div>
+          <button type="button" class="danger-btn" (click)="clearStorage()">Delete all data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="settings-section" aria-labelledby="about-heading">
+      <div class="section-label">
+        <h2 id="about-heading" class="section-title">About</h2>
+      </div>
+
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Private by design</span>
+            <span class="setting-desc"
+              >No account and no server. Share links carry the document inside the link
+              itself.</span
+            >
+          </div>
+          <span class="status-chip"><span class="chip-dot"></span>Local only</span>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Source code</span>
+            <span class="setting-desc"
+              >Built with Angular and ProseMirror. The code is on GitHub.</span
+            >
+          </div>
+          <a
+            class="link-btn"
+            href="https://github.com/Subhrangsu90/inkframe-app"
+            target="_blank"
+            rel="noopener"
+          >
+            GitHub <ink-icon name="external-link" [size]="12" />
+          </a>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Report a problem</span>
+            <span class="setting-desc">Found a bug or have an idea? Open an issue.</span>
+          </div>
+          <a
+            class="link-btn"
+            href="https://github.com/Subhrangsu90/inkframe-app/issues"
+            target="_blank"
+            rel="noopener"
+          >
+            Issues <ink-icon name="external-link" [size]="12" />
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

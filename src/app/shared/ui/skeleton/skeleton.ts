@@ -11,7 +11,8 @@ export type SkeletonVariant = 'text' | 'rect' | 'circle' | 'card' | 'bar' | 'edi
   template: `
     @switch (variant()) {
       @case ('editor') {
-        <div class="ink-skeleton-editor" [style.max-width]="width() || '760px'">
+        <!-- Full width, like a Pageless document (the default layout). -->
+        <div class="ink-skeleton-editor" [style.max-width]="width() || '100%'">
           <div class="ink-skeleton-shimmer ink-skeleton-title"></div>
           <div class="ink-skeleton-meta-row">
             <div class="ink-skeleton-shimmer ink-skeleton-pill"></div>

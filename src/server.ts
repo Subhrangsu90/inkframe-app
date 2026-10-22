@@ -24,14 +24,25 @@ const angularApp = new AngularNodeAppEngine();
  * ```
  */
 
+/** Build output with a content hash in its name (main-XXXXXXXX.js, media/inter-…-XXXXXXXX.woff2). */
+const HASHED_FILE = /[-.][A-Za-z0-9_-]{8}\.(?:js|mjs|css|woff2?)$/;
+
 /**
- * Serve static files from /browser
+ * Serve static files from /browser. Hashed files never change, so browsers
+ * keep them for a year. Everything else (the service worker and its
+ * manifest, the web app manifest, icons) is checked for changes on every
+ * request, so updates reach installed apps.
  */
 app.use(
   express.static(browserDistFolder, {
-    maxAge: '1y',
     index: false,
     redirect: false,
+    setHeaders: (res, path) => {
+      res.setHeader(
+        'Cache-Control',
+        HASHED_FILE.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache',
+      );
+    },
   }),
 );
 

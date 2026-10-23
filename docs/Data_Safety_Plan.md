@@ -128,9 +128,10 @@ These are the promises the privacy policy will make. Every control below exists 
 | DS-2.2 | **App server security headers** (`inkframe-app/src/server.ts` sends none today): CSP (DS-1.13), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `frame-ancestors 'none'` (and `X-Frame-Options: DENY`), `Permissions-Policy` turning off camera, microphone and location, `Cross-Origin-Opener-Policy: same-origin` | ⬜ | Stage 0 | helmet, as the API does |
 | DS-2.3 | **Allowed hosts** for the SSR server (`security.allowedHosts` is `[]`, blocker B6) | ⬜ | Stage 0 | |
 | DS-2.4 | **CORS allow-list** with credentials; `/v1` writes from any other `Origin` refused (403); Better Auth checks origins on its own routes, forced on in every environment | ✅ | — | `same-origin.middleware.ts` |
-| DS-2.5 | **Session cookie:** HTTP-only, `Secure`, `SameSite=Lax`; `__Secure-` prefix in production. Check the real cookie on staging. | 🟡 | Stage 0 | The app and API are the same site (`inkframe.app`, `api.inkframe.app`) |
+| DS-2.5 | **Session cookie:** HTTP-only, `Secure`, `SameSite=Lax`; `__Secure-` prefix in production ✅ (checked on the staging API, 2026-10-23). The app and API must be on **one site** for the browser to send it: `staging.inkframe.app` with `api.staging.inkframe.app`, `inkframe.app` with `api.inkframe.app` ⬜. Two `*.onrender.com` addresses are two sites (`onrender.com` is a public suffix), and so is `localhost` with any deployed API. | 🟡 | Stage 0 | Never fix it with `SameSite=None`: browsers increasingly block such cookies |
 | DS-2.6 | **Database connections use TLS with certificate checks** (`sslmode=verify-full` in `DATABASE_URL` and `MIGRATION_DATABASE_URL`) | ⬜ | Stage 0 | Neon requires TLS; verifying the certificate stops a man in the middle |
 | DS-2.7 | Edge protection (a CDN or firewall in front of Render) | ⬜ | After GA, if needed | It would see all traffic: it becomes a subprocessor (DS-11.2) |
+| DS-2.8 | **The API only through the app's proxy** (staging, D33): Vercel adds a secret header to the requests it forwards, and the server refuses any request without it, except `/health`. The visitor's IP comes from Vercel's `X-Forwarded-For` only on those requests, so nobody can fake it to escape the rate limit. API answers are `Cache-Control: no-store`. | ✅ | Stage 0 | `viaProxy()` in inkframe-server; tested |
 
 ---
 
@@ -277,7 +278,7 @@ Inkframe is built in India, hosts in Singapore (D22) and will have users elsewhe
 | Id | Control | Status | Needed by | Notes |
 | --- | --- | --- | --- | --- |
 | DS-11.1 | **Privacy policy and terms,** linked from sign-up; written for people, matching section 1's promises | ⬜ | Closed Beta | Testers get short tester terms in Alpha |
-| DS-11.2 | **Subprocessors listed, with signed data processing terms:** Render, Neon, AWS, the email provider, the payment provider; the AI provider later | ⬜ | Closed Beta | |
+| DS-11.2 | **Subprocessors listed, with signed data processing terms:** Render, Neon, AWS, Vercel (hosts the app and, through its proxy, sees API traffic), the email provider, the payment provider; the AI provider later | ⬜ | Closed Beta | Vercel's Hobby plan is for non-commercial use: Pro before payments go live |
 | DS-11.3 | **Export my data:** every document, version and image list the server holds, plus profile and security events, in one file | ⬜ | Alpha | `GET /v1/me/export` |
 | DS-11.4 | **Delete my account:** after asking again (DS-3.7): cancel the subscription, delete images in S3, then every row (`ON DELETE CASCADE` from `user`); gone from point-in-time backups within their window and from dumps within 30 days. The policy says so. | ⬜ | Alpha | Tested: no row or object left |
 | DS-11.5 | **Retention by schedule:** each row of the inventory (2.1) enforced by a job or a lifecycle rule | ⬜ | Closed Beta | Server Plan, 5 |

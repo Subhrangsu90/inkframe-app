@@ -28,7 +28,8 @@ async function checked<S extends z.ZodType>(
  */
 export function createAuthApi(base: string): AuthApi {
   const client = createAuthClient({
-    baseURL: base,
+    // An empty base is the app's own origin (CloudConfig.apiUrl); Better Auth needs it spelled out.
+    baseURL: base || globalThis.location.origin,
     basePath: API.auth,
     // The session is a cookie for the server's origin: send it along.
     fetchOptions: { credentials: 'include', timeout: REQUEST_TIMEOUT_MS },

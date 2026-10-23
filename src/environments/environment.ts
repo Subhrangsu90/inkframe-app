@@ -12,7 +12,11 @@ export const environment = {
      * claims it can't keep (product plan, section 5, "Fallback").
      */
     enabled: false,
-    /** The server's origin, without a trailing slash. Endpoint paths: src/app/core/api-endpoints.ts. */
-    apiUrl: 'https://api.inkframe.app',
+    /**
+     * Empty: the app's own origin. Its host forwards the server's paths
+     * (/api/auth, /v1) to inkframe-server (vercel.json), so the session
+     * cookie belongs to the app's site. Endpoint paths: src/app/core/api-endpoints.ts.
+     */
+    apiUrl: '',
   },
 };

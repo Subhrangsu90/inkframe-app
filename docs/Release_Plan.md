@@ -273,8 +273,8 @@ A feature that stores new kinds of data on the server (AI usage, collaboration r
 
 | | Local | CI | Staging | Production |
 | --- | --- | --- | --- | --- |
-| App | `localhost:4200` | builds only | `staging.inkframe.app` | `inkframe.app` |
-| API | `localhost:3001` | test server | `api.staging.inkframe.app` | `api.inkframe.app` |
+| App | `localhost:4200` | builds only | `inkframe-app.vercel.app` (Vercel; `npm run build:app:staging`) | `inkframe.app` (needs a domain) |
+| API | `localhost:3001` | test server | `inkframe-server.onrender.com`, reached only through the app's address (`/api/auth`, `/v1`, D33) | `api.inkframe.app`, or through the app's address |
 | Database | Postgres in Docker | Postgres service | Neon project `inkframe-staging` | Neon project `inkframe-prod` |
 | Images | MinIO in Docker | MinIO | S3 `inkframe-staging-images` | S3 `inkframe-prod-images` |
 | Data | Made up | Made up | Made up (testers' real data during Alpha only) | Real users |
@@ -447,6 +447,7 @@ Recorded in the [Product Plan's decision log](Inkframe_Product_Plan.md#111-decis
 | D30 | Sign-up abuse controls without a third-party CAPTCHA | Closed Beta |
 | D31 | Breached-password check at sign-up and password change | Alpha |
 | D32 | Email provider | Stage 0 |
+| D33 | Staging without a domain: the app on Vercel forwards the API's paths to Render. **Buy a domain before Closed Beta:** sign-in emails need one, and documents saved at a `vercel.app` address can't move to a domain without a backup and restore. | Closed Beta (domain) |
 
 ### 13.2 Risks
 

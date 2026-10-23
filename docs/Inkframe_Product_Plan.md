@@ -990,6 +990,7 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D30 | Sign-up abuse is handled without a third-party CAPTCHA, which would load outside code into the app: invite codes until Open Beta, then limits per IP and per email domain, disposable-email domains refused, and email verification before sync. | **Proposed** 2026-10-23 |
 | D31 | Passwords seen in breaches are refused at sign-up and password change, checked from the server through Have I Been Pwned's range API (only the first 5 characters of a SHA-1 hash leave the server). | **Proposed** 2026-10-23 |
 | D32 | Email provider for verification, password reset, magic links and security emails | **Open.** Candidates: Amazon SES (same AWS account as S3, cheapest) or Resend (simplest setup). Needed in Stage 0. |
+| D33 | Until Inkframe has a domain, the app is hosted on Vercel (`inkframe-app.vercel.app`) and forwards `/api/auth` and `/v1` to `inkframe-server` on Render (`vercel.json`), so the app and its server are one site and session cookies work. The server serves only requests that carry Vercel's secret header (DS-2.8). A domain is bought before Closed Beta. | Decided 2026-10-24 (changes D22's hosting of the app from Render to Vercel) |
 
 ### 11.2 Risks
 

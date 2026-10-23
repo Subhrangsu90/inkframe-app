@@ -62,6 +62,22 @@ describe('ImageCleanup', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it('waits while a restore writes images before the documents that show them', async () => {
+    localStorage.setItem('inkframe-image-sweep', String(Date.now())); // no weekly sweep due
+    const run = deleteUnused();
+    const cleanup = TestBed.inject(ImageCleanup);
+    let finish!: () => void;
+    const restoring = cleanup.hold(() => new Promise<void>((resolve) => (finish = resolve)));
+
+    const sweeping = cleanup.sweep();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(run).not.toHaveBeenCalled();
+    finish();
+    await restoring;
+    await sweeping;
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
   it('is told about every deleted document, with its content', async () => {
     const afterDeleting = vi.spyOn(ImageCleanup.prototype, 'afterDeleting').mockReturnValue();
     const docs = TestBed.inject(DocumentManager);

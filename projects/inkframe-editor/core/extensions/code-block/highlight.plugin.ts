@@ -48,14 +48,29 @@ const byPosition = (a: Decoration, b: Decoration) => a.from - b.from || a.to - b
 function updateDecorations(tr: Transaction, set: DecorationSet): DecorationSet {
   const doc = tr.doc;
   let mapped = set.map(tr.mapping, doc);
-  // The changed part of the document; attribute changes (a code block's
-  // language) count, though they move no text.
+  // The changed part of the document: what differs (attribute changes, such
+  // as a code block's language, move no text), and what the steps replaced
+  // even where it came out the same. Mapping dropped the tokens in there: a
+  // list command, say, replaces a whole list with the lists around an item.
+  let from = Infinity;
+  let to = -Infinity;
   const start = doc.content.findDiffStart(tr.before.content);
-  if (start == null) return mapped;
-  const end = doc.content.findDiffEnd(tr.before.content);
-  // With repeated text, the end can be found before the start.
-  let from = start;
-  let to = Math.max(end?.a ?? start, start);
+  if (start != null) {
+    const end = doc.content.findDiffEnd(tr.before.content);
+    // With repeated text, the end can be found before the start.
+    from = start;
+    to = Math.max(end?.a ?? start, start);
+  }
+  tr.mapping.maps.forEach((map, i) => {
+    const later = tr.mapping.slice(i + 1);
+    map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+      from = Math.min(from, later.map(newStart, -1));
+      to = Math.max(to, later.map(newEnd, 1));
+    });
+  });
+  if (from > to) return mapped;
+  from = Math.max(0, from);
+  to = Math.min(doc.content.size, to);
   // Whole code blocks: a change anywhere in one tokenizes all of it again.
   const blocks: { node: PMNode; pos: number }[] = [];
   doc.nodesBetween(from, to, (node, pos) => {

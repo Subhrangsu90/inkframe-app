@@ -48,6 +48,13 @@ export interface DocumentStore {
    * a StorageError when storage refuses the write.
    */
   put(entries: readonly DocEntry[]): Promise<void>;
+  /**
+   * Changes entries in one step, without their content: `update` gets each
+   * entry as stored at that moment and returns it changed, or null to leave
+   * it. Resolves to whether any changed. Throws a StorageError when storage
+   * refuses the write.
+   */
+  updateEntries(update: (current: DocMeta) => DocMeta | null): Promise<boolean>;
   /** Deletes a document, its entry and its version history. */
   remove(id: string): Promise<void>;
   /** Deletes every document, version and image the store holds. */

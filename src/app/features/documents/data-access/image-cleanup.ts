@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
-import { StorageHealth } from './storage-health';
+import { StorageHealth, readTime, writeTime } from './storage-health';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -26,10 +26,15 @@ export class ImageCleanup {
   private deleted: StoredDoc[] = [];
   private afterDeletingTimer?: ReturnType<typeof setTimeout>;
   private sweepTimer?: ReturnType<typeof setTimeout>;
+  /** Tasks holding cleanups off (see hold), and when the last of them is done. */
+  private holds = 0;
+  private released: Promise<void> = Promise.resolve();
+  private release?: () => void;
 
   constructor() {
     if (!this.browser) return;
-    if (Date.now() - readTime(LAST_SWEEP_KEY) >= SWEEP_EVERY_MS) {
+    // Without storage, every visit sweeps.
+    if (Date.now() - (readTime(LAST_SWEEP_KEY) ?? 0) >= SWEEP_EVERY_MS) {
       this.sweepTimer = setTimeout(() => void this.sweep(), SWEEP_AFTER_START_MS);
     }
     inject(DestroyRef).onDestroy(() => {
@@ -57,7 +62,22 @@ export class ImageCleanup {
     return this.run({ minAgeMs: DAY });
   }
 
+  /**
+   * Runs `task` with no images deleted meanwhile; a cleanup that comes due
+   * waits until it is done. For restoring a backup, which writes images
+   * before the documents that show them: until then, nothing does.
+   */
+  async hold<T>(task: () => Promise<T>): Promise<T> {
+    if (this.holds++ === 0) this.released = new Promise((resolve) => (this.release = resolve));
+    try {
+      return await task();
+    } finally {
+      if (--this.holds === 0) this.release?.();
+    }
+  }
+
   private async run(options: { onlyFrom?: StoredDoc[]; minAgeMs: number }): Promise<number> {
+    while (this.holds > 0) await this.released;
     const unsaved = [...this.health.unsavedDocs().values()].map(({ doc }) => doc);
     try {
       return await imageStorage.deleteUnusedImages({ ...options, alsoUsedBy: unsaved });
@@ -65,21 +85,5 @@ export class ImageCleanup {
       console.warn('Unused images could not be deleted:', e);
       return 0;
     }
-  }
-}
-
-function readTime(key: string): number {
-  try {
-    return Number(localStorage.getItem(key)) || 0;
-  } catch {
-    return 0;
-  }
-}
-
-function writeTime(key: string, time: number): void {
-  try {
-    localStorage.setItem(key, String(time));
-  } catch {
-    // Storage unavailable: the next visit sweeps again.
   }
 }

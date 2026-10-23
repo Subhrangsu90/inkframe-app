@@ -9,6 +9,7 @@ import {
   schema,
 } from '@inkframe-ui/editor/core';
 import { DocMeta, DocumentManager } from '../data-access/document-manager';
+import { ImageCleanup } from '../data-access/image-cleanup';
 import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory, VersionMeta } from '../versions/version-history';
 import { dataUrlToBlob, downloadFile } from './data-url';
@@ -239,6 +240,7 @@ export class BackupService {
   private readonly versions = inject(VersionHistory);
   /** Knows when the last backup was made, for the backup reminder. */
   private readonly health = inject(StorageHealth);
+  private readonly imageCleanup = inject(ImageCleanup);
 
   /**
    * The backup file: every document, its version history and the images
@@ -433,7 +435,17 @@ export class BackupService {
           : 'This backup has no documents.',
       );
     }
+    // Images are written before the documents that show them: until then,
+    // a cleanup (after a document was deleted, say) would take them.
+    return this.imageCleanup.hold(() => this.write(backup, mode, readable, summary));
+  }
 
+  private async write(
+    backup: ParsedBackup,
+    mode: RestoreMode,
+    readable: BackupDocument[],
+    summary: RestoreSummary,
+  ): Promise<RestoreSummary> {
     if (mode === 'replace') await this.docs.clearAll();
     const existing = new Map((await this.docs.getIndex()).map((meta) => [meta.id, meta]));
 

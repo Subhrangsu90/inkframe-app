@@ -33,7 +33,8 @@ export function backupReminderDue(
   return now - since >= BACKUP_REMINDER_DAYS * DAY;
 }
 
-function readTime(key: string): number | null {
+/** A time remembered in localStorage, or null when there is none. */
+export function readTime(key: string): number | null {
   try {
     const time = Number(localStorage.getItem(key));
     return time > 0 ? time : null;
@@ -42,11 +43,12 @@ function readTime(key: string): number | null {
   }
 }
 
-function writeTime(key: string, time: number): void {
+/** Remembers a time in localStorage, when there is any. */
+export function writeTime(key: string, time: number): void {
   try {
     localStorage.setItem(key, String(time));
   } catch {
-    // Storage unavailable: remembered until the page is closed.
+    // Storage unavailable: remembered until the page is closed, if at all.
   }
 }
 

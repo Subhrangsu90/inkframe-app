@@ -1,9 +1,10 @@
 import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SCHEMA_VERSION, StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
 import { BACKUP_FORMAT, BackupError, BackupService, UnsavedDoc, describeRestore } from './backup';
 import { DocumentManager } from '../data-access/document-manager';
+import { ImageCleanup } from '../data-access/image-cleanup';
 import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory } from '../versions/version-history';
 
@@ -98,6 +99,16 @@ describe('BackupService', () => {
     expect(new Uint8Array(await image!.blob.arrayBuffer())).toEqual(
       new Uint8Array([137, 80, 78, 71, 1, 2, 3]),
     );
+  });
+
+  it('holds image cleanups off while it writes', async () => {
+    await docs.createDoc('A', docWith('Alpha'));
+    const backup = await throughFile(backups);
+    await docs.clearAll();
+    const hold = vi.spyOn(TestBed.inject(ImageCleanup), 'hold');
+    await backups.restore(backup, 'merge');
+    expect(hold).toHaveBeenCalledTimes(1);
+    expect((await docs.getIndex()).map((d) => d.title)).toEqual(['A']);
   });
 
   it('counts a replace restore as a backup for the reminder, but not a merge', async () => {

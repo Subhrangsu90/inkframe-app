@@ -25,6 +25,7 @@ import { docPath } from '@app/features/documents/documents.paths';
 import { InkIcon, InkIconName } from '@app/shared/ui/icons/icon';
 import { ToastService } from '@app/shared/ui/toast/toast';
 import { SkeletonComponent } from '@app/shared/ui/skeleton/skeleton';
+import { copyText } from '@app/core/clipboard';
 import { StoredDoc, SCHEMA_VERSION } from '@inkframe-ui/editor/core';
 // Sharing and importing load when used: they need the document converters,
 // which the library page would otherwise download before showing anything.
@@ -379,21 +380,22 @@ export class Docs implements OnInit {
   async shareDocLink(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     event.preventDefault();
-    try {
+    let found = true;
+    const link = (async () => {
       const doc = await this.docManager.getDoc(id);
-      if (doc) {
-        const meta = this.library.documents().find((d: DocMeta) => d.id === id);
-        const { buildShareableUrl } = await import('@app/features/documents/transfer/share-codec');
-        const url = await buildShareableUrl(doc, meta?.title);
-        if (typeof navigator !== 'undefined' && navigator.clipboard) {
-          await navigator.clipboard.writeText(url);
-          this.toast.success('Shareable link copied to clipboard!');
-        }
-      } else {
-        this.toast.error('Document not found');
-      }
-    } catch {
-      this.toast.error('Failed to copy share link');
+      found = doc !== null;
+      if (!doc) throw new Error('Document not found');
+      const meta = this.library.documents().find((d: DocMeta) => d.id === id);
+      const { buildShareableUrl } = await import('@app/features/documents/transfer/share-codec');
+      return buildShareableUrl(doc, meta?.title);
+    })();
+    try {
+      // Given the link still being built, so the copy starts during the click.
+      await copyText(link);
+      this.toast.success('Shareable link copied to clipboard!');
+    } catch (e) {
+      console.warn('Copying the share link failed:', e);
+      this.toast.error(found ? 'Failed to copy share link' : 'Document not found');
     }
   }
 }

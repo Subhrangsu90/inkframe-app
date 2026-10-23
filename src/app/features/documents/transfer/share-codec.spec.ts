@@ -6,6 +6,7 @@ import {
   bytesToBase64Url,
   buildShareableUrl,
   base64UrlToBytes,
+  MAX_SHARED_DOC_BYTES,
 } from './share-codec';
 import { StoredDoc } from '../data-access/document-manager';
 
@@ -67,6 +68,47 @@ describe('share-codec', () => {
   it('returns null for empty or invalid hash', async () => {
     expect(await decompressSharedDoc('')).toBeNull();
     expect(await decompressSharedDoc('doc_default')).toBeNull();
+  });
+
+  it('returns null for a link cut short or damaged', async () => {
+    const doc: StoredDoc = { schemaVersion: 1, doc: { type: 'doc', content: [] } };
+    const hash = await compressDocForSharing(doc, 'Cut short');
+    expect(await decompressSharedDoc(hash.slice(0, -6))).toBeNull();
+    expect(await decompressSharedDoc('c_' + 'q'.repeat(40))).toBeNull();
+  });
+
+  it('round-trips a link too long for one step of the stream', async () => {
+    // Text that barely compresses, so the link holds several 4 kB steps.
+    let seed = 7;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const text = Array.from(
+      { length: 30_000 },
+      () => 'abcdefghijklmnopqrstuvwxyz '[Math.floor(random() * 27)],
+    ).join('');
+    const doc: StoredDoc = {
+      schemaVersion: 1,
+      doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] },
+    };
+    const hash = await compressDocForSharing(doc, 'Long');
+    expect(hash.length).toBeGreaterThan(3 * 4096);
+    expect((await decompressSharedDoc(hash))?.doc.doc).toEqual(doc.doc);
+  });
+
+  it('refuses a link crafted to unpack to more than any document (a zip bomb)', async () => {
+    const zlib = (globalThis as any).process.getBuiltinModule('node:zlib');
+    const link = (length: number) =>
+      'c_' +
+      bytesToBase64Url(
+        zlib.deflateRawSync(
+          `{"t":"Bomb","v":1,"d":{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"${'a'.repeat(length)}"}]}]}}`,
+          { level: 9 },
+        ),
+      );
+    const bomb = link(MAX_SHARED_DOC_BYTES);
+    expect(bomb.length).toBeLessThan(60_000); // small enough for any URL
+    expect(await decompressSharedDoc(bomb)).toBeNull();
+    // The same, smaller, opens.
+    expect((await decompressSharedDoc(link(1 << 20)))?.title).toBe('Bomb');
   });
 
   it('handles documents with images safely during sharing', async () => {

@@ -14,6 +14,7 @@ import { revealThemeChange } from '@inkframe-ui/editor/core';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { Card } from '@app/shared/ui/card/card';
 import { Button } from '@app/shared/ui/button/button';
+import { copyText } from '@app/core/clipboard';
 
 @Component({
   selector: 'ink-landing',
@@ -121,12 +122,14 @@ export class Landing implements OnDestroy {
   theme: 'minimal',
   plugins: ['syntax-highlight', 'slash-commands']
 });`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(snippet).then(() => {
+    copyText(snippet).then(
+      () => {
         this.codeCopied.set(true);
         setTimeout(() => this.codeCopied.set(false), 2000);
-      });
-    }
+      },
+      // Refused: the snippet stays on the page to select and copy.
+      () => undefined,
+    );
   }
 
   /* ── Bento Spotlight Glow ── */

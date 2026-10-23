@@ -7,7 +7,7 @@ This repository holds two products:
 - **The Inkframe app** (`src/`): an Angular app with server-side rendering for the landing page, and an installable PWA that works offline.
 - **The editor library**, [`@inkframe-ui/editor`](projects/inkframe-editor/README.md) (`projects/inkframe-editor/`): the ProseMirror-based editor the app uses, packaged for other Angular apps.
 
-The product plan, with the roadmap and architecture, is in [docs/Inkframe_Product_Plan.md](docs/Inkframe_Product_Plan.md).
+The plans are in [docs/](docs/README.md): the [product plan](docs/Inkframe_Product_Plan.md) (roadmap and architecture), the [release plan](docs/Release_Plan.md) (Alpha, Beta, Gamma, GA) and the [data safety plan](docs/Data_Safety_Plan.md) (how user data is protected).
 
 ## Requirements
 
@@ -59,7 +59,7 @@ projects/inkframe-editor/
   ui/                    @inkframe-ui/editor/ui: menus and panels
 public/                  Static files: icons, web app manifest
 scripts/                 Build and CI helper scripts
-docs/                    Product plan
+docs/                    Product, release and data safety plans
 ```
 
 ## Commands

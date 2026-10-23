@@ -5,9 +5,10 @@
 | **Product** | Inkframe: a private, full WYSIWYG document editor that runs entirely on your device |
 | **Deliverables** | The web app (`inkframe-app`) and the embeddable Angular editor library (`@inkframe-ui/editor`) |
 | **Stack** | Angular 22 (standalone components, signals, SSR), ProseMirror, Angular Material (M3), Tailwind CSS v4, IndexedDB. Optional cloud layer (M6), in a separate repository (`inkframe-server`): a Node.js server (Express, TypeScript, Zod) with Better Auth built in, Postgres (Docker on developer machines, Neon in production), Amazon S3 for images, hosted on Render; later AI and Yjs. |
-| **Plan version** | 4.5 (adds M6.6: subscriptions). 4.4 moved accounts, sync and cloud images, M6.1–M6.3, before launch, and decided the backend. 4.3 added M3.5: page setup. 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
-| **Last updated** | 2026-10-20 |
+| **Plan version** | 4.6 (splits out the [Release Plan](Release_Plan.md) and the [Data Safety Plan](Data_Safety_Plan.md): the security model (formerly 9.3) and the release checklist (formerly 9.5) moved there; adds D28–D32; staging becomes a separate Neon project). 4.5 added M6.6: subscriptions. 4.4 moved accounts, sync and cloud images, M6.1–M6.3, before launch, and decided the backend. 4.3 added M3.5: page setup. 4.2 added M7: Block mode. 4.1 added M6: optional cloud. 4.0 replaced the master product plan, the advanced features implementation plan, the UI redesign plan and the editor documentation. |
+| **Last updated** | 2026-10-23 |
 | **Status** | Pre-launch. The core editor is built; the work below takes it to a production release. |
+| **Related** | [Docs index](README.md) · [Release Plan](Release_Plan.md): when each milestone ships (Alpha, Beta, Gamma, GA) · [Data Safety Plan](Data_Safety_Plan.md): how user data is protected · [Server Plan](../../inkframe-server/docs/Server_Plan.md) |
 
 ---
 
@@ -49,6 +50,8 @@ Before launch, **M3.5 adds page setup**. Each document is either **Pages**, a sh
 **M6 adds an optional cloud layer.** Its first three steps ship **at launch** (decided 2026-10-20): accounts, sync across devices with server-side storage in a database, and cloud images (M6.1–M6.3). The AI writing assistant (M6.4) and real-time collaboration (M6.5) follow after launch. All of it is strictly opt-in. Inkframe keeps working fully without an account, and the copy on the device stays the primary one, so the privacy promise stays true for everyone who never signs in.
 
 **M7 adds Block mode**, a second, Notion-style way of writing: no toolbar, every paragraph is a block you can drag, turn into something else or nest pages under. Users choose Document mode or Block mode per document and can switch at any time, because both modes edit the same document. M7 needs no backend, so it can ship before, after or alongside M6.
+
+**Release (D28):** the milestones reach users through Stage 0, Alpha, Closed Beta, Open Beta, Gamma and GA (target: 16 March 2027). The editor goes public at Closed Beta; the cloud layer climbs every stage and moves on only when its gate passes. Dates, gates and environments are in the [Release Plan](Release_Plan.md); the controls that keep user data safe at each stage are in the [Data Safety Plan](Data_Safety_Plan.md).
 
 ---
 
@@ -206,7 +209,7 @@ Status key: ✅ shipped · 🟡 partial · ⬜ not started. Priority: **P0** req
 | **Export: HTML, print / PDF** | ✅ | P0 | Export menu: Markdown, Web page (.html, styled, images embedded, no network requests), Print or save as PDF (`Mod-P`), Copy as Markdown. Printing uses the HTML page in a hidden frame. |
 | Export: JSON (lossless), DOCX | ⬜ | P1 / P2 | |
 | Import: Markdown and HTML files | ✅ | P0 | Import button and drag and drop on `/docs`; one document per file; embedded images move to image storage. |
-| Image garbage collection | ⬜ | P1 | Images of deleted documents stay in IndexedDB. |
+| Image garbage collection | ✅ | P1 | `ImageCleanup`: a deleted document's images go an hour later, unless something else shows them; a weekly sweep removes images nothing shows that were added over a day ago. Images that a version or a refused edit still shows are kept. |
 
 ### 3.5 Platform
 
@@ -322,7 +325,7 @@ M6.1–M6.3 ship before launch; M6.4 and M6.5 after.
 
 ## 5. Roadmap to production
 
-Milestones are sequential; work inside a milestone can run in parallel. Sizes: **S** ≤ 2 days, **M** ≤ 1 week, **L** > 1 week.
+Milestones are sequential; work inside a milestone can run in parallel. Sizes: **S** ≤ 2 days, **M** ≤ 1 week, **L** > 1 week. Which release stage ships each milestone, and the gates between stages, are in the [Release Plan, section 3](Release_Plan.md#3-what-ships-in-each-stage).
 
 ```
 M0 Stabilize ─► M1 WYSIWYG ─► M2 Data safety ─► M3 Mobile & PWA ─► M3.5 Page setup ─► M6.1–M6.3 Accounts, sync, images ─► M4 Launch ─┬─► M5 Growth
@@ -529,7 +532,7 @@ Why the printout draws its own pages: the standard way to print page numbers is 
 
 1. Document outline, focus mode (P1). Block drag handles moved to M7.2.
 2. Share dialog with size warning and native share sheet; JSON and DOCX export (P1)
-3. Image garbage collection, table merge UI (P1)
+3. Table merge UI (P1). Image garbage collection shipped (see 3.4).
 4. Math and diagrams for technical writers (P2)
 5. Only if users ask: formatted headers and footers (bold, links, logos), different odd and even pages (D19)
 
@@ -553,7 +556,7 @@ Cloud short links and real-time collaboration moved to [M6](#m6-optional-cloud-a
 | --- | --- | --- |
 | Repositories | **Two**: `inkframe-app` (this one: the app and the editor library) and **`inkframe-server`** (the server, its migrations and its local database setup), side by side | They share no code. The server's HTTP routes are the contract between them: versioned under `/v1`, described by the server's Zod schemas and its README. The server repository has its own CI (type check, lint, tests against a real Postgres, build). Decided 2026-10-20 (D23); the first skeleton lived in `api/` in this repo for a few hours. |
 | Database (development and tests) | **Postgres 17 in Docker** (`docker compose up -d` in `inkframe-server`) | Works offline, with no cloud account. An init script creates the databases `inkframe` and `inkframe_test` and two roles: `inkframe_owner` owns the tables and runs migrations; `inkframe_app` is what the server connects as, owns nothing and cannot bypass row-level security. Tests run against `inkframe_test`. |
-| Database (production) | **Neon** serverless Postgres 17, region `aws-ap-southeast-1` (Singapore) | The server uses plain Postgres only, so Neon is replaceable by any Postgres 17. Neon creates new projects in AWS regions only, and has none in India; Singapore is the closest. **The region cannot be changed after the project is created**, so confirm where most users are first (Frankfurt or N. Virginia if they are mostly in Europe or the US). The same two roles are created with the same SQL as the Docker init script. Neon branches give a staging copy. |
+| Database (production) | **Neon** serverless Postgres 17, region `aws-ap-southeast-1` (Singapore) | The server uses plain Postgres only, so Neon is replaceable by any Postgres 17. Neon creates new projects in AWS regions only, and has none in India; Singapore is the closest. **The region cannot be changed after the project is created**, so confirm where most users are first (Frankfurt or N. Virginia if they are mostly in Europe or the US). The same two roles are created with the same SQL as the Docker init script. Staging is a **separate Neon project** with made-up data, never a branch of production, because a branch copies every user's rows (D29). |
 | Accounts | **Better Auth, running inside the server** at `/api/auth` | Users, sessions and sign-in methods are tables in the same Postgres, managed by the same migrations, so accounts work against the local Docker database too. Sessions are HTTP-only cookies (`Secure` and `SameSite=Lax` in production; the app at `inkframe.app` and the server at `api.inkframe.app` are the same site). Documents reference the `user` table, so deleting an account deletes its documents. Changed 2026-10-20 from Neon Managed Better Auth, which only works with a Neon database. Email and password work, and Google does once its OAuth client is set (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`); email verification, password reset and magic links need an email provider, and GitHub an OAuth app (M6.1). A Google sign-in joins a password account with the same email only when that email is verified (Better Auth's `requireLocalEmailVerified`), which blocks pre-registering someone else's email. Better Auth's Origin and redirect checks are forced on in every environment (it skips them when `NODE_ENV=test`). |
 | Server | **Node.js 24, Express 5, TypeScript**, in `inkframe-server` | Every request body, query and route parameter is checked with **Zod** schemas; anything else gets 400. `/v1` routes require a Better Auth session (`auth.api.getSession`), and writes from origins other than the app are refused on top of CORS. Postgres through `pg` (node-postgres) with Drizzle ORM; drizzle-kit migrations, run as `inkframe_owner` before each deploy. S3 through the AWS SDK v3 and its presigner. `helmet` for security headers, a CORS allow-list with credentials, `express-rate-limit`. |
 | Images | **Amazon S3**, private bucket in `ap-southeast-1` | Block all public access; the server hands out short-lived presigned URLs for upload and download. Locally, MinIO in the same Docker Compose file can stand in for S3 (M6.3). Cloudflare R2 is an S3-compatible alternative with no download (egress) fees, if costs grow. |
@@ -567,7 +570,7 @@ Collaboration (M6.5) will need a Yjs sync server (Hocuspocus, also Node and Type
 
 | Work | Size | Exit criteria |
 | --- | --- | --- |
-| Provision staging and production (Neon project and roles, Render services, S3 bucket); secrets management. Development already runs on Docker. | S | No secrets in the client bundle or either repository. Neon, AWS and Render keys live only in Render's environment variables. |
+| Provision staging and production (a Neon project each, with the roles; Render services; an S3 bucket each); secrets management. Development already runs on Docker. Staging in Stage 0, production at Closed Beta ([Release Plan](Release_Plan.md#4-stage-details-and-gates)). | S | No secrets in the client bundle or either repository. Neon, AWS and Render keys live only in Render's environment variables, a separate set for each environment. Staging holds no production data (D29). |
 | ✅ Server foundation in the `inkframe-server` repository (done 2026-10-20): Express 5 in a modular layout (`modules/<feature>` with routes, controller, service and Zod DTOs checked by `validate(dto)`), security headers, a CORS allow-list with credentials, refusal of cross-site writes, rate limits, a 2 MB body limit, JSON errors and content-free logs; Better Auth at `/api/auth` (email and password); Postgres in Docker with the `inkframe_owner` and `inkframe_app` roles; Drizzle schema and first migration (Better Auth's tables, `documents`, `document_versions`) with row-level security; `asUser()` for per-user transactions; CI with a Postgres service | M | 25 tests against a real Postgres: sign-up, sign-in, sign-out ends the session at once, hashed passwords; two users can't read, change, delete or create each other's documents or versions; no user set means no rows; deleting an account deletes its documents; the server's role can't bypass row-level security. Checked end to end with the built server. |
 | ✅ Sign-in and sign-up pages (`/signin`, `/signup`, standalone, one `AuthPage` with two modes) and `AuthService` (signals: `user`, `status`) on the Better Auth client, with "Continue with Google" when the server offers it (`GET /v1/auth/methods`); done 2026-10-20 in `src/app/features/account/` | M | Signing in and out never changes or hides local documents. People who never signed in on a device send nothing: the app only asks the server about the session when the device remembers a sign-in (`localStorage` `inkframe-account`: id, name and email, never a password). Better Auth's client and Zod load only when used; the initial bundle is 146.2 of 150 kB. Forms, server answers and the remembered sign-in are checked with Zod schemas (`auth.schemas.ts`, `core/api-response.ts`), the same library as the server. A return address after sign-in is always a path inside the app. Checked end to end in Chrome (sign up, reload, sign out, wrong password, return address); no axe violations in either theme or on phones; 21 tests. |
 | Account section in `/settings`: profile, sign out, export my data, delete account | M | Account deletion removes every server-side row and file (verified by a test). |
@@ -916,29 +919,7 @@ WCAG 2.1 AA in both themes. Every icon-only button has an `aria-label` and toggl
 
 ### 9.3 Security model
 
-| Threat | Defense |
-| --- | --- |
-| Scripts in pasted or imported HTML | DOMPurify, then ProseMirror schema parsing keeps only known nodes and marks. |
-| Malicious shared documents | Rendered through the schema serializer, then DOMPurify; no raw HTML from the payload is trusted. |
-| CSS injection through attributes (tracking pixels) | `sanitizeCssColor` / `sanitizeCssLength` on colors, widths and heights. |
-| Page setup values in shared documents (M3.5) | Layout, paper, orientation and font are checked against fixed lists; margins are clamped numbers; page color is a palette name, never a CSS value. Anything else falls back to the default. |
-| Paragraph formatting and font sizes in shared documents | Indent is a whole number 1–8, line spacing one of four values, font size a whole number of pixels 6–120; anything else is dropped before it reaches a `style`. From HTML only Inkframe's own data attributes are read. |
-| `javascript:` links, tab-nabbing | `sanitizeHref` allow-list; links get `rel="noopener noreferrer nofollow"`. |
-| Server exposure of shared content | Share payload lives in the URL fragment, which browsers never send. |
-| Third-party requests | Self-hosted fonts and icons (B1). External images in documents are user-chosen; the editor loads them with `referrerpolicy="no-referrer"`, and the reader should too (add in M0). |
-| Content Security Policy | Add a CSP at deploy time once fonts are self-hosted (no inline scripts; images allow `data:`, `blob:`, `https:`). |
-| **M6:** account takeover, session theft | Better Auth in the server: sessions stored in Postgres, sent as HTTP-only, `Secure`, `SameSite=Lax` cookies; passwords hashed by Better Auth; its sign-in rate limits on top of the server's. Every `/v1` request checks the session. |
-| **M6:** cross-site requests (CSRF) | `SameSite=Lax` cookies; CORS allows only the app's origin; `/v1` writes with any other `Origin` are refused (403); Better Auth checks the origin of its own endpoints. |
-| **M6:** reading other users' data | Row-level security on every table (the API sets `app.user_id` per transaction, see [6.6](#66-optional-cloud-architecture-m6)), owner filters in API queries, and tests that attempt cross-user access. |
-| **M6:** images reached without permission | S3 bucket with all public access blocked; presigned URLs that expire in minutes, issued only to the owner (or a member); the API's AWS key can reach only that bucket. |
-| **M6:** abuse and runaway costs | Per-user rate limits and storage quotas in the API; request and document size limits; Render and AWS budget alerts. |
-| **M6:** leaked keys | Neon, AWS and Render credentials only in Render environment variables; CI fails if a secret or a server SDK appears in the browser bundle; keys rotated after any leak. |
-| **M6:** leaked AI keys, AI cost abuse | Keys only on the server; per-user rate limits and quotas; CI check on the client bundle. |
-| **M6:** data at rest and in transit | Standard encryption (D21): TLS everywhere; Neon and S3 encrypt data at rest. Not end-to-end: the service could technically read synced documents, so the app never claims otherwise. |
-| **M6:** logs that leak content | Logs hold ids, status codes and timings only; never document text, titles or tokens. |
-| **M6:** right to be forgotten | Account deletion removes documents, versions, images, links, memberships and usage rows. |
-
-A security review of the API, the access rules and the bucket policy is required before launch (and of the AI endpoint before M6.4 goes live).
+Moved on 2026-10-23 to the [Data Safety Plan](Data_Safety_Plan.md), which keeps every row this table had and extends it to the whole stack: what we promise users, what data we hold, threats, and every control by layer (device, network, accounts, API, database, images, sync, backups, secrets, operations, privacy law), each with its status and the release stage that needs it. Security reviews: before launch, and again before the AI endpoint (M6.4) and collaboration (M6.5) go live (DS-10.8).
 
 ### 9.4 Definition of done (every feature)
 
@@ -952,16 +933,7 @@ A security review of the API, the access rules and the bucket policy is required
 
 ### 9.5 Release checklist
 
-- [ ] All launch blockers in [section 4.2](#42-launch-blockers-must-fix-before-public-launch) closed.
-- [ ] `security.allowedHosts` (or `NG_ALLOWED_HOSTS`) set for production domains.
-- [ ] CSP and caching headers configured; service worker versioning verified.
-- [ ] Backup, restore and migration tested with documents from the previous release.
-- [ ] Library tarball installed into a clean Angular app and smoke-tested.
-- [ ] **Cloud (M6.1–M6.3):** Neon's point-in-time restore window set to at least 7 days (longer than the Free plan allows), and a restore rehearsed on a staging branch; S3 versioning on the image bucket.
-- [ ] Cross-user access tests pass against staging; security review done and its findings fixed.
-- [ ] Two-device sync tested end to end: offline edits, conflicts, deletes and Trash restore.
-- [ ] Privacy policy and terms published; every "no server" / "no account" claim updated ([2.5](#25-messaging)).
-- [ ] Secrets only in Render environment variables; budget alerts set in Render and AWS.
+Moved on 2026-10-23 to the [Release Plan, section 12](Release_Plan.md#12-release-checklist), with every item kept and the cloud, security and privacy items extended. One change: the restore rehearsal runs on a temporary branch of the production project, not a staging branch (D29).
 
 ---
 
@@ -1013,6 +985,11 @@ Inkframe promises zero tracking, so **the app collects no analytics**. Measure t
 | D25 | Plans, prices, and whether subscriptions ship at launch | **Open.** Proposal: Free and Pro, Pro around $5 a month; the editor stays free forever either way. See the Server Plan, 4.2. |
 | D26 | The document font (Sans, Serif, Mono) is part of the page setup, chosen in the Page setup dialog, never per character; there is no font picker in the toolbar (per character: superseded by D27). Font sizes are per selection, in pixels. Line spacing uses word-processor names (Single to Double), as line heights of 1.2× the spacing. Paragraph indent uses `Mod-]` / `Mod-[`; Tab stays with lists and tables. | Decided 2026-10-20 |
 | D27 | Text can also take a font of its own, from the toolbar's font menu (as in Google Docs): one of `FONT_FAMILIES`, the three document fonts and nine fonts most systems have, stored by name. No web fonts are loaded for it, so the app stays offline and private; a system font a device lacks shows as its fallback. Text without a font keeps the document font (D26). Font size and line spacing get their own toolbar controls. | Decided 2026-10-21 |
+| D28 | Releases climb a ladder: Stage 0 (pre-alpha), Alpha (staging, invited testers), Closed Beta (production, invite codes; the editor public), Open Beta, Gamma (release candidate, feature freeze), GA. A stage starts only when the previous gate is fully ticked. After GA, big features go through Labs, Beta, GA behind server flags. See the [Release Plan](Release_Plan.md). | **Proposed** 2026-10-23 |
+| D29 | Staging is a separate Neon project (and a separate S3 bucket) with made-up data, never a branch of production; production data never leaves production. Restore drills use a temporary branch inside the production project. | **Proposed** 2026-10-23 (replaces "Neon branches give a staging copy") |
+| D30 | Sign-up abuse is handled without a third-party CAPTCHA, which would load outside code into the app: invite codes until Open Beta, then limits per IP and per email domain, disposable-email domains refused, and email verification before sync. | **Proposed** 2026-10-23 |
+| D31 | Passwords seen in breaches are refused at sign-up and password change, checked from the server through Have I Been Pwned's range API (only the first 5 characters of a SHA-1 hash leave the server). | **Proposed** 2026-10-23 |
+| D32 | Email provider for verification, password reset, magic links and security emails | **Open.** Candidates: Amazon SES (same AWS account as S3, cheapest) or Resend (simplest setup). Needed in Stage 0. |
 
 ### 11.2 Risks
 

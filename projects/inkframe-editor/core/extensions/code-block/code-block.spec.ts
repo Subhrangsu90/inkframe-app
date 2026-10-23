@@ -159,6 +159,29 @@ describe('Syntax highlighting while editing', () => {
     expect(tokens(state).length).toBeGreaterThan(before / 2);
   });
 
+  it('keeps the tokens of code that a replace rebuilt unchanged', () => {
+    // As list commands do: the whole list replaced by new nodes, some of
+    // them the same as before.
+    const item = (...content: PMNode[]) => nodes['list_item'].create(null, content);
+    const list = (...items: PMNode[]) => nodes['bullet_list'].create(null, items);
+    let state = stateOf(
+      nodes['doc'].create(null, [
+        list(item(p('one')), item(p('two')), item(p('three'), code('const a = 1;'))),
+      ]),
+    );
+    const doc = state.doc;
+    const [, two, three] = [0, 1, 2].map((i) => doc.firstChild!.child(i));
+    state = state.apply(
+      state.tr.replaceWith(0, doc.content.size, [
+        list(doc.firstChild!.child(0)),
+        two.firstChild!,
+        list(three),
+      ]),
+    );
+    expect(tokens(state).length).toBeGreaterThan(0);
+    expect(tokens(state)).toEqual(fromScratch(state));
+  });
+
   it('stays the same as highlighting from scratch through many random edits', () => {
     for (const seed of [1, 2, 3]) {
       const random = seededRandom(seed);

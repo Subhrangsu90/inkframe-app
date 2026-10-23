@@ -158,6 +158,15 @@ describe('DocumentManager with another store', () => {
         }
         index.sort((a, b) => b.updatedAt - a.updatedAt);
       },
+      updateEntries: async (update) => {
+        let changed = false;
+        index = index.map((meta) => {
+          const updated = update(meta);
+          if (updated) changed = true;
+          return updated ?? meta;
+        });
+        return changed;
+      },
       remove: async (id) => {
         docs.delete(id);
         index = index.filter((d) => d.id !== id);
@@ -283,6 +292,37 @@ describe('document previews', () => {
     const [entry] = await manager.getIndex();
     expect(entry.excerpt).toBe('Remember the milk');
     expect(entry.excerptVersion).toBe(EXCERPT_VERSION);
+  });
+
+  it('leaves alone what changed while previews were being made (in another tab, say)', async () => {
+    localStorage.clear();
+    const manager = TestBed.inject(DocumentManager);
+    const store = TestBed.inject(DOCUMENT_STORE);
+    const saved = await manager.createDoc('Saved', docWith('old text'));
+    const deleted = await manager.createDoc('Deleted', docWith('gone'));
+    await manager.createDoc('Kept', docWith('kept'));
+    const index = await manager.getIndex();
+    index.forEach((meta) => delete meta.excerpt);
+    await store.put(index.map((meta) => ({ meta })));
+
+    // While the backfill reads the first document, the other tab acts.
+    const get = store.get.bind(store);
+    let acted = false;
+    vi.spyOn(store, 'get').mockImplementation(async (id) => {
+      if (!acted) {
+        acted = true;
+        await manager.saveDoc(saved.meta.id, docWith('new text'), 'Renamed');
+        await manager.deleteDoc(deleted.meta.id);
+      }
+      return get(id);
+    });
+    await manager.backfillExcerpts();
+    vi.restoreAllMocks();
+
+    const after = await manager.getIndex();
+    expect(after.map((d) => d.title).sort()).toEqual(['Kept', 'Renamed']);
+    expect(after.find((d) => d.title === 'Renamed')?.excerpt).toBe('new text');
+    expect(after.find((d) => d.title === 'Kept')?.excerpt).toBe('kept');
   });
 });
 

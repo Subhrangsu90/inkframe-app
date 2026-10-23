@@ -1,4 +1,5 @@
 import { Node as PMNode } from 'prosemirror-model';
+import { NodeSelection } from 'prosemirror-state';
 import { EditorView, NodeView } from 'prosemirror-view';
 import { imageStorage } from '../../storage/image-storage';
 
@@ -45,12 +46,16 @@ export class ImageNodeView implements NodeView {
     this.img.title = node.attrs['title'] || 'Click to preview';
     this.img.setAttribute('referrerpolicy', 'no-referrer');
 
-    // Click handler on image to open preview lightbox
+    // Click handler on image to open preview lightbox. A finger has no hover
+    // to show the toolbar and resize handles, so its first tap only selects
+    // the image (which shows them); a tap on the selected image previews it.
     let downX = 0;
     let downY = 0;
-    this.img.addEventListener('mousedown', (e) => {
+    let tapSelects = false;
+    this.img.addEventListener('pointerdown', (e) => {
       downX = e.clientX;
       downY = e.clientY;
+      tapSelects = e.pointerType !== 'mouse' && !this.dom.classList.contains('selected');
     });
     this.img.addEventListener('click', (e) => {
       const dx = Math.abs(e.clientX - downX);
@@ -58,7 +63,7 @@ export class ImageNodeView implements NodeView {
       if (dx < 6 && dy < 6) {
         e.preventDefault();
         e.stopPropagation();
-        this.triggerPreview();
+        if (!tapSelects) this.triggerPreview();
       }
     });
 
@@ -130,7 +135,7 @@ export class ImageNodeView implements NodeView {
       const handle = document.createElement('div');
       handle.className = `ink-image-resize-handle handle-${pos}`;
       handle.title = 'Drag to resize';
-      handle.addEventListener('mousedown', (e) => this.onResizeStart(e, pos));
+      handle.addEventListener('pointerdown', (e) => this.onResizeStart(e, pos));
       this.handles.push(handle);
       this.imgWrapper.appendChild(handle);
     });
@@ -159,7 +164,9 @@ export class ImageNodeView implements NodeView {
     }
   }
 
-  private onResizeStart(e: MouseEvent, direction: 'se' | 'e' | 'sw' | 'w'): void {
+  /** Pointer events: a mouse, a pen or a finger (the handles' CSS stops a finger scrolling instead). */
+  private onResizeStart(e: PointerEvent, direction: 'se' | 'e' | 'sw' | 'w'): void {
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -175,7 +182,8 @@ export class ImageNodeView implements NodeView {
 
     let currentWidth = startWidth;
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== e.pointerId) return;
       moveEvent.preventDefault();
       const deltaX = (moveEvent.clientX - startX) / scale;
       let targetWidth: number;
@@ -189,26 +197,40 @@ export class ImageNodeView implements NodeView {
       this.badgeEl.textContent = `${Math.round(currentWidth)}px`;
     };
 
-    const onMouseUp = () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+    const onPointerEnd = (endEvent: PointerEvent) => {
+      if (endEvent.pointerId !== e.pointerId) return;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerEnd);
+      window.removeEventListener('pointercancel', onPointerEnd);
       this.dom.classList.remove('is-resizing');
       this.badgeEl.style.display = 'none';
+      if (endEvent.type === 'pointercancel') {
+        // The browser took the gesture over: back to the width before it.
+        this.dom.style.width = this.node.attrs['width'] || '';
+        return;
+      }
       this.applyWidth(`${Math.round(currentWidth)}px`);
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerEnd);
+    window.addEventListener('pointercancel', onPointerEnd);
   }
 
   private applyWidth(width: string): void {
     this.dom.style.width = width;
     const pos = this.getPos();
     if (pos != null) {
+      const { selection } = this.view.state;
       const tr = this.view.state.tr.setNodeMarkup(pos, undefined, {
         ...this.node.attrs,
         width,
       });
+      // A selected image stays selected, its toolbar and handles shown: on a
+      // touch screen, nothing else shows them.
+      if (selection instanceof NodeSelection && selection.from === pos) {
+        tr.setSelection(NodeSelection.create(tr.doc, pos));
+      }
       this.view.dispatch(tr);
     }
   }

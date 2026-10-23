@@ -59,6 +59,7 @@ import { InkIcon } from '@app/shared/ui/icons/icon';
 import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
 import { ToastService } from '@app/shared/ui/toast/toast';
 import { buildShareableUrl } from '@app/features/documents/transfer/share-codec';
+import { copyText } from '@app/core/clipboard';
 import {
   docToMarkdownText,
   downloadHtml,
@@ -622,27 +623,31 @@ export class EditorView implements OnInit {
     const next = !this.showShareMenu();
     this.showShareMenu.set(next);
     if (next) {
-      await this.updateShareUrl();
+      // If this fails, Copy tries again and says so.
+      await this.updateShareUrl().catch((e) => console.warn('The share link failed:', e));
     }
   }
 
-  async updateShareUrl(): Promise<void> {
+  async updateShareUrl(): Promise<string> {
     const doc = this.currentStoredDoc();
-    if (doc) {
-      const url = await buildShareableUrl(doc, this.docTitle());
-      this.shareUrl.set(url);
-    }
+    if (!doc) throw new Error('No document is open');
+    const url = await buildShareableUrl(doc, this.docTitle());
+    this.shareUrl.set(url);
+    return url;
   }
 
   async copyReaderLink(): Promise<void> {
-    if (!this.shareUrl()) {
-      await this.updateShareUrl();
-    }
-    const url = this.shareUrl();
-    if (url && typeof navigator !== 'undefined' && navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
+    try {
+      await copyText(this.shareUrl() || this.updateShareUrl());
       this.toast.success('Shareable link copied to clipboard!');
       this.showShareMenu.set(false);
+    } catch (e) {
+      console.warn('Copying the share link failed:', e);
+      this.toast.error(
+        this.shareUrl()
+          ? 'The link could not be copied. Select it in the box and copy it from there.'
+          : 'The share link could not be created',
+      );
     }
   }
 

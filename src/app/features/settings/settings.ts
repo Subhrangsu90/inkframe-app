@@ -173,7 +173,7 @@ export class Settings implements OnInit {
     const backups = this.injector.get(transfer.BackupService);
     let backup: ParsedBackup;
     try {
-      backup = backups.parse(await file.text());
+      backup = await backups.parse(file);
     } catch (e) {
       this.toast.error(e instanceof BackupError ? e.message : 'This file could not be read');
       return;

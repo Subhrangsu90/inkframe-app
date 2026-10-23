@@ -35,6 +35,56 @@ export function base64UrlToBytes(str: string): Uint8Array {
 }
 
 /**
+ * The most a shared document may unpack to. A share link holds at most a
+ * couple of megabytes, and real documents unpack to a few times that; a
+ * crafted link could unpack to gigabytes and crash the tab.
+ */
+export const MAX_SHARED_DOC_BYTES = 32 * 1024 * 1024;
+
+/**
+ * Input goes into the stream this much at a time, so one step unpacks to at
+ * most about 1000 times as much (deflate's limit), not the whole link at once.
+ */
+const STREAM_STEP = 4096;
+
+/** Runs bytes through a compression stream. Null when the output passes `limit`. */
+async function pipeBytes(
+  bytes: Uint8Array,
+  stream: CompressionStream | DecompressionStream,
+  limit = Infinity,
+): Promise<Uint8Array | null> {
+  const writer = stream.writable.getWriter();
+  // The stream takes the next piece only once the output so far is read.
+  // Errors (damaged data, or stopping early) surface through the reader.
+  for (let start = 0; start < bytes.length; start += STREAM_STEP) {
+    writer.write(bytes.subarray(start, start + STREAM_STEP) as BufferSource).catch(() => undefined);
+  }
+  writer.close().catch(() => undefined);
+
+  const reader = stream.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.length;
+    if (length > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+
+  const output = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    output.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return output;
+}
+
+/**
  * Compresses a document into a compact, zero-backend, URL-safe hash string.
  * Uses native Web Streams deflate-raw compression when available.
  */
@@ -51,28 +101,8 @@ export async function compressDocForSharing(storedDoc: StoredDoc, title?: string
 
   if (typeof CompressionStream !== 'undefined') {
     try {
-      const cs = new CompressionStream('deflate-raw');
-      const writer = cs.writable.getWriter();
-      writer.write(bytes);
-      writer.close();
-
-      const chunks: Uint8Array[] = [];
-      const reader = cs.readable.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-
-      const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-      const compressed = new Uint8Array(totalLen);
-      let offset = 0;
-      for (const chunk of chunks) {
-        compressed.set(chunk, offset);
-        offset += chunk.length;
-      }
-
-      return 'c_' + bytesToBase64Url(compressed);
+      const compressed = await pipeBytes(bytes, new CompressionStream('deflate-raw'));
+      return 'c_' + bytesToBase64Url(compressed!);
     } catch (e) {
       console.warn('CompressionStream failed, using base64url fallback:', e);
     }
@@ -96,27 +126,15 @@ export async function decompressSharedDoc(hash: string): Promise<DecodedSharedDo
       // Compressed with deflate-raw
       const bytes = base64UrlToBytes(hash.slice(2));
       if (typeof DecompressionStream !== 'undefined') {
-        const ds = new DecompressionStream('deflate-raw');
-        const writer = ds.writable.getWriter();
-        writer.write(bytes as unknown as BufferSource);
-        writer.close();
-
-        const chunks: Uint8Array[] = [];
-        const reader = ds.readable.getReader();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
+        const decompressed = await pipeBytes(
+          bytes,
+          new DecompressionStream('deflate-raw'),
+          MAX_SHARED_DOC_BYTES,
+        );
+        if (!decompressed) {
+          console.warn('This shared document unpacks to more than 32 MB; it was not opened.');
+          return null;
         }
-
-        const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-        const decompressed = new Uint8Array(totalLen);
-        let offset = 0;
-        for (const chunk of chunks) {
-          decompressed.set(chunk, offset);
-          offset += chunk.length;
-        }
-
         jsonString = new TextDecoder().decode(decompressed);
       }
     } else if (hash.startsWith('u_')) {

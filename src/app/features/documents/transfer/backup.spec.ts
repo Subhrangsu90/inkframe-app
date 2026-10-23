@@ -1,15 +1,10 @@
 import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SCHEMA_VERSION, StoredDoc, imageStorage } from '@inkframe-ui/editor/core';
-import {
-  BACKUP_FORMAT,
-  BackupError,
-  BackupService,
-  InkframeBackup,
-  describeRestore,
-} from './backup';
+import { BACKUP_FORMAT, BackupError, BackupService, UnsavedDoc, describeRestore } from './backup';
 import { DocumentManager } from '../data-access/document-manager';
+import { ImageCleanup } from '../data-access/image-cleanup';
 import { StorageHealth } from '../data-access/storage-health';
 import { VersionHistory } from '../versions/version-history';
 
@@ -29,9 +24,22 @@ const docWith = (text: string, imageId?: string): StoredDoc => ({
   },
 });
 
-/** Writes the backup to text and reads it back, as a file would. */
-const throughFile = (service: BackupService, backup: InkframeBackup) =>
-  service.parse(JSON.stringify(backup));
+/** Makes a backup file and reads it back, as restoring from it does. */
+const throughFile = async (service: BackupService, unsaved?: Map<string, UnsavedDoc>) =>
+  service.parse((await service.createFile(unsaved)).file);
+
+/** The lines of a backup file. */
+const linesOf = async (service: BackupService) =>
+  (await (await service.createFile()).file.text()).split('\n');
+
+const pngOf = (bytes: number[] | Uint8Array) =>
+  new Blob([new Uint8Array(bytes)], { type: 'image/png' });
+
+const putPng = (id: string, png: Blob) =>
+  imageStorage.putImage(
+    { id, name: `${id}.png`, type: 'image/png', size: png.size, createdAt: 7 },
+    png,
+  );
 
 // jsdom has no IndexedDB: documents use the localStorage fallback and images
 // stay in memory, which is enough to round-trip them.
@@ -52,9 +60,9 @@ describe('BackupService', () => {
     const stored = docWith('Pages');
     (stored.doc as any).attrs = { page: { layout: 'pages', paper: 'letter' } };
     const { meta } = await docs.createDoc('Pages', stored);
-    const backup = await backups.create();
+    const backup = await throughFile(backups);
     await docs.clearAll();
-    await backups.restore(throughFile(backups, backup), 'replace');
+    await backups.restore(backup, 'replace');
     expect(await docs.getDoc(meta.id)).toEqual(stored);
   });
 
@@ -67,13 +75,13 @@ describe('BackupService', () => {
     const a = await docs.createDoc('A', docWith('Alpha', 'img_1'));
     const b = await docs.createDoc('B', docWith('Beta'));
     const named = await versions.snapshot(a.meta.id, docWith('Alpha draft'), 'named', 'Draft');
-    const backup = await backups.create();
+    const backup = await throughFile(backups);
 
     await docs.clearAll();
     await imageStorage.clearAll();
     expect(await docs.getIndex()).toEqual([]);
 
-    const summary = await backups.restore(throughFile(backups, backup), 'replace');
+    const summary = await backups.restore(backup, 'replace');
     expect(summary).toEqual({ added: 2, copies: 0, unchanged: 0, unreadable: 0 });
 
     const index = await docs.getIndex();
@@ -93,23 +101,33 @@ describe('BackupService', () => {
     );
   });
 
+  it('holds image cleanups off while it writes', async () => {
+    await docs.createDoc('A', docWith('Alpha'));
+    const backup = await throughFile(backups);
+    await docs.clearAll();
+    const hold = vi.spyOn(TestBed.inject(ImageCleanup), 'hold');
+    await backups.restore(backup, 'merge');
+    expect(hold).toHaveBeenCalledTimes(1);
+    expect((await docs.getIndex()).map((d) => d.title)).toEqual(['A']);
+  });
+
   it('counts a replace restore as a backup for the reminder, but not a merge', async () => {
     await docs.createDoc('A', docWith('Alpha'));
-    const backup = { ...(await backups.create()), createdAt: 5000 };
+    const backup = { ...(await throughFile(backups)), createdAt: 5000 };
     const health = TestBed.inject(StorageHealth);
 
-    await backups.restore(throughFile(backups, backup), 'merge');
+    await backups.restore(backup, 'merge');
     expect(health.lastBackup()).toBeNull();
-    await backups.restore(throughFile(backups, backup), 'replace');
+    await backups.restore(backup, 'replace');
     expect(health.lastBackup()).toBe(5000);
   });
 
   it('replace deletes documents that are not in the backup', async () => {
     await docs.createDoc('Kept', docWith('kept'));
-    const backup = await backups.create();
+    const backup = await throughFile(backups);
     const extra = await docs.createDoc('Extra', docWith('extra'));
 
-    await backups.restore(throughFile(backups, backup), 'replace');
+    await backups.restore(backup, 'replace');
     expect((await docs.getIndex()).map((d) => d.title)).toEqual(['Kept']);
     expect(await docs.getDoc(extra.meta.id)).toBeNull();
   });
@@ -117,13 +135,13 @@ describe('BackupService', () => {
   it('merge never overwrites: it adds missing documents and copies of changed ones', async () => {
     const a = await docs.createDoc('A', docWith('Alpha'));
     const b = await docs.createDoc('B', docWith('Beta'));
-    const backup = await backups.create();
+    const backup = await throughFile(backups);
 
     await docs.deleteDoc(a.meta.id);
     await docs.saveDoc(b.meta.id, docWith('Beta, edited later'), 'B');
     const c = await docs.createDoc('C', docWith('Gamma'));
 
-    const summary = await backups.restore(throughFile(backups, backup), 'merge');
+    const summary = await backups.restore(backup, 'merge');
     expect(summary).toEqual({ added: 1, copies: 1, unchanged: 0, unreadable: 0 });
 
     const index = await docs.getIndex();
@@ -138,9 +156,9 @@ describe('BackupService', () => {
   it('merge skips documents identical to the ones on this device', async () => {
     await docs.createDoc('A', docWith('Alpha'));
     await docs.createDoc('B', docWith('Beta'));
-    const backup = await backups.create();
+    const backup = await throughFile(backups);
 
-    const summary = await backups.restore(throughFile(backups, backup), 'merge');
+    const summary = await backups.restore(backup, 'merge');
     expect(summary).toEqual({ added: 0, copies: 0, unchanged: 2, unreadable: 0 });
     expect(await docs.getIndex()).toHaveLength(2);
   });
@@ -149,37 +167,127 @@ describe('BackupService', () => {
     const a = await docs.createDoc('A', docWith('saved'));
     const unsaved = new Map([[a.meta.id, { title: 'A, renamed', doc: docWith('not saved yet') }]]);
 
-    const backup = await backups.create(unsaved);
+    const backup = await throughFile(backups, unsaved);
     expect(backup.documents).toHaveLength(1);
     expect(backup.documents[0].doc).toEqual(docWith('not saved yet'));
     expect(backup.documents[0].meta.title).toBe('A, renamed');
   });
 
-  it('rejects files that are not backups, or from a newer Inkframe', () => {
-    expect(() => backups.parse('not json')).toThrow(BackupError);
-    expect(() => backups.parse('{"format":"something-else"}')).toThrow(/not an Inkframe backup/);
-    expect(() =>
-      backups.parse(JSON.stringify({ format: BACKUP_FORMAT, version: 99, documents: [] })),
-    ).toThrow(/newer version/);
+  it('writes each document and image on a line of its own, as plain JSON', async () => {
+    await putPng('img_1', pngOf([137, 80, 78, 71]));
+    await docs.createDoc('A', docWith('Alpha', 'img_1'));
+    await docs.createDoc('B', docWith('Beta'));
+    const lines = await linesOf(backups);
+
+    expect(lines[0]).toMatch(
+      /^\{"format":"inkframe-backup","version":1,"createdAt":\d+,"documents":\[$/,
+    );
+    expect(
+      lines
+        .slice(1, 3)
+        .map((line) => JSON.parse(line.replace(/,$/, '')).meta.title)
+        .sort(),
+    ).toEqual(['A', 'B']);
+    expect(lines[3]).toBe('],"images":[');
+    expect(JSON.parse(lines[4]).id).toBe('img_1');
+    expect(lines.slice(5)).toEqual([']}', '']);
+    // One JSON document all the same, which Inkframe before this layout reads.
+    const whole = JSON.parse(lines.join('\n'));
+    expect(whole.documents).toHaveLength(2);
+    expect(whole.images).toHaveLength(1);
+  });
+
+  it('restores backups written as one line, as Inkframe made them before', async () => {
+    await putPng('img_1', pngOf([137, 80, 78, 71]));
+    const a = await docs.createDoc('A', docWith('Alpha', 'img_1'));
+    const oneLine = JSON.stringify(JSON.parse((await linesOf(backups)).join('\n')));
+    await docs.clearAll();
+    await imageStorage.clearAll();
+
+    const summary = await backups.restore(await backups.parse(new Blob([oneLine])), 'replace');
+    expect(summary.added).toBe(1);
+    expect(await docs.getDoc(a.meta.id)).toEqual(docWith('Alpha', 'img_1'));
+    expect((await imageStorage.getImage('img_1'))?.blob.size).toBe(4);
+  });
+
+  it('restores an image longer than one read of the file', async () => {
+    // Bytes that do not compress, about 2 MB as text: it spans three reads.
+    const bytes = new Uint8Array(1_500_000).map((_, i) => (i * 7919) % 251);
+    await putPng('big', pngOf(bytes));
+    await docs.createDoc('Photo', docWith('Photo', 'big'));
+    const backup = await throughFile(backups);
+    await imageStorage.clearAll();
+
+    await backups.restore(backup, 'replace');
+    const restored = new Uint8Array(await (await imageStorage.getImage('big'))!.blob.arrayBuffer());
+    // Compared by hand: toEqual takes seconds over this many bytes.
+    expect(restored.length === bytes.length && restored.every((b, i) => b === bytes[i])).toBe(true);
+  });
+
+  it('restores the rest of a file with a damaged line', async () => {
+    await putPng('img_1', pngOf([1]));
+    await putPng('img_2', pngOf([2]));
+    await docs.createDoc('A', docWith('Alpha', 'img_1'));
+    await docs.createDoc('B', docWith('Beta', 'img_2'));
+    const lines = await linesOf(backups);
+    const brokenDoc = lines.findIndex((line) => line.includes('"Beta"'));
+    lines[brokenDoc] = lines[brokenDoc].slice(0, 30);
+    const brokenImage = lines.findIndex((line) => line.startsWith('{"id":"img_1"'));
+    lines[brokenImage] = '{"id":"img_1","data":"data:image/png;base64,AQ';
+    await docs.clearAll();
+    await imageStorage.clearAll();
+
+    const parsed = await backups.parse(new Blob([lines.join('\n')]));
+    expect(parsed.damaged).toBe(1);
+    expect(parsed.documents.map((d) => d.meta.title)).toEqual(['A']);
+    const summary = await backups.restore(parsed, 'replace');
+    expect(summary).toEqual({ added: 1, copies: 0, unchanged: 0, unreadable: 1 });
+    expect(await imageStorage.getImage('img_1')).toBeNull();
+  });
+
+  it('reads an empty library, and files edited to end their lines with CR LF', async () => {
+    const empty = await throughFile(backups);
+    expect(empty.documents).toEqual([]);
+    expect(empty.damaged).toBe(0);
+
+    await docs.createDoc('A', docWith('Alpha'));
+    const windows = (await linesOf(backups)).join('\r\n');
+    expect((await backups.parse(new Blob([windows]))).documents).toHaveLength(1);
+  });
+
+  it('rejects files that are not backups, or from a newer Inkframe', async () => {
+    const parse = (text: string) => backups.parse(new Blob([text]));
+    await expect(parse('not json')).rejects.toThrow(BackupError);
+    await expect(parse('{"format":"something-else"}')).rejects.toThrow(/not an Inkframe backup/);
+    await expect(
+      parse(JSON.stringify({ format: BACKUP_FORMAT, version: 99, documents: [] })),
+    ).rejects.toThrow(/newer version/);
+    await expect(
+      parse(
+        `{"format":"${BACKUP_FORMAT}","version":99,"createdAt":1,"documents":[\n],"images":[\n]}`,
+      ),
+    ).rejects.toThrow(/newer version/);
   });
 
   it('counts damaged documents and refuses to replace anything with an unreadable backup', async () => {
     await docs.createDoc('Mine', docWith('mine'));
-    const parsed = backups.parse(
-      JSON.stringify({
-        format: BACKUP_FORMAT,
-        version: 1,
-        createdAt: 1,
-        documents: [
-          { meta: { id: 'x' } },
-          {
-            meta: { id: 'future', title: 'Future', createdAt: 1, updatedAt: 1 },
-            doc: { schemaVersion: SCHEMA_VERSION + 1, doc: { type: 'doc', content: [] } },
-            versions: [],
-          },
-        ],
-        images: [],
-      }),
+    const parsed = await backups.parse(
+      new Blob([
+        JSON.stringify({
+          format: BACKUP_FORMAT,
+          version: 1,
+          createdAt: 1,
+          documents: [
+            { meta: { id: 'x' } },
+            {
+              meta: { id: 'future', title: 'Future', createdAt: 1, updatedAt: 1 },
+              doc: { schemaVersion: SCHEMA_VERSION + 1, doc: { type: 'doc', content: [] } },
+              versions: [],
+            },
+          ],
+          images: [],
+        }),
+      ]),
     );
     expect(parsed.damaged).toBe(1);
 

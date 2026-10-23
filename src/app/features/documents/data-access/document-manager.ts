@@ -123,18 +123,24 @@ export class DocumentManager {
    * Edit times are left untouched.
    */
   async backfillExcerpts(): Promise<boolean> {
-    const stale = (await this.store.list()).filter(
-      (meta) => meta.excerpt === undefined || meta.excerptVersion !== EXCERPT_VERSION,
-    );
+    const isStale = (meta: DocMeta) =>
+      meta.excerpt === undefined || meta.excerptVersion !== EXCERPT_VERSION;
+    const stale = (await this.store.list()).filter(isStale);
     if (stale.length === 0) return false;
+    const excerpts = new Map<string, string>();
     for (const meta of stale) {
       const doc = await this.store.get(meta.id);
-      meta.excerpt = doc ? extractDocExcerpt(doc, meta.title) : '';
-      meta.excerptVersion = EXCERPT_VERSION;
+      excerpts.set(meta.id, doc ? extractDocExcerpt(doc, meta.title) : '');
     }
-    await this.store.put(stale.map((meta) => ({ meta })));
-    this.channel.post({ type: 'saved', ids: [] });
-    return true;
+    // Into the entries as they are now: one saved meanwhile (in another tab,
+    // say) has its own preview, and one deleted stays deleted.
+    const changed = await this.store.updateEntries((current) => {
+      const excerpt = excerpts.get(current.id);
+      if (excerpt === undefined || !isStale(current)) return null;
+      return { ...current, excerpt, excerptVersion: EXCERPT_VERSION };
+    });
+    if (changed) this.channel.post({ type: 'saved', ids: [] });
+    return changed;
   }
 
   /**

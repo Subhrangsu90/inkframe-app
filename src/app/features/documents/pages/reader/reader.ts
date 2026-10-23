@@ -46,6 +46,7 @@ import {
 } from '@inkframe-ui/editor/ui';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ToastService } from '@app/shared/ui/toast/toast';
+import { copyText } from '@app/core/clipboard';
 import {
   decompressSharedDoc,
   buildShareableUrl,
@@ -134,7 +135,8 @@ export class Reader implements OnInit {
         let isShared = false;
 
         // 1. Check if hash is a compressed zero-backend payload
-        if (hash.startsWith('c_') || hash.startsWith('u_')) {
+        const payload = hash.startsWith('c_') || hash.startsWith('u_');
+        if (payload) {
           const decoded = await decompressSharedDoc(hash);
           if (decoded) {
             active = decoded.doc;
@@ -153,7 +155,7 @@ export class Reader implements OnInit {
         }
 
         // 3. Check legacy base64 encoded document
-        if (!active && hash !== 'doc_default') {
+        if (!active && hash !== 'doc_default' && !payload) {
           const decoded = await decompressSharedDoc(hash);
           if (decoded) {
             active = decoded.doc;
@@ -170,6 +172,13 @@ export class Reader implements OnInit {
         }
 
         if (token !== this.loadToken) return;
+        if (payload && !isShared) {
+          // Cut short when copied, or crafted to unpack to more than a document could.
+          this.toast.error(
+            'This shared link could not be opened. It may be incomplete: ask for the link again.',
+            8000,
+          );
+        }
         this.activeDoc.set(active);
         this.docTitle.set(title);
         this.isSharedPayload.set(isShared);
@@ -248,12 +257,10 @@ export class Reader implements OnInit {
   async copyShareLink(): Promise<void> {
     try {
       const doc = this.activeDoc() || WELCOME_DOC;
-      const url = await buildShareableUrl(doc, this.docTitle());
-      if (typeof window !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
-        this.toast.success('Shareable link copied to clipboard!');
-      }
-    } catch {
+      await copyText(buildShareableUrl(doc, this.docTitle()));
+      this.toast.success('Shareable link copied to clipboard!');
+    } catch (e) {
+      console.warn('Copying the share link failed:', e);
       this.toast.error('Failed to copy shareable link');
     }
   }

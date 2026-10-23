@@ -99,6 +99,19 @@ export class LocalDocumentStore implements DocumentStore {
     }));
   }
 
+  async updateEntries(update: (current: DocMeta) => DocMeta | null): Promise<boolean> {
+    let changed = false;
+    await this.changeIndex((index) => {
+      const next = index.map((meta) => {
+        const updated = update(meta);
+        if (updated) changed = true;
+        return updated ?? meta;
+      });
+      return changed ? { index: next, docs: [] } : null;
+    });
+    return changed;
+  }
+
   async remove(id: string): Promise<void> {
     await this.changeIndex((index) => ({
       index: index.filter((d) => d.id !== id),

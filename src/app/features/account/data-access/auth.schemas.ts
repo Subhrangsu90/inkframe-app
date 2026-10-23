@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@app/core/zod';
 
 /*
  * Zod schemas for accounts: what the server sends, what this device

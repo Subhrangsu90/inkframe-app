@@ -3,6 +3,18 @@
   "buildCommand": "npm run build:app:staging",
   "routes": [
     {
+      "src": "^/(?!api/auth/|v1/).*$",
+      "headers": {
+        "Content-Security-Policy": "frame-ancestors 'none'",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
+        "Cross-Origin-Opener-Policy": "same-origin"
+      },
+      "continue": true
+    },
+    {
       "src": "^/(api/auth|v1)/(.*)$",
       "dest": "https://inkframe-server.onrender.com/$1/$2",
       "transforms": [

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from './zod';
 
 /*
  * The shapes of inkframe-server's /v1 answers, checked with Zod before the

@@ -1,0 +1,13 @@
+# Secret scanning (gitleaks, run in CI over the whole history): its default
+# rules, minus values that look like secrets but aren't. Allow exact values
+# only, never whole paths, so a real secret in the same file is still found.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known non-secrets"
+regexTarget = "match"
+regexes = [
+  # The made-up invite code in the sign-up page's tests (auth-page.spec.ts).
+  '''(?i)7K3M-Q9TD-XW2P-4HNA''',
+]

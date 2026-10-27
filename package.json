@@ -77,7 +77,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@types/express": "^5.0.1",
     "@types/markdown-it": "^14.2.0",
-    "@types/node": "^20.17.19",
+    "@types/node": "^26.6.5",
     "@types/prismjs": "^1.26.6",
     "angular-eslint": "22.6.0",
     "eslint": "^10.12.0",

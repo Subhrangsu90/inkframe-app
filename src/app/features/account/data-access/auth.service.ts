@@ -2,11 +2,14 @@ import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { CLOUD } from '@app/core/cloud';
 import { AUTH_API_LOADER, type AuthApi, type AuthApiResult } from './auth-api';
-import { NETWORK_ERROR, authErrorMessage } from './auth-errors';
+import { INVALID_INVITE, NETWORK_ERROR, authErrorMessage } from './auth-errors';
 // Types only: the schemas (and Zod) load on demand with the auth API module.
-import type { AccountHint, AccountUser, SignInMethods } from './auth.schemas';
+import type { AccountHint, AccountUser, AppConfig, SignInMethods } from './auth.schemas';
 
-export type { AccountUser, SignInMethods } from './auth.schemas';
+export type { AccountUser, AppConfig, SignInMethods, SignUpMode } from './auth.schemas';
+
+/** What the app assumes when the server can't be asked: sign-up open (the server still decides). */
+const FALLBACK_CONFIG: AppConfig = { signUp: 'open', minAppVersion: '0.0.0', features: {} };
 
 /** `unknown` until the browser has checked (and always on the server, which can't see the session). */
 export type AuthStatus = 'unknown' | 'signed-out' | 'signed-in';
@@ -33,6 +36,7 @@ export class AuthService {
 
   private api?: Promise<AuthApi>;
   private methodsRequest?: Promise<SignInMethods>;
+  private configRequest?: Promise<AppConfig>;
   private started = false;
   /**
    * Goes up with every sign-in, sign-up and sign-out, so a session check
@@ -137,6 +141,37 @@ export class AuthService {
         return { emailPassword: true, google: false };
       });
     return this.methodsRequest;
+  }
+
+  /**
+   * What the server offers now (who may sign up). Asks once; when it can't
+   * be reached, assumes open sign-up, and the server refuses what it must.
+   */
+  config(): Promise<AppConfig> {
+    this.configRequest ??= this.client()
+      .then((api) => api.getConfig())
+      .catch(() => {
+        this.configRequest = undefined;
+        return FALLBACK_CONFIG;
+      });
+    return this.configRequest;
+  }
+
+  /**
+   * Checks an invite code before signing up (by email or Google). When it
+   * works, the server holds it for the sign-up that follows.
+   */
+  async checkInvite(code: string): Promise<AuthOutcome> {
+    try {
+      await (await this.client()).checkInvite(code);
+      return { ok: true };
+    } catch (error) {
+      // The server's refusal (ApiRequestError, known by its code: importing it would load Zod here).
+      const { status, code: reason } = error as { status?: number; code?: string };
+      if (reason === 'invalid_invite') return { ok: false, message: INVALID_INVITE };
+      if (status) return { ok: false, message: authErrorMessage({ status, code: reason }) };
+      return { ok: false, message: NETWORK_ERROR };
+    }
   }
 
   /** Shows who was signed in as soon as the hint is checked, then asks the server. */

@@ -73,3 +73,18 @@ export async function getJson<T extends z.ZodType>(
   if (!parsed?.success) throw unexpected(res.status);
   return parsed.data;
 }
+
+/** POSTs `body` as JSON to a /v1 route and returns its `data`, checked against `data`. */
+export function postJson<T extends z.ZodType>(
+  url: string,
+  body: unknown,
+  data: T,
+  init: RequestInit = {},
+): Promise<z.output<T>> {
+  return getJson(url, data, {
+    ...init,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...init.headers },
+    body: JSON.stringify(body),
+  });
+}

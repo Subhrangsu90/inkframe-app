@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { AccountHint, AccountUser, SignInMethods } from './auth.schemas';
+import type { AccountHint, AccountUser, AppConfig, SignInMethods } from './auth.schemas';
 
 /** What Better Auth's client returns: data, or an error with the HTTP status and Better Auth's code. */
 export interface AuthApiResult<T> {
@@ -34,6 +34,14 @@ export interface AuthApi {
   signOut(): Promise<AuthApiResult<unknown>>;
   /** GET /v1/auth/methods. Throws when the server can't be reached or answers oddly. */
   getMethods(): Promise<SignInMethods>;
+  /** GET /v1/config. Throws when the server can't be reached or answers oddly. */
+  getConfig(): Promise<AppConfig>;
+  /**
+   * POST /v1/invites/check: resolves when the code works (the server then
+   * holds it for the sign-up that follows). Throws ApiRequestError
+   * (`invalid_invite`) when it doesn't, TypeError when offline.
+   */
+  checkInvite(code: string): Promise<void>;
   /** Reads what this device remembers (see AccountHintSchema); null when missing or invalid. */
   parseHint(raw: string): AccountHint | null;
 }

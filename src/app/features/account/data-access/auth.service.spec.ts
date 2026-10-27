@@ -26,6 +26,8 @@ function fakeApi(): { [K in keyof AuthApi]: ReturnType<typeof vi.fn> } {
     })),
     signOut: vi.fn(async () => ({ data: { success: true }, error: null })),
     getMethods: vi.fn(async () => ({ emailPassword: true, google: true })),
+    getConfig: vi.fn(async () => ({ signUp: 'invite', minAppVersion: '0.7.0', features: {} })),
+    checkInvite: vi.fn(async () => undefined),
     parseHint: vi.fn(parseHint),
   };
 }
@@ -182,6 +184,42 @@ describe('AuthService', () => {
     const auth = setup();
     expect(await auth.methods()).toEqual({ emailPassword: true, google: false });
     expect(await auth.methods()).toEqual({ emailPassword: true, google: true });
+  });
+
+  it('asks the server who may sign up, once', async () => {
+    const auth = setup();
+    expect((await auth.config()).signUp).toBe('invite');
+    await auth.config();
+    expect(api.getConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it('assumes open sign-up when the server cannot say, and asks again next time', async () => {
+    api.getConfig.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    const auth = setup();
+    expect((await auth.config()).signUp).toBe('open');
+    expect((await auth.config()).signUp).toBe('invite');
+  });
+
+  it('checks invite codes, in words people can act on when they fail', async () => {
+    const auth = setup();
+    expect(await auth.checkInvite('7K3M-Q9TD-XW2P-4HNA')).toEqual({ ok: true });
+    expect(api.checkInvite).toHaveBeenCalledWith('7K3M-Q9TD-XW2P-4HNA');
+
+    // The server's refusal, as getJson throws it (ApiRequestError).
+    api.checkInvite.mockRejectedValueOnce(
+      Object.assign(new Error('nope'), { status: 400, code: 'invalid_invite' }),
+    );
+    const refused = await auth.checkInvite('WRONG');
+    expect(refused).toEqual({ ok: false, message: expect.stringMatching(/invite code/) });
+
+    api.checkInvite.mockRejectedValueOnce(Object.assign(new Error('slow'), { status: 429 }));
+    expect(await auth.checkInvite('AGAIN')).toEqual({
+      ok: false,
+      message: expect.stringMatching(/Too many attempts/),
+    });
+
+    api.checkInvite.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    expect(await auth.checkInvite('OFFLINE')).toEqual({ ok: false, message: NETWORK_ERROR });
   });
 
   it('does nothing in builds without accounts', () => {

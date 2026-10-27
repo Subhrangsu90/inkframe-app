@@ -230,6 +230,22 @@
   gap: 6px;
 }
 
+/* Above "Continue with Google": both ways to sign up need it. */
+.invite-field {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.signup-closed {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--ink-border);
+  border-radius: var(--ink-radius-md);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-text-muted);
+}
+
 .field-label {
   font-size: 13px;
   font-weight: 600;

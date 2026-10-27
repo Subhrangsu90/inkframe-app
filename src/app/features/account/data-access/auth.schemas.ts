@@ -44,6 +44,21 @@ export const SignInMethodsSchema = z.object({
 });
 export type SignInMethods = z.output<typeof SignInMethodsSchema>;
 
+/** Who may create an account: anyone, people with an invite code, or nobody. */
+export const SIGN_UP_MODES = ['open', 'invite', 'closed'] as const;
+export type SignUpMode = (typeof SIGN_UP_MODES)[number];
+
+/** GET /v1/config: what the server offers now. */
+export const AppConfigSchema = z.object({
+  signUp: z.enum(SIGN_UP_MODES),
+  minAppVersion: z.string(),
+  features: z.record(z.string(), z.boolean()),
+});
+export type AppConfig = z.output<typeof AppConfigSchema>;
+
+/** POST /v1/invites/check: an accepted code answers with no data. */
+export const InviteAcceptedSchema = z.null();
+
 /**
  * What this device remembers between visits (localStorage): who was signed
  * in, or that a Google sign-in is under way. Never a password or a token.
@@ -98,7 +113,12 @@ export const SignUpFormSchema = z.object({
     .max(MAX_PASSWORD, `Use at most ${MAX_PASSWORD} characters.`),
 });
 
-export type FormField = 'name' | 'email' | 'password';
+/** The invite code, while sign-up needs one; the server checks it (case and dashes don't matter). */
+export const InviteFormSchema = z.object({
+  invite: z.string().trim().min(1, 'Enter your invite code.').max(64, 'That code is too long.'),
+});
+
+export type FormField = 'invite' | 'name' | 'email' | 'password';
 
 /** The first problem with each field, to show next to it. */
 export function fieldErrors(error: z.ZodError): Partial<Record<FormField, string>> {

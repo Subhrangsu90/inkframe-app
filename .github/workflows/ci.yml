@@ -18,15 +18,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      # Actions are pinned to a commit (a tag can be moved); Dependabot keeps the pins current.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Known vulnerabilities (high and critical fail)
+        run: npm audit --audit-level=high
 
       - name: Formatting (Prettier)
         run: npm run format:check
@@ -43,8 +47,28 @@ jobs:
       - name: Build library
         run: npm run build:lib:prod
 
+      # Also adds each page's Content Security Policy (scripts/add-csp.mjs) and fails on inline handlers.
       - name: Build app
         run: npm run build:app:prod
 
       - name: No third-party resources in the app
         run: node scripts/check-no-third-party.mjs dist/inkframe-app/browser
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Every commit: a secret deleted later is still in the history.
+          fetch-depth: 0
+
+      - name: Install gitleaks 8.30.1 (checksum checked)
+        run: |
+          curl -sSfL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum --check
+          tar -xzf gitleaks.tar.gz gitleaks
+
+      - name: Scan the history
+        run: ./gitleaks git . --redact --no-banner

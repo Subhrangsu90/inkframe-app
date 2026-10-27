@@ -26,6 +26,7 @@ import type { ParsedBackup } from '@app/features/documents/transfer/backup';
 import { StorageHealth } from '@app/features/documents/data-access/storage-health';
 import { EditorPreferences } from '@app/features/documents/data-access/editor-preferences';
 import { PwaService } from '@app/core/pwa';
+import { APP_VERSION } from '@app/core/version';
 import { InkIcon } from '@app/shared/ui/icons/icon';
 import { InkAvatar } from '@app/shared/ui/avatar/avatar';
 import { ConfirmDialogService } from '@app/shared/ui/confirm-dialog/confirm-dialog';
@@ -54,6 +55,8 @@ export class Settings implements OnInit {
   readonly pwa = inject(PwaService);
   readonly editorPreferences = inject(EditorPreferences);
   readonly auth = inject(AuthService);
+
+  protected readonly version = APP_VERSION;
 
   /** Signing in from here comes back here. */
   readonly settingsReturn = { returnTo: '/settings' };

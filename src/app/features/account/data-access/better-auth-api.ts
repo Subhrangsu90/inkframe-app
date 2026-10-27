@@ -1,9 +1,16 @@
 import { createAuthClient } from 'better-auth/client';
 import type { z } from 'zod';
 import { API, apiUrl } from '@app/core/api-endpoints';
-import { REQUEST_TIMEOUT_MS, getJson } from '@app/core/api-response';
+import { REQUEST_TIMEOUT_MS, getJson, postJson } from '@app/core/api-response';
 import type { AuthApi, AuthApiResult } from './auth-api';
-import { SessionSchema, SignInMethodsSchema, UserPayloadSchema, parseHint } from './auth.schemas';
+import {
+  AppConfigSchema,
+  InviteAcceptedSchema,
+  SessionSchema,
+  SignInMethodsSchema,
+  UserPayloadSchema,
+  parseHint,
+} from './auth.schemas';
 
 /** Better Auth answered, but not with what the app expects. */
 const UNEXPECTED = { status: 502, code: 'UNEXPECTED_RESPONSE', message: 'Unexpected answer' };
@@ -41,6 +48,13 @@ export function createAuthApi(base: string): AuthApi {
     signInSocial: (input) => client.signIn.social(input) as Promise<AuthApiResult<unknown>>,
     signOut: () => client.signOut() as Promise<AuthApiResult<unknown>>,
     getMethods: () => getJson(apiUrl(base, API.authMethods), SignInMethodsSchema),
+    getConfig: () => getJson(apiUrl(base, API.config), AppConfigSchema),
+    // `include`: the server answers with the cookie that carries the code to the sign-up.
+    checkInvite: async (code) => {
+      await postJson(apiUrl(base, API.inviteCheck), { code }, InviteAcceptedSchema, {
+        credentials: 'include',
+      });
+    },
     parseHint,
   };
 }
